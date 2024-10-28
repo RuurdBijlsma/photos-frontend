@@ -48,6 +48,7 @@ import { RouterLink, RouterView } from 'vue-router'
 }
 
 .logo > span {
+  letter-spacing: -1px;
   font-size: 30px;
   margin-left: 15px;
   font-weight: 500;
