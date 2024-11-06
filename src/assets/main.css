@@ -7,3 +7,13 @@ html {
   font-weight: 400;
   font-style: normal;
 }
+
+::-moz-selection {
+  color: white;
+  background: #4914ce;
+}
+
+::selection {
+  color: white;
+  background: #4914ce;
+}

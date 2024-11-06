@@ -3,9 +3,9 @@ import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <div class="main-content">
+  <v-app class="main-content">
     <RouterView />
-  </div>
+  </v-app>
 </template>
 
 <style scoped>
@@ -13,7 +13,7 @@ import { RouterView } from 'vue-router'
   width: 100%;
   height: 100vh;
   overflow-y: auto;
-  background-color: #ffe9d7;
+  background-color: #fff2e9;
   user-select: none;
 }
 </style>

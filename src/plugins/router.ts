@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import MainLayout from '@/views/main/MainLayout.vue'
+import MainLayout from '@/views/MainLayout.vue'
 import PhotosView from '@/views/main/PhotosView.vue'
 
 const router = createRouter({
@@ -20,12 +20,12 @@ const router = createRouter({
           name: 'explore',
           component: () => import('../views/main/ExploreView.vue'),
         },
+        {
+          path: '/map',
+          name: 'map',
+          component: () => import('../views/main/MapView.vue'),
+        },
       ],
-    },
-    {
-      path: '/about',
-      name: 'about',
-      component: () => import('../views/other-layout/AboutView.vue'),
     },
   ],
 })
