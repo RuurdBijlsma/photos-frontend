@@ -11,21 +11,23 @@
   >
     <template v-slot:prepend>
       <v-avatar>
-        <v-img src="img/white-border-512.png"></v-img>
+        <v-img class="ml-2" src="img/white-border-512.png"></v-img>
       </v-avatar>
     </template>
+    <v-spacer />
     <label class="search-bar">
       <span class="search-icon-div">
         <v-icon class="search-icon" icon="mdi-magnify"></v-icon>
       </span>
       <v-text-field
         class="search-text-field"
-        placeholder=""
+        placeholder="Search..."
         rounded
         hide-details
         clearable
       />
     </label>
+    <v-spacer />
     <div class="header-buttons">
       <v-btn variant="plain" rounded>
         <v-icon icon="mdi-upload"></v-icon>
@@ -77,7 +79,7 @@
 .search-bar {
   cursor: text;
   height: 50px;
-  width: 400px;
+  width: calc(100% - 800px);
   border-radius: 25px;
   background-color: rgba(0, 0, 0, 0.07);
   display: flex;
@@ -141,11 +143,11 @@
     rgb(255, 248, 252) 100%
   );
   flex-grow: 1;
-  border-top-left-radius: 40px;
-  border-top-right-radius: 40px;
+  border-top-left-radius: 60px;
+  border-top-right-radius: 60px;
   overflow: hidden;
   box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
-  max-width: calc(100% - 250px);
+  max-width: calc(100% - 50px);
 }
 
 .router-view {
