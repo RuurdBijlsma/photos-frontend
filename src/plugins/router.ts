@@ -27,6 +27,11 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/view',
+      name: 'view-photo',
+      component: () => import('../views/main/PhotoView.vue'),
+    },
   ],
 })
 

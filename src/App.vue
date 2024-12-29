@@ -34,7 +34,7 @@ const loadBg = async () => {
   }
   console.log(bgId.value, performance.now() - now)
 }
-loadBg().then()
+// loadBg().then()
 </script>
 
 <style scoped>
