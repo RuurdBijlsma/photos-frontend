@@ -5,38 +5,73 @@
 </template>
 <script setup lang="ts">
 import { onMounted, onUnmounted, type Ref, ref } from 'vue'
+import {
+  ImageLoader,
+  type GalleryPhoto,
+  type GalleryVideo,
+} from '@/utils/imageLoader'
 
-const images = [
-  'https://fastly.picsum.photos/id/778/1920/1080.jpg?hmac=OOFXAqXlF9l_Jo6tQCNwN3xgrCkl5wyFCw03FanLKGc',
-  'https://fastly.picsum.photos/id/72/1920/1080.jpg?hmac=6BY3KGhrhKlv3VOGlNKrECnIizq_P5l4v20TvanoUbE',
-  'https://fastly.picsum.photos/id/778/1920/1080.jpg?hmac=OOFXAqXlF9l_Jo6tQCNwN3xgrCkl5wyFCw03FanLKGc',
-  'https://fastly.picsum.photos/id/21/1920/1080.jpg?hmac=1BnxKswnhchVaU4-xZpgObgnwGLLb7hnugRQ9vwwUFY',
-  'https://fastly.picsum.photos/id/778/1920/1080.jpg?hmac=OOFXAqXlF9l_Jo6tQCNwN3xgrCkl5wyFCw03FanLKGc',
-  'https://fastly.picsum.photos/id/876/1920/1080.jpg?hmac=RiA84kFcXsag03tcAK80WXgrvjmjsqQvjx8ovhX5le4',
-  'https://fastly.picsum.photos/id/778/1920/1080.jpg?hmac=OOFXAqXlF9l_Jo6tQCNwN3xgrCkl5wyFCw03FanLKGc',
-  'https://fastly.picsum.photos/id/576/1920/1080.jpg?hmac=4SczqqyiYj8_DwymFUpSl6uEkd8VomRlOrMP99yQtn8',
+const imageLoader = new ImageLoader()
+// todo:
+// swipe/click next
+// preload video?
+// show video
+// zoom/pan
+
+const images: (GalleryPhoto | GalleryVideo)[] = [
+  {
+    low: 'https://picsum.photos/300/200',
+    medium: 'https://picsum.photos/1920/1080',
+    full: 'https://picsum.photos/2560/1440',
+  },
+  {
+    low: 'https://picsum.photos/300/200',
+    medium: 'https://picsum.photos/1920/1080',
+    full: 'https://picsum.photos/2560/1440',
+  },
+  {
+    video: 'img/vid.mp4',
+    thumbnail: 'https://picsum.photos/300/200',
+  },
+  {
+    low: 'https://picsum.photos/300/200',
+    medium: 'https://picsum.photos/1920/1080',
+    full: 'https://picsum.photos/2560/1440',
+  },
+  {
+    low: 'https://picsum.photos/300/200',
+    medium: 'https://picsum.photos/1920/1080',
+    full: 'https://picsum.photos/2560/1440',
+  },
+  {
+    low: 'https://picsum.photos/300/200',
+    medium: 'https://picsum.photos/1920/1080',
+    full: 'https://picsum.photos/2560/1440',
+  },
+  {
+    low: 'https://picsum.photos/300/200',
+    medium: 'https://picsum.photos/1920/1080',
+    full: 'https://picsum.photos/2560/1440',
+  },
+  {
+    low: 'https://picsum.photos/300/200',
+    medium: 'https://picsum.photos/1920/1080',
+    full: 'https://picsum.photos/2560/1440',
+  },
 ]
 const imageIndex = 0
-const imageCache: { [key: string]: HTMLImageElement } = {}
+const preloadNeighbours = 1
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 let animationRequest = 0
-
-const loadImage = async (url: string): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.src = url
-    image.onload = () => resolve(image)
-    image.onerror = reject
-  })
-}
-const loadImageCached = async (url: string) => {
-  if (imageCache[url] === undefined) {
-    imageCache[url] = await loadImage(url)
+const loadNeighbours = () => {
+  for (let i = -preloadNeighbours; i <= preloadNeighbours; i++) {
+    if (i === 0 || images[imageIndex + i] === undefined) continue
+    imageLoader.preloadImage(images[imageIndex + i])
   }
-  return imageCache[url]
 }
-loadImageCached(images[imageIndex]).then()
+
+imageLoader.preloadImage(images[imageIndex]).then(loadNeighbours)
 const render = async (
   cv: HTMLCanvasElement,
   context: CanvasRenderingContext2D,
@@ -44,7 +79,7 @@ const render = async (
   animationRequest = requestAnimationFrame(() => render(cv, context))
   context.clearRect(0, 0, cv.width, cv.height)
   context.fillRect(10, 10, 20, 20)
-  const image = imageCache[images[imageIndex]]
+  const image = imageLoader.getHighestQualityImage(images[imageIndex])
   if (image === undefined) return
   // draw image while keeping aspect ratio
   const canvasRatio = cv.width / cv.height
