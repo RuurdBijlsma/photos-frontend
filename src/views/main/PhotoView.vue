@@ -24,6 +24,7 @@ const imageLoader = new ImageLoader()
 // preload video?
 // show video
 // zoom/pan
+// Use photos from server
 
 const images: (GalleryPhoto | GalleryVideo)[] = [
   {
