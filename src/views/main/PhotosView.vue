@@ -3,4 +3,9 @@
     <h1>Photos!</h1>
   </div>
 </template>
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const now = performance.now()
+const response = await fetch('http://localhost:9475/images/')
+const images = await response.json()
+console.log(images, performance.now() - now)
+</script>
