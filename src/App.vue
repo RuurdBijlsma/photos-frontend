@@ -21,7 +21,7 @@ const defaultImage = ''
 const bgId = ref(
   localStorage.getItem('backgroundImage') === null
     ? defaultImage
-    : localStorage.backgroundImage
+    : localStorage.backgroundImage,
 )
 
 const loadBg = async () => {
@@ -34,7 +34,7 @@ const loadBg = async () => {
   }
   console.log(bgId.value, performance.now() - now)
 }
-// loadBg().then()
+loadBg().then()
 </script>
 
 <style scoped>

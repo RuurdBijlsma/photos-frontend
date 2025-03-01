@@ -14,26 +14,26 @@ const router = createRouter({
         {
           path: '/',
           name: 'photos-library',
-          component: PhotosView
+          component: PhotosView,
         },
         {
           path: '/explore',
           name: 'explore',
-          component: () => import('../views/main/ExploreView.vue')
+          component: () => import('../views/main/ExploreView.vue'),
         },
         {
           path: '/map',
           name: 'map',
-          component: () => import('../views/main/MapView.vue')
-        }
-      ]
+          component: () => import('../views/main/MapView.vue'),
+        },
+      ],
     },
     {
       path: '/view',
       name: 'view-photo',
-      component: () => import('../views/main/PhotoView.vue')
-    }
-  ]
+      component: () => import('../views/main/PhotoView.vue'),
+    },
+  ],
 })
 
 export default router

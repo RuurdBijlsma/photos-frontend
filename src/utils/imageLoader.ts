@@ -10,11 +10,14 @@ export interface GalleryVideo {
 }
 
 export class ImageLoader {
-  private imageCache: { [key: string]: HTMLImageElement | HTMLVideoElement } = {}
-  private promiseCache: { [key: string]: Promise<HTMLImageElement | HTMLVideoElement> } = {}
+  private imageCache: { [key: string]: HTMLImageElement | HTMLVideoElement } =
+    {}
+  private promiseCache: {
+    [key: string]: Promise<HTMLImageElement | HTMLVideoElement>
+  } = {}
 
   async loadVideo(url: string): Promise<HTMLVideoElement> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const video = document.createElement('video')
       video.setAttribute('controls', '')
       video.src = url
@@ -32,7 +35,10 @@ export class ImageLoader {
   }
 
   async loadImageCached(url: string, isPhoto: boolean) {
-    if (this.promiseCache[url] === undefined || this.imageCache[url] === undefined) {
+    if (
+      this.promiseCache[url] === undefined ||
+      this.imageCache[url] === undefined
+    ) {
       this.promiseCache[url] = (isPhoto ? this.loadPhoto : this.loadVideo)(url)
       this.imageCache[url] = await this.promiseCache[url]
     }
@@ -45,12 +51,12 @@ export class ImageLoader {
       await Promise.all([
         this.loadImageCached(image.low, true),
         this.loadImageCached(image.medium, true),
-        this.loadImageCached(image.full, true)
+        this.loadImageCached(image.full, true),
       ])
     } else {
       await Promise.all([
         this.loadImageCached(image.thumbnail, true),
-        this.loadImageCached(image.video, false)
+        this.loadImageCached(image.video, false),
       ])
     }
     console.log('preloaded', image)
