@@ -2,7 +2,6 @@ export interface User {
   id: string
   email: string
   name?: string
-  // Add other user properties as needed
 }
 
 export interface LoginCredentials {
@@ -11,7 +10,7 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData extends LoginCredentials {
-  name?: string
+  name: string
 }
 
 export interface AuthError {

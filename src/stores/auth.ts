@@ -7,7 +7,6 @@ import type {
   RegisterData,
   AuthError,
 } from '@/types/auth'
-import { fetchJson } from '@/utils/apiHelpers'
 
 export const useAuthStore = defineStore(
   'auth',
@@ -15,168 +14,46 @@ export const useAuthStore = defineStore(
     const user = ref<User | null>(null)
     const token = ref<string | null>(null)
     const error = ref<AuthError | null>(null)
-    const isLoading = ref(false)
+    const loadingCount = ref(0)
+    const isLoading = computed(() => loadingCount.value === 0)
     const isLoggedIn = computed(() => !!user.value)
 
     /**
-     * A generic wrapper for handling API requests with loading state and error handling
-     * @param fn - Async function to execute
-     * @returns Promise resolving to the result or undefined if error occurs
+     * Login with email and password
      */
-    async function handleRequest<T>(
-      fn: () => Promise<T>,
-    ): Promise<T | undefined> {
-      try {
-        isLoading.value = true
-        error.value = null
-        return await fn()
-      } catch (err) {
-        error.value = {
-          message:
-            err instanceof Error ? err.message : 'An unexpected error occurred',
-        }
-      } finally {
-        isLoading.value = false
-      }
-    }
+    async function login(credentials: LoginCredentials) {}
 
     /**
-     * Authenticate a user with email and password
-     * @param credentials - Login credentials object
-     * @returns Promise resolving to authentication data
+     * Register new user with validation
      */
-    async function login(credentials: LoginCredentials) {
-      return handleRequest(async () => {
-        const data = await fetchJson<{ token: string }>(
-          '/auth/login',
-          token.value,
-          {
-            method: 'POST',
-            body: JSON.stringify(credentials),
-          },
-        )
-
-        token.value = data.token
-        await fetchCurrentUser()
-        return data
-      })
-    }
+    async function register(userData: RegisterData) {}
 
     /**
-     * Register a new user account
-     * @param userData - User registration data
-     * @returns Promise resolving to registration data
+     * Fetch current authenticated user
      */
-    async function register(userData: RegisterData) {
-      return handleRequest(async () => {
-        const data = await fetchJson<{ token: string }>(
-          '/auth/register',
-          token.value,
-          {
-            method: 'POST',
-            body: JSON.stringify(userData),
-          },
-        )
-
-        token.value = data.token
-        await fetchCurrentUser()
-        return data
-      })
-    }
+    async function fetchCurrentUser() {}
 
     /**
-     * Fetch the current authenticated user's data
-     * @returns Promise resolving to user data
+     * Initiate password reset
      */
-    async function fetchCurrentUser() {
-      return handleRequest(async () => {
-        user.value = await fetchJson<User>('/auth/current', token.value)
-        return user.value
-      })
-    }
+    async function forgotPassword(email: string) {}
 
     /**
-     * Send a magic link to the specified email
-     * @param email - User's email address
-     * @returns Promise resolving to magic link response
+     * Reset password with token
      */
-    async function sendMagicLink(email: string) {
-      return handleRequest(async () => {
-        return fetchJson('/auth/magic-link', token.value, {
-          method: 'POST',
-          body: JSON.stringify({ email }),
-        })
-      })
-    }
+    async function resetPassword(forgotToken: string, newPassword: string) {}
 
     /**
-     * Verify a magic link token and authenticate the user
-     * @param tokenParam - Magic link token from URL
-     * @returns Promise resolving to authentication data
+     * Verify email with token
      */
-    async function verifyMagicLink(tokenParam: string) {
-      return handleRequest(async () => {
-        const data = await fetchJson<{ token: string }>(
-          `/auth/magic-link/${tokenParam}`,
-          token.value,
-        )
-        token.value = data.token
-        await fetchCurrentUser()
-        return data
-      })
-    }
+    async function verifyEmail(verification_token: string) {}
 
     /**
-     * Initiate password reset process
-     * @param email - User's email address
-     * @returns Promise resolving to reset initiation response
-     */
-    async function forgotPassword(email: string) {
-      return handleRequest(async () => {
-        return fetchJson('/auth/forgot', token.value, {
-          method: 'POST',
-          body: JSON.stringify({ email }),
-        })
-      })
-    }
-
-    /**
-     * Reset user password with a valid reset token
-     * @param tokenParam - Password reset token
-     * @param newPassword - New password to set
-     * @returns Promise resolving to reset confirmation
-     */
-    async function resetPassword(tokenParam: string, newPassword: string) {
-      return handleRequest(async () => {
-        return fetchJson('/auth/reset', token.value, {
-          method: 'POST',
-          body: JSON.stringify({ token: tokenParam, newPassword }),
-        })
-      })
-    }
-
-    /**
-     * Verify user email with a verification token
-     * @param tokenParam - Email verification token
-     * @returns Promise resolving to verification result
-     */
-    async function verifyEmail(tokenParam: string) {
-      return handleRequest(async () => {
-        return fetchJson(`/auth/verify/${tokenParam}`, token.value)
-      })
-    }
-
-    /**
-     * Log out current user and clear authentication state
+     * Logout current user
      */
     function logout() {
       user.value = null
       token.value = null
-    }
-
-    // Initialize user if token exists at store creation
-    if (token.value) {
-      fetchCurrentUser().then()
     }
 
     return {
@@ -189,8 +66,6 @@ export const useAuthStore = defineStore(
       logout,
       fetchCurrentUser,
       register,
-      sendMagicLink,
-      verifyMagicLink,
       forgotPassword,
       resetPassword,
       verifyEmail,
