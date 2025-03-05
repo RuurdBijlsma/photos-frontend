@@ -1,5 +1,3 @@
-<script setup lang="ts"></script>
-
 <template>
   <v-app-bar
     density="comfortable"
@@ -19,9 +17,40 @@
   <v-main class="layout-body">
     <div class="login-container">
       <h1>Logdin</h1>
+      <v-form @submit.prevent="login()">
+        <v-text-field v-model="email" placeholder="Email"></v-text-field>
+        <v-text-field
+          v-model="password"
+          placeholder="Password"
+          type="password"
+        ></v-text-field>
+        <v-btn type="submit">Login</v-btn>
+      </v-form>
     </div>
   </v-main>
 </template>
+
+<script setup lang="ts">
+import { PhotosApi } from '@/utils/api/PhotosApi'
+import { ref } from 'vue'
+
+const email = ref('')
+const password = ref('')
+
+const api = new PhotosApi()
+
+async function login() {
+  const result = await api.login({
+    email: email.value,
+    password: password.value,
+  })
+  if ('error' in result) {
+    alert('ERROR LOGGING IN' + result.description)
+  } else {
+    console.log('Logged in', result)
+  }
+}
+</script>
 
 <style scoped>
 .layout-body {

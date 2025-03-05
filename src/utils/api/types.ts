@@ -1,7 +1,7 @@
 export interface User {
-  id: string
+  pid: string
+  name: string
   email: string
-  name?: string
 }
 
 export interface LoginCredentials {
@@ -14,6 +14,13 @@ export interface RegisterData extends LoginCredentials {
 }
 
 export interface AuthError {
-  message: string
-  code?: string
+  error: string
+  description: string
+}
+
+export interface LoginResult {
+  token: string
+  pid: string
+  name: string
+  is_verified: boolean
 }
