@@ -1,6 +1,8 @@
 import type {
   AuthError,
-  LoginCredentials, LoginResult, RegisterData
+  LoginCredentials,
+  LoginResult,
+  RegisterData,
 } from '@/utils/api/types'
 
 export class PhotosApi {
@@ -16,8 +18,8 @@ export class PhotosApi {
   async login(credentials: LoginCredentials): Promise<AuthError | LoginResult> {
     const response = await fetch(this.baseUrl + '/api/auth/login', {
       method: 'POST',
-      headers:{
-        'Accept': 'application/json',
+      headers: {
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
