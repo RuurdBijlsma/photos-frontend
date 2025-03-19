@@ -1,6 +1,5 @@
 <template>
   <div class="login-background">
-    <div class="blur-bg"></div>
     <v-main class="login-main">
       <v-card class="login-app-bar" color="transparent" flat>
         <div class="login-app-icon" />
@@ -16,7 +15,7 @@
             variant="outlined"
             ref="emailInput"
             rounded
-            :rules="[rules.required, rules.min]"
+            :rules="[rules.mailRequired, rules.min]"
             v-model="email"
             label="Email"
             color="primary"
@@ -33,12 +32,12 @@
             >Forgot password
           </v-btn>
           <v-text-field
-            class="text-input"
+            class="text-input mb-1"
             variant="outlined"
             :prepend-icon="show ? 'mdi-lock-open-outline' : 'mdi-lock-outline'"
             :append-icon="show ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
             @click:append="show = !show"
-            :rules="[rules.required, rules.authError]"
+            :rules="[rules.passRequired, rules.authError]"
             :type="show ? 'text' : 'password'"
             rounded
             v-model="password"
@@ -58,11 +57,12 @@
           </v-btn>
         </v-form>
         <div class="register-container">
-          <p>Don't have an account?</p>
+          <p class="opacity-50">Don't have an account?</p>
           <v-btn
-            variant="outlined"
+            variant="plain"
             base-color="rgba(0,0,0,0.5)"
             width="150"
+            color="primary"
             rounded
             density="default"
             >Sign up
@@ -88,7 +88,8 @@ onMounted(() => {
 })
 
 const rules = {
-  required: (v: string) => !!v || 'Required.',
+  mailRequired: (v: string) => !!v || 'Email is required.',
+  passRequired: (v: string) => !!v || 'Password is required.',
   min: (v: string) => v.length >= 6 || `Min 6 characters`,
   authError: () => !auth.hasError || `Credentials don't match.`,
 }
@@ -111,16 +112,7 @@ async function login() {
   position: fixed;
   width: 100%;
   height: 100%;
-  background-image: url('img/sahara.jpg');
-  background-size: cover;
-  background-position: center;
-}
-
-.blur-bg {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  backdrop-filter: blur(15px);
+  background-color: rgb(226, 219, 241);
 }
 
 .login-app-bar {
@@ -133,16 +125,15 @@ async function login() {
 }
 
 .login-app-icon {
-  background-image: url('img/white-border-512.png');
+  background-image: url('img/transparent-512.png');
   --size: 40px;
   height: var(--size);
   width: var(--size);
-  background-size: contain;
+  background-color: black;
+  background-size: 105%;
   background-position: center;
   border-radius: 100%;
-  box-shadow:
-    0 0 0 2px white,
-    0 4px 5px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.3);
 }
 
 .app-name {
@@ -154,10 +145,9 @@ async function login() {
   background: rgb(227, 222, 255, 0.7);
   background: linear-gradient(
     0deg,
-    rgb(234, 222, 255, 0.5) 0%,
+    rgba(255, 232, 232, 0.5) 0%,
     rgb(255, 248, 252, 0.8) 100%
   );
-  backdrop-filter: blur(20px) contrast(110%) brightness(110%) saturate(150%);
   flex-grow: 1;
   border-radius: 30px;
   overflow: hidden;

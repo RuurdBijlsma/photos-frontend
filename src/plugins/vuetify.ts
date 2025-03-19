@@ -13,7 +13,7 @@ const lightTheme: ThemeDefinition = {
     'surface-light': '#EEEEEE',
     'surface-variant': '#424242',
     'on-surface-variant': '#EEEEEE',
-    primary: '#b9611e',
+    primary: '#b91e8d',
     'primary-darken-1': '#7b3d0c',
     secondary: '#51947c',
     'secondary-darken-1': '#1db5b4',

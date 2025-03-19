@@ -11,7 +11,7 @@
   >
     <template v-slot:prepend>
       <v-avatar>
-        <v-img class="ml-2" src="img/white-border-512.png"></v-img>
+        <v-img class="ml-2" src="img/transparent-512.png"></v-img>
       </v-avatar>
     </template>
     <v-spacer />
