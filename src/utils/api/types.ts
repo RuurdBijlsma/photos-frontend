@@ -17,8 +17,10 @@ export interface AuthError {
   error: string
   description: string
 }
-
-export interface LoginResult {
+export interface RegisterResponse{
+  success: boolean,
+}
+export interface LoginResponse {
   token: string
   pid: string
   name: string

@@ -1,12 +1,13 @@
 import type {
   AuthError,
   LoginCredentials,
-  LoginResult,
+  LoginResponse,
   RegisterData,
+  RegisterResponse,
 } from '@/utils/api/types'
 
 export class PhotosApi {
-  private baseUrl: string
+  private readonly baseUrl: string
 
   constructor(baseUrl: string = 'http://localhost:7000') {
     this.baseUrl = baseUrl
@@ -15,7 +16,9 @@ export class PhotosApi {
   /**
    * Login with email and password
    */
-  async login(credentials: LoginCredentials): Promise<AuthError | LoginResult> {
+  async login(
+    credentials: LoginCredentials,
+  ): Promise<AuthError | LoginResponse> {
     const response = await fetch(this.baseUrl + '/api/auth/login', {
       method: 'POST',
       headers: {
@@ -26,6 +29,10 @@ export class PhotosApi {
     })
     if (!response.ok) {
       console.warn('Login failed', response)
+      return {
+        error: `${response.status.toString()} ${response.statusText}`,
+        description: await response.text(),
+      }
     }
     return await response.json()
   }
@@ -33,7 +40,9 @@ export class PhotosApi {
   /**
    * Register new user with validation
    */
-  async register(userData: RegisterData) {
+  async register(
+    userData: RegisterData,
+  ): Promise<RegisterResponse | AuthError> {
     const response = await fetch(this.baseUrl + '/api/auth/register', {
       method: 'POST',
       headers: {
@@ -43,9 +52,17 @@ export class PhotosApi {
       body: JSON.stringify(userData),
     })
     if (!response.ok) {
-      console.warn('Login failed', response)
+      console.warn('Register failed', response)
+      return {
+        error: `${response.status.toString()} ${response.statusText}`,
+        description: (await response.json())["description"],
+      }
     }
-    return await response.json()
+    const result = await response.json()
+    console.log(result)
+    return {
+      success: true,
+    }
   }
 
   /**
@@ -67,4 +84,20 @@ export class PhotosApi {
    * Verify email with token
    */
   async verifyEmail(verification_token: string) {}
+
+  async setupNeeded(): Promise<boolean> {
+    const response = await fetch(this.baseUrl + '/api/auth/setup-needed', {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
+    if (!response.ok) {
+      console.warn('Setup needed check failed', response)
+    }
+    return await response.json()
+  }
 }
+
+export const photosApi = new PhotosApi()

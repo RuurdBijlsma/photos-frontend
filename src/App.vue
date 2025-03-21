@@ -4,7 +4,7 @@
     <div
       class="background-image"
       :style="{
-        backgroundImage: `url(http://localhost:9475/thumbnails/${bgId}/200p.avif)`,
+        backgroundImage: `url(img/etna.jpg)`,
       }"
     ></div>
   </div>
@@ -16,6 +16,8 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import router from '@/plugins/router'
 
 const defaultImage = ''
 const bgId = ref(
@@ -35,6 +37,13 @@ const loadBg = async () => {
   console.log(bgId.value, performance.now() - now)
 }
 loadBg().then()
+
+const auth = useAuthStore()
+auth.setupNeeded().then(needed => {
+  if (needed) {
+    router.push({ name: 'welcome' })
+  }
+})
 </script>
 
 <style scoped>
@@ -42,7 +51,6 @@ loadBg().then()
   width: 100%;
   height: 100vh;
   overflow-y: auto;
-  background-color: #fff2e9;
   user-select: none;
 }
 
@@ -50,7 +58,7 @@ loadBg().then()
   position: fixed;
   width: 100%;
   height: 100%;
-  background-color: blue;
+  background-color: #7878ff;
   z-index: 0;
 }
 
@@ -64,11 +72,17 @@ loadBg().then()
   z-index: 0;
   background-size: cover;
   background-position: center;
+  width: 100%;
+  height: 100%;
 }
 
 .blur-filter {
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: saturate(120%) brightness(120%) blur(100px) contrast(200%);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  backdrop-filter: saturate(150%) brightness(70%) blur(0px) contrast(100%);
   z-index: 1;
 }
 </style>

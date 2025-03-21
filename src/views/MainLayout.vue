@@ -86,8 +86,9 @@
   cursor: text;
   height: 50px;
   width: calc(100% - 800px);
+  max-width: 700px;
   border-radius: 25px;
-  background-color: rgba(0, 0, 0, 0.07);
+  background-color: rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: row;
 }
@@ -145,8 +146,8 @@
   background: rgb(227, 222, 255);
   background: linear-gradient(
     0deg,
-    rgb(234, 222, 255) 0%,
-    rgb(255, 248, 252) 100%
+    rgba(238, 229, 255, 0.6) 0%,
+    rgba(255, 248, 252, 0.6) 100%
   );
   flex-grow: 1;
   border-top-left-radius: 60px;
@@ -154,6 +155,7 @@
   overflow: hidden;
   box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
   max-width: calc(100% - 50px);
+  backdrop-filter: saturate(150%) blur(30px) contrast(100%);
 }
 
 .router-view {

@@ -2,56 +2,82 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { AuthError, User } from '@/utils/api/types'
-import { PhotosApi } from '@/utils/api/PhotosApi'
-
-const api = new PhotosApi()
+import { photosApi } from '@/utils/api/PhotosApi'
 
 export const useAuthStore = defineStore(
   'auth',
   () => {
     const user = ref<User | null>(null)
     const token = ref<string | null>(null)
-    const error = ref<AuthError | null>(null)
+    const loginError = ref<AuthError | null>(null)
+    const registerError = ref<AuthError | null>(null)
     const isLoggedIn = computed(() => !!user.value)
     const loginLoading = ref<boolean>(false)
-    const hasError = computed(() => error.value !== null)
+    const registerLoading = ref<boolean>(false)
+    const hasError = computed(() => loginError.value !== null)
 
-    async function register(username:string, email:string, password:string) :Promise<boolean> {
+    async function login(email: string, password: string): Promise<boolean> {
+      if (loginError.value !== null) loginError.value = null
       loginLoading.value = true
-      const result = await api.register({name:username, email, password})
+      const result = await photosApi.login({ email, password })
       loginLoading.value = false
-      if('error' in result){
-        console.log('Setting error to', result)
-        error.value = result
+      if ('error' in result) {
+        console.log('Setting login error to', result)
+        loginError.value = result
         return false
       }
-      error.value = null
       token.value = result.token
       user.value = {
         email: email,
         name: result.name,
         pid: result.pid,
       }
+      console.info('Login success')
       return true
     }
 
-    async function login(email: string, password: string): Promise<boolean> {
-      loginLoading.value = true
-      const result = await api.login({ email, password })
-      loginLoading.value = false
+    async function register(
+      displayName: string,
+      email: string,
+      password: string,
+    ): Promise<boolean> {
+      registerLoading.value = true
+      if (loginError.value !== null) loginError.value = null
+      if (registerError.value !== null) registerError.value = null
+      const result = await photosApi.register({
+        name: displayName,
+        email,
+        password,
+      })
       if ('error' in result) {
-        console.log('Setting error to', result)
-        error.value = result
+        console.log('Setting register error to', result)
+        registerError.value = result
+        registerLoading.value = false
         return false
       }
-      error.value = null
-      token.value = result.token
-      user.value = {
-        email: email,
-        name: result.name,
-        pid: result.pid,
+      const loginSuccess = await login(email, password)
+      registerLoading.value = false
+      if (!loginSuccess) {
+        const le = loginError.value as AuthError | null
+        registerError.value = {
+          error: 'Login failed',
+          description: `Login failed after successful registration.
+          Login error: ${le?.error} \n\n ${le?.description}`, // noinspection
+        }
+        return false
       }
+      registerError.value = null
+      console.info('Register success')
       return true
+    }
+
+    async function setupNeeded() {
+      if (localStorage.getItem('setupNeeded') === 'false') {
+        return false
+      }
+      const result = await photosApi.setupNeeded()
+      localStorage.setupNeeded = result
+      return result
     }
 
     function logout() {
@@ -64,13 +90,17 @@ export const useAuthStore = defineStore(
     return {
       user,
       token,
-      error,
+      error: loginError,
       hasError,
+      registerLoading,
       loginLoading,
       isLoggedIn,
+      registerError,
+      register,
       login,
       logout,
       fetchCurrentUser,
+      setupNeeded,
     }
   },
   {

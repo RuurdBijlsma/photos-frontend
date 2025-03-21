@@ -5,7 +5,7 @@
         <div :class="{ rotating: auth.loginLoading }" class="big-image"></div>
       </div>
       <div class="right-pane">
-        <v-form class="login-form mt-7" @submit.prevent="login()" ref="form">
+        <v-form class="login-form" @submit.prevent="login()" ref="form">
           <v-text-field
             class="text-input"
             prepend-icon="mdi-email-outline"
@@ -48,6 +48,7 @@
             label="Password"
           ></v-text-field>
           <v-btn
+            class="mt-4"
             type="submit"
             variant="flat"
             color="primary"
@@ -83,7 +84,6 @@ const rules = {
   min: (v: string) => v.length >= 6 || `Min 6 characters`,
   authError: () => !auth.hasError || `Credentials don't match.`,
 }
-console.log('CURRENT ROUTE', router.currentRoute.value)
 const showPassword = ref(false)
 const email = ref('')
 const password = ref('')
@@ -106,7 +106,7 @@ async function login() {
   position: fixed;
   width: 100%;
   height: 100%;
-  background-color: rgb(226, 219, 241);
+  background-color: rgb(220, 220, 239);
 }
 
 .login-container {
@@ -121,7 +121,7 @@ async function login() {
   overflow: hidden;
   box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
   max-width: 800px;
-  padding: 40px;
+  padding: 60px;
   margin: 100px auto 0;
   display: flex;
 }
@@ -149,6 +149,7 @@ async function login() {
 
 .right-pane {
   width: 500px;
+  margin-left: 50px;
 }
 
 .login-container > h1 {

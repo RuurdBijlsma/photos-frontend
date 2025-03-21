@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/views/MainLayout.vue'
 import PhotosView from '@/views/main/PhotosView.vue'
 import { useAuthStore } from '@/stores/auth'
+import { photosApi, PhotosApi } from '@/utils/api/PhotosApi'
 
 const router = createRouter({
   // history: createWebHistory(import.meta.env.BASE_URL),
@@ -41,12 +42,18 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
-      path: '/register',
-      name: 'register',
-      component: () => import('../views/LoginView.vue'),
+      path: '/welcome',
+      name: 'welcome',
+      component: () => import('../views/FirstVisitView.vue'),
+    },
+    {
+      path: '/setup',
+      name: 'setup',
+      component: () => import('../views/InitialSetup.vue'),
     },
   ],
 })
+
 
 export function registerNavigationGuard() {
   const authStore = useAuthStore()
