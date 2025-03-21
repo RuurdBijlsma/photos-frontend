@@ -3,17 +3,12 @@
 <template>
   <v-app-bar
     density="comfortable"
-    title="Ruurd Photos"
     :height="70"
     class="header"
     color="transparent"
     elevation="0"
   >
-    <template v-slot:prepend>
-      <v-avatar>
-        <v-img class="ml-2" src="img/transparent-512.png"></v-img>
-      </v-avatar>
-    </template>
+    <h1 class="appbar-title"><span>Ruurd</span> Photos</h1>
     <v-spacer />
     <label class="search-bar">
       <span class="search-icon-div">
@@ -76,6 +71,17 @@
 </template>
 
 <style scoped>
+.appbar-title {
+  font-weight: 600;
+  font-size: 20px;
+  margin-left: 50px;
+  opacity: 0.6;
+}
+
+.appbar-title > span {
+  font-weight: 400;
+}
+
 .search-bar {
   cursor: text;
   height: 50px;

@@ -1,21 +1,19 @@
 <template>
-  <div class="login-background">
-    <v-main class="login-main">
-      <v-card class="login-app-bar" color="transparent" flat>
-        <div class="login-app-icon" />
-        <p class="app-name">Ruurd Photos</p>
-      </v-card>
-      <div class="login-container">
-        <h1>Log In</h1>
-        <v-form class="login-form" @submit.prevent="login()" ref="form">
+  <v-main class="login-main">
+    <div class="login-container">
+      <div class="left-pane">
+        <div :class="{ rotating: auth.loginLoading }" class="big-image"></div>
+      </div>
+      <div class="right-pane">
+        <v-form class="login-form mt-7" @submit.prevent="login()" ref="form">
           <v-text-field
-            class="mt-7 text-input"
-            prepend-icon="mdi-account-outline"
+            class="text-input"
+            prepend-icon="mdi-email-outline"
             append-icon="empty"
             variant="outlined"
             ref="emailInput"
             rounded
-            :rules="[rules.mailRequired, rules.min]"
+            :rules="isSubmitted ? [rules.mailRequired, rules.min] : []"
             v-model="email"
             label="Email"
             color="primary"
@@ -34,11 +32,15 @@
           <v-text-field
             class="text-input mb-1"
             variant="outlined"
-            :prepend-icon="show ? 'mdi-lock-open-outline' : 'mdi-lock-outline'"
-            :append-icon="show ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
-            @click:append="show = !show"
-            :rules="[rules.passRequired, rules.authError]"
-            :type="show ? 'text' : 'password'"
+            :prepend-icon="
+              showPassword ? 'mdi-lock-open-outline' : 'mdi-lock-outline'
+            "
+            :append-icon="
+              showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'
+            "
+            @click:append="showPassword = !showPassword"
+            :rules="isSubmitted ? [rules.passRequired, rules.authError] : []"
+            :type="showPassword ? 'text' : 'password'"
             rounded
             v-model="password"
             color="primary"
@@ -56,21 +58,9 @@
             >Login
           </v-btn>
         </v-form>
-        <div class="register-container">
-          <p class="opacity-50">Don't have an account?</p>
-          <v-btn
-            variant="plain"
-            base-color="rgba(0,0,0,0.5)"
-            width="150"
-            color="primary"
-            rounded
-            density="default"
-            >Sign up
-          </v-btn>
-        </div>
       </div>
-    </v-main>
-  </div>
+    </div>
+  </v-main>
 </template>
 
 <script setup lang="ts">
@@ -93,11 +83,15 @@ const rules = {
   min: (v: string) => v.length >= 6 || `Min 6 characters`,
   authError: () => !auth.hasError || `Credentials don't match.`,
 }
-const show = ref(false)
+console.log('CURRENT ROUTE', router.currentRoute.value)
+const showPassword = ref(false)
 const email = ref('')
 const password = ref('')
+const isSubmitted = ref(false)
 
 async function login() {
+  isSubmitted.value = true
+
   const result = await auth.login(email.value, password.value)
   if (result) {
     await router.push('/')
@@ -108,37 +102,11 @@ async function login() {
 </script>
 
 <style scoped>
-.login-background {
+.login-main {
   position: fixed;
   width: 100%;
   height: 100%;
   background-color: rgb(226, 219, 241);
-}
-
-.login-app-bar {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  width: 100%;
-  justify-content: center;
-  height: 80px;
-}
-
-.login-app-icon {
-  background-image: url('img/transparent-512.png');
-  --size: 40px;
-  height: var(--size);
-  width: var(--size);
-  background-color: black;
-  background-size: 105%;
-  background-position: center;
-  border-radius: 100%;
-  box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.3);
-}
-
-.app-name {
-  font-size: var(--font-size-big);
-  margin-left: 20px;
 }
 
 .login-container {
@@ -152,9 +120,35 @@ async function login() {
   border-radius: 30px;
   overflow: hidden;
   box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 30px;
+  max-width: 800px;
+  padding: 40px;
+  margin: 100px auto 0;
+  display: flex;
+}
+
+.left-pane {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.big-image {
+  background-image: url('img/app-no-bg-1024.png');
+  width: 100%;
+  height: 100%;
+  background-size: 80%;
+  background-position: center;
+}
+
+.left-pane h1 {
+  margin-left: 20px;
+  font-size: 20px;
+  font-weight: 500;
+  opacity: 0.6;
+}
+
+.right-pane {
+  width: 500px;
 }
 
 .login-container > h1 {
@@ -171,16 +165,16 @@ async function login() {
   width: 100%;
 }
 
-.register-container {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  gap: 0.8rem;
-  margin-top: 2rem;
+.rotating {
+  animation: rotate 1s ease-in-out infinite;
 }
 
-.register-container > p {
-  opacity: 0.7;
-  font-size: var(--font-size-normal);
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

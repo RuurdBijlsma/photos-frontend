@@ -33,7 +33,20 @@ export class PhotosApi {
   /**
    * Register new user with validation
    */
-  async register(userData: RegisterData) {}
+  async register(userData: RegisterData) {
+    const response = await fetch(this.baseUrl + '/api/auth/register', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    })
+    if (!response.ok) {
+      console.warn('Login failed', response)
+    }
+    return await response.json()
+  }
 
   /**
    * Fetch current authenticated user

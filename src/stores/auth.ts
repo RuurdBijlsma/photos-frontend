@@ -16,6 +16,25 @@ export const useAuthStore = defineStore(
     const loginLoading = ref<boolean>(false)
     const hasError = computed(() => error.value !== null)
 
+    async function register(username:string, email:string, password:string) :Promise<boolean> {
+      loginLoading.value = true
+      const result = await api.register({name:username, email, password})
+      loginLoading.value = false
+      if('error' in result){
+        console.log('Setting error to', result)
+        error.value = result
+        return false
+      }
+      error.value = null
+      token.value = result.token
+      user.value = {
+        email: email,
+        name: result.name,
+        pid: result.pid,
+      }
+      return true
+    }
+
     async function login(email: string, password: string): Promise<boolean> {
       loginLoading.value = true
       const result = await api.login({ email, password })
