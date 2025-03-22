@@ -1,7 +1,7 @@
 // src/stores/auth.ts
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import type { AuthError, User } from '@/utils/api/types'
+import type { ApiError, User } from '@/utils/api/types'
 import { photosApi } from '@/utils/api/PhotosApi'
 
 export const useAuthStore = defineStore(
@@ -9,8 +9,9 @@ export const useAuthStore = defineStore(
   () => {
     const user = ref<User | null>(null)
     const token = ref<string | null>(null)
-    const loginError = ref<AuthError | null>(null)
-    const registerError = ref<AuthError | null>(null)
+    watch(token, () => token.value && photosApi.setToken(token.value))
+    const loginError = ref<ApiError | null>(null)
+    const registerError = ref<ApiError | null>(null)
     const isLoggedIn = computed(() => !!user.value)
     const loginLoading = ref<boolean>(false)
     const registerLoading = ref<boolean>(false)
@@ -58,7 +59,7 @@ export const useAuthStore = defineStore(
       const loginSuccess = await login(email, password)
       registerLoading.value = false
       if (!loginSuccess) {
-        const le = loginError.value as AuthError | null
+        const le = loginError.value as ApiError | null
         registerError.value = {
           error: 'Login failed',
           description: `Login failed after successful registration.

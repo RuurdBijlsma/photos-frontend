@@ -39,6 +39,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
+      meta: { loggedOut: true },
       component: () => import('../views/LoginView.vue'),
     },
     {
@@ -54,7 +55,6 @@ const router = createRouter({
     },
   ],
 })
-
 
 export function registerNavigationGuard() {
   const authStore = useAuthStore()
@@ -73,6 +73,13 @@ export function registerNavigationGuard() {
           }
         }
         next('/login')
+      } else {
+        next()
+      }
+    } else if (to.meta.loggedOut) {
+      if (authStore.isLoggedIn) {
+        alert("You're already logged in, you can't go to /login.")
+        next('/')
       } else {
         next()
       }

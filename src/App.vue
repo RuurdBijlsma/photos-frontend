@@ -28,13 +28,12 @@ const bgId = ref(
 
 const loadBg = async () => {
   const now = performance.now()
-  localStorage.backgroundImage = await (
-    await fetch('http://localhost:9475/images/random')
-  ).json()
+  // localStorage.backgroundImage = await (
+  //   // await fetch('http://localhost:9475/images/random')
+  // ).json()
   if (bgId.value === defaultImage) {
     bgId.value = localStorage.backgroundImage
   }
-  console.log(bgId.value, performance.now() - now)
 }
 loadBg().then()
 

@@ -1,5 +1,6 @@
 import type {
-  AuthError,
+  ApiError,
+  FileCountResponse,
   LoginCredentials,
   LoginResponse,
   RegisterData,
@@ -8,9 +9,15 @@ import type {
 
 export class PhotosApi {
   private readonly baseUrl: string
+  private token?: string
 
-  constructor(baseUrl: string = 'http://localhost:7000') {
+  constructor(baseUrl: string = 'http://localhost:7000', token?: string) {
     this.baseUrl = baseUrl
+    this.token = token
+  }
+
+  setToken(token: string) {
+    this.token = token
   }
 
   /**
@@ -18,7 +25,7 @@ export class PhotosApi {
    */
   async login(
     credentials: LoginCredentials,
-  ): Promise<AuthError | LoginResponse> {
+  ): Promise<ApiError | LoginResponse> {
     const response = await fetch(this.baseUrl + '/api/auth/login', {
       method: 'POST',
       headers: {
@@ -40,9 +47,7 @@ export class PhotosApi {
   /**
    * Register new user with validation
    */
-  async register(
-    userData: RegisterData,
-  ): Promise<RegisterResponse | AuthError> {
+  async register(userData: RegisterData): Promise<RegisterResponse | ApiError> {
     const response = await fetch(this.baseUrl + '/api/auth/register', {
       method: 'POST',
       headers: {
@@ -55,7 +60,7 @@ export class PhotosApi {
       console.warn('Register failed', response)
       return {
         error: `${response.status.toString()} ${response.statusText}`,
-        description: (await response.json())["description"],
+        description: (await response.json())['description'],
       }
     }
     const result = await response.json()
@@ -65,25 +70,20 @@ export class PhotosApi {
     }
   }
 
-  /**
-   * Fetch current authenticated user
-   */
-  async fetchCurrentUser() {}
-
-  /**
-   * Initiate password reset
-   */
-  async forgotPassword(email: string) {}
-
-  /**
-   * Reset password with token
-   */
-  async resetPassword(forgotToken: string, newPassword: string) {}
-
-  /**
-   * Verify email with token
-   */
-  async verifyEmail(verification_token: string) {}
+  async validateFolders(): Promise<FileCountResponse | ApiError> {
+    const response = await fetch(this.baseUrl + '/api/setup/validate-folders', {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.token}`,
+      },
+    })
+    if (!response.ok) {
+      console.warn('call to validate folders failed', response)
+    }
+    return await response.json()
+  }
 
   async setupNeeded(): Promise<boolean> {
     const response = await fetch(this.baseUrl + '/api/auth/setup-needed', {

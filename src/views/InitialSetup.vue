@@ -7,15 +7,14 @@
         </div>
         <div class="right-title">
           <h1>Set Up <span>Ruurd Photos</span></h1>
-          <h3>Now, let's configure your library and settings.</h3>
           <p class="mt-2">
-            Select your photo folder and adjust additional preferences, like an
-            email server and Google Photos album imports.
+            Now, let's configure your library and settings. Make sure your media
+            library is set up correctly, then enter your server URL to continue.
           </p>
         </div>
       </div>
 
-      <v-divider class="mt-10 mb-5"></v-divider>
+      <v-divider class="mt-10 mb-5" />
 
       <!--
       TODO:
@@ -26,7 +25,24 @@
   </v-main>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { photosApi } from '@/utils/api/PhotosApi'
+import type { ApiError, FileCountResponse } from '@/utils/api/types'
+import { type Ref, ref } from 'vue'
+
+const folderSummary: Ref<FileCountResponse | null> = ref(null)
+
+photosApi
+  .validateFolders()
+  .then((result: FileCountResponse | ApiError) => {
+    if ('error' in result) {
+      console.warn('error getting validate folders result', result)
+    } else {
+      console.log(result)
+      folderSummary.value = result
+    }
+  })
+</script>
 
 <style scoped>
 .main {
