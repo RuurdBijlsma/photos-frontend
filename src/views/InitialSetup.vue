@@ -17,7 +17,11 @@
 
       <v-divider class="mt-10 mb-5"></v-divider>
 
-      <!-- todo make custom folder browser (browse on server)-->
+      <!--
+      TODO:
+      * Check with user if the correct folder is selected, show amount of files and maybe a sample of 10 photos
+      * Let user input the url of the server, ie. photos.ruurd.dev, and autofill the current url for easyness.
+      -->
     </div>
   </v-main>
 </template>
