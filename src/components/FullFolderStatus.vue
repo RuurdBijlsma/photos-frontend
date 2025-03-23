@@ -44,4 +44,8 @@ defineProps<{
   font-size: 17px;
 }
 
+.text-error {
+  color: #ff5252;
+  font-weight: 500;
+}
 </style>

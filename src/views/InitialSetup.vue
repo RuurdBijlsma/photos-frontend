@@ -270,15 +270,6 @@ refreshFolderSummary().then()
   transform: scale(1.05);
 }
 
-.text-error {
-  color: #ff5252;
-  font-weight: 500;
-}
-
-.no-padding {
-  padding-top: 0;
-}
-
 .folder-status-title {
   display: flex;
 }

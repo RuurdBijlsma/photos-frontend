@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/views/MainLayout.vue'
 import PhotosView from '@/views/main/PhotosView.vue'
 import { useAuthStore } from '@/stores/auth'
-import { photosApi, PhotosApi } from '@/utils/api/PhotosApi'
 
 const router = createRouter({
   // history: createWebHistory(import.meta.env.BASE_URL),

@@ -45,7 +45,7 @@
 import type { PathInfoResponse } from '@/utils/api/types'
 import { prettyBytes } from '@/utils/formatting'
 
-const props = defineProps<{
+defineProps<{
   info: PathInfoResponse
   envVar: string
 }>()
