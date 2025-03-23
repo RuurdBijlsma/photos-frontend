@@ -26,11 +26,10 @@
           @click="refreshFolderSummary"
           :loading="refreshLoading"
           prepend-icon="mdi-refresh"
-        >Refresh
+          >Refresh
         </v-btn>
       </div>
       <section v-if="folderSummary">
-
         <!-- Media Folder -->
         <full-folder-status
           :folder="folderSummary.media_folder"
@@ -46,113 +45,19 @@
         />
 
         <!-- Media Files Section -->
-        <v-card
-          class="mb-6"
-          variant="tonal"
-          color="success"
-          v-if="folderSummary.media_folder.read_access"
-        >
-          <v-card-title>
-            <v-icon icon="mdi-image-multiple" class="mr-2"></v-icon>
-            Media Files ({{ folderSummary.count }} supported files)
-          </v-card-title>
-          <v-card-text>
-            <p class="text-caption text-medium-emphasis mb-4">
-              Found {{ folderSummary.count }} supported media files. Here's a
-              sample:
-            </p>
-            <v-row dense>
-              <v-col
-                v-for="(file, index) in folderSummary.samples"
-                :key="index"
-                cols="4"
-                sm="3"
-                md="2"
-              >
-                <div
-                  class="media-thumbnail pa-2 bg-grey-lighten-3 rounded-lg text-center"
-                >
-                  <v-icon icon="mdi-file-image" size="40" class="mb-1"></v-icon>
-                  <div class="text-caption text-truncate">{{ file }}</div>
-                </div>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
+        <media-sample :summary="folderSummary" :images="samples" />
 
         <!-- Unsupported Files -->
-        <v-card class="mb-6 folder-card" variant="text">
-          <v-card-title class="d-flex align-center card-title">
-            <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
-            Unsupported Files ({{ folderSummary.unsupported_count }})
-          </v-card-title>
-          <v-card-text>
-            <p class="mt-3 mb-3">
-              Files with the following extensions are excluded from the scanning
-              process, as they are not compatible with our media processor.
-            </p>
-            <v-alert
-              v-if="folderSummary.unsupported_count > 0"
-              type="warning"
-              variant="tonal"
-            >
-              <span class="black-text"
-                >Unsupported filetype{{
-                  [...Object.keys(folderSummary.unsupported_files)].length === 1
-                    ? ''
-                    : 's'
-                }}
-                detected:</span
-              >
-              <br />
-              <v-dialog
-                max-width="500"
-                v-for="(files, ext) in folderSummary.unsupported_files"
-                :key="ext"
-              >
-                <template v-slot:activator="{ props: activatorProps }">
-                  <v-chip
-                    @click="console.log(files)"
-                    class="ma-1"
-                    v-bind="activatorProps"
-                  >
-                    <span class="black-text">.{{ ext }}</span>
-                  </v-chip>
-                </template>
+        <unsupported-files
+          v-if="folderSummary.unsupported_count > 0"
+          :summary="folderSummary"
+        />
 
-                <template v-slot:default="{ isActive }">
-                  <v-card :title="`Unsupported ${ext} files`">
-                    <v-card-text>
-                      <v-list>
-                        <v-list-item v-for="(file, i) in files" :key="i">
-                          <template v-slot:prepend>
-                            <v-icon icon="mdi-file"></v-icon>
-                          </template>
-                          <v-list-item-title>
-                            {{ file }}
-                          </v-list-item-title>
-                        </v-list-item>
-                      </v-list>
-                    </v-card-text>
-
-                    <v-card-actions>
-                      <v-spacer></v-spacer>
-
-                      <v-btn
-                        text="Dismiss"
-                        @click="isActive.value = false"
-                      ></v-btn>
-                    </v-card-actions>
-                  </v-card>
-                </template>
-              </v-dialog>
-            </v-alert>
-            <v-alert v-else type="success" variant="tonal" rounded>
-              No unsupported files found - great job keeping your media library
-              clean!
-            </v-alert>
-          </v-card-text>
-        </v-card>
+        <!-- Inaccessible Files and Folders -->
+        <inaccessible-entries
+          v-if="folderSummary.inaccessible_entries.length > 0"
+          :summary="folderSummary"
+        />
       </section>
 
       <v-skeleton-loader
@@ -160,7 +65,6 @@
         v-else
         type="card-avatar, heading, paragraph, divider, heading, button, card, article, card"
       ></v-skeleton-loader>
-
     </div>
   </v-main>
 </template>
@@ -169,10 +73,15 @@
 import { photosApi } from '@/utils/api/PhotosApi'
 import type { FileCountResponse } from '@/utils/api/types'
 import { type Ref, ref } from 'vue'
-import FullFolderStatus from '@/components/FullFolderStatus.vue'
+import FullFolderStatus from '@/components/setup/FullFolderStatus.vue'
+import MediaSample from '@/components/setup/MediaSample.vue'
+import UnsupportedFiles from '@/components/setup/UnsupportedFiles.vue'
+import InaccessibleEntries from '@/components/setup/InaccessibleEntries.vue'
 
 const folderSummary: Ref<FileCountResponse | null> = ref(null)
 const refreshLoading = ref(false)
+let N_SAMPLES = 8
+const samples: Ref<string[]> = ref(Array(N_SAMPLES))
 
 async function refreshFolderSummary() {
   refreshLoading.value = true
@@ -183,10 +92,22 @@ async function refreshFolderSummary() {
     } else {
       console.log(result)
       folderSummary.value = result
+      N_SAMPLES = result.samples.length
+      let j = 0
+      for (let i = 0; i < N_SAMPLES; i++) {
+        getImageUrl(result.samples[i]).then(
+          imageUrl => (samples.value[j++] = imageUrl),
+        )
+      }
     }
   } finally {
     refreshLoading.value = false
   }
+}
+
+async function getImageUrl(file: string): Promise<string> {
+  console.log(file)
+  return await photosApi.rawMediaUrl(file)
 }
 
 refreshFolderSummary().then()
@@ -256,18 +177,6 @@ refreshFolderSummary().then()
   opacity: 0.7;
   font-weight: 500;
   font-size: 20px;
-}
-
-.media-thumbnail {
-  height: 100px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  transition: transform 0.2s;
-}
-
-.media-thumbnail:hover {
-  transform: scale(1.05);
 }
 
 .folder-status-title {

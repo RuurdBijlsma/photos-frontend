@@ -24,13 +24,25 @@ html {
     background: #9f84e8;
 }
 
+/* Width and height of the scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
 
+/* Background of the scrollbar track */
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
 
-@keyframes rotate {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
+/* Scrollbar handle (thumb) */
+::-webkit-scrollbar-thumb {
+    background: rgba(47, 43, 56, 0.3);
+    border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(47, 43, 56, 0.5);
 }

@@ -39,10 +39,12 @@ export interface PathInfoResponse {
 }
 
 export interface FileCountResponse {
-  count: number
+  photo_count: number
+  video_count: number
   samples: string[]
   unsupported_count: number
-  unsupported_files: {[key: string]: string[]}
+  unsupported_files: { [key: string]: string[] }
+  inaccessible_entries: string[]
   media_folder: PathInfoResponse
   thumbnails_folder: PathInfoResponse
 }

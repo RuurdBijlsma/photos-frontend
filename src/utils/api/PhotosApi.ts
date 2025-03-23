@@ -98,6 +98,19 @@ export class PhotosApi {
     }
     return await response.json()
   }
+
+  async rawMediaUrl(relativePath: string): Promise<string> {
+    const url = `${this.baseUrl}/download/media?path=${encodeURIComponent(relativePath)}`
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.token}`,
+      },
+    })
+    const blob = await response.blob()
+    return URL.createObjectURL(blob)
+  }
 }
 
 export const photosApi = new PhotosApi()

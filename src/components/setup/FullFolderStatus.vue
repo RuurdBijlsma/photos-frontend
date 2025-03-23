@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FolderStatus from '@/components/FolderStatus.vue'
+import FolderStatus from '@/components/setup/FolderStatus.vue'
 
 import type { PathInfoResponse } from '@/utils/api/types'
 
