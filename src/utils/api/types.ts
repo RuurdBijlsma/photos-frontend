@@ -30,18 +30,19 @@ export interface LoginResponse {
 }
 
 export interface PathInfoResponse {
-  diskAvailable: number
-  diskUsed: number
-  diskTotal: number
-  readAccess: boolean
-  writeAccess: boolean
+  disk_available: number
+  disk_used: number
+  disk_total: number
+  read_access: boolean
+  write_access: boolean
+  folder: string
 }
 
 export interface FileCountResponse {
   count: number
   samples: string[]
-  unsupportedFilesCount: number
-  unsupportedExtensions: string[]
-  mediaFolder: PathInfoResponse
-  thumbnailsFolder: PathInfoResponse
+  unsupported_count: number
+  unsupported_files: {[key: string]: string[]}
+  media_folder: PathInfoResponse
+  thumbnails_folder: PathInfoResponse
 }
