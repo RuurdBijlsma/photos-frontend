@@ -5,3 +5,21 @@
 
 * show error if api connection fails
 * check if material color utilities is actually correct (compare to js version)
+
+
+
+
+
+
+
+
+Change media dir to root dir.
+
+Change setup
+
+Step 1: check read write access
+Step 2: choose folder for current user.
+Step 3: check folder contents with sample and unsupported files etc.
+
+Other additions :
+When processing image, link the image to a hash of the file + filename, so rebuilding is easy
