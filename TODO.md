@@ -5,7 +5,15 @@
 
 * show error if api connection fails
 * check if material color utilities is actually correct (compare to js version)
-
+* read vuetify docs more, very cool stuff
+* i can use:
+* pull to refresh
+* v-scroll
+* v-resize
+* date/time inputs
+* snackbar queue
+* click outside maybe
+* v-tooltip 4 sure
 
 
 
