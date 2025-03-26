@@ -17,19 +17,19 @@ export interface DynamicSchemeCollection {
   dark: DynamicScheme
 }
 
-interface Palette {
+export interface Palette {
   hue: number
   chroma: number
   tones: PaletteTones
 }
 
-interface HCT {
+export interface HCT {
   hue: number
   chroma: number
   tone: number
 }
 
-interface PaletteTones {
+export interface PaletteTones {
   '10': string
   '20': string
   '30': string
@@ -41,7 +41,7 @@ interface PaletteTones {
   '90': string
 }
 
-interface DynamicScheme {
+export interface DynamicScheme {
   source_color_hct: HCT
   variant: string
   is_dark: boolean
