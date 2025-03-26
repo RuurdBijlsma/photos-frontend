@@ -3,39 +3,33 @@ import '@mdi/font/css/materialdesignicons.css'
 import { createVuetify } from 'vuetify'
 import type { ThemeDefinition } from 'vuetify'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
-import themeJson from '@/assets/exampleTheme.json'
+import themeJson from '@/assets/themes-v5.json'
 import type { Theme } from '@/utils/types/color'
 
-const theme: Theme = themeJson
-console.log(theme)
 
-// Extract the light scheme from your theme object
-const lightScheme = theme.schemes.light
+const themes: Theme[] = themeJson
+export const scheme = themes[1].schemes.light
 
 // Map your dynamic scheme values to Vuetify's theme colors.
 // Adjust these mappings according to your design system.
 const lightTheme: ThemeDefinition = {
   dark: false,
   colors: {
-    background: lightScheme.surface_container,           // use surface_container as background
-    surface: lightScheme.surface_container,              // same for surface
-    'surface-bright': lightScheme.surface_container_highest, // brightest surface
-    'surface-light': lightScheme.surface_container_low,    // lighter surface variant
-    'surface-variant': lightScheme.surface_variant,
-    'on-surface-variant': lightScheme.on_surface_variant,
-    primary: lightScheme.primary,
-    'primary-darken-1': lightScheme.primary_fixed_dim,     // example mapping
-    secondary: lightScheme.secondary,
-    'secondary-darken-1': lightScheme.secondary_fixed_dim, // example mapping
-    error: lightScheme.error,
-    // These keys below are optional and can be remapped to whatever properties you see fit.
-    info: lightScheme.on_primary,
-    success: lightScheme.on_secondary,
-    warning: lightScheme.on_error,
+    background: scheme.surface_container,           // use surface_container as background
+    surface: scheme.surface_container,              // same for surface
+    'surface-bright': scheme.surface_container_highest, // brightest surface
+    'surface-light': scheme.surface_container_low,    // lighter surface variant
+    'surface-variant': scheme.surface_variant,
+    'on-surface-variant': scheme.on_surface_variant,
+    primary: scheme.primary,
+    'primary-darken-1': scheme.primary_fixed_dim,     // example mapping
+    secondary: scheme.secondary,
+    'secondary-darken-1': scheme.secondary_fixed_dim, // example mapping
+    error: scheme.error,
   },
   variables: {
     // Map additional variables if needed; here we use outline as the border color.
-    'border-color': lightScheme.outline,
+    'border-color': scheme.outline,
     // You can add additional mappings here based on your theme requirements.
     'border-opacity': 0.12,
     'high-emphasis-opacity': 0.87,
@@ -48,10 +42,10 @@ const lightTheme: ThemeDefinition = {
     'activated-opacity': 0.12,
     'pressed-opacity': 0.12,
     'dragged-opacity': 0.08,
-    'theme-kbd': lightScheme.on_surface,  // example mapping
-    'theme-on-kbd': lightScheme.on_surface_variant,  // example mapping
-    'theme-code': lightScheme.surface_tint,  // example mapping
-    'theme-on-code': lightScheme.inverse_on_surface,  // example mapping
+    'theme-kbd': scheme.on_surface,  // example mapping
+    'theme-on-kbd': scheme.on_surface_variant,  // example mapping
+    'theme-code': scheme.surface_tint,  // example mapping
+    'theme-on-code': scheme.inverse_on_surface,  // example mapping
   },
 }
 

@@ -50,7 +50,7 @@ const router = createRouter({
       path: '/setup',
       name: 'setup',
       meta: { requiresAuth: true },
-      component: () => import('../views/InitialSetup.vue'),
+      component: () => import('../views/SetupView.vue'),
     },
   ],
 })

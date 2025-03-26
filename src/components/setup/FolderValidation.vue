@@ -4,8 +4,9 @@ import UnsupportedFiles from '@/components/setup/UnsupportedFiles.vue'
 import InaccessibleEntries from '@/components/setup/InaccessibleEntries.vue'
 import MediaSample from '@/components/setup/MediaSample.vue'
 import { photosApi } from '@/utils/api/PhotosApi'
-import type { FileCountResponse } from '@/utils/api/types'
 import { type Ref, ref } from 'vue'
+import type { FileCountResponse } from '@/utils/types/api'
+import { scheme } from '@/plugins/vuetify'
 
 const folderSummary: Ref<FileCountResponse | null> = ref(null)
 const refreshLoading = ref(false)
@@ -47,12 +48,16 @@ refreshFolderSummary().then()
 <template>
   <!-- Folders Status Section -->
   <div class="folder-status-title mb-3">
-    <p class="text-caption text-medium-emphasis">
+    <p
+      class="text-caption text-medium-emphasis"
+      :style="{ color: scheme.on_surface }"
+    >
       Make sure the correct folders are linked before starting the indexing
       process.
     </p>
     <v-spacer />
     <v-btn
+      :color="scheme.primary"
       variant="plain"
       density="compact"
       @click="refreshFolderSummary"

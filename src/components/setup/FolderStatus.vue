@@ -1,8 +1,25 @@
+<script setup lang="ts">
+import { prettyBytes } from '@/utils/formatting'
+import { scheme } from '@/plugins/vuetify'
+import type { PathInfoResponse } from '@/utils/types/api'
+
+defineProps<{
+  info: PathInfoResponse
+  envVar: string
+}>()
+</script>
+
 <template>
   <div>
     <div class="d-flex justify-space-between mb-2 disk-text-container mt-3">
-      <span class="text-caption disk-uppercase">{{ envVar }}</span>
-      <span class="text-caption black-text"
+      <span
+        class="text-caption disk-uppercase"
+        :style="{ color: scheme.on_surface_variant }"
+        >{{ envVar }}
+      </span>
+      <span
+        class="text-caption black-text"
+        :style="{ color: scheme.on_surface_variant }"
         >{{ prettyBytes(info.disk_used) }} /
         {{ prettyBytes(info.disk_total) }}</span
       >
@@ -10,7 +27,7 @@
     <v-progress-linear
       :model-value="(info.disk_used / info.disk_total) * 100"
       class="linear-progress mt-0"
-      color="black"
+      :color="scheme.primary"
       rounded
     />
 
@@ -18,7 +35,7 @@
       <v-chip
         variant="tonal"
         density="compact"
-        :color="info.read_access ? 'success' : 'error'"
+        :color="info.read_access ? scheme.primary : 'error'"
       >
         <v-icon
           class="mr-2"
@@ -29,7 +46,7 @@
       <v-chip
         variant="tonal"
         density="compact"
-        :color="info.write_access ? 'success' : 'error'"
+        :color="info.write_access ? scheme.primary : 'error'"
       >
         <v-icon
           class="mr-2"
@@ -41,16 +58,6 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import type { PathInfoResponse } from '@/utils/api/types'
-import { prettyBytes } from '@/utils/formatting'
-
-defineProps<{
-  info: PathInfoResponse
-  envVar: string
-}>()
-
-</script>
 <style scoped>
 .chips {
   margin-top: 15px;

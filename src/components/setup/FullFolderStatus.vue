@@ -2,6 +2,7 @@
 import FolderStatus from '@/components/setup/FolderStatus.vue'
 
 import type { PathInfoResponse } from '@/utils/api/types'
+import { scheme } from '@/plugins/vuetify'
 
 defineProps<{
   folder: PathInfoResponse
@@ -11,14 +12,18 @@ defineProps<{
 </script>
 
 <template>
-  <v-card rounded class="mb-6 folder-card" variant="tonal" color="grey">
-    <v-card-title class="d-flex align-center card-title">
+  <v-card
+    class="mb-6 folder-card rounded-xl pa-3"
+    variant="flat"
+    :color="scheme.surface_container_highest"
+  >
+    <v-card-title :style="{color: scheme.on_surface_variant}" class="d-flex align-center card-title">
       <v-icon :icon="titleIcon" class="mr-4"></v-icon>
       {{ folder.folder }}
       <v-spacer />
       <v-chip
         class="ml-2"
-        :color="folder.read_access ? 'grey' : 'error'"
+        :color="folder.read_access ? scheme.secondary_container : 'error'"
         size="small"
       >
         {{ folder.read_access ? 'Connected' : 'No Access' }}

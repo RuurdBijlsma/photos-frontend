@@ -1,13 +1,70 @@
+<script setup lang="ts">
+import FolderValidation from '@/components/setup/FolderValidation.vue'
+import { useAuthStore } from '@/stores/auth'
+import { ref, watch } from 'vue'
+import {
+  type RouteLocationNormalizedLoadedGeneric,
+  useRoute,
+  useRouter,
+} from 'vue-router'
+import { scheme } from '@/plugins/vuetify'
+
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+
+const upEnabled = ref(false)
+const forwardEnabled = ref(false)
+const backEnabled = ref(false)
+const refreshLoading = ref(false)
+
+function openFolder(folder: string) {
+  console.log('open', folder)
+}
+
+function selectFolder(folder: string) {
+  console.log('select', folder)
+}
+
+function getStepFromRoute(
+  r: RouteLocationNormalizedLoadedGeneric,
+): number | null {
+  const stepString = r.query.step?.toString()
+  if (!stepString) return null
+  const step = parseInt(stepString)
+  if (step > 3 || step < 1) return null
+  return step
+}
+
+function setStepFromRoute() {
+  const step = getStepFromRoute(route)
+  if (step === null || tabIndex.value === step) return
+  tabIndex.value = step
+}
+
+const tabIndex = ref(0)
+watch(tabIndex, () => {
+  console.log(tabIndex.value)
+  router.push({
+    query: {
+      step: tabIndex.value,
+    },
+  })
+})
+watch(route, setStepFromRoute)
+setStepFromRoute()
+</script>
+
 <template>
-  <v-main class="main">
-    <div class="container">
+  <v-main class="main" :style="{ backgroundColor: scheme.surface_container_low }">
+    <div class="container" :style="{backgroundColor: scheme.surface_container}">
       <div class="title-box">
         <div class="left-title">
           <div class="big-image"></div>
         </div>
         <div class="right-title">
-          <h1>Set Up <span>Ruurd Photos</span></h1>
-          <p class="mt-2">
+          <h1 :style="{color: scheme.on_surface_variant}">Set Up <span>Ruurd Photos</span></h1>
+          <p class="mt-2 text-caption" :style="{color: scheme.on_surface_variant}">
             Now, let's configure your library and settings. Make sure your media
             library is set up correctly, then enter your server URL to continue.
           </p>
@@ -89,9 +146,7 @@
                         />
                       </v-card-text>
                       <v-card-actions>
-                        <v-btn>
-                          Create
-                        </v-btn>
+                        <v-btn> Create</v-btn>
                       </v-card-actions>
                     </v-card>
                   </template>
@@ -152,97 +207,28 @@
   </v-main>
 </template>
 
-<script setup lang="ts">
-import FolderValidation from '@/views/main/FolderValidation.vue'
-import { useAuthStore } from '@/stores/auth'
-import { ref, watch } from 'vue'
-import {
-  type RouteLocationNormalizedLoadedGeneric,
-  useRoute,
-  useRouter,
-} from 'vue-router'
-
-const router = useRouter()
-const route = useRoute()
-const auth = useAuthStore()
-
-const upEnabled = ref(false)
-const forwardEnabled = ref(false)
-const backEnabled = ref(false)
-const refreshLoading = ref(false)
-
-function openFolder(folder: string) {
-  console.log('open', folder)
-}
-
-function selectFolder(folder: string) {
-  console.log('select', folder)
-}
-
-function getStepFromRoute(
-  r: RouteLocationNormalizedLoadedGeneric,
-): number | null {
-  const stepString = r.query.step?.toString()
-  if (!stepString) return null
-  const step = parseInt(stepString)
-  if (step > 3 || step < 1) return null
-  return step
-}
-
-function setStepFromRoute() {
-  const step = getStepFromRoute(route)
-  if (step === null || tabIndex.value === step) return
-  tabIndex.value = step
-}
-
-const tabIndex = ref(0)
-watch(tabIndex, () => {
-  console.log(tabIndex.value)
-  router.push({
-    query: {
-      step: tabIndex.value,
-    },
-  })
-})
-watch(route, setStepFromRoute)
-setStepFromRoute()
-</script>
-
 <style scoped>
 .main {
   position: fixed;
   width: 100%;
   height: 100%;
-  background-color: rgb(220, 220, 239);
   overflow-y: auto;
   padding-bottom: 100px;
 }
 
 .container {
-  background: rgb(227, 222, 255, 0.7);
-  background: linear-gradient(
-    0deg,
-    rgba(255, 232, 232, 0.5) 0%,
-    rgb(255, 248, 252, 0.8) 100%
-  );
-  border-radius: 30px;
+  border-radius: 50px;
   overflow: hidden;
-  box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.07);
   max-width: 800px;
   padding: 30px 40px;
   margin: 100px auto 0;
   transition: box-shadow 0.3s ease;
 }
 
-.container:hover {
-  box-shadow: 0 10px 30px 0 rgba(0, 0, 0, 0.1);
-}
-
 .title-box {
   display: flex;
   gap: 40px;
-  padding: 20px;
-  padding-bottom: 0;
+  padding: 20px 20px 0;
 }
 
 .big-image {
@@ -263,7 +249,7 @@ setStepFromRoute()
 .container h1 {
   font-size: 35px;
   font-weight: 400;
-  opacity: 0.7;
+  opacity: 0.9;
 }
 
 .container span {
@@ -302,7 +288,7 @@ setStepFromRoute()
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.show-selected-folder{
+.show-selected-folder {
   display: flex;
   gap: 25px;
   align-items: center;
