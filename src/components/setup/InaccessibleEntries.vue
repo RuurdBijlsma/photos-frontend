@@ -41,7 +41,7 @@ const virtualScrollHeight = computed(() => {
             <v-list-item
               density="compact"
               rounded-xl
-              :title="item"
+              v-tooltip="item"
               class="ma-1"
             />
           </template>

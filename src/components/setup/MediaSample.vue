@@ -36,7 +36,7 @@ defineProps<{
             v-ripple
             :href="url"
             target="_blank"
-            :title="summary.samples[index]"
+            v-tooltip:bottom="summary.samples[index]"
             v-else
             class="preview-image"
             :style="{ backgroundImage: `url(${url})` }"

@@ -43,7 +43,7 @@ const virtualScrollHeight = computed(() => {
                 <v-list-item
                   density="compact"
                   rounded-xl
-                  :title="`.${item}`"
+                  v-tooltip="`.${item}`"
                   class="ma-1"
                   v-bind="activatorProps"
                 />
@@ -51,7 +51,7 @@ const virtualScrollHeight = computed(() => {
 
               <template v-slot:default="{ isActive }">
                 <v-card
-                  :title="`${summary.unsupported_files[item].length.toLocaleString()} Unsupported .${item} Files`"
+                  v-tooltip="`${summary.unsupported_files[item].length.toLocaleString()} Unsupported .${item} Files`"
                 >
                   <v-card-text>
                     <v-list>
