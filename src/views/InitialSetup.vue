@@ -89,7 +89,7 @@
                         />
                       </v-card-text>
                       <v-card-actions>
-                        <v-btn @click="isActive=false">
+                        <v-btn>
                           Create
                         </v-btn>
                       </v-card-actions>

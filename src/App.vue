@@ -4,7 +4,7 @@
     <div
       class="background-image"
       :style="{
-        backgroundImage: `url(img/etna.jpg)`,
+        backgroundImage: `url(img/theme3-foto.jpg)`,
       }"
     ></div>
   </div>
