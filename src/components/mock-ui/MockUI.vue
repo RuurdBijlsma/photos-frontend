@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Theme } from '@/utils/types/color'
-import themeJson from '@/assets/themes-v5.json'
+import themeJson from '@/assets/themes/themes-v6.json'
 import ThemePhoneTodo from '@/components/mock-ui/ThemePhoneTodo.vue'
 import ThemePhonePlant from '@/components/mock-ui/ThemePhonePlant.vue'
 

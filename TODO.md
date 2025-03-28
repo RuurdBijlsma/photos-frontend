@@ -31,3 +31,8 @@ Step 3: check folder contents with sample and unsupported files etc.
 
 Other additions :
 When processing image, link the image to a hash of the file + filename, so rebuilding is easy
+
+todo for now:
+* make pinia store for pick folder tab
+* do api calls there, store selected folder there, store folder info there
+* display from state.

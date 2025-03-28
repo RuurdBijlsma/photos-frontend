@@ -1,11 +1,11 @@
 import type {
   ApiError,
-  FileCountResponse,
   LoginCredentials,
   LoginResponse,
   RegisterData,
   RegisterResponse,
 } from '@/utils/api/types'
+import type { DiskResponse, UserFolderResponse } from '@/utils/types/api'
 
 export class PhotosApi {
   private readonly baseUrl: string
@@ -70,8 +70,8 @@ export class PhotosApi {
     }
   }
 
-  async validateFolders(): Promise<FileCountResponse | ApiError> {
-    const response = await fetch(this.baseUrl + '/api/setup/validate-folders', {
+  async getDiskInfo(): Promise<DiskResponse | ApiError> {
+    const response = await fetch(this.baseUrl + '/api/setup/disk-info', {
       method: 'GET',
       headers: {
         Accept: 'application/json',
@@ -80,7 +80,27 @@ export class PhotosApi {
       },
     })
     if (!response.ok) {
-      console.warn('call to validate folders failed', response)
+      console.warn('call to get disk info failed', response)
+    }
+    return await response.json()
+  }
+
+  async getUserFolderInfo(
+    userFolder: string,
+  ): Promise<UserFolderResponse | ApiError> {
+    const response = await fetch(
+      this.baseUrl + `/api/setup/user-folder-info?user_folder=${userFolder}`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.token}`,
+        },
+      },
+    )
+    if (!response.ok) {
+      console.warn('call to get user folder info failed', response)
     }
     return await response.json()
   }

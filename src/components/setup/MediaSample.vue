@@ -8,25 +8,22 @@ defineProps<{
 </script>
 
 <template>
-  <v-card
-    rounded
-    class="mb-6 folder-card"
-    variant="text"
-    v-if="summary.media_folder.read_access"
-  >
+  <v-card rounded class="folder-card" variant="text">
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-eye-check-outline" class="mr-2"></v-icon>
-      Media Files ({{ (summary.photo_count + summary.video_count).toLocaleString() }} supported
-      files)
+      Media Files ({{
+        (summary.photo_count + summary.video_count).toLocaleString()
+      }}
+      supported files)
     </v-card-title>
     <v-card-text>
       <p class="text-caption text-medium-emphasis mb-4">
         We've found {{ summary.photo_count.toLocaleString() }} photos and
-        {{ summary.video_count.toLocaleString() }} videos in your library. Here's a preview of
-        your collection:
+        {{ summary.video_count.toLocaleString() }} videos in your library.
+        Here's a preview of your collection:
       </p>
-      <v-row dense>
-        <v-col v-for="(url, index) in images" :key="index" cols="4" sm="3">
+      <div class="image-grid">
+        <div v-for="(url, index) in images" :key="index">
           <v-skeleton-loader
             v-if="!url"
             type="image"
@@ -41,8 +38,8 @@ defineProps<{
             class="preview-image"
             :style="{ backgroundImage: `url(${url})` }"
           ></a>
-        </v-col>
-      </v-row>
+        </div>
+      </div>
     </v-card-text>
   </v-card>
 </template>
@@ -54,14 +51,26 @@ defineProps<{
   font-size: 17px;
 }
 
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
 .preview-image {
   width: 100%;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  height: 150px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: block;
+  transition: border-radius 0.15s;
+  aspect-ratio: 1;
+  image-rendering: smooth;
+}
+
+.preview-image:hover {
   border-radius: 15px;
-  cursor:pointer;
-  display:block;
 }
 </style>

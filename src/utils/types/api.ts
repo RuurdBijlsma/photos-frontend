@@ -38,13 +38,18 @@ export interface PathInfoResponse {
   folder: string
 }
 
-export interface FileCountResponse {
+export interface UserFolderResponse {
+  read_access: boolean,
+  folder: string,
   photo_count: number
   video_count: number
   samples: string[]
+  inaccessible_entries: string[]
   unsupported_count: number
   unsupported_files: { [key: string]: string[] }
-  inaccessible_entries: string[]
+}
+
+export interface DiskResponse {
   media_folder: PathInfoResponse
   thumbnails_folder: PathInfoResponse
 }

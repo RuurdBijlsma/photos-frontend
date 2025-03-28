@@ -52,6 +52,11 @@ export interface DynamicScheme {
   neutral_palette: Palette
   neutral_variant_palette: Palette
   error_palette: Palette
+  background: string
+  surface: string
+  surface_dim: string
+  surface_bright: string
+  surface_container_lowest: string
   surface_container_low: string
   surface_container: string
   surface_container_high: string
