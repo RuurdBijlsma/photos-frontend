@@ -1,8 +1,8 @@
-// src/stores/auth.ts
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import type { ApiError, User } from '@/utils/api/types'
 import { photosApi } from '@/utils/api/PhotosApi'
+import type { ApiError, ServerError, User } from '@/utils/types/api'
+import { useSnackbarsStore } from '@/stores/snackbars'
 
 export const useAuthStore = defineStore(
   'auth',
@@ -16,22 +16,23 @@ export const useAuthStore = defineStore(
     const loginLoading = ref<boolean>(false)
     const registerLoading = ref<boolean>(false)
     const hasError = computed(() => loginError.value !== null)
+    const snackbars = useSnackbarsStore()
 
     async function login(email: string, password: string): Promise<boolean> {
-      if (loginError.value !== null) loginError.value = null
+      loginError.value = null
       loginLoading.value = true
       const result = await photosApi.login({ email, password })
       loginLoading.value = false
-      if ('error' in result) {
-        console.log('Setting login error to', result)
-        loginError.value = result
+      if (!result.ok) {
+        console.log('Setting login error to', result.error)
+        loginError.value = result.error
         return false
       }
-      token.value = result.token
+      token.value = result.value.token
       user.value = {
         email: email,
-        name: result.name,
-        pid: result.pid,
+        name: result.value.name,
+        pid: result.value.pid,
       }
       console.info('Login success')
       return true
@@ -43,16 +44,16 @@ export const useAuthStore = defineStore(
       password: string,
     ): Promise<boolean> {
       registerLoading.value = true
-      if (loginError.value !== null) loginError.value = null
-      if (registerError.value !== null) registerError.value = null
+      loginError.value = null
+      registerError.value = null
       const result = await photosApi.register({
         name: displayName,
         email,
         password,
       })
-      if ('error' in result) {
-        console.log('Setting register error to', result)
-        registerError.value = result
+      if (!result.ok) {
+        console.log('Setting register error to', result.error)
+        registerError.value = result.error
         registerLoading.value = false
         return false
       }
@@ -60,10 +61,24 @@ export const useAuthStore = defineStore(
       registerLoading.value = false
       if (!loginSuccess) {
         const le = loginError.value as ApiError | null
+        let loginServerError: ServerError | null = null
+        if (
+          le !== null &&
+          le.tokenProvided &&
+          le.serverReachable &&
+          !le.aborted
+        ) {
+          loginServerError = le.error
+        }
         registerError.value = {
-          error: 'Login failed',
-          description: `Login failed after successful registration.
-          Login error: ${le?.error} \n\n ${le?.description}`, // noinspection
+          tokenProvided: true,
+          aborted: false,
+          serverReachable: true,
+          error: loginServerError ?? {
+            message: `Login failed after successful registration.`,
+            status: 0,
+            statusText: '',
+          },
         }
         return false
       }
@@ -77,8 +92,19 @@ export const useAuthStore = defineStore(
         return false
       }
       const result = await photosApi.setupNeeded()
-      localStorage.setupNeeded = result
-      return result
+      if (!result.ok) {
+        snackbars.enqueue({
+          message: "Can't reach server to determine if setup wizard is needed.",
+          timeout: -1,
+        })
+        console.warn(
+          "Can't reach server to check if setup is needed.",
+          result.error,
+        )
+        return false
+      }
+      localStorage.setupNeeded = result.value
+      return result.value
     }
 
     function logout() {
@@ -91,7 +117,7 @@ export const useAuthStore = defineStore(
     return {
       user,
       token,
-      error: loginError,
+      loginError,
       hasError,
       registerLoading,
       loginLoading,

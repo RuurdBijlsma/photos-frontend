@@ -11,6 +11,8 @@
   <v-app class="main-content">
     <RouterView />
   </v-app>
+
+  <snackbar-queue />
 </template>
 
 <script setup lang="ts">
@@ -18,6 +20,7 @@ import { RouterView } from 'vue-router'
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/plugins/router'
+import SnackbarQueue from '@/components/SnackbarQueue.vue'
 
 const defaultImage = ''
 const bgId = ref(

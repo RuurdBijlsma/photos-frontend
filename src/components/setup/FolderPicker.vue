@@ -20,7 +20,7 @@ function selectFolder(folder: string) {
   <v-card
     variant="flat"
     class="folder-picker"
-    :color="scheme.surface_container"
+    :color="scheme.surface_container_highest"
   >
     <v-card-text>
       <div class="picker-header">
@@ -88,7 +88,6 @@ function selectFolder(folder: string) {
         </div>
         <div
           class="current-route-display"
-          :style="{ backgroundColor: scheme.surface_container_highest }"
         >
           <div class="route-component route-root">Media Folder</div>
           <v-icon icon="mdi-chevron-right" />
@@ -147,6 +146,7 @@ function selectFolder(folder: string) {
   font-size: 14px;
   font-weight: 500;
   align-items: center;
+  background-color: rgba(0,0,0,0.08);
 }
 
 .header-buttons {
@@ -154,7 +154,7 @@ function selectFolder(folder: string) {
 }
 
 .selected-folder {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0,0,0,0.08);
 }
 
 .show-selected-folder {

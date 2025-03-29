@@ -10,18 +10,14 @@ const refreshLoading = ref(false)
 
 async function refreshFolderSummary() {
   refreshLoading.value = true
-  try {
-    const result = await photosApi.getDiskInfo()
-    if ('error' in result) {
-      console.warn('error getting validate folders result', result)
-    } else {
-      console.log(result)
-      diskResponse.value = result
-      refreshLoading.value = false
-    }
-  } finally {
-    refreshLoading.value = false
+  const result = await photosApi.getDiskInfo()
+  refreshLoading.value = false
+  if (!result.ok) {
+    console.warn('error getting validate folders result', result)
+    return
   }
+  console.log(result.value)
+  diskResponse.value = result.value
 }
 
 refreshFolderSummary().then()

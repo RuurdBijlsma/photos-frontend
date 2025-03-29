@@ -5,7 +5,6 @@ import MediaSample from '@/components/setup/MediaSample.vue'
 import { photosApi } from '@/utils/api/PhotosApi'
 import { type Ref, ref } from 'vue'
 import type { UserFolderResponse } from '@/utils/types/api'
-import { scheme } from '@/plugins/vuetify'
 import { useAuthStore } from '@/stores/auth'
 import FolderPicker from '@/components/setup/FolderPicker.vue'
 
@@ -18,31 +17,33 @@ const samples: Ref<string[]> = ref(Array(N_SAMPLES))
 
 async function refreshInfo() {
   refreshLoading.value = true
-  try {
-    const result = await photosApi.getUserFolderInfo('./')
-    if ('error' in result) {
-      console.warn('error getting validate folders result', result)
-    } else {
-      console.log(result)
-      folderInfo.value = result
-      refreshLoading.value = false
+  const result = await photosApi.getUserFolderInfo('./')
+  refreshLoading.value = false
 
-      N_SAMPLES = result.samples.length
-      let j = 0
-      for (let i = 0; i < N_SAMPLES; i++) {
-        getImageUrl(result.samples[i]).then(
-          imageUrl => (samples.value[j++] = imageUrl),
-        )
-      }
-    }
-  } finally {
-    refreshLoading.value = false
+  if (!result.ok) {
+    console.warn('error getting validate folders result', result)
+    return
+  }
+  console.log(result.value)
+  folderInfo.value = result.value
+
+  N_SAMPLES = result.value.samples.length
+  let j = 0
+  for (let i = 0; i < N_SAMPLES; i++) {
+    getImageUrl(result.value.samples[i]).then(
+      imageUrl => (samples.value[j++] = imageUrl),
+    )
   }
 }
 
 async function getImageUrl(file: string): Promise<string> {
   console.log(file)
-  return await photosApi.rawMediaUrl(file)
+  const result = await photosApi.rawMediaUrl(file)
+  if (result.ok) {
+    return result.value
+  }
+  console.warn("Couldn't get image url", result)
+  return "img/placeholder.svg";
 }
 
 refreshInfo().then()
@@ -63,10 +64,12 @@ refreshInfo().then()
     <folder-picker class="mb-5" />
 
     <!-- Media Files Section -->
-    <media-sample :summary="folderInfo" :images="samples" />
+    <media-sample :summary="folderInfo" :images="samples"
+                  class="mt-10" />
 
     <!-- Unsupported Files -->
     <unsupported-files
+      class="mt-10"
       v-if="folderInfo.unsupported_count > 0"
       :summary="folderInfo"
     />

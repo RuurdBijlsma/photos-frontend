@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FileCountResponse } from '@/utils/api/types'
+import { scheme } from '@/plugins/vuetify'
 
 defineProps<{
   summary: FileCountResponse
@@ -8,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <v-card rounded class="folder-card" variant="text">
+  <v-card rounded class="folder-card" variant="text" :color="scheme.primary">
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-eye-check-outline" class="mr-2"></v-icon>
       Media Files ({{
@@ -33,7 +34,7 @@ defineProps<{
             v-ripple
             :href="url"
             target="_blank"
-            v-tooltip:bottom="summary.samples[index]"
+            v-tooltip:top="summary.samples[index]"
             v-else
             class="preview-image"
             :style="{ backgroundImage: `url(${url})` }"
@@ -45,16 +46,16 @@ defineProps<{
 </template>
 
 <style scoped>
-.card-title {
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.7);
-  font-size: 17px;
-}
 
 .image-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
+}
+
+.preview-skeleton{
+  border-radius:50%;
+  overflow:hidden;
 }
 
 .preview-image {

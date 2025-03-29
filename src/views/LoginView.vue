@@ -1,3 +1,53 @@
+<script setup lang="ts">
+import { onMounted, type Ref, ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import router from '@/plugins/router'
+import type { VForm } from 'vuetify/components'
+import { scheme } from '@/plugins/vuetify'
+import MyAlert from '@/components/my-theme/MyAlert.vue'
+import { photosApi } from '@/utils/api/PhotosApi'
+
+const auth = useAuthStore()
+const emailInput: Ref<null | HTMLElement> = ref(null)
+const form: Ref<null | VForm> = ref(null)
+
+onMounted(() => {
+  console.log(emailInput.value?.focus())
+})
+
+const rules = {
+  mailRequired: (v: string) => !!v || 'Email is required.',
+  passRequired: (v: string) => !!v || 'Password is required.',
+  min: (v: string) => v.length >= 6 || `Min 6 characters`,
+}
+const showPassword = ref(false)
+const email = ref('')
+const password = ref('')
+const isSubmitted = ref(false)
+const errorMessage: Ref<string | null> = ref(null)
+
+async function login() {
+  isSubmitted.value = true
+  errorMessage.value = ''
+
+  const result = await auth.login(email.value, password.value)
+  if (result) {
+    await router.push('/')
+  } else {
+    if (auth.loginError && auth.loginError.tokenProvided) {
+      if (!auth.loginError.serverReachable) {
+        errorMessage.value = `We're having trouble connecting to the server at ${photosApi.baseUrl}. Please try again later.`
+      } else if (auth.loginError.aborted) {
+        errorMessage.value = `The server at ${photosApi.baseUrl} is taking too long to respond. Please check your connection and try again.`
+      } else {
+        errorMessage.value = auth.loginError.error.message
+      }
+    }
+    await form.value?.validate()
+  }
+}
+</script>
+
 <template>
   <v-main class="login-main">
     <div class="login-container">
@@ -17,7 +67,7 @@
             v-model="email"
             label="Email"
             color="primary"
-            base-color="rgba(0,0,0,0.5)"
+            :base-color="scheme.outline"
             placeholder="user@example.com"
           />
           <v-btn
@@ -39,12 +89,12 @@
               showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'
             "
             @click:append="showPassword = !showPassword"
-            :rules="isSubmitted ? [rules.passRequired, rules.authError] : []"
+            :rules="isSubmitted ? [rules.passRequired] : []"
             :type="showPassword ? 'text' : 'password'"
             rounded
             v-model="password"
             color="primary"
-            base-color="rgba(0,0,0,0.5)"
+            :base-color="scheme.outline"
             label="Password"
           ></v-text-field>
           <v-btn
@@ -59,47 +109,19 @@
             >Login
           </v-btn>
         </v-form>
+
+        <my-alert
+          v-if="errorMessage"
+          :text="errorMessage"
+          icon="mdi-alert-octagon"
+          class="mt-8"
+          :background-color="scheme.error_container"
+          :text-color="scheme.on_error_container"
+        />
       </div>
     </div>
   </v-main>
 </template>
-
-<script setup lang="ts">
-import { onMounted, type Ref, ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import router from '@/plugins/router'
-import type { VForm } from 'vuetify/components'
-
-const auth = useAuthStore()
-const emailInput: Ref<null | HTMLElement> = ref(null)
-const form: Ref<null | VForm> = ref(null)
-
-onMounted(() => {
-  console.log(emailInput.value?.focus())
-})
-
-const rules = {
-  mailRequired: (v: string) => !!v || 'Email is required.',
-  passRequired: (v: string) => !!v || 'Password is required.',
-  min: (v: string) => v.length >= 6 || `Min 6 characters`,
-  authError: () => !auth.hasError || `Credentials don't match.`,
-}
-const showPassword = ref(false)
-const email = ref('')
-const password = ref('')
-const isSubmitted = ref(false)
-
-async function login() {
-  isSubmitted.value = true
-
-  const result = await auth.login(email.value, password.value)
-  if (result) {
-    await router.push('/')
-  } else {
-    await form.value?.validate()
-  }
-}
-</script>
 
 <style scoped>
 .login-main {

@@ -1,3 +1,32 @@
+export type RequestParams = {
+  method?: string
+  path: string
+  body?: Record<string, any>
+  authenticate?: boolean
+  timeout?: number
+}
+
+export type RequestRequired = { path: string } & Partial<
+  Omit<RequestParams, 'path'>
+>
+
+export interface ServerError {
+  message: string
+  status: number
+  statusText: string
+}
+
+export type ApiError =
+  | { tokenProvided: false }
+  | { serverReachable: false; tokenProvided: true }
+  | { serverReachable: true; tokenProvided: true; aborted: true }
+  | {
+      tokenProvided: true
+      serverReachable: true
+      aborted: false
+      error: ServerError
+    }
+
 export interface User {
   pid: string
   name: string
@@ -11,11 +40,6 @@ export interface LoginCredentials {
 
 export interface RegisterData extends LoginCredentials {
   name: string
-}
-
-export interface ApiError {
-  error: string
-  description: string
 }
 
 export interface RegisterResponse {
@@ -39,8 +63,8 @@ export interface PathInfoResponse {
 }
 
 export interface UserFolderResponse {
-  read_access: boolean,
-  folder: string,
+  read_access: boolean
+  folder: string
   photo_count: number
   video_count: number
   samples: string[]

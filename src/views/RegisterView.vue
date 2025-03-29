@@ -1,0 +1,190 @@
+<script setup lang="ts">
+import type { VForm } from 'vuetify/components'
+import { useAuthStore } from '@/stores/auth'
+import { onMounted, type Ref, ref } from 'vue'
+import router from '@/plugins/router'
+import { scheme } from '@/plugins/vuetify'
+import { photosApi } from '@/utils/api/PhotosApi'
+import MyAlert from '@/components/my-theme/MyAlert.vue'
+import SetupLayout from '@/components/my-theme/SetupLayout.vue'
+import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
+
+const auth = useAuthStore()
+const userInput: Ref<null | HTMLElement> = ref(null)
+const form: Ref<null | VForm> = ref(null)
+
+onMounted(() => {
+  console.log(userInput.value?.focus())
+})
+
+const showPassword = ref(false)
+const displayName = ref('')
+const email = ref('')
+const password1 = ref('')
+const password2 = ref('')
+const isSubmitted = ref(false)
+const errorMessage: Ref<null | string> = ref(null)
+
+const rules = {
+  userRequired: (v: string) => !!v || 'Display name is required.',
+  mailRequired: (v: string) => !!v || 'Email is required.',
+  passRequired: (v: string) => !!v || 'Password is required.',
+  min: (v: string) => v.length >= 6 || `Min 6 characters`,
+  noMatch: () => password1.value == password2.value || 'Passwords must match',
+}
+
+async function register() {
+  errorMessage.value = null
+  isSubmitted.value = true
+  if (password1.value !== password2.value) return
+
+  const result = await auth.register(
+    displayName.value,
+    email.value,
+    password1.value,
+  )
+  if (result) {
+    await router.push('/setup')
+  } else {
+    if (auth.registerError && auth.registerError.tokenProvided) {
+      if (!auth.registerError.serverReachable) {
+        errorMessage.value = `We're having trouble connecting to the server at ${photosApi.baseUrl}. Please try again later.`
+      } else if (auth.registerError.aborted) {
+        errorMessage.value = `The server at ${photosApi.baseUrl} is taking too long to respond. Please check your connection and try again.`
+      } else {
+        errorMessage.value = auth.registerError.error.message
+      }
+    }
+    await form.value?.validate()
+  }
+}
+</script>
+
+<template>
+  <my-main-container>
+    <setup-layout
+      :caption-text="false"
+      text="Let's set up your account to get started."
+    />
+
+    <v-form class="register-form" @submit.prevent="register()" ref="form">
+      <div class="row-input mb-3">
+        <v-text-field
+          class="text-input"
+          prepend-icon="mdi-account-outline"
+          variant="outlined"
+          ref="userInput"
+          rounded
+          :rules="isSubmitted ? [rules.userRequired] : []"
+          v-model="displayName"
+          label="Display Name"
+          :color="scheme.primary"
+          :base-color="scheme.outline"
+          placeholder="Ruurd Bijlsma"
+          :min-width="280"
+        />
+        <v-text-field
+          class="text-input ml-5"
+          prepend-icon="mdi-email-outline"
+          append-icon="empty"
+          variant="outlined"
+          rounded
+          :rules="isSubmitted ? [rules.mailRequired, rules.min] : []"
+          v-model="email"
+          label="Email"
+          color="primary"
+          base-color="rgba(0,0,0,0.5)"
+          placeholder="user@example.com"
+          :min-width="330"
+        />
+      </div>
+      <div class="row-input">
+        <v-text-field
+          class="text-input"
+          variant="outlined"
+          :prepend-icon="
+            showPassword ? 'mdi-lock-open-outline' : 'mdi-lock-outline'
+          "
+          :rules="isSubmitted ? [rules.passRequired] : []"
+          :type="showPassword ? 'text' : 'password'"
+          rounded
+          v-model="password1"
+          :color="scheme.primary"
+          :base-color="scheme.outline"
+          label="Password"
+          :min-width="280"
+        ></v-text-field>
+        <v-text-field
+          class="text-input ml-5"
+          variant="outlined"
+          prepend-icon="mdi-lock-check-outline"
+          :append-icon="
+            showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'
+          "
+          @click:append="showPassword = !showPassword"
+          :rules="isSubmitted ? [rules.passRequired, rules.noMatch] : []"
+          :type="showPassword ? 'text' : 'password'"
+          rounded
+          v-model="password2"
+          :color="scheme.primary"
+          :base-color="scheme.outline"
+          label="Repeat Password"
+          :min-width="330"
+        ></v-text-field>
+      </div>
+      <div class="center">
+        <v-btn
+          class="mt-5"
+          type="submit"
+          variant="tonal"
+          :color="scheme.primary"
+          rounded
+          density="default"
+          width="240"
+          :loading="auth.registerLoading"
+          >Create Account
+        </v-btn>
+      </div>
+    </v-form>
+    <my-alert
+      v-if="errorMessage"
+      :text="errorMessage"
+      icon="mdi-alert-octagon"
+      class="mt-8"
+      :background-color="scheme.error_container"
+      :text-color="scheme.on_error_container"
+    />
+  </my-main-container>
+</template>
+
+<style scoped>
+.row-input {
+  display: flex;
+}
+
+.row-input > *:nth-child(1) {
+  width: 46%;
+}
+
+.row-input > *:nth-child(2) {
+  width: 54%;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+}
+
+.rotating {
+  animation: rotate 2s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>

@@ -36,3 +36,5 @@ todo for now:
 * make pinia store for pick folder tab
 * do api calls there, store selected folder there, store folder info there
 * display from state.
+* on login redirect to where you were
+* inaccessible entries op folder tab

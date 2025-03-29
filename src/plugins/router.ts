@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/views/MainLayout.vue'
 import PhotosView from '@/views/main/PhotosView.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useSnackbarsStore } from '@/stores/snackbars'
 
 const router = createRouter({
   // history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,7 +45,8 @@ const router = createRouter({
     {
       path: '/welcome',
       name: 'welcome',
-      component: () => import('../views/FirstVisitView.vue'),
+      meta: { loggedOut: true },
+      component: () => import('../views/RegisterView.vue'),
     },
     {
       path: '/setup',
@@ -57,6 +59,7 @@ const router = createRouter({
 
 export function registerNavigationGuard() {
   const authStore = useAuthStore()
+  const snackStore = useSnackbarsStore()
   // Global Navigation Guard
   router.beforeEach(async (to, from, next) => {
     if (to.meta.requiresAuth) {
@@ -77,7 +80,10 @@ export function registerNavigationGuard() {
       }
     } else if (to.meta.loggedOut) {
       if (authStore.isLoggedIn) {
-        alert("You're already logged in, you can't go to /login.")
+        snackStore.enqueue({
+          message: `You're already logged in, you can't go to ${to.path}.`,
+          timeout: 10000,
+        })
         next('/')
       } else {
         next()

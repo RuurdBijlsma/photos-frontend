@@ -1,135 +1,95 @@
+import { BaseApi } from '../api/BaseApi'
 import type {
   ApiError,
+  DiskResponse,
   LoginCredentials,
   LoginResponse,
   RegisterData,
   RegisterResponse,
-} from '@/utils/api/types'
-import type { DiskResponse, UserFolderResponse } from '@/utils/types/api'
+  UserFolderResponse,
+} from '../types/api'
+import { Err, Ok, type Result } from '@/utils/types/result'
 
-export class PhotosApi {
-  private readonly baseUrl: string
-  private token?: string
-
-  constructor(baseUrl: string = 'http://localhost:7000', token?: string) {
-    this.baseUrl = baseUrl
-    this.token = token
-  }
-
-  setToken(token: string) {
-    this.token = token
-  }
-
-  /**
-   * Login with email and password
-   */
+export class PhotosApi extends BaseApi {
   async login(
     credentials: LoginCredentials,
-  ): Promise<ApiError | LoginResponse> {
-    const response = await fetch(this.baseUrl + '/api/auth/login', {
+  ): Promise<Result<LoginResponse, ApiError>> {
+    return this.json<LoginResponse>({
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
+      path: '/api/auth/login',
+      body: credentials,
     })
-    if (!response.ok) {
-      console.warn('Login failed', response)
-      return {
-        error: `${response.status.toString()} ${response.statusText}`,
-        description: await response.text(),
-      }
-    }
-    return await response.json()
   }
 
-  /**
-   * Register new user with validation
-   */
-  async register(userData: RegisterData): Promise<RegisterResponse | ApiError> {
-    const response = await fetch(this.baseUrl + '/api/auth/register', {
+  async register(
+    userData: RegisterData,
+  ): Promise<Result<RegisterResponse, ApiError>> {
+    return this.json<RegisterResponse>({
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
+      path: '/api/auth/register',
+      body: userData,
     })
-    if (!response.ok) {
-      console.warn('Register failed', response)
-      return {
-        error: `${response.status.toString()} ${response.statusText}`,
-        description: (await response.json())['description'],
-      }
-    }
-    const result = await response.json()
-    console.log(result)
-    return {
-      success: true,
-    }
   }
 
-  async getDiskInfo(): Promise<DiskResponse | ApiError> {
-    const response = await fetch(this.baseUrl + '/api/setup/disk-info', {
+  async getFolders(): Promise<Result<string[], ApiError>> {
+    return this.json<string[]>({
       method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.token}`,
-      },
+      path: '/api/auth/folders',
+      authenticate: true,
     })
-    if (!response.ok) {
-      console.warn('call to get disk info failed', response)
-    }
-    return await response.json()
+  }
+
+  async getDiskInfo(): Promise<Result<DiskResponse, ApiError>> {
+    return this.json<DiskResponse>({
+      method: 'GET',
+      path: '/api/setup/disk-info',
+      authenticate: true,
+    })
   }
 
   async getUserFolderInfo(
     userFolder: string,
-  ): Promise<UserFolderResponse | ApiError> {
-    const response = await fetch(
-      this.baseUrl + `/api/setup/user-folder-info?user_folder=${userFolder}`,
-      {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.token}`,
-        },
-      },
-    )
-    if (!response.ok) {
-      console.warn('call to get user folder info failed', response)
-    }
-    return await response.json()
-  }
-
-  async setupNeeded(): Promise<boolean> {
-    const response = await fetch(this.baseUrl + '/api/auth/setup-needed', {
+  ): Promise<Result<UserFolderResponse, ApiError>> {
+    const path = `/api/setup/user-folder-info?user_folder=${encodeURIComponent(userFolder)}`
+    return this.json<UserFolderResponse>({
       method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+      path,
+      authenticate: true,
     })
-    if (!response.ok) {
-      console.warn('Setup needed check failed', response)
-    }
-    return await response.json()
   }
 
-  async rawMediaUrl(relativePath: string): Promise<string> {
-    const url = `${this.baseUrl}/download/media?path=${encodeURIComponent(relativePath)}`
-    const response = await fetch(url, {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.token}`,
-      },
+  async setupNeeded(): Promise<Result<boolean, ApiError>> {
+    return this.json<boolean>({
+      method: 'GET',
+      path: '/api/setup/needed',
     })
-    const blob = await response.blob()
-    return URL.createObjectURL(blob)
+  }
+
+  async rawMediaUrl(relativePath: string): Promise<Result<string, ApiError>> {
+    const result = await this.request({
+      method: 'GET',
+      path: `/download/media?path=${encodeURIComponent(relativePath)}`,
+      authenticate: true,
+    })
+    if (!result.ok) return result
+    try {
+      return Ok(URL.createObjectURL(await result.value.blob()))
+    } catch (e: any) {
+      console.error(`Can't create blob url from response`, e, {
+        apiCall: 'rawMediaUrl',
+        relativePath,
+      })
+      return Err({
+        tokenProvided: true,
+        serverReachable: true,
+        aborted: false,
+        error: {
+          message: `Can't create blob url from response. ${e.message}`,
+          status: 0,
+          statusText: '',
+        },
+      })
+    }
   }
 }
 
