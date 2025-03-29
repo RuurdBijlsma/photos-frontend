@@ -69,6 +69,7 @@ defineProps<{
   transition: border-radius 0.15s;
   aspect-ratio: 1;
   image-rendering: smooth;
+  will-change: border-radius;
 }
 
 .preview-image:hover {

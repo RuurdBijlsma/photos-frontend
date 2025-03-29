@@ -25,7 +25,7 @@ const virtualScrollHeight = computed(() => {
   >
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
-      Unsupported Files ({{ summary.unsupported_count.toLocaleString() }})
+      Unsupported File Types ({{ summary.unsupported_count.toLocaleString() }})
     </v-card-title>
     <v-card-text>
       <p class="mb-3 text-caption text-medium-emphasis">

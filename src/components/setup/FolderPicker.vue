@@ -26,7 +26,7 @@ function selectFolder(folder: string) {
       <div class="picker-header">
         <div class="header-buttons">
           <v-btn
-            :color="scheme.secondary"
+            :color="scheme.primary"
             class="mr-2"
             title="Go forward"
             variant="text"
@@ -35,7 +35,7 @@ function selectFolder(folder: string) {
             icon="mdi-arrow-left"
           />
           <v-btn
-            :color="scheme.secondary"
+            :color="scheme.primary"
             class="mr-2"
             title="Go back"
             variant="text"
@@ -44,7 +44,7 @@ function selectFolder(folder: string) {
             icon="mdi-arrow-right"
           />
           <v-btn
-            :color="scheme.secondary"
+            :color="scheme.primary"
             class="mr-2"
             variant="text"
             :disabled="!upEnabled"
@@ -55,7 +55,7 @@ function selectFolder(folder: string) {
           <v-dialog max-width="500">
             <template v-slot:activator="{ props: activatorProps }">
               <v-btn
-                :color="scheme.secondary"
+                :color="scheme.primary"
                 class="mr-2"
                 variant="text"
                 title="Create folder"
@@ -75,27 +75,25 @@ function selectFolder(folder: string) {
                     variant="outlined"
                     :hide-details="true"
                     rounded
-                    color="primary"
-                    base-color="rgba(0,0,0,0.5)"
+                    :color="scheme.primary"
+                    :base-color="scheme.outline"
                   />
                 </v-card-text>
                 <v-card-actions>
-                  <v-btn> Create</v-btn>
+                  <v-btn>Create</v-btn>
                 </v-card-actions>
               </v-card>
             </template>
           </v-dialog>
         </div>
-        <div
-          class="current-route-display"
-        >
+        <div class="current-route-display">
           <div class="route-component route-root">Media Folder</div>
           <v-icon icon="mdi-chevron-right" />
           <div class="route-component">Ruurd</div>
         </div>
         <div class="header-buttons">
           <v-btn
-            :color="scheme.secondary"
+            :color="scheme.primary"
             class="ml-2"
             variant="text"
             density="compact"
@@ -146,7 +144,7 @@ function selectFolder(folder: string) {
   font-size: 14px;
   font-weight: 500;
   align-items: center;
-  background-color: rgba(0,0,0,0.08);
+  background-color: rgba(0, 0, 0, 0.08);
 }
 
 .header-buttons {
@@ -154,20 +152,11 @@ function selectFolder(folder: string) {
 }
 
 .selected-folder {
-  background-color: rgba(0,0,0,0.08);
-}
-
-.show-selected-folder {
-  display: flex;
-  gap: 25px;
-  align-items: center;
-  margin-top: 20px;
-  font-weight: 600;
-  font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.08);
 }
 
 .folder-picker {
-  border-radius: 40px;
-  padding: 20px;
+  border-radius: 32px;
+  padding: 15px;
 }
 </style>

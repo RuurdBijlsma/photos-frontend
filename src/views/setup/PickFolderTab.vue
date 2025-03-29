@@ -7,6 +7,7 @@ import { type Ref, ref } from 'vue'
 import type { UserFolderResponse } from '@/utils/types/api'
 import { useAuthStore } from '@/stores/auth'
 import FolderPicker from '@/components/setup/FolderPicker.vue'
+import { scheme } from '@/plugins/vuetify'
 
 const auth = useAuthStore()
 
@@ -43,7 +44,7 @@ async function getImageUrl(file: string): Promise<string> {
     return result.value
   }
   console.warn("Couldn't get image url", result)
-  return "img/placeholder.svg";
+  return 'img/placeholder.svg'
 }
 
 refreshInfo().then()
@@ -51,21 +52,31 @@ refreshInfo().then()
 
 <template>
   <!-- Folders Status Section -->
-  <div class="folder-status-title mb-3">
-    <p class="text-medium-emphasis text-caption mb-3">
-      Select the media folder where your
-      <span :style="{ fontWeight: 700 }">({{ auth.user?.name }})</span>
-      files are located. You can choose the root of the linked media directory
-      or a specific folder. If you invite others, their media will be kept in
-      separate folders.
-    </p>
-  </div>
   <section v-if="folderInfo">
-    <folder-picker class="mb-5" />
+    <v-card
+      class="mb-6 folder-card"
+      variant="text"
+      rounded
+      :color="scheme.primary"
+    >
+      <v-card-title class="d-flex align-center card-title">
+        <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
+        Pick your user folder.
+      </v-card-title>
+      <v-card-text>
+        <p class="text-medium-emphasis text-caption mb-3">
+          Select the media folder where your
+          <span :style="{ fontWeight: 700 }">({{ auth.user?.name }})</span>
+          files are located. You can choose the root of the linked media
+          directory or a specific folder. If you invite others, their media will
+          be kept in separate folders.
+        </p>
+        <folder-picker class="mb-5" />
+      </v-card-text>
+    </v-card>
 
     <!-- Media Files Section -->
-    <media-sample :summary="folderInfo" :images="samples"
-                  class="mt-10" />
+    <media-sample :summary="folderInfo" :images="samples" class="mt-10" />
 
     <!-- Unsupported Files -->
     <unsupported-files
@@ -76,8 +87,8 @@ refreshInfo().then()
 
     <!-- Inaccessible Files and Folders -->
     <inaccessible-entries
-      v-if="folderInfo.inaccessible_entries.length > 0"
       :summary="folderInfo"
+      v-if="folderInfo.inaccessible_entries.length > 0"
     />
   </section>
 

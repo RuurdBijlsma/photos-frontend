@@ -102,7 +102,7 @@ defineProps<{
 }
 
 .folder-card {
-  border-radius: 40px;
+  border-radius: 24px;
 }
 
 .chips {
