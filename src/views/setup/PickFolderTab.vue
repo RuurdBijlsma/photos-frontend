@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import UnsupportedFiles from '@/components/setup/UnsupportedFiles.vue'
-import InaccessibleEntries from '@/components/setup/InaccessibleEntries.vue'
 import MediaSample from '@/components/setup/MediaSample.vue'
 import { useAuthStore } from '@/stores/auth'
 import FolderPicker from '@/components/setup/FolderPicker.vue'
@@ -13,7 +11,6 @@ const folders = usePickFolderStore()
 </script>
 
 <template>
-  <!-- Folders Status Section -->
   <section>
     <v-card class="folder-card" variant="text" rounded :color="scheme.primary">
       <v-card-title class="d-flex align-center card-title">

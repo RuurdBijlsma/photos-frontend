@@ -182,7 +182,8 @@ folders.refreshFolders().then()
 }
 
 .picker-entries {
-  height: 350px;
+  height: 180px;
+  max-height:340px;
   overflow-y: auto;
 }
 </style>
