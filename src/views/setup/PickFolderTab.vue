@@ -2,63 +2,20 @@
 import UnsupportedFiles from '@/components/setup/UnsupportedFiles.vue'
 import InaccessibleEntries from '@/components/setup/InaccessibleEntries.vue'
 import MediaSample from '@/components/setup/MediaSample.vue'
-import { photosApi } from '@/utils/api/PhotosApi'
-import { type Ref, ref } from 'vue'
-import type { UserFolderResponse } from '@/utils/types/api'
 import { useAuthStore } from '@/stores/auth'
 import FolderPicker from '@/components/setup/FolderPicker.vue'
 import { scheme } from '@/plugins/vuetify'
+import { usePickFolderStore } from '@/stores/pickFolder'
+import ShowSelectedFolder from '@/components/setup/ShowSelectedFolder.vue'
 
 const auth = useAuthStore()
-
-const folderInfo: Ref<UserFolderResponse | null> = ref(null)
-const refreshLoading = ref(false)
-let N_SAMPLES = 8
-const samples: Ref<string[]> = ref(Array(N_SAMPLES))
-
-async function refreshInfo() {
-  refreshLoading.value = true
-  const result = await photosApi.getUserFolderInfo('./')
-  refreshLoading.value = false
-
-  if (!result.ok) {
-    console.warn('error getting validate folders result', result)
-    return
-  }
-  console.log(result.value)
-  folderInfo.value = result.value
-
-  N_SAMPLES = result.value.samples.length
-  let j = 0
-  for (let i = 0; i < N_SAMPLES; i++) {
-    getImageUrl(result.value.samples[i]).then(
-      imageUrl => (samples.value[j++] = imageUrl),
-    )
-  }
-}
-
-async function getImageUrl(file: string): Promise<string> {
-  console.log(file)
-  const result = await photosApi.rawMediaUrl(file)
-  if (result.ok) {
-    return result.value
-  }
-  console.warn("Couldn't get image url", result)
-  return 'img/placeholder.svg'
-}
-
-refreshInfo().then()
+const folders = usePickFolderStore()
 </script>
 
 <template>
   <!-- Folders Status Section -->
-  <section v-if="folderInfo">
-    <v-card
-      class="mb-6 folder-card"
-      variant="text"
-      rounded
-      :color="scheme.primary"
-    >
+  <section>
+    <v-card class="folder-card" variant="text" rounded :color="scheme.primary">
       <v-card-title class="d-flex align-center card-title">
         <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
         Pick your user folder.
@@ -71,43 +28,35 @@ refreshInfo().then()
           directory or a specific folder. If you invite others, their media will
           be kept in separate folders.
         </p>
-        <folder-picker class="mb-5" />
+        <folder-picker />
       </v-card-text>
+      <div class="text-center mt-4">
+        <show-selected-folder :folder="folders.viewedFolder" />
+        <v-progress-linear
+          class="mt-3"
+          indeterminate
+          v-if="folders.folderInfoLoading"
+          rounded
+          rounded-bar
+          color="primary"
+        />
+        <div v-else class="mt-3"></div>
+      </div>
     </v-card>
 
     <!-- Media Files Section -->
-    <media-sample :summary="folderInfo" :images="samples" class="mt-10" />
-
-    <!-- Unsupported Files -->
-    <unsupported-files
-      class="mt-10"
-      v-if="folderInfo.unsupported_count > 0"
-      :summary="folderInfo"
+    <media-sample
+      v-if="folders.folderInfo"
+      class="mt-3"
+      :summary="folders.folderInfo"
+      :images="folders.samples"
     />
-
-    <!-- Inaccessible Files and Folders -->
-    <inaccessible-entries
-      :summary="folderInfo"
-      v-if="folderInfo.inaccessible_entries.length > 0"
-    />
+    <v-skeleton-loader
+      :loading="folders.folderInfoLoading"
+      v-else
+      type="card-avatar, heading, paragraph, card"
+    ></v-skeleton-loader>
   </section>
-
-  <v-skeleton-loader
-    :loading="refreshLoading"
-    v-else
-    type="card-avatar, heading, paragraph"
-  ></v-skeleton-loader>
 </template>
 
-<style scoped>
-.folder-status-title {
-  display: flex;
-  align-items: center;
-}
-
-h3 {
-  opacity: 0.7;
-  font-weight: 500;
-  font-size: 20px;
-}
-</style>
+<style scoped></style>

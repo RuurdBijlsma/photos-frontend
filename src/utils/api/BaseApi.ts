@@ -24,7 +24,7 @@ export class BaseApi {
       const errorMessage = errorResponse.error ?? 'none'
       const errorDesc =
         errorResponse.description ?? JSON.stringify(errorResponse)
-      errorDetail = errorMessage + '\n' + errorDesc
+      errorDetail = errorMessage + ':\n' + errorDesc
     } catch (e: any) {
       const errorMessage = e.toString()
       const errorDesc = await e.text()
@@ -48,7 +48,7 @@ export class BaseApi {
     const defaults: Omit<RequestParams, 'path'> = {
       authenticate: false,
       method: 'GET',
-      timeout: 5000,
+      timeout: 15000,
       body: undefined,
     }
     const { timeout, path, body, authenticate, method } = {
@@ -68,7 +68,10 @@ export class BaseApi {
     }
 
     const controller = new AbortController()
-    const id = setTimeout(() => controller.abort(), timeout)
+    const id = setTimeout(() => {
+      console.warn("Timeout reached")
+      controller.abort()
+    }, timeout)
 
     try {
       const response = await fetch(`${this.baseUrl}${path}`, {

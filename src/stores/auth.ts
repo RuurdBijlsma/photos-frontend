@@ -24,7 +24,7 @@ export const useAuthStore = defineStore(
       const result = await photosApi.login({ email, password })
       loginLoading.value = false
       if (!result.ok) {
-        console.log('Setting login error to', result.error)
+        console.error('login error', result.error)
         loginError.value = result.error
         return false
       }
@@ -52,7 +52,7 @@ export const useAuthStore = defineStore(
         password,
       })
       if (!result.ok) {
-        console.log('Setting register error to', result.error)
+        console.error('register error', result.error)
         registerError.value = result.error
         registerLoading.value = false
         return false

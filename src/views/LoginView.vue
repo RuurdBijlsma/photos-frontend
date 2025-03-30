@@ -12,7 +12,7 @@ const emailInput: Ref<null | HTMLElement> = ref(null)
 const form: Ref<null | VForm> = ref(null)
 
 onMounted(() => {
-  console.log(emailInput.value?.focus())
+  emailInput.value?.focus()
 })
 
 const rules = {

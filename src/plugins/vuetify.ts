@@ -7,7 +7,6 @@ import themeJson from '@/assets/themes/themes-v6.json'
 import type { Theme } from '@/utils/types/color'
 
 const themes: Theme[] = themeJson
-console.log(themes)
 export const scheme = themes[0].schemes.light
 
 // Map your dynamic scheme values to Vuetify's theme colors.

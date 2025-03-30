@@ -10,6 +10,7 @@ import CheckDrivesTab from '@/views/setup/CheckDrivesTab.vue'
 import PickFolderTab from '@/views/setup/PickFolderTab.vue'
 import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
 import SetupLayout from '@/components/my-theme/SetupLayout.vue'
+import SkippedFilesTab from '@/views/setup/SkippedFilesTab.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -32,7 +33,6 @@ function setStepFromRoute() {
 
 const tabIndex = ref(0)
 watch(tabIndex, () => {
-  console.log(tabIndex.value)
   router.push({
     query: {
       step: tabIndex.value,
@@ -56,7 +56,7 @@ setStepFromRoute()
       v-model="tabIndex"
       class="stepper"
       editable
-      :items="['Validate Drives', 'Pick User Folder', 'Start Indexing']"
+      :items="['Drives', 'User Folder', 'Skipped files', 'Go!']"
     >
       <template v-slot:item.1>
         <check-drives-tab />
@@ -67,11 +67,14 @@ setStepFromRoute()
       </template>
 
       <template v-slot:item.3>
+        <skipped-files-tab />
+      </template>
+
+      <template v-slot:item.4>
         <v-card title="Step Three" flat>...</v-card>
       </template>
     </v-stepper>
   </my-main-container>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

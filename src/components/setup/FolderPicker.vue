@@ -1,19 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { type Ref, ref, watch } from 'vue'
 import { scheme } from '@/plugins/vuetify'
+import { usePickFolderStore } from '@/stores/pickFolder'
 
-const upEnabled = ref(false)
-const forwardEnabled = ref(false)
-const backEnabled = ref(false)
-const refreshLoading = ref(false)
+const folders = usePickFolderStore()
 
-function openFolder(folder: string) {
-  console.log('open', folder)
+watch(
+  () => folders.viewedFolder,
+  () => onViewedChange(),
+  { deep: true },
+)
+
+async function onViewedChange() {
+  setTimeout(() => {
+    const el = document.querySelector('.current-route-display')
+    if (el) el.scrollLeft = el.scrollWidth - el.clientWidth
+  }, 50)
 }
 
-function selectFolder(folder: string) {
-  console.log('select', folder)
-}
+folders.refreshFolders().then()
 </script>
 
 <template>
@@ -28,27 +33,9 @@ function selectFolder(folder: string) {
           <v-btn
             :color="scheme.primary"
             class="mr-2"
-            title="Go forward"
             variant="text"
-            :disabled="!forwardEnabled"
-            density="compact"
-            icon="mdi-arrow-left"
-          />
-          <v-btn
-            :color="scheme.primary"
-            class="mr-2"
-            title="Go back"
-            variant="text"
-            :disabled="!backEnabled"
-            density="compact"
-            icon="mdi-arrow-right"
-          />
-          <v-btn
-            :color="scheme.primary"
-            class="mr-2"
-            variant="text"
-            :disabled="!upEnabled"
-            title="Move up a folder."
+            :disabled="folders.viewedFolder.length === 0"
+            @click="folders.truncateViewed(folders.viewedFolder.length - 1)"
             density="compact"
             icon="mdi-arrow-up"
           />
@@ -87,9 +74,26 @@ function selectFolder(folder: string) {
           </v-dialog>
         </div>
         <div class="current-route-display">
-          <div class="route-component route-root">Media Folder</div>
-          <v-icon icon="mdi-chevron-right" />
-          <div class="route-component">Ruurd</div>
+          <div
+            class="route-component route-root"
+            v-ripple
+            @click="folders.truncateViewed(0)"
+          >
+            Media Folder
+          </div>
+          <template
+            v-for="(component, index) in folders.viewedFolder"
+            :key="index"
+          >
+            <v-icon icon="mdi-chevron-right" />
+            <div
+              class="route-component"
+              v-ripple
+              @click="folders.truncateViewed(index + 1)"
+            >
+              {{ component }}
+            </div>
+          </template>
         </div>
         <div class="header-buttons">
           <v-btn
@@ -98,32 +102,25 @@ function selectFolder(folder: string) {
             variant="text"
             density="compact"
             icon="mdi-refresh"
-            :loading="refreshLoading"
+            @click="folders.refreshFolders"
+            :loading="folders.listFolderLoading"
           />
         </div>
       </div>
       <div class="picker-entries mt-5">
+        <p
+          class="text-caption text-center font-italic"
+          v-if="folders.folderList.length === 0"
+        >
+          There are no folders here.
+        </p>
         <v-list-item
-          rounded
-          @dblclick="openFolder('folder1')"
-          @click="selectFolder('folder1')"
+          v-for="folder in folders.folderList"
+          :key="folder"
+          class="rounded-xl"
+          @click="folders.openFolder(folder)"
           prepend-icon="mdi-folder-outline"
-          title="folder1"
-        ></v-list-item>
-        <v-list-item
-          rounded
-          @dblclick="openFolder('folder1')"
-          @click="selectFolder('folder2')"
-          prepend-icon="mdi-folder-outline"
-          title="folder2"
-        ></v-list-item>
-        <v-list-item
-          rounded
-          @dblclick="openFolder('folder1')"
-          @click="selectFolder('folder3')"
-          prepend-icon="mdi-folder-check"
-          class="selected-folder"
-          title="folder3"
+          :title="folder"
         ></v-list-item>
       </div>
     </v-card-text>
@@ -131,6 +128,13 @@ function selectFolder(folder: string) {
 </template>
 
 <style scoped>
+.folder-picker {
+  border-radius: 50px;
+  padding: 15px;
+  margin-left: -15px;
+  margin-right: -15px;
+}
+
 .picker-header {
   display: flex;
   align-items: center;
@@ -139,24 +143,46 @@ function selectFolder(folder: string) {
 .current-route-display {
   display: flex;
   border-radius: 15px;
-  padding: 4px 15px;
+  padding: 2px 7px;
   flex-grow: 1;
   font-size: 14px;
   font-weight: 500;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  scroll-behavior: smooth;
+}
+
+.current-route-display::-webkit-scrollbar {
+  display: none;
+}
+
+.route-root {
+  font-weight: bold;
+  opacity: 0.5;
+}
+
+.route-component {
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 15px;
+}
+
+.route-component:hover {
+  text-decoration: underline;
 }
 
 .header-buttons {
   opacity: 0.6;
 }
 
-.selected-folder {
-  background-color: rgba(0, 0, 0, 0.08);
+.header-buttons:first-child {
+  min-width: 75px;
 }
 
-.folder-picker {
-  border-radius: 32px;
-  padding: 15px;
+.picker-entries {
+  height: 350px;
+  overflow-y: auto;
 }
 </style>

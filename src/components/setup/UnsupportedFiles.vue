@@ -25,7 +25,7 @@ const virtualScrollHeight = computed(() => {
   >
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
-      Unsupported File Types ({{ summary.unsupported_count.toLocaleString() }})
+      Unsupported Files ({{ summary.unsupported_count.toLocaleString() }})
     </v-card-title>
     <v-card-text>
       <p class="mb-3 text-caption text-medium-emphasis">
@@ -41,6 +41,7 @@ const virtualScrollHeight = computed(() => {
             <v-dialog max-width="500">
               <template v-slot:activator="{ props: activatorProps }">
                 <v-list-item
+                  :key="item"
                   density="compact"
                   rounded-xl
                   v-tooltip="`.${item}`"
@@ -48,15 +49,16 @@ const virtualScrollHeight = computed(() => {
                   v-bind="activatorProps"
                   prepend-icon="mdi-file-alert-outline"
                 >
-                  {{ item }}
+                  <span class="empty-extension" v-if="item === ''"
+                    >Empty extension</span
+                  >
+                  <span v-else>{{ item }}</span>
                 </v-list-item>
               </template>
 
               <template v-slot:default="{ isActive }">
                 <v-card
-                  v-tooltip="
-                    `${summary.unsupported_files[item].length.toLocaleString()} Unsupported .${item} Files`
-                  "
+                  :title="`${summary.unsupported_files[item].length.toLocaleString()} Unsupported .${item} Files`"
                 >
                   <v-card-text>
                     <v-list>
@@ -101,5 +103,10 @@ const virtualScrollHeight = computed(() => {
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 24px;
   overflow: hidden;
+}
+
+.empty-extension {
+  font-style: italic;
+  opacity: 0.6;
 }
 </style>

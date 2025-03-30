@@ -31,10 +31,12 @@ export class PhotosApi extends BaseApi {
     })
   }
 
-  async getFolders(): Promise<Result<string[], ApiError>> {
+  async getFolders(
+    fromFolder: string = '',
+  ): Promise<Result<string[], ApiError>> {
     return this.json<string[]>({
       method: 'GET',
-      path: '/api/auth/folders',
+      path: `/api/setup/folders?folder=${fromFolder}`,
       authenticate: true,
     })
   }
@@ -50,7 +52,7 @@ export class PhotosApi extends BaseApi {
   async getUserFolderInfo(
     userFolder: string,
   ): Promise<Result<UserFolderResponse, ApiError>> {
-    const path = `/api/setup/user-folder-info?user_folder=${encodeURIComponent(userFolder)}`
+    const path = `/api/setup/user-folder-info?folder=${encodeURIComponent(userFolder)}`
     return this.json<UserFolderResponse>({
       method: 'GET',
       path,

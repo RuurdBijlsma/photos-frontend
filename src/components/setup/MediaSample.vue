@@ -21,7 +21,9 @@ defineProps<{
       <p class="text-caption text-medium-emphasis mb-4">
         We've found {{ summary.photo_count.toLocaleString() }} photos and
         {{ summary.video_count.toLocaleString() }} videos in your library.
-        Here's a preview of your collection:
+        <span v-if="summary.photo_count > 0">
+          Here's a preview of your collection:
+        </span>
       </p>
       <div class="image-grid">
         <div v-for="(url, index) in images" :key="index">
@@ -46,16 +48,15 @@ defineProps<{
 </template>
 
 <style scoped>
-
 .image-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
 }
 
-.preview-skeleton{
-  border-radius:50%;
-  overflow:hidden;
+.preview-skeleton {
+  border-radius: 50%;
+  overflow: hidden;
 }
 
 .preview-image {

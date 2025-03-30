@@ -16,7 +16,6 @@ async function refreshFolderSummary() {
     console.warn('error getting validate folders result', result)
     return
   }
-  console.log(result.value)
   diskResponse.value = result.value
 }
 
@@ -71,11 +70,5 @@ refreshFolderSummary().then()
 .folder-status-title {
   display: flex;
   align-items: center;
-}
-
-h3 {
-  opacity: 0.7;
-  font-weight: 500;
-  font-size: 20px;
 }
 </style>

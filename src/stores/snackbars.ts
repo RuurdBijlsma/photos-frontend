@@ -29,6 +29,13 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
     { deep: true },
   )
 
+  function message(m: string) {
+    return enqueue({
+      message: m,
+      timeout: 10000,
+    })
+  }
+
   function enqueue({
     message,
     timeout = 5000,
@@ -46,6 +53,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
 
   return {
     queue,
+    message,
     enqueue,
   }
 })

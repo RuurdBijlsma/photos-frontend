@@ -14,7 +14,7 @@ const userInput: Ref<null | HTMLElement> = ref(null)
 const form: Ref<null | VForm> = ref(null)
 
 onMounted(() => {
-  console.log(userInput.value?.focus())
+  userInput.value?.focus()
 })
 
 const showPassword = ref(false)
