@@ -16,7 +16,8 @@ export function Err<T, E>(error: E): Result<T, E> {
   return {
     ok: false,
     error,
-    map: function <T>(_fn: (value: T) => T): Result<T, E> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    map: function <T>(_: (value: T) => T): Result<T, E> {
       return this
     },
   }

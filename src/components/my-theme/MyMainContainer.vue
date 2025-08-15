@@ -1,10 +1,30 @@
 <script setup lang="ts">
 import { scheme } from '@/plugins/vuetify'
+
+const hexToRgba = (hex, alpha) => {
+  let r, g, b;
+  if (hex.startsWith('#')) {
+    hex = hex.substring(1);
+    if (hex.length === 3) {
+      hex = hex.split('').map(char => char + char).join('');
+    }
+    r = parseInt(hex.substring(0, 2), 16);
+    g = parseInt(hex.substring(2, 4), 16);
+    b = parseInt(hex.substring(4, 6), 16);
+  }
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 </script>
 
 <template>
   <v-main class="main" :style="{ backgroundColor: scheme.primary_container }">
-    <div class="container">
+    <div class="container" :style="{
+      background: `linear-gradient(
+        0deg,
+        ${hexToRgba(scheme.background, 0.7)} 0%,
+        ${hexToRgba(scheme.background, 0.9)} 100%
+      )`
+    }">
       <slot />
     </div>
   </v-main>
@@ -23,12 +43,6 @@ import { scheme } from '@/plugins/vuetify'
 
 .container {
   margin: auto 0;
-  background: rgb(227, 222, 255, 0.7);
-  background: linear-gradient(
-    0deg,
-    rgba(255, 232, 232, 0.5) 0%,
-    rgb(255, 248, 252, 0.8) 100%
-  );
   flex-grow: 0;
   border-radius: 40px;
   overflow: hidden;

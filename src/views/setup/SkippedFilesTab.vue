@@ -3,36 +3,74 @@ import UnsupportedFiles from '@/components/setup/UnsupportedFiles.vue'
 import InaccessibleEntries from '@/components/setup/InaccessibleEntries.vue'
 import { usePickFolderStore } from '@/stores/pickFolder'
 import ShowSelectedFolder from '@/components/setup/ShowSelectedFolder.vue'
+import { scheme } from '@/plugins/vuetify'
 
 const folders = usePickFolderStore()
 </script>
 
 <template>
-  <show-selected-folder :folder="folders.viewedFolder" />
+  <v-card variant="text" color="primary" class="top-bar mb-5">
+    <div class="pill" :style="{ backgroundColor: scheme.primary_container }">
+      <show-selected-folder
+        :icon-color="scheme.primary"
+        :pill="false"
+        :color="scheme.on_primary_container"
+        :folder="folders.viewedFolder"
+      />
+    </div>
+    <v-spacer />
+    <v-btn
+      :loading="folders.unsupportedFilesLoading"
+      prepend-icon="mdi-refresh"
+      rounded
+      variant="text"
+      @click="folders.refreshUnsupportedFiles"
+      color="primary"
+      >Refresh
+    </v-btn>
+  </v-card>
 
   <div
     v-if="
-      folders.folderInfo &&
-      (folders.folderInfo.unsupported_count > 0 ||
-        folders.folderInfo.inaccessible_entries.length > 0)
+      folders.unsupportedFiles &&
+      (folders.unsupportedFiles.unsupported_count > 0 ||
+        folders.unsupportedFiles.inaccessible_entries.length > 0)
     "
   >
     <!-- Unsupported Files -->
     <unsupported-files
-      v-if="folders.folderInfo.unsupported_count > 0"
-      :summary="folders.folderInfo"
+      v-if="folders.unsupportedFiles.unsupported_count > 0"
+      :summary="folders.unsupportedFiles"
     />
 
     <!-- Inaccessible Files and Folders -->
     <inaccessible-entries
-      :summary="folders.folderInfo"
-      v-if="folders.folderInfo.inaccessible_entries.length > 0"
+      :summary="folders.unsupportedFiles"
+      v-if="folders.unsupportedFiles.inaccessible_entries.length > 0"
     />
   </div>
-  <p v-else-if="folders.folderInfo" class="text-lg-caption text-center">
-    There are no unsupported files in `{{ folders.viewedFolder.join('/') }}`,
-    hooray!
-  </p>
+  <v-alert
+    variant="flat"
+    :color="scheme.primary_container"
+    v-else-if="folders.unsupportedFiles"
+    class="rounded-xl text-md-caption"
+    icon="mdi-check"
+  >
+    <p :style="{ color: scheme.on_primary_container }">
+      Great news! There are no unsupported files in your selection. Everything
+      looks good!
+    </p>
+  </v-alert>
 </template>
 
-<style scoped></style>
+<style scoped>
+.top-bar {
+  display: flex;
+  align-items: center;
+}
+
+.pill {
+  padding: 24px 32px;
+  border-radius: 32px;
+}
+</style>

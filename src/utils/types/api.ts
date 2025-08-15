@@ -62,12 +62,17 @@ export interface PathInfoResponse {
   folder: string
 }
 
-export interface UserFolderResponse {
+export interface MediaSampleResponse {
   read_access: boolean
   folder: string
   photo_count: number
   video_count: number
   samples: string[]
+}
+
+export interface UnsupportedFilesResponse {
+  read_access: boolean
+  folder: string
   inaccessible_entries: string[]
   unsupported_count: number
   unsupported_files: { [key: string]: string[] }

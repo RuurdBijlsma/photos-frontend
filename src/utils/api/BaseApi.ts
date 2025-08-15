@@ -25,8 +25,10 @@ export class BaseApi {
       const errorDesc =
         errorResponse.description ?? JSON.stringify(errorResponse)
       errorDetail = errorMessage + ':\n' + errorDesc
-    } catch (e: any) {
+    } catch (e) {
+      // @ts-expect-error idk
       const errorMessage = e.toString()
+      // @ts-expect-error idk
       const errorDesc = await e.text()
       errorDetail = errorMessage + '\n' + errorDesc
     }
@@ -85,8 +87,9 @@ export class BaseApi {
       if (!response.ok) return await this.handleError(response)
 
       return Ok(response)
-    } catch (error: any) {
+    } catch (error) {
       clearTimeout(id)
+      // @ts-expect-error idk
       if (error.name === 'AbortError') {
         return Err({
           tokenProvided: true,
@@ -109,7 +112,7 @@ export class BaseApi {
     if (result.ok) {
       try {
         return Ok(await result.value.json())
-      } catch (error: any) {
+      } catch (error) {
         console.error('JSON parse error:', error, { params })
         return Err({
           tokenProvided: true,

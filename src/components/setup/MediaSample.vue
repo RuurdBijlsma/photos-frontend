@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { FileCountResponse } from '@/utils/api/types'
 import { scheme } from '@/plugins/vuetify'
+import type { MediaSampleResponse } from '@/utils/types/api'
 
 defineProps<{
-  summary: FileCountResponse
+  mediaSamples: MediaSampleResponse
   images: string[]
 }>()
 </script>
@@ -13,15 +13,15 @@ defineProps<{
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-eye-check-outline" class="mr-2"></v-icon>
       Media Files ({{
-        (summary.photo_count + summary.video_count).toLocaleString()
+        (mediaSamples.photo_count + mediaSamples.video_count).toLocaleString()
       }}
       supported files)
     </v-card-title>
     <v-card-text>
       <p class="text-caption text-medium-emphasis mb-4">
-        We've found {{ summary.photo_count.toLocaleString() }} photos and
-        {{ summary.video_count.toLocaleString() }} videos in your library.
-        <span v-if="summary.photo_count > 0">
+        We've found {{ mediaSamples.photo_count.toLocaleString() }} photos and
+        {{ mediaSamples.video_count.toLocaleString() }} videos in your library.
+        <span v-if="mediaSamples.photo_count > 0">
           Here's a preview of your collection:
         </span>
       </p>
@@ -36,7 +36,7 @@ defineProps<{
             v-ripple
             :href="url"
             target="_blank"
-            v-tooltip:top="summary.samples[index]"
+            v-tooltip:top="mediaSamples.samples[index]"
             v-else
             class="preview-image"
             :style="{ backgroundImage: `url(${url})` }"

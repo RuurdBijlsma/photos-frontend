@@ -1,11 +1,3 @@
-<template>
-  <div class="image-viewer">
-    <canvas ref="canvas" class="photo-canvas" />
-    <div class="video-container" ref="videoContainer"></div>
-    <v-btn @click="skip(-1)">prev image</v-btn>
-    <v-btn @click="skip(1)">next image</v-btn>
-  </div>
-</template>
 <script setup lang="ts">
 import { onMounted, onUnmounted, type Ref, ref } from 'vue'
 import {
@@ -166,6 +158,16 @@ onUnmounted(() => {
   cancelAnimationFrame(animationRequest)
 })
 </script>
+
+<template>
+  <div class="image-viewer">
+    <canvas ref="canvas" class="photo-canvas" />
+    <div class="video-container" ref="videoContainer"></div>
+    <v-btn @click="skip(-1)">prev image</v-btn>
+    <v-btn @click="skip(1)">next image</v-btn>
+  </div>
+</template>
+
 <style scoped>
 .image-viewer {
   background-color: rgba(0, 0, 0, 0.95);

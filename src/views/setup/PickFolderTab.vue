@@ -27,33 +27,32 @@ const folders = usePickFolderStore()
         </p>
         <folder-picker />
       </v-card-text>
-      <div class="text-center mt-4">
-        <show-selected-folder :folder="folders.viewedFolder" />
-        <v-progress-linear
-          class="mt-3"
-          indeterminate
-          v-if="folders.folderInfoLoading"
-          rounded
-          rounded-bar
-          color="primary"
+      <div class="text-center mt-4 mb-3">
+        <show-selected-folder
+          include-selected-text
+          pill
+          :folder="folders.viewedFolder"
         />
-        <div v-else class="mt-3"></div>
       </div>
     </v-card>
 
     <!-- Media Files Section -->
     <media-sample
-      v-if="folders.folderInfo"
-      class="mt-3"
-      :summary="folders.folderInfo"
+      v-if="folders.mediaSamples"
+      class="mt-3 media-sample"
+      :media-samples="folders.mediaSamples"
       :images="folders.samples"
     />
     <v-skeleton-loader
-      :loading="folders.folderInfoLoading"
+      :loading="folders.mediaSampleLoading"
       v-else
       type="card-avatar, heading, paragraph, card"
     ></v-skeleton-loader>
   </section>
 </template>
 
-<style scoped></style>
+<style scoped>
+.media-sample {
+  min-height: 400px;
+}
+</style>

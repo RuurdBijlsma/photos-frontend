@@ -11,6 +11,7 @@ import PickFolderTab from '@/views/setup/PickFolderTab.vue'
 import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
 import SetupLayout from '@/components/my-theme/SetupLayout.vue'
 import SkippedFilesTab from '@/views/setup/SkippedFilesTab.vue'
+import { usePickFolderStore } from '@/stores/pickFolder'
 
 const router = useRouter()
 const route = useRoute()
@@ -32,7 +33,12 @@ function setStepFromRoute() {
 }
 
 const tabIndex = ref(0)
+const folders = usePickFolderStore()
 watch(tabIndex, () => {
+  console.log(tabIndex.value)
+  if(tabIndex.value===3){
+    folders.refreshUnsupportedFiles().then()
+  }
   router.push({
     query: {
       step: tabIndex.value,

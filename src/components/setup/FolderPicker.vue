@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { type Ref, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { scheme } from '@/plugins/vuetify'
 import { usePickFolderStore } from '@/stores/pickFolder'
 
 const folders = usePickFolderStore()
+const newFolderName = ref('')
 
 watch(
   () => folders.viewedFolder,
@@ -16,6 +17,12 @@ async function onViewedChange() {
     const el = document.querySelector('.current-route-display')
     if (el) el.scrollLeft = el.scrollWidth - el.clientWidth
   }, 50)
+}
+
+async function makeFolder(isActive: { value: boolean }) {
+  isActive.value = false
+  await folders.makeFolder(newFolderName.value)
+  newFolderName.value = ''
 }
 
 folders.refreshFolders().then()
@@ -56,10 +63,13 @@ folders.refreshFolders().then()
               <v-card title="Create folder" variant="flat" class="rounded-xl">
                 <v-card-text>
                   <v-text-field
+                    autofocus
                     label="Folder name"
                     placeholder="Enter folder name"
                     prepend-icon="mdi-folder-plus-outline"
+                    v-model="newFolderName"
                     variant="outlined"
+                    @keyup.enter="makeFolder(isActive)"
                     :hide-details="true"
                     rounded
                     :color="scheme.primary"
@@ -67,7 +77,7 @@ folders.refreshFolders().then()
                   />
                 </v-card-text>
                 <v-card-actions>
-                  <v-btn>Create</v-btn>
+                  <v-btn @click="makeFolder(isActive)">Create</v-btn>
                 </v-card-actions>
               </v-card>
             </template>
@@ -79,7 +89,7 @@ folders.refreshFolders().then()
             v-ripple
             @click="folders.truncateViewed(0)"
           >
-            Media Folder
+            Media Root
           </div>
           <template
             v-for="(component, index) in folders.viewedFolder"
@@ -183,7 +193,7 @@ folders.refreshFolders().then()
 
 .picker-entries {
   height: 180px;
-  max-height:340px;
+  max-height: 340px;
   overflow-y: auto;
 }
 </style>
