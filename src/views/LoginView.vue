@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { onMounted, type Ref, ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import router from '@/plugins/router'
 import type { VForm } from 'vuetify/components'
 import { scheme } from '@/plugins/vuetify'
 import MyAlert from '@/components/my-theme/MyAlert.vue'
-import { photosApi } from '@/utils/api/PhotosApi'
+import { useAuthStore } from '@/stores/authStore.ts'
 
-const auth = useAuthStore()
+const authStore = useAuthStore()
 const emailInput: Ref<null | HTMLElement> = ref(null)
 const form: Ref<null | VForm> = ref(null)
 
@@ -20,30 +18,29 @@ const rules = {
   passRequired: (v: string) => !!v || 'Password is required.',
   min: (v: string) => v.length >= 6 || `Min 6 characters`,
 }
+
 const showPassword = ref(false)
 const email = ref('')
 const password = ref('')
 const isSubmitted = ref(false)
 const errorMessage: Ref<string | null> = ref(null)
+const isLoading = ref(false)
 
 async function login() {
-  isSubmitted.value = true
-  errorMessage.value = ''
-
-  const result = await auth.login(email.value, password.value)
-  if (result) {
-    await router.push('/')
-  } else {
-    if (auth.loginError && auth.loginError.tokenProvided) {
-      if (!auth.loginError.serverReachable) {
-        errorMessage.value = `We're having trouble connecting to the server at ${photosApi.baseUrl}. Please try again later.`
-      } else if (auth.loginError.aborted) {
-        errorMessage.value = `The server at ${photosApi.baseUrl} is taking too long to respond. Please check your connection and try again.`
-      } else {
-        errorMessage.value = auth.loginError.error.message
-      }
-    }
-    await form.value?.validate()
+  isLoading.value = true
+  try {
+    // This will either succeed and navigate away, or throw an error.
+    await authStore.login({
+      email: email.value,
+      password: password.value,
+    })
+  } catch (error) {
+    // The authStore already showed the snackbar. We just need to handle
+    // the UI state here.
+    console.error("Login failed from component's perspective.", error)
+  } finally {
+    // This will run whether the login succeeds or fails.
+    isLoading.value = false
   }
 }
 </script>
@@ -52,7 +49,7 @@ async function login() {
   <v-main class="login-main">
     <div class="login-container">
       <div class="left-pane">
-        <div :class="{ rotating: auth.loginLoading }" class="big-image"></div>
+        <div :class="{ rotating: isLoading }" class="big-image"></div>
       </div>
       <div class="right-pane">
         <v-form class="login-form" @submit.prevent="login()" ref="form">
@@ -82,12 +79,8 @@ async function login() {
           <v-text-field
             class="text-input mb-1"
             variant="outlined"
-            :prepend-icon="
-              showPassword ? 'mdi-lock-open-outline' : 'mdi-lock-outline'
-            "
-            :append-icon="
-              showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'
-            "
+            :prepend-icon="showPassword ? 'mdi-lock-open-outline' : 'mdi-lock-outline'"
+            :append-icon="showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
             @click:append="showPassword = !showPassword"
             :rules="isSubmitted ? [rules.passRequired] : []"
             :type="showPassword ? 'text' : 'password'"
@@ -104,7 +97,7 @@ async function login() {
             color="primary"
             rounded
             density="default"
-            :loading="auth.loginLoading"
+            :loading="isLoading"
             width="150"
             >Login
           </v-btn>
@@ -133,11 +126,7 @@ async function login() {
 
 .login-container {
   background: rgb(227, 222, 255, 0.7);
-  background: linear-gradient(
-    0deg,
-    rgba(255, 232, 232, 0.5) 0%,
-    rgb(255, 248, 252, 0.8) 100%
-  );
+  background: linear-gradient(0deg, rgba(255, 232, 232, 0.5) 0%, rgb(255, 248, 252, 0.8) 100%);
   flex-grow: 1;
   border-radius: 30px;
   overflow: hidden;

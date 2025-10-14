@@ -1,13 +1,13 @@
 import 'vuetify/styles'
 import '@mdi/font/css/materialdesignicons.css'
-import { createVuetify } from 'vuetify'
 import type { ThemeDefinition } from 'vuetify'
+import { createVuetify } from 'vuetify'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import themeJson from '@/assets/themes/themes-v6.json'
 import type { Theme } from '@/utils/types/color'
 
 const themes: Theme[] = themeJson
-export const scheme = themes[0].schemes.light
+export const scheme = themes[0]?.schemes?.light!
 
 // Map your dynamic scheme values to Vuetify's theme colors.
 // Adjust these mappings according to your design system.

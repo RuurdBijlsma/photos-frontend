@@ -18,15 +18,13 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import { ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import router from '@/plugins/router'
 import SnackbarQueue from '@/components/SnackbarQueue.vue'
+import { useSetupStore } from '@/stores/setupStore.ts'
 
 const defaultImage = ''
 const bgId = ref(
-  localStorage.getItem('backgroundImage') === null
-    ? defaultImage
-    : localStorage.backgroundImage,
+  localStorage.getItem('backgroundImage') === null ? defaultImage : localStorage.backgroundImage,
 )
 
 const loadBg = async () => {
@@ -39,13 +37,6 @@ const loadBg = async () => {
   }
 }
 loadBg().then()
-
-const auth = useAuthStore()
-auth.setupNeeded().then(needed => {
-  if (needed) {
-    router.push({ name: 'welcome' })
-  }
-})
 </script>
 
 <style scoped>

@@ -10,14 +10,12 @@ const folders = usePickFolderStore()
 
 <template>
   <v-card variant="text" color="primary" class="top-bar mb-5">
-    <div class="pill" :style="{ backgroundColor: scheme.primary_container }">
-      <show-selected-folder
-        :icon-color="scheme.primary"
-        :pill="false"
-        :color="scheme.on_primary_container"
-        :folder="folders.viewedFolder"
-      />
-    </div>
+    <show-selected-folder
+      :icon-color="scheme.on_surface_variant"
+      :pill="true"
+      :color="scheme.on_surface"
+      :folder="folders.viewedFolder"
+    />
     <v-spacer />
     <v-btn
       :loading="folders.unsupportedFilesLoading"

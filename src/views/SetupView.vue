@@ -53,7 +53,7 @@ setStepFromRoute()
   <my-main-container>
     <setup-layout
       :caption-text="false"
-      text="Now, let's configure your library and settings.
+      text="Let's configure your library and settings.
       Make sure your media library is set up correctly, then enter your server URL to continue."
     />
 

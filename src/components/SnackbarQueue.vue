@@ -1,40 +1,48 @@
 <script setup lang="ts">
-import { scheme } from '@/plugins/vuetify'
-import { useSnackbarsStore } from '@/stores/snackbars'
 
-const snackbars = useSnackbarsStore()
+import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
+
+const snackbarsStore = useSnackbarsStore();
+
+// The v-model="snack.open" is crucial. When Vuetify closes the snackbar
+// (either by timeout or the user clicking 'Close'), it will set `snack.open`
+// to false. This will trigger the `watch` effect you built in your
+// `snackbarsStore` to remove it from the queue.
 </script>
 
 <template>
-  <v-snackbar
-    v-for="(snack, index) in snackbars.queue"
-    :style="{
-      transform: `translateY(-${index * 55}px)`,
-    }"
-    variant="flat"
-    :color="scheme.primary_container"
-    rounded="pill"
-    class="rounded-xl snackbar"
-    :key="snack.id"
-    v-model="snack.open"
-    :timeout="snack.timeout"
-  >
-    {{ snack.message }}
+  <div class="snackbar-container">
+    <v-snackbar
+      v-for="(snack, i) in snackbarsStore.queue"
+      :key="snack.id"
+      v-model="snack.open"
+      :timeout="snack.timeout"
+      location="bottom right"
+      multi-line
+    >
+      {{ snack.message }}
 
-    <template v-slot:actions>
-      <v-btn
-        :color="scheme.on_primary_container"
-        variant="text"
-        @click="snack.open = false"
-      >
-        Close
-      </v-btn>
-    </template>
-  </v-snackbar>
+      <template #actions>
+        <v-btn
+          color="pink"
+          variant="text"
+          @click="snack.open = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
+  </div>
 </template>
 
 <style scoped>
-.snackbar {
-  transition: transform 0.5s;
+/* Optional: If using multi-line, you might want to give it some space */
+.snackbar-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Allows clicks to go through to the page */
 }
 </style>

@@ -3,7 +3,7 @@ import './assets/main.css'
 import { createApp } from 'vue'
 
 import App from './App.vue'
-import router, { registerNavigationGuard } from './plugins/router'
+import router, { registerNavigationGuard } from '@/plugins/router'
 import { vuetify } from '@/plugins/vuetify'
 import { pinia } from '@/plugins/pinia'
 
