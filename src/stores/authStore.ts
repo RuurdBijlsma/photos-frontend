@@ -19,7 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // --- GETTERS ---
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
-  const isAdmin = computed(() => user.value?.role === 'ADMIN')
+  const isAdmin = computed(() => user.value?.role === 'admin')
 
   // --- ACTIONS ---
   // Actions are regular functions defined within the setup scope

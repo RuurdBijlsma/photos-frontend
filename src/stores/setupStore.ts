@@ -43,11 +43,11 @@ export const useSetupStore = defineStore('setup', () => {
   // --- RETURN ---
   return {
     // State
-    needsSetup: needsWelcome,
+    needsWelcome,
     disks,
     isLoading,
     // Actions
-    checkSetupStatus: checkWelcomeStatus,
+    checkWelcomeStatus: checkWelcomeStatus,
     fetchDiskInfo,
   }
 })

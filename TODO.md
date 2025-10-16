@@ -5,3 +5,4 @@
 * When processing image, link the image to a hash of the file + filename, so rebuilding is easy
 * on login redirect to where you were
 * handle token expiry
+* fix setup to use new api abstraction

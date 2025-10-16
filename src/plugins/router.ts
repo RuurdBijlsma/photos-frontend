@@ -70,10 +70,10 @@ export function registerNavigationGuard() {
     const snackbarsStore = useSnackbarsStore()
     const setupStore = useSetupStore()
 
-    if (setupStore.needsSetup === null) {
-      await setupStore.checkSetupStatus()
+    if (setupStore.needsWelcome === null) {
+      await setupStore.checkWelcomeStatus()
     }
-    if (setupStore.needsSetup) {
+    if (setupStore.needsWelcome) {
       if (to.name !== 'welcome') {
         // If they try to go anywhere else, redirect them.
         return next({ name: 'welcome' })
@@ -102,6 +102,15 @@ export function registerNavigationGuard() {
 
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
+    const needsSetup = isAdmin && authStore.user?.media_folder === null
+
+    console.log({ isAdmin, media_folder: authStore.user?.media_folder })
+    if (needsSetup) {
+      // setup needed
+      if (to.name !== 'setup') {
+        return next({ name: 'setup' })
+      }
+    }
 
     // --- Logic for Admin Routes ---
     if (to.meta.requiresAdmin) {
