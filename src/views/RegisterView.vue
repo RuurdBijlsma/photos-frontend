@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
-import { useAuthStore } from '@/stores/auth'
 import { onMounted, type Ref, ref } from 'vue'
-import router from '@/plugins/router'
 import { scheme } from '@/plugins/vuetify'
-import { photosApi } from '@/utils/api/PhotosApi'
 import MyAlert from '@/components/my-theme/MyAlert.vue'
 import SetupLayout from '@/components/my-theme/SetupLayout.vue'
 import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
+import { useAuthStore } from '@/stores/authStore.ts'
 
-const auth = useAuthStore()
+const authStore = useAuthStore()
 const userInput: Ref<null | HTMLElement> = ref(null)
 const form: Ref<null | VForm> = ref(null)
 
@@ -24,6 +22,7 @@ const password1 = ref('')
 const password2 = ref('')
 const isSubmitted = ref(false)
 const errorMessage: Ref<null | string> = ref(null)
+const isLoading = ref(false)
 
 const rules = {
   userRequired: (v: string) => !!v || 'Display name is required.',
@@ -36,36 +35,33 @@ const rules = {
 async function register() {
   errorMessage.value = null
   isSubmitted.value = true
+  isLoading.value = true
   if (password1.value !== password2.value) return
 
-  const result = await auth.register(
-    displayName.value,
-    email.value,
-    password1.value,
-  )
-  if (result) {
-    await router.push('/setup')
-  } else {
-    if (auth.registerError && auth.registerError.tokenProvided) {
-      if (!auth.registerError.serverReachable) {
-        errorMessage.value = `We're having trouble connecting to the server at ${photosApi.baseUrl}. Please try again later.`
-      } else if (auth.registerError.aborted) {
-        errorMessage.value = `The server at ${photosApi.baseUrl} is taking too long to respond. Please check your connection and try again.`
-      } else {
-        errorMessage.value = auth.registerError.error.message
-      }
-    }
-    await form.value?.validate()
+  // todo: add register func
+  //todo: handle result
+  try {
+    // This will either succeed and navigate away, or throw an error.
+    const result = await authStore.register({
+      name: displayName.value,
+      email: email.value,
+      password: password1.value,
+    })
+    console.log('Register result', result)
+  } catch (error) {
+    // The authStore already showed the snackbar. We just need to handle
+    // the UI state here.
+    console.error("Login failed from component's perspective.", error)
+  } finally {
+    // This will run whether the login succeeds or fails.
+    isLoading.value = false
   }
 }
 </script>
 
 <template>
   <my-main-container>
-    <setup-layout
-      :caption-text="false"
-      text="Let's set up your account to get started."
-    />
+    <setup-layout :caption-text="false" text="Let's set up your account to get started." />
 
     <v-form class="register-form" @submit.prevent="register()" ref="form">
       <div class="row-input mb-3">
@@ -102,9 +98,7 @@ async function register() {
         <v-text-field
           class="text-input"
           variant="outlined"
-          :prepend-icon="
-            showPassword ? 'mdi-lock-open-outline' : 'mdi-lock-outline'
-          "
+          :prepend-icon="showPassword ? 'mdi-lock-open-outline' : 'mdi-lock-outline'"
           :rules="isSubmitted ? [rules.passRequired] : []"
           :type="showPassword ? 'text' : 'password'"
           rounded
@@ -118,9 +112,7 @@ async function register() {
           class="text-input ml-5"
           variant="outlined"
           prepend-icon="mdi-lock-check-outline"
-          :append-icon="
-            showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'
-          "
+          :append-icon="showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
           @click:append="showPassword = !showPassword"
           :rules="isSubmitted ? [rules.passRequired, rules.noMatch] : []"
           :type="showPassword ? 'text' : 'password'"
@@ -141,7 +133,7 @@ async function register() {
           rounded
           density="default"
           width="240"
-          :loading="auth.registerLoading"
+          :loading="isLoading"
           >Create Account
         </v-btn>
       </div>

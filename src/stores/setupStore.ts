@@ -5,21 +5,21 @@ import type { DiskResponse } from '@/script/types/api/setup.ts'
 
 export const useSetupStore = defineStore('setup', () => {
   // --- STATE ---
-  const needsSetup: Ref<boolean | null> = ref(null)
+  const needsWelcome: Ref<boolean | null> = ref(null)
   const disks: Ref<DiskResponse | null> = ref(null)
   const isLoading: Ref<boolean> = ref(false)
 
   // --- ACTIONS ---
-  async function checkSetupStatus() {
-    if (localStorage.getItem('setup-needed') === 'false') {
-      needsSetup.value = false
+  async function checkWelcomeStatus() {
+    if (localStorage.getItem('welcomeNeeded') === 'false') {
+      needsWelcome.value = false
       return
     }
     isLoading.value = true
     try {
-      const response = await setupService.isSetupNeeded()
-      needsSetup.value = response.data
-      localStorage.setItem('setup-needed', response.data.toString())
+      const response = await setupService.isWelcomeNeeded()
+      needsWelcome.value = response.data
+      localStorage.setItem('welcomeNeeded', response.data.toString())
     } catch (error) {
       console.error('Failed to check setup status:', error)
       // Optionally set an error state here
@@ -43,11 +43,11 @@ export const useSetupStore = defineStore('setup', () => {
   // --- RETURN ---
   return {
     // State
-    needsSetup,
+    needsSetup: needsWelcome,
     disks,
     isLoading,
     // Actions
-    checkSetupStatus,
+    checkSetupStatus: checkWelcomeStatus,
     fetchDiskInfo,
   }
 })

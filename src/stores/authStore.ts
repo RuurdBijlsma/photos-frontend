@@ -2,7 +2,7 @@ import { computed, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import router from '@/plugins/router'
 import authService from '@/script/services/authService'
-import type { LoginUser, User } from '@/script/types/api/auth'
+import type { CreateUser, LoginUser, User } from '@/script/types/api/auth'
 import { isAxiosError } from 'axios'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
@@ -78,6 +78,33 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * Registers the user, and then logs in.
+   */
+  async function register(credentials: CreateUser): Promise<User> {
+    status.value = 'loading'
+    const snackbarsStore = useSnackbarsStore();
+    try {
+      const response = await authService.register(credentials)
+      await login(credentials)
+      status.value = 'success'
+      return response.data;
+    } catch (error) {
+      console.error('Failed to register:', error)
+      status.value = 'error'
+      // 3. Extract a user-friendly message and show the snackbar
+      let errorMessage = 'An unexpected error occurred.';
+      if (isAxiosError(error) && error.response) {
+        // Use the error message from the backend if it exists, otherwise a default
+        errorMessage = error.response.data?.message || `Error ${error.response.status}: Register failed.`;
+      }
+
+      snackbarsStore.message(errorMessage);
+      // Propagate the error to the component for UI feedback (e.g., showing a snackbar)
+      throw error
+    }
+  }
+
+  /**
    * Logs the user out, clears all auth state, and redirects to the login page.
    */
   async function logout() {
@@ -114,6 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isAdmin,
     // Actions
+    register,
     login,
     logout,
     fetchCurrentUser,
