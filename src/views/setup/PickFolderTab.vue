@@ -14,25 +14,21 @@ const pickFolderStore = usePickFolderStore()
   <section>
     <v-card class="folder-card" variant="text" rounded :color="scheme.primary">
       <v-card-title class="d-flex align-center card-title">
-        <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
+        <v-icon icon="mdi-folder-outline" class="mr-2"></v-icon>
         Pick your user folder.
       </v-card-title>
       <v-card-text>
         <p class="text-medium-emphasis text-caption mb-3">
-          Select the media folder where your
+          Choose the folder where your
           <span :style="{ fontWeight: 700 }">({{ authStore.user?.name }})</span>
-          files are located. You can choose the root of the linked media
-          directory or a specific folder. If you invite others, their media will
-          be kept in separate folders.
+          photos and videos are stored. You can select the root of your linked media directory or a
+          specific subfolder. If you invite others, their media will be organized in separate
+          folders within the same root directory.
         </p>
         <folder-picker />
       </v-card-text>
       <div class="text-center mt-4 mb-3">
-        <show-selected-folder
-          include-selected-text
-          pill
-          :folder="pickFolderStore.viewedFolder"
-        />
+        <show-selected-folder include-selected-text pill :folder="pickFolderStore.viewedFolder" />
       </div>
     </v-card>
 

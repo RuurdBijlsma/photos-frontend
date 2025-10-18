@@ -4,7 +4,7 @@ import type { MediaSampleResponse } from '@/utils/types/api'
 
 defineProps<{
   mediaSamples: MediaSampleResponse
-  images: string[]
+  images: { imageUrl: string; relPath: string }[]
 }>()
 </script>
 
@@ -26,20 +26,20 @@ defineProps<{
         </span>
       </p>
       <div class="image-grid">
-        <div v-for="(url, index) in images" :key="index">
+        <div v-for="(imageSample, index) in images" :key="index">
           <v-skeleton-loader
-            v-if="!url"
+            v-if="!imageSample.imageUrl"
             type="image"
             class="preview-skeleton"
           />
           <a
             v-ripple
-            :href="url"
+            :href="imageSample.imageUrl"
             target="_blank"
-            v-tooltip:top="mediaSamples.samples[index]"
+            v-tooltip:top="imageSample.relPath"
             v-else
             class="preview-image"
-            :style="{ backgroundImage: `url(${url})` }"
+            :style="{ backgroundImage: `url(${imageSample.imageUrl})` }"
           ></a>
         </div>
       </div>

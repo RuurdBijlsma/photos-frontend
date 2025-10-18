@@ -18,7 +18,9 @@ export const usePickFolderStore = defineStore(
     const viewedFolder: Ref<string[]> = ref([])
     const mediaSamples: Ref<MediaSampleResponse | null> = ref(null)
     const unsupportedFiles: Ref<UnsupportedFilesResponse | null> = ref(null)
-    const samples: Ref<string[]> = ref(Array(N_SAMPLES))
+    const samples: Ref<{ imageUrl: string; relPath: string }[]> = ref(
+      [...Array(N_SAMPLES)].map(() => ({ imageUrl: '', relPath: '' })),
+    )
     const setupStore = useSetupStore()
 
     const dbRefreshMediaSample = debounce(refreshMediaSample, 500)
@@ -41,7 +43,9 @@ export const usePickFolderStore = defineStore(
         await truncateViewed(viewedFolder.value.length - 2)
         console.error(`Could not refresh folders for folder: ${folder}`, e)
       }
-      if (setupStore.folders !== null) folderList.value = setupStore.folders
+      if (setupStore.folders !== null) {
+        folderList.value = setupStore.folders
+      }
       dbRefreshMediaSample()
     }
 
@@ -63,6 +67,7 @@ export const usePickFolderStore = defineStore(
       if (viewedFolder.value.join('/') !== requestFolder || setupStore.mediaSamples === null) return
 
       mediaSamples.value = setupStore.mediaSamples
+      console.log(JSON.parse(JSON.stringify(mediaSamples.value?.samples)))
 
       N_SAMPLES = mediaSamples.value.samples.length
       if (samples.value.length > N_SAMPLES) {
@@ -72,11 +77,11 @@ export const usePickFolderStore = defineStore(
       }
       let j = 0
       for (let i = 0; i < N_SAMPLES; i++) {
-        const rel_path = mediaSamples.value.samples[i]
-        if (rel_path === undefined) continue
-        getImageUrl(rel_path).then((imageUrl) => {
+        const relPath = mediaSamples.value.samples[i]
+        if (relPath === undefined) continue
+        getImageUrl(relPath).then((imageUrl) => {
           if (viewedFolder.value.join('/') !== requestFolder) return
-          samples.value[j++] = imageUrl
+          samples.value[j++] = { imageUrl, relPath }
         })
       }
     }

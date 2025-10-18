@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import {
-  type RouteLocationNormalizedLoadedGeneric,
-  useRoute,
-  useRouter,
-} from 'vue-router'
+import { type RouteLocationNormalizedLoadedGeneric, useRoute, useRouter } from 'vue-router'
 import { scheme } from '@/plugins/vuetify'
 import CheckDrivesTab from '@/views/setup/CheckDrivesTab.vue'
 import PickFolderTab from '@/views/setup/PickFolderTab.vue'
@@ -12,13 +8,12 @@ import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
 import SetupLayout from '@/components/my-theme/SetupLayout.vue'
 import SkippedFilesTab from '@/views/setup/SkippedFilesTab.vue'
 import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
+import ConfirmSetupTab from '@/views/setup/ConfirmSetupTab.vue'
 
 const router = useRouter()
 const route = useRoute()
 
-function getStepFromRoute(
-  r: RouteLocationNormalizedLoadedGeneric,
-): number | null {
+function getStepFromRoute(r: RouteLocationNormalizedLoadedGeneric): number | null {
   const stepString = r.query.step?.toString()
   if (!stepString) return null
   const step = parseInt(stepString)
@@ -36,7 +31,7 @@ const tabIndex = ref(0)
 const pickFolderStore = usePickFolderStore()
 watch(tabIndex, () => {
   console.log(tabIndex.value)
-  if(tabIndex.value===3){
+  if (tabIndex.value === 3) {
     pickFolderStore.refreshUnsupportedFiles().then()
   }
   router.push({
@@ -53,8 +48,8 @@ setStepFromRoute()
   <my-main-container>
     <setup-layout
       :caption-text="false"
-      text="Let's configure your library and settings.
-      Make sure your media library is set up correctly, then enter your server URL to continue."
+      text="Let's set up your library and preferences.
+      Make sure your media folders are linked correctly, then choose a user folder to begin."
     />
 
     <v-stepper
@@ -62,7 +57,7 @@ setStepFromRoute()
       v-model="tabIndex"
       class="stepper"
       editable
-      :items="['Drives', 'User Folder', 'Skipped files', 'Go!']"
+      :items="['Drives', 'User folder', 'Skipped files', 'Confirm setup']"
     >
       <template v-slot:item.1>
         <check-drives-tab />
@@ -77,10 +72,42 @@ setStepFromRoute()
       </template>
 
       <template v-slot:item.4>
-        <v-card title="Step Three" flat>...</v-card>
+        <confirm-setup-tab />
+      </template>
+
+      <template v-slot:actions="{ prev, next }">
+        <div class="bottom-buttons">
+          <v-btn
+            class="left-button"
+            :color="scheme.primary"
+            variant="plain"
+            rounded
+            @click="prev"
+            :disabled="tabIndex <= 1"
+            >Back</v-btn
+          >
+          <v-btn
+            class="right-button"
+            :color="scheme.primary"
+            variant="tonal"
+            rounded
+            v-if="tabIndex < 4"
+            @click="next"
+            >Next</v-btn
+          >
+          <v-btn class="right-button" :color="scheme.primary" variant="flat" rounded v-else
+            >Start</v-btn
+          >
+        </div>
       </template>
     </v-stepper>
   </my-main-container>
 </template>
 
-<style scoped></style>
+<style scoped>
+.bottom-buttons {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px;
+}
+</style>
