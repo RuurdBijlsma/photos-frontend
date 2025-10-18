@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { scheme } from '@/plugins/vuetify'
-import { usePickFolderStore } from '@/stores/pickFolder'
+import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
 
-const folders = usePickFolderStore()
+const pickFolderStore = usePickFolderStore()
 const newFolderName = ref('')
 
 watch(
-  () => folders.viewedFolder,
+  () => pickFolderStore.viewedFolder,
   () => onViewedChange(),
   { deep: true },
 )
@@ -21,11 +21,11 @@ async function onViewedChange() {
 
 async function makeFolder(isActive: { value: boolean }) {
   isActive.value = false
-  await folders.makeFolder(newFolderName.value)
+  await pickFolderStore.makeFolder(newFolderName.value)
   newFolderName.value = ''
 }
 
-folders.refreshFolders().then()
+pickFolderStore.refreshFolders().then()
 </script>
 
 <template>
@@ -41,8 +41,8 @@ folders.refreshFolders().then()
             :color="scheme.primary"
             class="mr-2"
             variant="text"
-            :disabled="folders.viewedFolder.length === 0"
-            @click="folders.truncateViewed(folders.viewedFolder.length - 1)"
+            :disabled="pickFolderStore.viewedFolder.length === 0"
+            @click="pickFolderStore.truncateViewed(pickFolderStore.viewedFolder.length - 1)"
             density="compact"
             icon="mdi-arrow-up"
           />
@@ -87,19 +87,19 @@ folders.refreshFolders().then()
           <div
             class="route-component route-root"
             v-ripple
-            @click="folders.truncateViewed(0)"
+            @click="pickFolderStore.truncateViewed(0)"
           >
             Media Root
           </div>
           <template
-            v-for="(component, index) in folders.viewedFolder"
+            v-for="(component, index) in pickFolderStore.viewedFolder"
             :key="index"
           >
             <v-icon icon="mdi-chevron-right" />
             <div
               class="route-component"
               v-ripple
-              @click="folders.truncateViewed(index + 1)"
+              @click="pickFolderStore.truncateViewed(index + 1)"
             >
               {{ component }}
             </div>
@@ -112,23 +112,23 @@ folders.refreshFolders().then()
             variant="text"
             density="compact"
             icon="mdi-refresh"
-            @click="folders.refreshFolders"
-            :loading="folders.listFolderLoading"
+            @click="pickFolderStore.refreshFolders"
+            :loading="pickFolderStore.listFolderLoading"
           />
         </div>
       </div>
       <div class="picker-entries mt-5">
         <p
           class="text-caption text-center font-italic"
-          v-if="folders.folderList.length === 0"
+          v-if="pickFolderStore.folderList.length === 0"
         >
           There are no folders here.
         </p>
         <v-list-item
-          v-for="folder in folders.folderList"
+          v-for="folder in pickFolderStore.folderList"
           :key="folder"
           class="rounded-xl"
-          @click="folders.openFolder(folder)"
+          @click="pickFolderStore.openFolder(folder)"
           prepend-icon="mdi-folder-outline"
           :title="folder"
         ></v-list-item>

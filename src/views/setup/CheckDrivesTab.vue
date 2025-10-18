@@ -1,22 +1,16 @@
 <script setup lang="ts">
 import FullFolderStatus from '@/components/setup/FullFolderStatus.vue'
-import { photosApi } from '@/utils/api/PhotosApi'
-import { type Ref, ref } from 'vue'
-import type { DiskResponse } from '@/utils/types/api'
+import { ref } from 'vue'
 import { scheme } from '@/plugins/vuetify'
+import { useSetupStore } from '@/stores/setupStore.ts'
 
-const diskResponse: Ref<DiskResponse | null> = ref(null)
+const setupStore = useSetupStore()
 const refreshLoading = ref(false)
 
 async function refreshFolderSummary() {
   refreshLoading.value = true
-  const result = await photosApi.getDiskInfo()
+  await setupStore.fetchDiskInfo()
   refreshLoading.value = false
-  if (!result.ok) {
-    console.warn('error getting validate folders result', result)
-    return
-  }
-  diskResponse.value = result.value
 }
 
 refreshFolderSummary().then()
@@ -43,17 +37,17 @@ refreshFolderSummary().then()
       >Refresh
     </v-btn>
   </div>
-  <section v-if="diskResponse">
+  <section v-if="setupStore.disks">
     <!-- Media Folder -->
     <full-folder-status
-      :folder="diskResponse.media_folder"
+      :folder="setupStore.disks.media_folder"
       env-var="MEDIA_DIR"
       title-icon="mdi-camera"
     />
 
     <!-- Thumbnails Folder -->
     <full-folder-status
-      :folder="diskResponse.thumbnails_folder"
+      :folder="setupStore.disks.thumbnails_folder"
       env-var="THUMBNAILS_DIR"
       title-icon="mdi-image-multiple"
     />

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import UnsupportedFiles from '@/components/setup/UnsupportedFiles.vue'
 import InaccessibleEntries from '@/components/setup/InaccessibleEntries.vue'
-import { usePickFolderStore } from '@/stores/pickFolder'
 import ShowSelectedFolder from '@/components/setup/ShowSelectedFolder.vue'
 import { scheme } from '@/plugins/vuetify'
+import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
 
-const folders = usePickFolderStore()
+const pickFolderStore = usePickFolderStore()
 </script>
 
 <template>
@@ -14,15 +14,15 @@ const folders = usePickFolderStore()
       :icon-color="scheme.on_surface_variant"
       :pill="true"
       :color="scheme.on_surface"
-      :folder="folders.viewedFolder"
+      :folder="pickFolderStore.viewedFolder"
     />
     <v-spacer />
     <v-btn
-      :loading="folders.unsupportedFilesLoading"
+      :loading="pickFolderStore.unsupportedFilesLoading"
       prepend-icon="mdi-refresh"
       rounded
       variant="text"
-      @click="folders.refreshUnsupportedFiles"
+      @click="pickFolderStore.refreshUnsupportedFiles"
       color="primary"
       >Refresh
     </v-btn>
@@ -30,27 +30,27 @@ const folders = usePickFolderStore()
 
   <div
     v-if="
-      folders.unsupportedFiles &&
-      (folders.unsupportedFiles.unsupported_count > 0 ||
-        folders.unsupportedFiles.inaccessible_entries.length > 0)
+      pickFolderStore.unsupportedFiles &&
+      (pickFolderStore.unsupportedFiles.unsupported_count > 0 ||
+        pickFolderStore.unsupportedFiles.inaccessible_entries.length > 0)
     "
   >
     <!-- Unsupported Files -->
     <unsupported-files
-      v-if="folders.unsupportedFiles.unsupported_count > 0"
-      :summary="folders.unsupportedFiles"
+      v-if="pickFolderStore.unsupportedFiles.unsupported_count > 0"
+      :summary="pickFolderStore.unsupportedFiles"
     />
 
     <!-- Inaccessible Files and Folders -->
     <inaccessible-entries
-      :summary="folders.unsupportedFiles"
-      v-if="folders.unsupportedFiles.inaccessible_entries.length > 0"
+      :summary="pickFolderStore.unsupportedFiles"
+      v-if="pickFolderStore.unsupportedFiles.inaccessible_entries.length > 0"
     />
   </div>
   <v-alert
     variant="flat"
     :color="scheme.primary_container"
-    v-else-if="folders.unsupportedFiles"
+    v-else-if="pickFolderStore.unsupportedFiles"
     class="rounded-xl text-md-caption"
     icon="mdi-check"
   >

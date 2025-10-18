@@ -6,3 +6,4 @@
 * on login redirect to where you were
 * handle token expiry
 * fix setup to use new api abstraction
+* merge pickfolderstore and setup store

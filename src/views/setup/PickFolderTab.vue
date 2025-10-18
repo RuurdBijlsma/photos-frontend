@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import MediaSample from '@/components/setup/MediaSample.vue'
-import { useAuthStore } from '@/stores/auth'
 import FolderPicker from '@/components/setup/FolderPicker.vue'
 import { scheme } from '@/plugins/vuetify'
-import { usePickFolderStore } from '@/stores/pickFolder'
 import ShowSelectedFolder from '@/components/setup/ShowSelectedFolder.vue'
+import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
+import { useAuthStore } from '@/stores/authStore.ts'
 
-const auth = useAuthStore()
-const folders = usePickFolderStore()
+const authStore = useAuthStore()
+const pickFolderStore = usePickFolderStore()
 </script>
 
 <template>
@@ -20,7 +20,7 @@ const folders = usePickFolderStore()
       <v-card-text>
         <p class="text-medium-emphasis text-caption mb-3">
           Select the media folder where your
-          <span :style="{ fontWeight: 700 }">({{ auth.user?.name }})</span>
+          <span :style="{ fontWeight: 700 }">({{ authStore.user?.name }})</span>
           files are located. You can choose the root of the linked media
           directory or a specific folder. If you invite others, their media will
           be kept in separate folders.
@@ -31,20 +31,20 @@ const folders = usePickFolderStore()
         <show-selected-folder
           include-selected-text
           pill
-          :folder="folders.viewedFolder"
+          :folder="pickFolderStore.viewedFolder"
         />
       </div>
     </v-card>
 
     <!-- Media Files Section -->
     <media-sample
-      v-if="folders.mediaSamples"
+      v-if="pickFolderStore.mediaSamples"
       class="mt-3 media-sample"
-      :media-samples="folders.mediaSamples"
-      :images="folders.samples"
+      :media-samples="pickFolderStore.mediaSamples"
+      :images="pickFolderStore.samples"
     />
     <v-skeleton-loader
-      :loading="folders.mediaSampleLoading"
+      :loading="pickFolderStore.mediaSampleLoading"
       v-else
       type="card-avatar, heading, paragraph, card"
     ></v-skeleton-loader>
