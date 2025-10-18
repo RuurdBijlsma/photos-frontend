@@ -20,6 +20,11 @@ export interface MakeFolderBody {
   new_name: string;
 }
 
+// Maps to the MakeFolderBody schema
+export interface StartProcessingBody {
+  user_folder: string;
+}
+
 // Maps to the MediaSampleResponse schema
 export interface MediaSampleResponse {
   read_access: boolean;

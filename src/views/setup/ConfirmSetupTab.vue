@@ -14,7 +14,7 @@ const pickFolderStore = usePickFolderStore()
       Process media library
     </v-card-title>
     <v-card-text>
-      <v-table striped="even">
+      <v-table striped="odd">
         <tbody>
           <tr>
             <td class="table-left">Media folder</td>

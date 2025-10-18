@@ -6,6 +6,7 @@ import type {
   MediaSampleResponse,
   UnsupportedFilesResponse,
 } from '@/script/types/api/setup.ts'
+import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
 
 export const useSetupStore = defineStore('setup', () => {
   // --- STATE ---
@@ -95,6 +96,19 @@ export const useSetupStore = defineStore('setup', () => {
     }
   }
 
+  async function startProcessing() {
+    const pickFolderStore = usePickFolderStore()
+    isLoading.value = true
+    const userFolder = pickFolderStore.viewedFolder.join('/')
+    try {
+      await setupService.startProcessing({ user_folder: userFolder })
+    } catch (error) {
+      console.error(`Failed to start processing processing:`, error)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   // --- RETURN ---
   return {
     // State
@@ -111,5 +125,6 @@ export const useSetupStore = defineStore('setup', () => {
     fetchMediaSamples,
     mediaBlobUrl,
     fetchUnsupportedFiles,
+    startProcessing,
   }
 })

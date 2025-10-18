@@ -9,9 +9,12 @@ import SetupLayout from '@/components/my-theme/SetupLayout.vue'
 import SkippedFilesTab from '@/views/setup/SkippedFilesTab.vue'
 import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
 import ConfirmSetupTab from '@/views/setup/ConfirmSetupTab.vue'
+import { useSetupStore } from '@/stores/setupStore.ts'
 
 const router = useRouter()
 const route = useRoute()
+const setupStore = useSetupStore()
+const pickFolderStore = usePickFolderStore()
 
 function getStepFromRoute(r: RouteLocationNormalizedLoadedGeneric): number | null {
   const stepString = r.query.step?.toString()
@@ -28,7 +31,6 @@ function setStepFromRoute() {
 }
 
 const tabIndex = ref(0)
-const pickFolderStore = usePickFolderStore()
 watch(tabIndex, () => {
   console.log(tabIndex.value)
   if (tabIndex.value === 3) {
@@ -95,7 +97,7 @@ setStepFromRoute()
             @click="next"
             >Next</v-btn
           >
-          <v-btn class="right-button" :color="scheme.primary" variant="flat" rounded v-else
+          <v-btn class="right-button" :color="scheme.primary" variant="flat" rounded v-else @click="setupStore.startProcessing"
             >Start</v-btn
           >
         </div>

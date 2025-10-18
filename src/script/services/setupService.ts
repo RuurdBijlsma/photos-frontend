@@ -4,6 +4,7 @@ import type {
   DiskResponse,
   MakeFolderBody,
   MediaSampleResponse,
+  StartProcessingBody,
   UnsupportedFilesResponse,
 } from '@/script/types/api/setup.ts'
 
@@ -78,6 +79,15 @@ const setupService = {
       params: { path: relative_path },
       responseType: 'blob',
     })
+  },
+
+  /**
+   * Start processing photos and videos for the admin account.
+   * @param data Data containing user folder
+   * @returns Void axios promise.
+   */
+  startProcessing(data: StartProcessingBody): Promise<AxiosResponse<void>> {
+    return apiClient.post<void>('/setup/start-processing', data)
   },
 }
 
