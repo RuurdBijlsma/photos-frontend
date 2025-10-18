@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { scheme } from '@/plugins/vuetify.js'
 </script>
 
 <template>
@@ -125,7 +124,7 @@ import { scheme } from '@/plugins/vuetify.js'
 
 .router-view-container {
   background: rgb(227, 222, 255);
-  background: linear-gradient(0deg, rgba(238, 229, 255, 0.6) 0%, rgba(255, 248, 252, 0.6) 100%);
+  background: linear-gradient(0deg, rgba(var(--v-theme-background), 0.6) 0%, rgba(var(--v-theme-background), 0.6) 100%);
   flex-grow: 1;
   border-top-left-radius: 60px;
   border-top-right-radius: 60px;

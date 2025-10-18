@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { scheme } from '@/plugins/vuetify.ts'
 import { useSetupStore } from '@/stores/setupStore.ts'
 import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
 
@@ -8,7 +7,7 @@ const pickFolderStore = usePickFolderStore()
 </script>
 
 <template>
-  <v-card class="folder-card" variant="text" rounded :color="scheme.primary">
+  <v-card class="folder-card" variant="text" rounded color="primary">
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-rocket-launch" class="mr-2"></v-icon>
       Process media library

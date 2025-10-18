@@ -1,8 +1,7 @@
 <script setup lang="ts">
-
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
-const snackbarsStore = useSnackbarsStore();
+const snackbarsStore = useSnackbarsStore()
 
 // The v-model="snack.open" is crucial. When Vuetify closes the snackbar
 // (either by timeout or the user clicking 'Close'), it will set `snack.open`
@@ -23,26 +22,19 @@ const snackbarsStore = useSnackbarsStore();
       {{ snack.message }}
 
       <template #actions>
-        <v-btn
-          color="pink"
-          variant="text"
-          @click="snack.open = false"
-        >
-          Close
-        </v-btn>
+        <v-btn color="pink" variant="text" @click="snack.open = false"> Close </v-btn>
       </template>
     </v-snackbar>
   </div>
 </template>
 
 <style scoped>
-/* Optional: If using multi-line, you might want to give it some space */
 .snackbar-container {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none; /* Allows clicks to go through to the page */
+  pointer-events: none;
 }
 </style>

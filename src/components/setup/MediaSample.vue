@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { scheme } from '@/plugins/vuetify'
 import type { MediaSampleResponse } from '@/utils/types/api'
 
 defineProps<{
@@ -9,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-  <v-card rounded class="folder-card" variant="text" :color="scheme.primary">
+  <v-card rounded class="folder-card" variant="text" color="primary">
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-eye-check-outline" class="mr-2"></v-icon>
       Media Files ({{

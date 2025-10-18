@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
 import { onMounted, type Ref, ref } from 'vue'
-import { scheme } from '@/plugins/vuetify'
 import MyAlert from '@/components/my-theme/MyAlert.vue'
 import SetupLayout from '@/components/my-theme/SetupLayout.vue'
 import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
@@ -74,8 +73,8 @@ async function register() {
           :rules="isSubmitted ? [rules.userRequired] : []"
           v-model="displayName"
           label="Display Name"
-          :color="scheme.primary"
-          :base-color="scheme.outline"
+          color="primary"
+          base-color="outline"
           placeholder="Ruurd Bijlsma"
           :min-width="280"
         />
@@ -103,8 +102,8 @@ async function register() {
           :type="showPassword ? 'text' : 'password'"
           rounded
           v-model="password1"
-          :color="scheme.primary"
-          :base-color="scheme.outline"
+          color="primary"
+          base-color="outline"
           label="Password"
           :min-width="280"
         ></v-text-field>
@@ -118,8 +117,8 @@ async function register() {
           :type="showPassword ? 'text' : 'password'"
           rounded
           v-model="password2"
-          :color="scheme.primary"
-          :base-color="scheme.outline"
+          color="primary"
+          base-color="outline"
           label="Repeat Password"
           :min-width="330"
         ></v-text-field>
@@ -129,7 +128,7 @@ async function register() {
           class="mt-5"
           type="submit"
           variant="tonal"
-          :color="scheme.primary"
+          color="primary"
           rounded
           density="default"
           width="240"
@@ -143,8 +142,8 @@ async function register() {
       :text="errorMessage"
       icon="mdi-alert-octagon"
       class="mt-8"
-      :background-color="scheme.error_container"
-      :text-color="scheme.on_error_container"
+      background-color="error-container"
+      text-color="on-error-container"
     />
   </my-main-container>
 </template>

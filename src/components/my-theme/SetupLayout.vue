@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { scheme } from '@/plugins/vuetify'
-
 defineProps<{
   text: string
   captionText: boolean
@@ -13,15 +11,12 @@ defineProps<{
       <div class="big-image"></div>
     </div>
     <div class="right-title">
-      <h1 :style="{ color: scheme.on_surface_variant }">
-        Set Up <span>Ruurd Photos</span>
-      </h1>
+      <h1>Set Up <span>Ruurd Photos</span></h1>
       <p
         class="mt-2"
         :class="{
           'text-caption': captionText,
         }"
-        :style="{ color: scheme.on_surface_variant }"
         v-text="text"
       />
     </div>
@@ -45,6 +40,7 @@ defineProps<{
 }
 
 .right-title {
+  color: rgb(var(--v-theme-on-surface-variant));
   height: 100px;
   display: flex;
   flex-direction: column;

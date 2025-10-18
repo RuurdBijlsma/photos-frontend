@@ -34,17 +34,26 @@ const dynamicBgUrl = ref(
     ? defaultImage
     : localStorage.getItem('backgroundUrl'),
 )
-
+//
+// const lsImageTheme = localStorage.getItem('imageTheme')
+// if (lsImageTheme !== null) {
+//   const newTheme = JSON.parse(lsImageTheme)
+//   themeStore.setThemesFromJson(newTheme)
+// }
+//
 const applyRandomPhoto = async () => {
   if (photosStore.randomPhoto?.media_id) {
     const newBgUrl = photosService.getPhotoThumbnail(photosStore.randomPhoto.media_id, 1080)
     localStorage.setItem('backgroundUrl', newBgUrl)
+    localStorage.setItem('imageTheme', JSON.stringify(photosStore.randomPhoto?.themes?.[0]))
   }
   if (photosStore.randomPhoto?.themes) {
     const newTheme = photosStore.randomPhoto.themes[0]
     if (newTheme !== undefined) {
       themeStore.setThemesFromJson(newTheme)
+      //@ts-expect-error I dont know
       vuetifyTheme.themes.value.dark = themeStore.currentTheme.dark
+      //@ts-expect-error I dont know
       vuetifyTheme.themes.value.light = themeStore.currentTheme.light
       // todo uncomment this when dark theme works
       vuetifyTheme.change('light')
@@ -55,9 +64,9 @@ const applyRandomPhoto = async () => {
 const loadBg = async () => {
   photosStore.refreshRandomPhoto().then(() => applyRandomPhoto())
 }
-
-applyRandomPhoto()
-loadBg().then()
+//
+// applyRandomPhoto()
+// loadBg().then()
 </script>
 
 <style scoped>
@@ -93,8 +102,8 @@ loadBg().then()
 .blur-filter {
   background-image: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 255, 255, 0.4) 100%
+    rgba(var(--v-theme-background), 0.95) 0%,
+    rgba(var(--v-theme-background), 0.4) 100%
   );
   backdrop-filter: saturate(150%) brightness(70%) blur(10px) contrast(100%);
   z-index: 1;

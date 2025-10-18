@@ -1,32 +1,31 @@
 <script setup lang="ts">
-import { scheme } from '@/plugins/vuetify'
+
+import { useTheme } from 'vuetify/framework'
 
 defineProps<{
   folder: string[]
   pill: boolean
-  color?: string
   iconColor?: string
   includeSelectedText?: boolean
 }>()
+
+const theme = useTheme()
+
 </script>
 
 <template>
   <div class="folder-selection text-lg-caption">
-    <v-icon :color="iconColor ?? scheme.primary" icon="mdi-check-circle-outline" />
-    <span v-if="includeSelectedText" :style="{ color: color ?? scheme.primary }">Selected folder:</span>
+    <v-icon :color="iconColor ?? 'primary'" icon="mdi-check-circle-outline" />
+    <span class="primary-color" v-if="includeSelectedText">Selected folder:</span>
     <div
       :style="{
-        color: color ?? scheme.on_secondary_container,
-        backgroundColor: pill ? scheme.secondary_container : undefined,
+        backgroundColor: pill ? theme.current.value.colors['secondary-container'] : undefined
       }"
       class="viewed-folder"
     >
       <span class="opa">Media Root</span>
       <template v-for="(component, index) in folder" :key="index">
-        <v-icon
-          :color="color ?? scheme.on_secondary_container"
-          icon="mdi-chevron-right"
-        />
+        <v-icon color="on-secondary-container" icon="mdi-chevron-right" />
         <span>{{ component }}</span>
       </template>
     </div>
@@ -41,12 +40,17 @@ defineProps<{
   align-items: center;
 }
 
+.primary-color {
+  color: rgb(var(--v-theme-primary));
+}
+
 .viewed-folder {
   font-weight: 500;
   display: flex;
   align-items: center;
   padding: 5px 20px;
   border-radius: 20px;
+  color: rgb(var(--v-theme-on-secondary-container));
 }
 
 .opa {

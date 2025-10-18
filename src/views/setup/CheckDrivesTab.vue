@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import FullFolderStatus from '@/components/setup/FullFolderStatus.vue'
 import { ref } from 'vue'
-import { scheme } from '@/plugins/vuetify'
 import { useSetupStore } from '@/stores/setupStore.ts'
 
 const setupStore = useSetupStore()
@@ -20,15 +19,14 @@ refreshFolderSummary().then()
   <!-- Folders Status Section -->
   <div class="folder-status-title mb-3">
     <p
-      class="text-caption text-medium-emphasis"
-      :style="{ color: scheme.on_surface }"
+      class="text-caption text-medium-emphasis text-primary"
     >
       Make sure the correct drives are linked before starting the indexing
       process.
     </p>
     <v-spacer />
     <v-btn
-      :color="scheme.primary"
+      color="primary"
       variant="plain"
       density="compact"
       @click="refreshFolderSummary"

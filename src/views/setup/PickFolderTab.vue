@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import MediaSample from '@/components/setup/MediaSample.vue'
 import FolderPicker from '@/components/setup/FolderPicker.vue'
-import { scheme } from '@/plugins/vuetify'
 import ShowSelectedFolder from '@/components/setup/ShowSelectedFolder.vue'
 import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
 import { useAuthStore } from '@/stores/authStore.ts'
@@ -12,7 +11,7 @@ const pickFolderStore = usePickFolderStore()
 
 <template>
   <section>
-    <v-card class="folder-card" variant="text" rounded :color="scheme.primary">
+    <v-card class="folder-card" variant="text" rounded color="primary">
       <v-card-title class="d-flex align-center card-title">
         <v-icon icon="mdi-folder-outline" class="mr-2"></v-icon>
         Pick your user folder.

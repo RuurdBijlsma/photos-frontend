@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { PathInfoResponse } from '@/utils/api/types'
-import { scheme } from '@/plugins/vuetify'
 import { prettyBytes } from '@/utils/formatting'
+import type { PathInfoResponse } from '@/script/types/api/setup.ts'
 
 defineProps<{
   folder: PathInfoResponse
@@ -14,10 +13,9 @@ defineProps<{
   <v-card
     class="mb-6 folder-card pa-3"
     variant="flat"
-    :color="scheme.secondary_container"
+    color="secondary-container"
   >
     <v-card-title
-      :style="{ color: scheme.on_surface_variant }"
       class="d-flex align-center card-title"
     >
       <v-icon size="22" :icon="titleIcon" class="mr-5"></v-icon>
@@ -25,7 +23,7 @@ defineProps<{
       <v-spacer />
       <v-chip
         class="ml-2"
-        :color="folder.read_access ? scheme.secondary_container : 'error'"
+        :color="folder.read_access ? 'secondary-container' : 'error'"
         size="small"
       >
         {{ folder.read_access ? 'Connected' : 'No Access' }}
@@ -36,12 +34,10 @@ defineProps<{
         <div class="d-flex justify-space-between mb-2 disk-text-container mt-3">
           <span
             class="text-caption disk-uppercase"
-            :style="{ color: scheme.on_surface_variant }"
             >{{ envVar }}
           </span>
           <span
             class="text-caption black-text"
-            :style="{ color: scheme.on_surface_variant }"
             >{{ prettyBytes(folder.disk_used) }} /
             {{ prettyBytes(folder.disk_total) }}</span
           >
@@ -49,7 +45,7 @@ defineProps<{
         <v-progress-linear
           :model-value="(folder.disk_used / folder.disk_total) * 100"
           class="linear-progress mt-0"
-          :color="scheme.primary"
+          color="primary"
           rounded
         />
 
@@ -57,7 +53,7 @@ defineProps<{
           <v-chip
             variant="tonal"
             density="compact"
-            :color="folder.read_access ? scheme.primary : 'error'"
+            :color="folder.read_access ? 'primary' : 'error'"
           >
             <v-icon
               class="mr-2"
@@ -68,7 +64,7 @@ defineProps<{
           <v-chip
             variant="tonal"
             density="compact"
-            :color="folder.write_access ? scheme.primary : 'error'"
+            :color="folder.write_access ? 'primary' : 'error'"
           >
             <v-icon
               class="mr-2"
@@ -94,6 +90,7 @@ defineProps<{
   font-weight: 600;
   font-size: 17px;
   font-family: Arial, Helvetica, Roboto, sans-serif;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 
 .text-error {
@@ -119,9 +116,10 @@ defineProps<{
   text-transform: uppercase;
   font-weight: bold;
   opacity: 0.7;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 
 .black-text {
-  color: rgba(0, 0, 0, 0.7);
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 </style>

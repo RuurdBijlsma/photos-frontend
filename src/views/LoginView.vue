@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, type Ref, ref } from 'vue'
 import type { VForm } from 'vuetify/components'
-import { scheme } from '@/plugins/vuetify'
 import MyAlert from '@/components/my-theme/MyAlert.vue'
 import { useAuthStore } from '@/stores/authStore.ts'
 
@@ -64,7 +63,7 @@ async function login() {
             v-model="email"
             label="Email"
             color="primary"
-            :base-color="scheme.outline"
+            base-color="outline"
             placeholder="user@example.com"
           />
           <v-btn
@@ -87,7 +86,7 @@ async function login() {
             rounded
             v-model="password"
             color="primary"
-            :base-color="scheme.outline"
+            base-color="outline"
             label="Password"
           ></v-text-field>
           <v-btn
@@ -108,8 +107,8 @@ async function login() {
           :text="errorMessage"
           icon="mdi-alert-octagon"
           class="mt-8"
-          :background-color="scheme.error_container"
-          :text-color="scheme.on_error_container"
+          background-color="error-container"
+          text-color="on-error-container"
         />
       </div>
     </div>
@@ -121,12 +120,12 @@ async function login() {
   position: fixed;
   width: 100%;
   height: 100%;
-  background-color: rgb(220, 220, 239);
+  background-color: rgb(var(--v-theme-surface-variant));
 }
 
 .login-container {
   background: rgb(227, 222, 255, 0.7);
-  background: linear-gradient(0deg, rgba(255, 232, 232, 0.5) 0%, rgb(255, 248, 252, 0.8) 100%);
+  background: linear-gradient(0deg, rgba(var(--v-theme-background), 0.5) 0%, rgb(var(--v-theme-background), 0.8) 100%);
   flex-grow: 1;
   border-radius: 30px;
   overflow: hidden;

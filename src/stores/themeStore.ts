@@ -42,6 +42,7 @@ export function generateColorVariations(
 /**
  * Transforms your backend's scheme into a Vuetify ThemeDefinition object.
  * @param {DynamicScheme} scheme - The light or dark scheme from your types.
+ * @param isDark is dark
  * @returns {ThemeDefinition} A complete Vuetify theme definition.
  */
 export function transformToVuetifyTheme(scheme: DynamicScheme, isDark: boolean): ThemeDefinition {
@@ -71,6 +72,11 @@ export function transformToVuetifyTheme(scheme: DynamicScheme, isDark: boolean):
     'outline-variant': scheme.outline_variant,
     scrim: scheme.scrim,
     shadow: scheme.shadow,
+    'surface-container-highest': scheme.surface_container_highest,
+    'surface-container-high': scheme.surface_container_high,
+    'surface-container': scheme.surface_container,
+    'surface-container-low': scheme.surface_container_low,
+    'surface-container-lowest': scheme.surface_container_lowest,
 
     error: scheme.error,
     'on-error': scheme.on_error,
@@ -135,8 +141,8 @@ export const useThemeStore = defineStore('theme', () => {
 
     // Update the state ref.
     currentTheme.value = {
-      light: transformToVuetifyTheme(schemes.light),
-      dark: transformToVuetifyTheme(schemes.dark),
+      light: transformToVuetifyTheme(schemes.light, false),
+      dark: transformToVuetifyTheme(schemes.dark, true),
     }
   }
 

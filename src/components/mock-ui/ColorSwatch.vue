@@ -13,7 +13,7 @@ defineProps<{
       :style="{
         backgroundColor: color,
         color: textColor,
-        border: '1px solid #ddd',
+        border: '1px solid #ddd'
       }"
     >
       <div>

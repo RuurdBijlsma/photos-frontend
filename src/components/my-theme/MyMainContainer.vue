@@ -1,29 +1,11 @@
 <script setup lang="ts">
-import { scheme } from '@/plugins/vuetify'
 
-const hexToRgba = (hex, alpha) => {
-  let r, g, b;
-  if (hex.startsWith('#')) {
-    hex = hex.substring(1);
-    if (hex.length === 3) {
-      hex = hex.split('').map(char => char + char).join('');
-    }
-    r = parseInt(hex.substring(0, 2), 16);
-    g = parseInt(hex.substring(2, 4), 16);
-    b = parseInt(hex.substring(4, 6), 16);
-  }
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
 </script>
 
 <template>
-  <v-main class="main" :style="{ backgroundColor: scheme.primary_container }">
+  <v-main class="main">
     <div class="container" :style="{
-      background: `linear-gradient(
-        0deg,
-        ${hexToRgba(scheme.background, 0.7)} 0%,
-        ${hexToRgba(scheme.background, 0.9)} 100%
-      )`
+      background: ``
     }">
       <slot />
     </div>
@@ -39,6 +21,7 @@ const hexToRgba = (hex, alpha) => {
   display: flex;
   justify-content: center;
   padding: 20px;
+  background-color: rgb(var(--v-theme-primary-container));
 }
 
 .container {
@@ -51,6 +34,11 @@ const hexToRgba = (hex, alpha) => {
   padding: 40px 60px;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(
+    0deg,
+    rgba(var(--v-theme-background), 70) 0%,
+    rgba(var(--v-theme-background), 90) 100%,
+  )
 }
 
 .container:deep(.v-sheet) {

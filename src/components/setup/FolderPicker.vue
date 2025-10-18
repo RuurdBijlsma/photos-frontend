@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { scheme } from '@/plugins/vuetify'
 import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
 
 const pickFolderStore = usePickFolderStore()
@@ -32,13 +31,13 @@ pickFolderStore.refreshFolders().then()
   <v-card
     variant="flat"
     class="folder-picker"
-    :color="scheme.surface_container_highest"
+    color="surface-container-highest"
   >
     <v-card-text>
       <div class="picker-header">
         <div class="header-buttons">
           <v-btn
-            :color="scheme.primary"
+            color="primary"
             class="mr-2"
             variant="text"
             :disabled="pickFolderStore.viewedFolder.length === 0"
@@ -49,7 +48,7 @@ pickFolderStore.refreshFolders().then()
           <v-dialog max-width="500">
             <template v-slot:activator="{ props: activatorProps }">
               <v-btn
-                :color="scheme.primary"
+                color="primary"
                 class="mr-2"
                 variant="text"
                 title="Create folder"
@@ -72,8 +71,8 @@ pickFolderStore.refreshFolders().then()
                     @keyup.enter="makeFolder(isActive)"
                     :hide-details="true"
                     rounded
-                    :color="scheme.primary"
-                    :base-color="scheme.outline"
+                    color="primary"
+                    base-color="outline"
                   />
                 </v-card-text>
                 <v-card-actions>
@@ -107,7 +106,7 @@ pickFolderStore.refreshFolders().then()
         </div>
         <div class="header-buttons">
           <v-btn
-            :color="scheme.primary"
+            color="primary"
             class="ml-2"
             variant="text"
             density="compact"

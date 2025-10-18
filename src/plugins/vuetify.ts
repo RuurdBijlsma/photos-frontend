@@ -8,8 +8,8 @@ import type { Theme } from '@/utils/types/color'
 import { transformToVuetifyTheme } from '@/stores/themeStore.ts'
 
 const themes: Theme[] = themeJson
-const lightDefinition = transformToVuetifyTheme(themes[0]?.schemes?.light!)
-const darkDefinition = transformToVuetifyTheme(themes[0]?.schemes?.dark!)
+const lightDefinition = transformToVuetifyTheme(themes[0]?.schemes?.light!, false)
+const darkDefinition = transformToVuetifyTheme(themes[0]?.schemes?.dark!, true)
 //
 // // Map your dynamic scheme values to Vuetify's theme colors.
 // // Adjust these mappings according to your design system.

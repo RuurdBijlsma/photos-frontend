@@ -2,7 +2,6 @@
 import UnsupportedFiles from '@/components/setup/UnsupportedFiles.vue'
 import InaccessibleEntries from '@/components/setup/InaccessibleEntries.vue'
 import ShowSelectedFolder from '@/components/setup/ShowSelectedFolder.vue'
-import { scheme } from '@/plugins/vuetify'
 import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
 
 const pickFolderStore = usePickFolderStore()
@@ -11,9 +10,9 @@ const pickFolderStore = usePickFolderStore()
 <template>
   <v-card variant="text" color="primary" class="top-bar mb-5">
     <show-selected-folder
-      :icon-color="scheme.on_surface_variant"
+      icon-color="on-surface-variant"
       :pill="true"
-      :color="scheme.on_surface"
+      color="on_surface"
       :folder="pickFolderStore.viewedFolder"
     />
     <v-spacer />
@@ -49,12 +48,12 @@ const pickFolderStore = usePickFolderStore()
   </div>
   <v-alert
     variant="flat"
-    :color="scheme.primary_container"
+    color="primary-container"
     v-else-if="pickFolderStore.unsupportedFiles"
     class="rounded-xl text-md-caption"
     icon="mdi-check"
   >
-    <p :style="{ color: scheme.on_primary_container }">
+    <p :style="{ color: 'rgb(var(--v-theme-on-primary-container))' }">
       Great news! There are no unsupported files in your selection. Everything
       looks good!
     </p>

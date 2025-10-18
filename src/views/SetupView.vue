@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { type RouteLocationNormalizedLoadedGeneric, useRoute, useRouter } from 'vue-router'
-import { scheme } from '@/plugins/vuetify'
 import CheckDrivesTab from '@/views/setup/CheckDrivesTab.vue'
 import PickFolderTab from '@/views/setup/PickFolderTab.vue'
 import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
@@ -55,7 +54,7 @@ setStepFromRoute()
     />
 
     <v-stepper
-      :color="scheme.primary"
+      color="primary"
       v-model="tabIndex"
       class="stepper"
       editable
@@ -81,7 +80,7 @@ setStepFromRoute()
         <div class="bottom-buttons">
           <v-btn
             class="left-button"
-            :color="scheme.primary"
+            color="primary"
             variant="plain"
             rounded
             @click="prev"
@@ -90,14 +89,14 @@ setStepFromRoute()
           >
           <v-btn
             class="right-button"
-            :color="scheme.primary"
+            color="primary"
             variant="tonal"
             rounded
             v-if="tabIndex < 4"
             @click="next"
             >Next</v-btn
           >
-          <v-btn class="right-button" :color="scheme.primary" variant="flat" rounded v-else @click="setupStore.startProcessing"
+          <v-btn class="right-button" color="primary" variant="flat" rounded v-else @click="setupStore.startProcessing"
             >Start</v-btn
           >
         </div>

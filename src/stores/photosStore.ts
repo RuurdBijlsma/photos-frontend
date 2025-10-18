@@ -6,9 +6,7 @@ import photosService from '@/script/services/photosService.ts'
 
 export const usePhotosStore = defineStore('photos', () => {
   // --- STATE ---
-  const randomPhoto: Ref<RandomPhotoResponse | null> = ref(
-    localStorage.getItem('randomPhoto') === null ? null : JSON.parse(localStorage['randomPhoto']),
-  )
+  const randomPhoto: Ref<RandomPhotoResponse | null> = ref(null)
   const randomPhotoLoading: Ref<boolean> = ref(false)
 
   // --- ACTIONS ---
@@ -17,7 +15,6 @@ export const usePhotosStore = defineStore('photos', () => {
     try {
       const response = await photosService.getRandomPhoto()
       randomPhoto.value = response.data
-      localStorage.setItem('randomPhoto', JSON.stringify(response))
       console.log(response.data)
     } catch (e) {
       console.log("Can't retrieve random photo", e)
