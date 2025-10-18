@@ -10,3 +10,4 @@
 * make global showError function that spawns a snackbar and logs it to console
 * na register word je niet geredirect naar setup
 * fix auth refresh token expire handling
+* clear messaging when you load the website and the server is off

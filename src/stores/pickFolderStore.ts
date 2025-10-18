@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
-import { debounce } from '@/utils/utils'
 import type { MediaSampleResponse, UnsupportedFilesResponse } from '@/utils/types/api'
 import { useSetupStore } from '@/stores/setupStore.ts'
 import setupService from '@/script/services/setupService.ts'
+import { debounce } from '@/script/utils.ts'
 
 export const usePickFolderStore = defineStore(
   'pickFolder',
