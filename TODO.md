@@ -7,5 +7,6 @@
 * handle token expiry
 * fix setup to use new api abstraction
 * merge pickfolderstore and setup store
-* make global showErorr function that spawns a snackbar and logs it to console
-* na register wordt je niet geredirect naar setup
+* make global showError function that spawns a snackbar and logs it to console
+* na register word je niet geredirect naar setup
+* fix auth refresh token expire handling

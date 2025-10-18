@@ -85,7 +85,7 @@ export function registerNavigationGuard() {
 
     const accessToken = authStore.accessToken
 
-    // CRITICAL: Handle Initial App Load
+    // Handle Initial App Load
     // If the user object is not yet loaded but a token exists,
     // it means the user has refreshed the page on a protected route.
     // We must wait for the user data to be fetched before proceeding.
@@ -104,7 +104,7 @@ export function registerNavigationGuard() {
     const isAdmin = authStore.isAdmin
     const needsSetup = isAdmin && authStore.user?.media_folder === null
 
-    console.log({ isAdmin, media_folder: authStore.user?.media_folder })
+    console.log({ isAdmin, media_folder: authStore.user?.media_folder, needsSetup })
     if (needsSetup) {
       // setup needed
       if (to.name !== 'setup') {

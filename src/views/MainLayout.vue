@@ -1,13 +1,9 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { scheme } from '@/plugins/vuetify.js'
+</script>
 
 <template>
-  <v-app-bar
-    density="comfortable"
-    :height="70"
-    class="header"
-    color="transparent"
-    elevation="0"
-  >
+  <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
     <h1 class="appbar-title"><span>Ruurd</span> Photos</h1>
     <v-spacer />
     <label class="search-bar">
@@ -40,25 +36,9 @@
   </v-app-bar>
   <v-navigation-drawer permanent color="transparent" floating>
     <v-list color="primary-darken-1" class="nav-list">
-      <v-list-item
-        rounded
-        prepend-icon="mdi-image-outline"
-        title="Photos"
-        to="/"
-        exact
-      />
-      <v-list-item
-        rounded
-        prepend-icon="mdi-compass-outline"
-        title="Explore"
-        to="/explore"
-      />
-      <v-list-item
-        rounded
-        prepend-icon="mdi-map-outline"
-        title="Map"
-        to="/map"
-      />
+      <v-list-item rounded prepend-icon="mdi-image-outline" title="Photos" to="/" exact />
+      <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
+      <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
     </v-list>
   </v-navigation-drawer>
   <v-main class="layout-body">
@@ -66,7 +46,8 @@
       <RouterView class="router-view" />
     </div>
 
-    <div class="scroll-area"></div>
+    <div class="scroll-area">
+    </div>
   </v-main>
 </template>
 
@@ -144,11 +125,7 @@
 
 .router-view-container {
   background: rgb(227, 222, 255);
-  background: linear-gradient(
-    0deg,
-    rgba(238, 229, 255, 0.6) 0%,
-    rgba(255, 248, 252, 0.6) 100%
-  );
+  background: linear-gradient(0deg, rgba(238, 229, 255, 0.6) 0%, rgba(255, 248, 252, 0.6) 100%);
   flex-grow: 1;
   border-top-left-radius: 60px;
   border-top-right-radius: 60px;

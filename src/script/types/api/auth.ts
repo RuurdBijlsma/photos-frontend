@@ -1,5 +1,5 @@
 // Maps to the UserRole enum
-export type UserRole = 'ADMIN' | 'USER';
+export type UserRole = 'admin' | 'user';
 
 // Maps to the Tokens schema
 export interface Tokens {

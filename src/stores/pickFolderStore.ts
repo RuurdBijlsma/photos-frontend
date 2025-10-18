@@ -38,19 +38,17 @@ export const usePickFolderStore = defineStore(
     async function refreshFolders() {
       const folder = viewedFolder.value.join('/')
       try {
-        await setupStore.fetchFolders(folder)
+        const response = await setupService.getFolders(folder)
+        folderList.value = response.data
       } catch (e) {
         await truncateViewed(viewedFolder.value.length - 2)
         console.error(`Could not refresh folders for folder: ${folder}`, e)
-      }
-      if (setupStore.folders !== null) {
-        folderList.value = setupStore.folders
       }
       dbRefreshMediaSample()
     }
 
     async function getImageUrl(relative_path: string): Promise<string> {
-      const url = await setupStore.mediaBlobUrl(relative_path)
+      const url = await mediaBlobUrl(relative_path)
       if (url !== null) {
         return url
       }
@@ -61,12 +59,12 @@ export const usePickFolderStore = defineStore(
       const requestFolder = viewedFolder.value.join('/')
 
       mediaSampleLoading.value = true
-      await setupStore.fetchMediaSamples(requestFolder)
+      const response = await setupService.getMediaSample(requestFolder)
       mediaSampleLoading.value = false
       // Ignore result if the viewed folder has changed since making the request
       if (viewedFolder.value.join('/') !== requestFolder || setupStore.mediaSamples === null) return
 
-      mediaSamples.value = setupStore.mediaSamples
+      mediaSamples.value = response.data
       console.log(JSON.parse(JSON.stringify(mediaSamples.value?.samples)))
 
       N_SAMPLES = mediaSamples.value.samples.length
@@ -90,12 +88,12 @@ export const usePickFolderStore = defineStore(
       const requestFolder = viewedFolder.value.join('/')
 
       unsupportedFilesLoading.value = true
-      await setupStore.fetchUnsupportedFiles(requestFolder)
+      const response = await setupService.getUnsupportedFiles(requestFolder)
       unsupportedFilesLoading.value = false
       // Ignore result if the viewed folder has changed since making the request
       if (viewedFolder.value.join('/') !== requestFolder) return
 
-      unsupportedFiles.value = setupStore.unsupportedFiles
+      unsupportedFiles.value = response.data
     }
 
     async function makeFolder(folderName: string) {
@@ -113,12 +111,21 @@ export const usePickFolderStore = defineStore(
       refreshFolders().then()
     }
 
+    async function mediaBlobUrl(relative_path: string): Promise<string | null> {
+      try {
+        const response = await setupService.getFullMediaFile(relative_path)
+        return URL.createObjectURL(response.data)
+      } catch (error) {
+        console.error(`Failed to get full file url: ${relative_path}:`, error)
+      }
+      return null
+    }
+
     return {
       refreshFolders,
       openFolder,
       truncateViewed,
       makeFolder,
-      refreshMediaSample,
       mediaSamples,
       mediaSampleLoading,
       samples,

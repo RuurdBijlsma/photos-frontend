@@ -47,55 +47,6 @@ export const useSetupStore = defineStore('setup', () => {
     }
   }
 
-  async function fetchFolders(folder: string) {
-    isLoading.value = true
-    try {
-      const response = await setupService.getFolders(folder)
-      folders.value = response.data
-    } catch (error) {
-      console.error(`Failed to fetch folders from ${folder}:`, error)
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function mediaBlobUrl(relative_path: string): Promise<string | null> {
-    isLoading.value = true
-    try {
-      const response = await setupService.getFullMediaFile(relative_path)
-      return URL.createObjectURL(response.data)
-    } catch (error) {
-      console.error(`Failed to get full file url: ${relative_path}:`, error)
-    } finally {
-      isLoading.value = false
-    }
-    return null
-  }
-
-  async function fetchMediaSamples(user_folder: string) {
-    isLoading.value = true
-    try {
-      const response = await setupService.getMediaSample(user_folder)
-      mediaSamples.value = response.data
-    } catch (error) {
-      console.error(`Failed to get media samples from ${user_folder}:`, error)
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function fetchUnsupportedFiles(folder: string) {
-    isLoading.value = true
-    try {
-      const response = await setupService.getUnsupportedFiles(folder)
-      unsupportedFiles.value = response.data
-    } catch (error) {
-      console.error(`Failed to get unsupported files:`, error)
-    } finally {
-      isLoading.value = false
-    }
-  }
-
   async function startProcessing() {
     const pickFolderStore = usePickFolderStore()
     isLoading.value = true
@@ -121,10 +72,6 @@ export const useSetupStore = defineStore('setup', () => {
     // Actions
     checkWelcomeStatus,
     fetchDiskInfo,
-    fetchFolders,
-    fetchMediaSamples,
-    mediaBlobUrl,
-    fetchUnsupportedFiles,
     startProcessing,
   }
 })

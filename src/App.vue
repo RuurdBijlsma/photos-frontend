@@ -4,7 +4,7 @@
     <div
       class="background-image"
       :style="{
-        backgroundImage: `url(img/theme3-foto.jpg)`,
+        backgroundImage: `url(${dynamicBgUrl})`,
       }"
     ></div>
   </div>
@@ -18,25 +18,41 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import { ref } from 'vue'
-import router from '@/plugins/router'
 import SnackbarQueue from '@/components/SnackbarQueue.vue'
-import { useSetupStore } from '@/stores/setupStore.ts'
+import { usePhotosStore } from '@/stores/photosStore.ts'
+import photosService from '@/script/services/photosService.ts'
+import { useThemeStore } from '@/stores/themeStore.ts'
 
-const defaultImage = ''
-const bgId = ref(
-  localStorage.getItem('backgroundImage') === null ? defaultImage : localStorage.backgroundImage,
+const photosStore = usePhotosStore()
+const themeStore = useThemeStore()
+
+const defaultImage = 'img/etna.jpg'
+const dynamicBgUrl = ref(
+  localStorage.getItem('backgroundUrl') === null
+    ? defaultImage
+    : localStorage.getItem('backgroundUrl'),
 )
 
-const loadBg = async () => {
-  const now = performance.now()
-  // localStorage.backgroundImage = await (
-  //   // await fetch('http://localhost:9475/images/random')
-  // ).json()
-  if (bgId.value === defaultImage) {
-    bgId.value = localStorage.backgroundImage
+const applyRandomPhoto = async () => {
+  if (photosStore.randomPhoto?.media_id) {
+    const newBgUrl = photosService.getPhotoThumbnail(photosStore.randomPhoto.media_id, 1080)
+    localStorage.setItem('backgroundUrl', newBgUrl)
+  }
+  if (photosStore.randomPhoto?.themes) {
+    const newTheme = photosStore.randomPhoto.themes[0]
+    if (newTheme !== undefined) {
+      themeStore.applyThemeFromJSON(newTheme)
+    }
   }
 }
+
+const loadBg = async () => {
+  photosStore.refreshRandomPhoto().then(() => applyRandomPhoto())
+}
+
+applyRandomPhoto()
 loadBg().then()
+
 </script>
 
 <style scoped>
@@ -75,7 +91,7 @@ loadBg().then()
     rgba(255, 255, 255, 0.95) 0%,
     rgba(255, 255, 255, 0.4) 100%
   );
-  backdrop-filter: saturate(150%) brightness(70%) blur(0px) contrast(100%);
+  backdrop-filter: saturate(150%) brightness(70%) blur(10px) contrast(100%);
   z-index: 1;
 }
 </style>
