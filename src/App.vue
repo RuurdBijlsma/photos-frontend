@@ -34,13 +34,17 @@ const dynamicBgUrl = ref(
     ? defaultImage
     : localStorage.getItem('backgroundUrl'),
 )
-//
-// const lsImageTheme = localStorage.getItem('imageTheme')
-// if (lsImageTheme !== null) {
-//   const newTheme = JSON.parse(lsImageTheme)
-//   themeStore.setThemesFromJson(newTheme)
-// }
-//
+
+const lsImageTheme = localStorage.getItem('imageTheme')
+if (lsImageTheme) {
+  try {
+    const newTheme = JSON.parse(lsImageTheme)
+    if (newTheme) themeStore.setThemesFromJson(newTheme)
+  } catch (e) {
+    console.warn("Couldn't apply theme from localStorage")
+  }
+}
+
 const applyRandomPhoto = async () => {
   if (photosStore.randomPhoto?.media_id) {
     const newBgUrl = photosService.getPhotoThumbnail(photosStore.randomPhoto.media_id, 1080)
@@ -55,8 +59,6 @@ const applyRandomPhoto = async () => {
       vuetifyTheme.themes.value.dark = themeStore.currentTheme.dark
       //@ts-expect-error I dont know
       vuetifyTheme.themes.value.light = themeStore.currentTheme.light
-      // todo uncomment this when dark theme works
-      vuetifyTheme.change('light')
     }
   }
 }
@@ -64,9 +66,9 @@ const applyRandomPhoto = async () => {
 const loadBg = async () => {
   photosStore.refreshRandomPhoto().then(() => applyRandomPhoto())
 }
-//
-// applyRandomPhoto()
-// loadBg().then()
+
+applyRandomPhoto()
+loadBg().then()
 </script>
 
 <style scoped>
@@ -105,7 +107,7 @@ const loadBg = async () => {
     rgba(var(--v-theme-background), 0.95) 0%,
     rgba(var(--v-theme-background), 0.4) 100%
   );
-  backdrop-filter: saturate(150%) brightness(70%) blur(10px) contrast(100%);
+  backdrop-filter: saturate(150%) brightness(70%) blur(15px) contrast(100%);
   z-index: 1;
 }
 </style>
