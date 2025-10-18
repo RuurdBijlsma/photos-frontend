@@ -59,10 +59,10 @@ const darkDefinition = transformToVuetifyTheme(themes[0]?.schemes?.dark!)
 
 export const vuetify = createVuetify({
   theme: {
-    defaultTheme: 'lightTheme',
+    defaultTheme: 'system',
     themes: {
-      lightTheme: lightDefinition,
-      darkTheme: darkDefinition,
+      light: lightDefinition,
+      dark: darkDefinition,
     },
   },
   icons: {

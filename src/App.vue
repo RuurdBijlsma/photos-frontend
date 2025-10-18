@@ -22,9 +22,11 @@ import SnackbarQueue from '@/components/SnackbarQueue.vue'
 import { usePhotosStore } from '@/stores/photosStore.ts'
 import photosService from '@/script/services/photosService.ts'
 import { useThemeStore } from '@/stores/themeStore.ts'
+import { useTheme } from 'vuetify/framework'
 
 const photosStore = usePhotosStore()
 const themeStore = useThemeStore()
+const vuetifyTheme = useTheme()
 
 const defaultImage = 'img/etna.jpg'
 const dynamicBgUrl = ref(
@@ -41,7 +43,11 @@ const applyRandomPhoto = async () => {
   if (photosStore.randomPhoto?.themes) {
     const newTheme = photosStore.randomPhoto.themes[0]
     if (newTheme !== undefined) {
-      themeStore.applyThemeFromJSON(newTheme)
+      themeStore.setThemesFromJson(newTheme)
+      vuetifyTheme.themes.value.dark = themeStore.currentTheme.dark
+      vuetifyTheme.themes.value.light = themeStore.currentTheme.light
+      // todo uncomment this when dark theme works
+      vuetifyTheme.change('light')
     }
   }
 }
@@ -52,7 +58,6 @@ const loadBg = async () => {
 
 applyRandomPhoto()
 loadBg().then()
-
 </script>
 
 <style scoped>
