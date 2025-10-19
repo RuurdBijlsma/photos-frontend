@@ -11,21 +11,24 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: '23'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run lint
-        run: npm run lint
+      - name: Run oxlint
+        run: npm run lint:oxlint
+
+      - name: Run eslint
+        run: npm run lint:eslint
+
+      - name: Run type-check
+        run: npm run lint:type-check
 
       - name: Run prettier check
         run: npm run prettier:check
-
-      - name: Run type-check
-        run: npm run type-check

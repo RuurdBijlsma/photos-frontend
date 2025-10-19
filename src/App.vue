@@ -4,37 +4,30 @@
     <div
       class="background-image"
       :style="{
-        backgroundImage: `url(http://localhost:9475/thumbnails/${bgId}/200p.avif)`,
+        backgroundImage: `url(${backgroundUrl})`,
       }"
     ></div>
   </div>
   <v-app class="main-content">
     <RouterView />
   </v-app>
+
+  <snackbar-queue />
 </template>
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import SnackbarQueue from '@/components/SnackbarQueue.vue'
+import { useBackgroundStore } from '@/stores/backgroundStore'
 
-const defaultImage = ''
-const bgId = ref(
-  localStorage.getItem('backgroundImage') === null
-    ? defaultImage
-    : localStorage.backgroundImage,
-)
+// Instantiate stores
+const backgroundStore = useBackgroundStore()
+const { backgroundUrl } = storeToRefs(backgroundStore)
 
-const loadBg = async () => {
-  const now = performance.now()
-  localStorage.backgroundImage = await (
-    await fetch('http://localhost:9475/images/random')
-  ).json()
-  if (bgId.value === defaultImage) {
-    bgId.value = localStorage.backgroundImage
-  }
-  console.log(bgId.value, performance.now() - now)
-}
-loadBg().then()
+// Initialize the systems. Order doesn't matter
+// themeStore.initialize()
+backgroundStore.initialize()
 </script>
 
 <style scoped>
@@ -42,7 +35,6 @@ loadBg().then()
   width: 100%;
   height: 100vh;
   overflow-y: auto;
-  background-color: #fff2e9;
   user-select: none;
 }
 
@@ -50,7 +42,7 @@ loadBg().then()
   position: fixed;
   width: 100%;
   height: 100%;
-  background-color: blue;
+  background-color: #7878ff;
   z-index: 0;
 }
 
@@ -64,11 +56,17 @@ loadBg().then()
   z-index: 0;
   background-size: cover;
   background-position: center;
+  width: 100%;
+  height: 100%;
 }
 
 .blur-filter {
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: saturate(120%) brightness(120%) blur(100px) contrast(200%);
+  background-image: linear-gradient(
+    180deg,
+    rgba(var(--v-theme-background), 0.95) 0%,
+    rgba(var(--v-theme-background), 0.4) 100%
+  );
+  backdrop-filter: saturate(150%) brightness(70%) blur(15px) contrast(100%);
   z-index: 1;
 }
 </style>
