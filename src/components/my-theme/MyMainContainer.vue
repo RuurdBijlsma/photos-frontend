@@ -22,7 +22,7 @@
   display: flex;
   justify-content: center;
   padding: 20px;
-  background-color: rgb(var(--v-theme-primary-container));
+  background-color: rgb(var(--v-theme-surface-container));
 }
 
 .container {

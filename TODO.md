@@ -7,7 +7,11 @@
 * handle token expiry
 * ✅ fix setup to use new api abstraction
 * ✅ merge pickfolderstore and setup store
-* make global showError function that spawns a snackbar and logs it to console
+* ✅ make global showError function that spawns a snackbar and logs it to console
 * na register word je niet geredirect naar setup
-* fix auth refresh token expire handling
-* clear messaging when you load the website and the server is off
+* fix auth refresh token expire handling (is dit stuk?)
+* improve messaging when you load the website and the server is off
+* in settings, add option to have solid color background, with fitting theme. or custom image as wallpaper with fitting
+  theme.
+* make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
+  music

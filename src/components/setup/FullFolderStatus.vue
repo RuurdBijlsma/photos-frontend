@@ -10,7 +10,7 @@ defineProps<{
 </script>
 
 <template>
-  <v-card class="mb-6 folder-card pa-3" variant="flat" color="secondary-container">
+  <v-card class="mb-6 folder-card pa-3" variant="flat" color="surface-container">
     <v-card-title class="d-flex align-center card-title">
       <v-icon size="22" :icon="titleIcon" class="mr-5"></v-icon>
       {{ folder.folder }}

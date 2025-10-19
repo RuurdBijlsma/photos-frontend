@@ -58,13 +58,14 @@ export const usePickFolderStore = defineStore(
     }
 
     async function refreshMediaSample() {
+      console.warn('Refreshing media samples')
       const requestFolder = viewedFolder.value.join('/')
 
       mediaSampleLoading.value = true
       const response = await setupService.getMediaSample(requestFolder)
       mediaSampleLoading.value = false
       // Ignore result if the viewed folder has changed since making the request
-      if (viewedFolder.value.join('/') !== requestFolder || setupStore.mediaSamples === null) return
+      if (viewedFolder.value.join('/') !== requestFolder) return
 
       mediaSamples.value = response.data
       console.log(JSON.parse(JSON.stringify(mediaSamples.value?.samples)))

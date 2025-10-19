@@ -48,12 +48,12 @@ const pickFolderStore = usePickFolderStore()
   </div>
   <v-alert
     variant="flat"
-    color="primary-container"
+    color="surface-container"
     v-else-if="pickFolderStore.unsupportedFiles"
     class="rounded-xl text-md-caption"
     icon="mdi-check"
   >
-    <p :style="{ color: 'rgb(var(--v-theme-on-primary-container))' }">
+    <p :style="{ color: 'rgb(var(--v-theme-on-surface-container))' }">
       Great news! There are no unsupported files in your selection. Everything looks good!
     </p>
   </v-alert>

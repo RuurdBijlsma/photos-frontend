@@ -35,6 +35,10 @@ export const useBackgroundStore = defineStore('background', () => {
     try {
       const response = await photosService.getRandomPhoto()
       const photo = response.data
+      if (photo === null) {
+        console.warn('getRandomPhoto returned null, probably no photos in DB with a theme.')
+        return
+      }
 
       const newBgUrl = photosService.getPhotoThumbnail(photo.media_id, 1080)
       const newTheme = photo.themes?.[0]
