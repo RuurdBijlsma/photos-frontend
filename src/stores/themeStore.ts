@@ -160,27 +160,8 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  /**
-   * Initializes the theme by loading any persisted theme from localStorage.
-   * This should be called once when the app starts.
-   */
-  function initialize() {
-    const storedTheme = localStorage.getItem('imageTheme')
-    if (storedTheme) {
-      try {
-        const parsedTheme = JSON.parse(storedTheme)
-        if (parsedTheme) {
-          setThemesFromJson(parsedTheme)
-        }
-      } catch (e) {
-        console.warn("Couldn't apply theme from localStorage.", e)
-      }
-    }
-  }
-
   return {
     currentTheme,
     setThemesFromJson,
-    initialize,
   }
 })

@@ -23,15 +23,11 @@ import { useThemeStore } from '@/stores/themeStore'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 
 // Instantiate stores
-const themeStore = useThemeStore()
 const backgroundStore = useBackgroundStore()
-
-// Get reactive state from the store
 const { backgroundUrl } = storeToRefs(backgroundStore)
 
-// Initialize the systems. Order doesn't strictly matter,
-// but it's logical to init the theme first.
-themeStore.initialize()
+// Initialize the systems. Order doesn't matter
+// themeStore.initialize()
 backgroundStore.initialize()
 </script>
 
