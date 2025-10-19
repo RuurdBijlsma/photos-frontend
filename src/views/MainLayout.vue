@@ -55,7 +55,7 @@
   font-weight: 600;
   font-size: 20px;
   margin-left: 50px;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 .appbar-title > span {
@@ -68,13 +68,14 @@
   width: calc(100% - 800px);
   max-width: 700px;
   border-radius: 25px;
-  background-color: rgba(0, 0, 0, 0.06);
+  background-color: rgba(var(--v-theme-surface-container), .8);
   display: flex;
   flex-direction: row;
 }
 
 .search-bar:has(.search-text-field input:focus) {
   background-color: white;
+  color: black;
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.2);
 }
 

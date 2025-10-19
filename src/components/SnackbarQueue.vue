@@ -89,10 +89,6 @@ const showErrorDetails = (snack: Snack) => {
   gap: 8px;
 }
 
-.stacked-snackbar {
-  pointer-events: auto;
-}
-
 /* Animations */
 .snack-fade-enter-active,
 .snack-fade-leave-active {

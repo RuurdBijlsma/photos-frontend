@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { ThemeDefinition } from 'vuetify'
 import type { DynamicScheme, Palette, Theme } from '@/script/types/themeColor.ts'
+import { useTheme } from 'vuetify/framework'
 
 type VuetifyColors = ThemeDefinition['colors']
 
@@ -123,33 +124,63 @@ export function transformToVuetifyTheme(scheme: DynamicScheme, isDark: boolean):
 export const useThemeStore = defineStore('theme', () => {
   // --- STATE ---
   const currentTheme: Ref<{ light: ThemeDefinition; dark: ThemeDefinition } | null> = ref(null)
+  const vuetifyTheme = useTheme()
 
-  // --- HELPER FUNCTIONS ---
-
-  // --- PUBLIC ACTIONS ---
+  // --- ACTIONS ---
 
   /**
-   * Applies a new theme based on the theme data from your backend.
-   * @param {Theme[]} themeData - An array of themes, where the first will be used.
+   * Applies a new theme to both the store's state and the live Vuetify instance.
+   * @param themeData The theme object from your backend.
    */
   function setThemesFromJson(themeData: Theme) {
     if (!themeData) {
-      console.warn('applyThemeFromJSON called with empty or invalid theme data.')
+      console.warn('setThemesFromJson called with empty or invalid theme data.')
       return
     }
     const { schemes } = themeData
 
-    // Update the state ref.
+    const lightTheme = transformToVuetifyTheme(schemes.light, false)
+    const darkTheme = transformToVuetifyTheme(schemes.dark, true)
+
+    // Update the Pinia state
     currentTheme.value = {
-      light: transformToVuetifyTheme(schemes.light, false),
-      dark: transformToVuetifyTheme(schemes.dark, true),
+      light: lightTheme,
+      dark: darkTheme,
+    }
+
+    console.warn("APPLYING THEME")
+    // Directly update the live Vuetify themes. This is the correct way.
+    if (vuetifyTheme.themes.value.dark && darkTheme.colors) {
+      //@ts-expect-error Error
+      vuetifyTheme.themes.value.dark.colors = darkTheme.colors
+    }
+    if (vuetifyTheme.themes.value.light && lightTheme.colors) {
+      //@ts-expect-error Error
+      vuetifyTheme.themes.value.light.colors = lightTheme.colors
     }
   }
 
-  // --- RETURN ---
-  // Expose the public state and actions.
+  /**
+   * Initializes the theme by loading any persisted theme from localStorage.
+   * This should be called once when the app starts.
+   */
+  function initialize() {
+    const storedTheme = localStorage.getItem('imageTheme')
+    if (storedTheme) {
+      try {
+        const parsedTheme = JSON.parse(storedTheme)
+        if (parsedTheme) {
+          setThemesFromJson(parsedTheme)
+        }
+      } catch (e) {
+        console.warn("Couldn't apply theme from localStorage.", e)
+      }
+    }
+  }
+
   return {
     currentTheme,
     setThemesFromJson,
+    initialize,
   }
 })

@@ -4,7 +4,7 @@
     <div
       class="background-image"
       :style="{
-        backgroundImage: `url(${dynamicBgUrl})`,
+        backgroundImage: `url(${backgroundUrl})`,
       }"
     ></div>
   </div>
@@ -17,58 +17,22 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import SnackbarQueue from '@/components/SnackbarQueue.vue'
-import { usePhotosStore } from '@/stores/photosStore.ts'
-import photosService from '@/script/services/photosService.ts'
-import { useThemeStore } from '@/stores/themeStore.ts'
-import { useTheme } from 'vuetify/framework'
+import { useThemeStore } from '@/stores/themeStore'
+import { useBackgroundStore } from '@/stores/backgroundStore'
 
-const photosStore = usePhotosStore()
+// Instantiate stores
 const themeStore = useThemeStore()
-const vuetifyTheme = useTheme()
+const backgroundStore = useBackgroundStore()
 
-const defaultImage = 'img/etna.jpg'
-const dynamicBgUrl = ref(
-  localStorage.getItem('backgroundUrl') === null
-    ? defaultImage
-    : localStorage.getItem('backgroundUrl'),
-)
+// Get reactive state from the store
+const { backgroundUrl } = storeToRefs(backgroundStore)
 
-const lsImageTheme = localStorage.getItem('imageTheme')
-if (lsImageTheme) {
-  try {
-    const newTheme = JSON.parse(lsImageTheme)
-    if (newTheme) themeStore.setThemesFromJson(newTheme)
-  } catch (e) {
-    console.warn("Couldn't apply theme from localStorage")
-  }
-}
-
-const applyRandomPhoto = async () => {
-  if (photosStore.randomPhoto?.media_id) {
-    const newBgUrl = photosService.getPhotoThumbnail(photosStore.randomPhoto.media_id, 1080)
-    localStorage.setItem('backgroundUrl', newBgUrl)
-    localStorage.setItem('imageTheme', JSON.stringify(photosStore.randomPhoto?.themes?.[0]))
-  }
-  if (photosStore.randomPhoto?.themes) {
-    const newTheme = photosStore.randomPhoto.themes[0]
-    if (newTheme !== undefined) {
-      themeStore.setThemesFromJson(newTheme)
-      //@ts-expect-error I dont know
-      vuetifyTheme.themes.value.dark = themeStore.currentTheme.dark
-      //@ts-expect-error I dont know
-      vuetifyTheme.themes.value.light = themeStore.currentTheme.light
-    }
-  }
-}
-
-const loadBg = async () => {
-  photosStore.refreshRandomPhoto().then(() => applyRandomPhoto())
-}
-
-applyRandomPhoto()
-loadBg().then()
+// Initialize the systems. Order doesn't strictly matter,
+// but it's logical to init the theme first.
+themeStore.initialize()
+backgroundStore.initialize()
 </script>
 
 <style scoped>

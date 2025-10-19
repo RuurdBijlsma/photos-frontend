@@ -15,9 +15,8 @@ export const usePhotosStore = defineStore('photos', () => {
     try {
       const response = await photosService.getRandomPhoto()
       randomPhoto.value = response.data
-      console.log(response.data)
     } catch (e) {
-      console.log("Can't retrieve random photo", e)
+      console.warn("Can't retrieve random photo", e)
     } finally {
       randomPhotoLoading.value = false
     }
