@@ -64,11 +64,14 @@ const router = createRouter({
 })
 
 export function registerNavigationGuard() {
+  const authStore = useAuthStore()
+  const snackbarsStore = useSnackbarsStore()
+  const setupStore = useSetupStore()
+  const snackbarStore = useSnackbarsStore()
+
   // --- Global Navigation Guard ---
   router.beforeEach(async (to, from, next) => {
-    const authStore = useAuthStore()
-    const snackbarsStore = useSnackbarsStore()
-    const setupStore = useSetupStore()
+
 
     if (setupStore.needsWelcome === null) {
       await setupStore.checkWelcomeStatus()
@@ -96,7 +99,7 @@ export function registerNavigationGuard() {
         // If fetching the user fails (e.g., token is invalid),
         // the authStore's interceptor should handle logout.
         // We'll proceed with the navigation, and subsequent checks will redirect to login.
-        console.error('Session could not be restored. Redirecting to login.')
+        snackbarStore.error('Session could not be restored. Redirecting to login.', error)
       }
     }
 

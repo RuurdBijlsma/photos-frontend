@@ -2,7 +2,7 @@ import type { Ref } from 'vue'
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { ThemeDefinition } from 'vuetify'
-import type { DynamicScheme, Palette, Theme } from '@/utils/types/color.ts'
+import type { DynamicScheme, Palette, Theme } from '@/script/types/themeColor.ts'
 
 type VuetifyColors = ThemeDefinition['colors']
 

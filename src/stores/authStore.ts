@@ -16,6 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken: Ref<string | null> = ref(localStorage.getItem('accessToken') || null)
   const refreshToken: Ref<string | null> = ref(localStorage.getItem('refreshToken') || null)
   const status: Ref<AuthStatus> = ref('idle')
+  const snackbarStore = useSnackbarsStore()
 
   // --- GETTERS ---
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
@@ -41,9 +42,9 @@ export const useAuthStore = defineStore('auth', () => {
     if (!accessToken.value) return
     try {
       const response = await authService.getMe()
-      user.value = response.data;
+      user.value = response.data
     } catch (error) {
-      console.error('Failed to fetch user:', error)
+      snackbarStore.error('Failed to fetch current user from server.', error)
     }
   }
 
@@ -52,7 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function login(credentials: LoginUser) {
     status.value = 'loading'
-    const snackbarsStore = useSnackbarsStore();
+    const snackbarsStore = useSnackbarsStore()
     try {
       const response = await authService.login(credentials)
       setTokens(response.data.access_token, response.data.refresh_token)
@@ -62,16 +63,17 @@ export const useAuthStore = defineStore('auth', () => {
       status.value = 'success'
       await router.push('/')
     } catch (error) {
-      console.error('Failed to login:', error)
+      if (error instanceof Error) snackbarStore.error('Failed to login. ' + error.message, error)
       status.value = 'error'
       // 3. Extract a user-friendly message and show the snackbar
-      let errorMessage = 'An unexpected error occurred.';
+      let errorMessage = 'An unexpected error occurred.'
       if (isAxiosError(error) && error.response) {
         // Use the error message from the backend if it exists, otherwise a default
-        errorMessage = error.response.data?.message || `Error ${error.response.status}: Login failed.`;
+        errorMessage =
+          error.response.data?.message || `Error ${error.response.status}: Login failed.`
       }
 
-      snackbarsStore.message(errorMessage);
+      snackbarsStore.error(errorMessage)
       // Propagate the error to the component for UI feedback (e.g., showing a snackbar)
       throw error
     }
@@ -82,23 +84,23 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function register(credentials: CreateUser): Promise<User> {
     status.value = 'loading'
-    const snackbarsStore = useSnackbarsStore();
+    const snackbarsStore = useSnackbarsStore()
     try {
       const response = await authService.register(credentials)
       await login(credentials)
       status.value = 'success'
-      return response.data;
+      return response.data
     } catch (error) {
-      console.error('Failed to register:', error)
       status.value = 'error'
       // 3. Extract a user-friendly message and show the snackbar
-      let errorMessage = 'An unexpected error occurred.';
+      let errorMessage = 'An unexpected error occurred.'
       if (isAxiosError(error) && error.response) {
         // Use the error message from the backend if it exists, otherwise a default
-        errorMessage = error.response.data?.message || `Error ${error.response.status}: Register failed.`;
+        errorMessage =
+          error.response.data?.message || `Error ${error.response.status}: Register failed.`
       }
 
-      snackbarsStore.message(errorMessage);
+      snackbarsStore.error(errorMessage, error)
       // Propagate the error to the component for UI feedback (e.g., showing a snackbar)
       throw error
     }
@@ -113,7 +115,7 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         await authService.logout({ refresh_token: refreshToken.value })
       } catch (err) {
-        console.error('Logout API call failed, but logging out client-side anyway.', err)
+        console.warn('Logout API call failed, but logging out client-side anyway.', err)
       }
     }
 
@@ -123,7 +125,7 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken.value = null
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
-    localStorage.removeItem('setup-needed');
+    localStorage.removeItem('setup-needed')
 
     // Redirect to login page
     await router.push('/login')

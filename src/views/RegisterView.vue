@@ -5,8 +5,11 @@ import MyAlert from '@/components/my-theme/MyAlert.vue'
 import SetupLayout from '@/components/my-theme/SetupLayout.vue'
 import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
 import { useAuthStore } from '@/stores/authStore.ts'
+import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
 const authStore = useAuthStore()
+const snackbarStore = useSnackbarsStore()
+
 const userInput: Ref<null | HTMLElement> = ref(null)
 const form: Ref<null | VForm> = ref(null)
 
@@ -50,7 +53,7 @@ async function register() {
   } catch (error) {
     // The authStore already showed the snackbar. We just need to handle
     // the UI state here.
-    console.error("Login failed from component's perspective.", error)
+    snackbarStore.error('Register failed. ' + error.message, error)
   } finally {
     // This will run whether the login succeeds or fails.
     isLoading.value = false

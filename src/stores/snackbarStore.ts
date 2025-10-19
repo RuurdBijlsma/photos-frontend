@@ -9,7 +9,8 @@ export interface Snack {
   message: string
   open: boolean
   timeout: number
-  color?: 'success' | 'info' | 'warning' | 'error' | string // Allow standard colors or custom ones
+  color?: 'success' | 'info' | 'warning' | 'error' | string
+  error?: Error | null
 }
 
 /**
@@ -56,7 +57,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
   function enqueue(options: SnackOptions): void {
     const defaults: Omit<Snack, 'id' | 'message'> = {
       open: true,
-      timeout: 5000,
+      timeout: 10000,
       color: 'info',
     }
 
@@ -71,7 +72,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
    * A shortcut to enqueue a standard informational message.
    * @param message The text to display.
    */
-  function message(message: string): void {
+  function info(message: string): void {
     enqueue({ message, color: 'info' })
   }
 
@@ -80,15 +81,50 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
    * @param message The text to display.
    */
   function success(message: string): void {
-    enqueue({ message, color: 'success', timeout: 3000 })
+    enqueue({ message, color: 'success', timeout: 5000 })
   }
 
   /**
    * A shortcut to enqueue an error message.
    * @param message The text to display.
    */
-  function error(message: string): void {
-    enqueue({ message, color: 'error', timeout: 7000 })
+  function warn(message: string): void {
+    enqueue({ message, color: 'warning', timeout: 7500 })
+  }
+
+  /**
+   * A shortcut to enqueue an error message.
+   * @param message The text to display.
+   * @param error Optional error object
+   */
+  function error(message: string, error: unknown | null = null): void {
+    if (error instanceof Error) {
+      console.error('Message: ', message, error.message, error)
+      enqueue({ message, color: 'error', timeout: 15000, error })
+    } else if (error === null) {
+      enqueue({ message, color: 'error', timeout: 15000 })
+    } else {
+      console.warn('Logged error not shown because the error type is not error', message, error)
+    }
+  }
+
+  /**
+   * A shortcut to enqueue an error message.
+   * @param message The text to display.
+   */
+  function message(message: string): void {
+    enqueue({ message, color: 'surface-variant' })
+  }
+
+  /**
+   * Pauses the timeout for a specific snackbar.
+   * @param snackId The ID of the snackbar to pause.
+   */
+  function pauseTimeout(snackId: number): void {
+    const snack = queue.value.find((s) => s.id === snackId)
+    if (snack) {
+      snack.timeout = -1
+    }
   }
 
   return {
@@ -97,7 +133,10 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
     // Actions
     enqueue,
     message,
+    info,
     success,
     error,
+    warn,
+    pauseTimeout,
   }
 })

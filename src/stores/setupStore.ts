@@ -7,6 +7,7 @@ import type {
   UnsupportedFilesResponse,
 } from '@/script/types/api/setup.ts'
 import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
+import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
 export const useSetupStore = defineStore('setup', () => {
   // --- STATE ---
@@ -16,6 +17,7 @@ export const useSetupStore = defineStore('setup', () => {
   const folders: Ref<string[] | null> = ref(null)
   const mediaSamples: Ref<MediaSampleResponse | null> = ref(null)
   const unsupportedFiles: Ref<UnsupportedFilesResponse | null> = ref(null)
+  const snackbarStore = useSnackbarsStore()
 
   // --- ACTIONS ---
   async function checkWelcomeStatus() {
@@ -29,7 +31,7 @@ export const useSetupStore = defineStore('setup', () => {
       needsWelcome.value = response.data
       localStorage.setItem('welcomeNeeded', response.data.toString())
     } catch (error) {
-      console.error('Failed to check setup status:', error)
+      snackbarStore.error("Failed to check setup status", error)
     } finally {
       isLoading.value = false
     }
@@ -41,7 +43,7 @@ export const useSetupStore = defineStore('setup', () => {
       const response = await setupService.getDisks()
       disks.value = response.data
     } catch (error) {
-      console.error('Failed to fetch disk info:', error)
+      snackbarStore.error('Failed to fetch disk info', error)
     } finally {
       isLoading.value = false
     }
@@ -54,7 +56,7 @@ export const useSetupStore = defineStore('setup', () => {
     try {
       await setupService.startProcessing({ user_folder: userFolder })
     } catch (error) {
-      console.error(`Failed to start processing processing:`, error)
+      console.error(`Failed to start processing processing`, error)
     } finally {
       isLoading.value = false
     }

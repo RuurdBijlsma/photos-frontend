@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
-import type { MediaSampleResponse, UnsupportedFilesResponse } from '@/utils/types/api'
 import { useSetupStore } from '@/stores/setupStore.ts'
 import setupService from '@/script/services/setupService.ts'
 import { debounce } from '@/script/utils.ts'
+import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
+import type { MediaSampleResponse, UnsupportedFilesResponse } from '@/script/types/api/setup.ts'
 
 export const usePickFolderStore = defineStore(
   'pickFolder',
@@ -22,6 +23,7 @@ export const usePickFolderStore = defineStore(
       [...Array(N_SAMPLES)].map(() => ({ imageUrl: '', relPath: '' })),
     )
     const setupStore = useSetupStore()
+    const snackbarStore = useSnackbarsStore()
 
     const dbRefreshMediaSample = debounce(refreshMediaSample, 500)
 
@@ -42,7 +44,7 @@ export const usePickFolderStore = defineStore(
         folderList.value = response.data
       } catch (e) {
         await truncateViewed(viewedFolder.value.length - 2)
-        console.error(`Could not refresh folders for folder: ${folder}`, e)
+        snackbarStore.error(`Could not fetch sub-folders for: ${folder}`, e)
       }
       dbRefreshMediaSample()
     }
@@ -103,7 +105,7 @@ export const usePickFolderStore = defineStore(
       try {
         await setupService.makeFolder({ base_folder: baseFolder, new_name: folderName })
       } catch (e) {
-        console.error("Can't make folder", e)
+        snackbarStore.error("Can't make folder", e)
       } finally {
         makeFolderLoading.value = false
       }
@@ -116,7 +118,7 @@ export const usePickFolderStore = defineStore(
         const response = await setupService.getFullMediaFile(relative_path)
         return URL.createObjectURL(response.data)
       } catch (error) {
-        console.error(`Failed to get full file url: ${relative_path}:`, error)
+        snackbarStore.error(`Failed to get full file url: ${relative_path}`, error)
       }
       return null
     }

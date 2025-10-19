@@ -1,6 +1,8 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
 import authService from './authService'
+import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
+
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:9475',
@@ -45,6 +47,7 @@ apiClient.interceptors.response.use(
   (response) => response, // Simply return a successful response
   async (error) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    const snackbarStore = useSnackbarsStore()
     const authStore = useAuthStore()
 
     // Check for 401 Unauthorized and ensure it's not a retry request
@@ -68,8 +71,8 @@ apiClient.interceptors.response.use(
 
       const refreshToken = authStore.refreshToken
       if (!refreshToken) {
-        console.error('No refresh token available. Logging out.')
-        authStore.logout()
+        snackbarStore.error('No refresh token available. Logging out.')
+        authStore.logout().then(() => console.info('Logged out'))
         return Promise.reject(error)
       }
 
@@ -89,7 +92,7 @@ apiClient.interceptors.response.use(
         // Retry the original request
         return apiClient(originalRequest)
       } catch (refreshError) {
-        console.error('Refresh token failed. Logging out.', refreshError)
+        snackbarStore.error('Refreshing token failed. Logging out.', refreshError)
         processQueue(refreshError, null)
         authStore.logout()
         return Promise.reject(refreshError)

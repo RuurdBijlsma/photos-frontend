@@ -3,8 +3,11 @@ import { onMounted, type Ref, ref } from 'vue'
 import type { VForm } from 'vuetify/components'
 import MyAlert from '@/components/my-theme/MyAlert.vue'
 import { useAuthStore } from '@/stores/authStore.ts'
+import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
 const authStore = useAuthStore()
+const snackbarStore = useSnackbarsStore()
+
 const emailInput: Ref<null | HTMLElement> = ref(null)
 const form: Ref<null | VForm> = ref(null)
 
@@ -36,7 +39,7 @@ async function login() {
   } catch (error) {
     // The authStore already showed the snackbar. We just need to handle
     // the UI state here.
-    console.error("Login failed from component's perspective.", error)
+    snackbarStore.error('Login failed. ' + error.message, error)
   } finally {
     // This will run whether the login succeeds or fails.
     isLoading.value = false
@@ -125,7 +128,11 @@ async function login() {
 
 .login-container {
   background: rgb(227, 222, 255, 0.7);
-  background: linear-gradient(0deg, rgba(var(--v-theme-background), 0.5) 0%, rgb(var(--v-theme-background), 0.8) 100%);
+  background: linear-gradient(
+    0deg,
+    rgba(var(--v-theme-background), 0.5) 0%,
+    rgb(var(--v-theme-background), 0.8) 100%
+  );
   flex-grow: 1;
   border-radius: 30px;
   overflow: hidden;
