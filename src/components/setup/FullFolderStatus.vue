@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { prettyBytes } from '@/utils/formatting'
 import type { PathInfoResponse } from '@/script/types/api/setup.ts'
+import { prettyBytes } from '@/script/utils.ts'
 
 defineProps<{
   folder: PathInfoResponse
@@ -10,14 +10,8 @@ defineProps<{
 </script>
 
 <template>
-  <v-card
-    class="mb-6 folder-card pa-3"
-    variant="flat"
-    color="secondary-container"
-  >
-    <v-card-title
-      class="d-flex align-center card-title"
-    >
+  <v-card class="mb-6 folder-card pa-3" variant="flat" color="secondary-container">
+    <v-card-title class="d-flex align-center card-title">
       <v-icon size="22" :icon="titleIcon" class="mr-5"></v-icon>
       {{ folder.folder }}
       <v-spacer />
@@ -32,14 +26,9 @@ defineProps<{
     <v-card-text>
       <div>
         <div class="d-flex justify-space-between mb-2 disk-text-container mt-3">
-          <span
-            class="text-caption disk-uppercase"
-            >{{ envVar }}
-          </span>
-          <span
-            class="text-caption black-text"
-            >{{ prettyBytes(folder.disk_used) }} /
-            {{ prettyBytes(folder.disk_total) }}</span
+          <span class="text-caption disk-uppercase">{{ envVar }} </span>
+          <span class="text-caption black-text"
+            >{{ prettyBytes(folder.disk_used) }} / {{ prettyBytes(folder.disk_total) }}</span
           >
         </div>
         <v-progress-linear
@@ -55,10 +44,7 @@ defineProps<{
             density="compact"
             :color="folder.read_access ? 'primary' : 'error'"
           >
-            <v-icon
-              class="mr-2"
-              :icon="folder.read_access ? 'mdi-check' : 'mdi-close'"
-            ></v-icon>
+            <v-icon class="mr-2" :icon="folder.read_access ? 'mdi-check' : 'mdi-close'"></v-icon>
             Read
           </v-chip>
           <v-chip
@@ -66,18 +52,12 @@ defineProps<{
             density="compact"
             :color="folder.write_access ? 'primary' : 'error'"
           >
-            <v-icon
-              class="mr-2"
-              :icon="folder.write_access ? 'mdi-check' : 'mdi-close'"
-            ></v-icon>
+            <v-icon class="mr-2" :icon="folder.write_access ? 'mdi-check' : 'mdi-close'"></v-icon>
             Write
           </v-chip>
         </div>
       </div>
-      <div
-        v-if="!folder.read_access || !folder.write_access"
-        class="mt-4 text-error"
-      >
+      <div v-if="!folder.read_access || !folder.write_access" class="mt-4 text-error">
         <v-icon icon="mdi-alert" class="mr-3"></v-icon>
         This folder has permission issues. Please check read/write access.
       </div>

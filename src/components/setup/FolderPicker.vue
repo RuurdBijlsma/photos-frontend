@@ -28,11 +28,7 @@ pickFolderStore.refreshFolders().then()
 </script>
 
 <template>
-  <v-card
-    variant="flat"
-    class="folder-picker"
-    color="surface-container-highest"
-  >
+  <v-card variant="flat" class="folder-picker" color="surface-container-highest">
     <v-card-text>
       <div class="picker-header">
         <div class="header-buttons">
@@ -90,10 +86,7 @@ pickFolderStore.refreshFolders().then()
           >
             Media Root
           </div>
-          <template
-            v-for="(component, index) in pickFolderStore.viewedFolder"
-            :key="index"
-          >
+          <template v-for="(component, index) in pickFolderStore.viewedFolder" :key="index">
             <v-icon icon="mdi-chevron-right" />
             <div
               class="route-component"

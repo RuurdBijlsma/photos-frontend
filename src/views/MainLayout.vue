@@ -1,5 +1,4 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
@@ -45,8 +44,7 @@
       <RouterView class="router-view" />
     </div>
 
-    <div class="scroll-area">
-    </div>
+    <div class="scroll-area"></div>
   </v-main>
 </template>
 
@@ -68,7 +66,7 @@
   width: calc(100% - 800px);
   max-width: 700px;
   border-radius: 25px;
-  background-color: rgba(var(--v-theme-surface-container), .8);
+  background-color: rgba(var(--v-theme-surface-container), 0.8);
   display: flex;
   flex-direction: row;
 }
@@ -125,7 +123,11 @@
 
 .router-view-container {
   background: rgb(227, 222, 255);
-  background: linear-gradient(0deg, rgba(var(--v-theme-background), 0.6) 0%, rgba(var(--v-theme-background), 0.6) 100%);
+  background: linear-gradient(
+    0deg,
+    rgba(var(--v-theme-background), 0.6) 0%,
+    rgba(var(--v-theme-background), 0.6) 100%
+  );
   flex-grow: 1;
   border-top-left-radius: 60px;
   border-top-right-radius: 60px;

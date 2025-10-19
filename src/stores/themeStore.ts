@@ -126,10 +126,11 @@ export const useThemeStore = defineStore('theme', () => {
   const currentTheme: Ref<{ light: ThemeDefinition; dark: ThemeDefinition } | null> = ref(null)
   const vuetifyTheme = useTheme()
 
-  // --- ACTIONS ---
+  // --- ACTION ---
 
   /**
    * Applies a new theme to both the store's state and the live Vuetify instance.
+   * This is the single entry point for changing the application's theme.
    * @param themeData The theme object from your backend.
    */
   function setThemesFromJson(themeData: Theme) {
@@ -143,13 +144,9 @@ export const useThemeStore = defineStore('theme', () => {
     const darkTheme = transformToVuetifyTheme(schemes.dark, true)
 
     // Update the Pinia state
-    currentTheme.value = {
-      light: lightTheme,
-      dark: darkTheme,
-    }
+    currentTheme.value = { light: lightTheme, dark: darkTheme }
 
-    console.warn("APPLYING THEME")
-    // Directly update the live Vuetify themes. This is the correct way.
+    console.warn('Apply theme')
     if (vuetifyTheme.themes.value.dark && darkTheme.colors) {
       //@ts-expect-error Error
       vuetifyTheme.themes.value.dark.colors = darkTheme.colors
@@ -160,8 +157,12 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
+  // REMOVED: The initialize function is no longer needed here.
+
   return {
+    // State
     currentTheme,
+    // Actions
     setThemesFromJson,
   }
 })

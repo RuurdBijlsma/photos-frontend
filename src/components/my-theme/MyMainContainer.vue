@@ -1,12 +1,13 @@
-<script setup lang="ts">
-
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <v-main class="main">
-    <div class="container" :style="{
-      background: ``
-    }">
+    <div
+      class="container"
+      :style="{
+        background: ``,
+      }"
+    >
       <slot />
     </div>
   </v-main>
@@ -37,8 +38,8 @@
   background: linear-gradient(
     0deg,
     rgba(var(--v-theme-background), 70) 0%,
-    rgba(var(--v-theme-background), 90) 100%,
-  )
+    rgba(var(--v-theme-background), 90) 100%
+  );
 }
 
 .container:deep(.v-sheet) {

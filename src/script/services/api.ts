@@ -1,8 +1,7 @@
-import axios, { type InternalAxiosRequestConfig } from 'axios'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
 import authService from './authService'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
-
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:9475',
@@ -24,19 +23,22 @@ apiClient.interceptors.request.use(
     }
     return config
   },
-  (error) => Promise.reject(error),
+  (error: AxiosError) => Promise.reject(error),
 )
 
 // --- Response Interceptor ---
 // This is where the magic happens for handling expired tokens.
 let isRefreshing = false
-let failedQueue: { resolve: (value: unknown) => void; reject: (reason?: any) => void }[] = []
+let failedQueue: {
+  resolve: (value: string) => void
+  reject: (reason: Error) => void
+}[] = []
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error)
-    } else {
+    } else if (token) {
       prom.resolve(token)
     }
   })
@@ -45,8 +47,10 @@ const processQueue = (error: any, token: string | null = null) => {
 
 apiClient.interceptors.response.use(
   (response) => response, // Simply return a successful response
-  async (error) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean
+    }
     const snackbarStore = useSnackbarsStore()
     const authStore = useAuthStore()
 
@@ -54,11 +58,13 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // If a refresh is already in progress, queue this request
-        return new Promise(function (resolve, reject) {
+        return new Promise<string>((resolve, reject) => {
           failedQueue.push({ resolve, reject })
         })
           .then((token) => {
-            originalRequest.headers['Authorization'] = 'Bearer ' + token
+            if (originalRequest.headers) {
+              originalRequest.headers['Authorization'] = 'Bearer ' + token
+            }
             return apiClient(originalRequest)
           })
           .catch((err) => {
@@ -77,14 +83,18 @@ apiClient.interceptors.response.use(
       }
 
       try {
-        const response = await authService.refreshSession({ refresh_token: refreshToken })
+        const response = await authService.refreshSession({
+          refresh_token: refreshToken,
+        })
         const { access_token, refresh_token } = response.data
 
         // Update the store with the new tokens
         authStore.setTokens(access_token, refresh_token)
 
         // Update the header of the original request
-        originalRequest.headers['Authorization'] = `Bearer ${access_token}`
+        if (originalRequest.headers) {
+          originalRequest.headers['Authorization'] = `Bearer ${access_token}`
+        }
 
         // Process the queue with the new token
         processQueue(null, access_token)
@@ -92,8 +102,8 @@ apiClient.interceptors.response.use(
         // Retry the original request
         return apiClient(originalRequest)
       } catch (refreshError) {
-        snackbarStore.error('Refreshing token failed. Logging out.', refreshError)
-        processQueue(refreshError, null)
+        snackbarStore.error('Refreshing token failed. Logging out.', refreshError as Error)
+        processQueue(refreshError as Error, null)
         authStore.logout()
         return Promise.reject(refreshError)
       } finally {

@@ -32,12 +32,6 @@ const router = createRouter({
       ],
     },
     {
-      path: '/view',
-      name: 'view-photo',
-      // intentionally public
-      component: () => import('../views/PhotoView.vue'),
-    },
-    {
       path: '/login',
       name: 'login',
       meta: { guest: true },
@@ -71,8 +65,6 @@ export function registerNavigationGuard() {
 
   // --- Global Navigation Guard ---
   router.beforeEach(async (to, from, next) => {
-
-
     if (setupStore.needsWelcome === null) {
       await setupStore.checkWelcomeStatus()
     }

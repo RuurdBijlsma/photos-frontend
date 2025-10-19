@@ -54,8 +54,7 @@ const pickFolderStore = usePickFolderStore()
     icon="mdi-check"
   >
     <p :style="{ color: 'rgb(var(--v-theme-on-primary-container))' }">
-      Great news! There are no unsupported files in your selection. Everything
-      looks good!
+      Great news! There are no unsupported files in your selection. Everything looks good!
     </p>
   </v-alert>
 </template>

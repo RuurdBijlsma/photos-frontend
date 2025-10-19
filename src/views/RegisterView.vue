@@ -53,7 +53,7 @@ async function register() {
   } catch (error) {
     // The authStore already showed the snackbar. We just need to handle
     // the UI state here.
-    snackbarStore.error('Register failed. ' + error.message, error)
+    if (error instanceof Error) snackbarStore.error('Register failed. ' + error.message, error)
   } finally {
     // This will run whether the login succeeds or fails.
     isLoading.value = false

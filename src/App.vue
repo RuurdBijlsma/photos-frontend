@@ -19,7 +19,6 @@
 import { RouterView } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import SnackbarQueue from '@/components/SnackbarQueue.vue'
-import { useThemeStore } from '@/stores/themeStore'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 
 // Instantiate stores

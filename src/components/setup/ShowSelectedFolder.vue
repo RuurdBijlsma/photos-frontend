@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import { useTheme } from 'vuetify/framework'
 
 defineProps<{
@@ -10,7 +9,6 @@ defineProps<{
 }>()
 
 const theme = useTheme()
-
 </script>
 
 <template>
@@ -19,7 +17,7 @@ const theme = useTheme()
     <span class="primary-color" v-if="includeSelectedText">Selected folder:</span>
     <div
       :style="{
-        backgroundColor: pill ? theme.current.value.colors['secondary-container'] : undefined
+        backgroundColor: pill ? theme.current.value.colors['secondary-container'] : undefined,
       }"
       class="viewed-folder"
     >

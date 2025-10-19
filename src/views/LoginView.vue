@@ -39,7 +39,7 @@ async function login() {
   } catch (error) {
     // The authStore already showed the snackbar. We just need to handle
     // the UI state here.
-    snackbarStore.error('Login failed. ' + error.message, error)
+    if (error instanceof Error) snackbarStore.error('Login failed. ' + error.message, error)
   } finally {
     // This will run whether the login succeeds or fails.
     isLoading.value = false

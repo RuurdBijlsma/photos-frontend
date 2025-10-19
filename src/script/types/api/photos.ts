@@ -1,5 +1,4 @@
-// Maps to the PathInfoResponse schema
-import type { Theme } from '@/utils/types/color.ts'
+import type { Theme } from '@/script/types/themeColor.ts'
 
 export interface RandomPhotoResponse {
   media_id: string

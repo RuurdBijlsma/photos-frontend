@@ -55,7 +55,9 @@ const showErrorDetails = (snack: Snack) => {
 
     <v-dialog v-model="dialog" max-width="700">
       <v-card v-if="selectedSnack && selectedSnack.error" color="surface-variant">
-        <v-card-title class="headline">Error: <strong>{{ selectedSnack.error.name}}</strong></v-card-title>
+        <v-card-title class="headline"
+          >Error: <strong>{{ selectedSnack.error.name }}</strong></v-card-title
+        >
         <v-card-text>
           <p><strong>Message:</strong> {{ selectedSnack.error.message }}</p>
           <pre v-if="selectedSnack.error.stack"><strong>Stack Trace:</strong>

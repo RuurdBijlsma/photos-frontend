@@ -60,6 +60,7 @@ setStepFromRoute()
       editable
       :items="['Drives', 'User folder', 'Skipped files', 'Confirm setup']"
     >
+      <!-- eslint-disable vue/valid-v-slot -->
       <template v-slot:item.1>
         <check-drives-tab />
       </template>
@@ -75,6 +76,7 @@ setStepFromRoute()
       <template v-slot:item.4>
         <confirm-setup-tab />
       </template>
+      <!-- eslint-enable vue/valid-v-slot -->
 
       <template v-slot:actions="{ prev, next }">
         <div class="bottom-buttons">
@@ -96,7 +98,13 @@ setStepFromRoute()
             @click="next"
             >Next</v-btn
           >
-          <v-btn class="right-button" color="primary" variant="flat" rounded v-else @click="setupStore.startProcessing"
+          <v-btn
+            class="right-button"
+            color="primary"
+            variant="flat"
+            rounded
+            v-else
+            @click="setupStore.startProcessing"
             >Start</v-btn
           >
         </div>

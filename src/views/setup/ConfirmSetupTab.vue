@@ -34,7 +34,7 @@ const pickFolderStore = usePickFolderStore()
 </template>
 
 <style scoped>
-.table-left{
+.table-left {
   font-weight: 500;
 }
 .table-right {

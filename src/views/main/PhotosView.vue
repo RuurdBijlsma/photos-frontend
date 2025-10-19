@@ -1,8 +1,6 @@
 <template>
   <div class="images">
-    <mock-u-i></mock-u-i>
+    <h1>Hello there</h1>
   </div>
 </template>
-<script setup lang="ts">
-import MockUI from '@/components/mock-ui/MockUI.vue'
-</script>
+<script setup lang="ts"></script>

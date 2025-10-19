@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { FileCountResponse } from '@/utils/api/types'
 import { computed } from 'vue'
+import type { UnsupportedFilesResponse } from '@/script/types/api/setup.ts'
 
 const props = defineProps<{
-  summary: FileCountResponse
+  summary: UnsupportedFilesResponse
 }>()
 
 const virtualScrollHeight = computed(() => {
@@ -16,34 +16,19 @@ const virtualScrollHeight = computed(() => {
 </script>
 
 <template>
-  <v-card
-    class="mb-6 folder-card"
-    variant="text"
-    rounded
-    color="primary"
-  >
+  <v-card class="mb-6 folder-card" variant="text" rounded color="primary">
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
-      Inaccessible Entries ({{
-        summary.inaccessible_entries.length.toLocaleString()
-      }})
+      Inaccessible Entries ({{ summary.inaccessible_entries.length.toLocaleString() }})
     </v-card-title>
     <v-card-text>
       <p class="mb-3 text-caption text-medium-emphasis">
         Some items couldn't be accessed, so their contents won't be included.
       </p>
       <div class="ext-list" v-if="summary.unsupported_count > 0">
-        <v-virtual-scroll
-          :height="virtualScrollHeight"
-          :items="summary.inaccessible_entries"
-        >
+        <v-virtual-scroll :height="virtualScrollHeight" :items="summary.inaccessible_entries">
           <template v-slot:default="{ item }">
-            <v-list-item
-              density="compact"
-              rounded-xl
-              :title="item"
-              class="ma-1"
-            />
+            <v-list-item density="compact" rounded-xl :title="item" class="ma-1" />
           </template>
         </v-virtual-scroll>
       </div>

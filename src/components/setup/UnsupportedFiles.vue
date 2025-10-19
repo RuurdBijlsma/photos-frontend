@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { FileCountResponse } from '@/utils/api/types'
 import { computed } from 'vue'
+import type { UnsupportedFilesResponse } from '@/script/types/api/setup.ts'
 
 const props = defineProps<{
-  summary: FileCountResponse
+  summary: UnsupportedFilesResponse
 }>()
 
 const virtualScrollHeight = computed(() => {
@@ -16,20 +16,15 @@ const virtualScrollHeight = computed(() => {
 </script>
 
 <template>
-  <v-card
-    class="mb-6 folder-card"
-    variant="text"
-    rounded
-    color="primary"
-  >
+  <v-card class="mb-6 folder-card" variant="text" rounded color="primary">
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
       Unsupported Files ({{ summary.unsupported_count.toLocaleString() }})
     </v-card-title>
     <v-card-text>
       <p class="mb-3 text-caption text-medium-emphasis">
-        Files with the following extensions will not be processed or shown by in
-        Ruurd Photos, as they are not compatible with our media processor.
+        Files with the following extensions will not be processed or shown by in Ruurd Photos, as
+        they are not compatible with our media processor.
       </p>
       <div class="ext-list">
         <v-virtual-scroll
@@ -48,23 +43,18 @@ const virtualScrollHeight = computed(() => {
                   v-bind="activatorProps"
                   prepend-icon="mdi-file-alert-outline"
                 >
-                  <span class="empty-extension" v-if="item === ''"
-                    >Empty extension</span
-                  >
+                  <span class="empty-extension" v-if="item === ''">Empty extension</span>
                   <span v-else>{{ item }}</span>
                 </v-list-item>
               </template>
 
               <template v-slot:default="{ isActive }">
                 <v-card
-                  :title="`${summary.unsupported_files[item].length.toLocaleString()} Unsupported .${item} Files`"
+                  :title="`${summary.unsupported_files[item]?.length?.toLocaleString?.()} Unsupported .${item} Files`"
                 >
                   <v-card-text>
                     <v-list>
-                      <v-virtual-scroll
-                        :height="400"
-                        :items="summary.unsupported_files[item]"
-                      >
+                      <v-virtual-scroll :height="400" :items="summary.unsupported_files[item]">
                         <template v-slot:default="{ item }">
                           <v-list-item>
                             <template v-slot:prepend>
@@ -82,10 +72,7 @@ const virtualScrollHeight = computed(() => {
                   <v-card-actions>
                     <v-spacer></v-spacer>
 
-                    <v-btn
-                      text="Dismiss"
-                      @click="isActive.value = false"
-                    ></v-btn>
+                    <v-btn text="Dismiss" @click="isActive.value = false"></v-btn>
                   </v-card-actions>
                 </v-card>
               </template>

@@ -31,7 +31,7 @@ export const useSetupStore = defineStore('setup', () => {
       needsWelcome.value = response.data
       localStorage.setItem('welcomeNeeded', response.data.toString())
     } catch (error) {
-      snackbarStore.error("Failed to check setup status", error)
+      snackbarStore.error('Failed to check setup status', error)
     } finally {
       isLoading.value = false
     }
