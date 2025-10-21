@@ -14,6 +14,17 @@ const router = useRouter()
 const route = useRoute()
 const setupStore = useSetupStore()
 const pickFolderStore = usePickFolderStore()
+const isLoading = ref(false)
+
+async function startProcessing() {
+  isLoading.value = true
+  try {
+    await setupStore.startProcessing()
+    await router.push({ name: 'home' })
+  } finally {
+    isLoading.value = false
+  }
+}
 
 function getStepFromRoute(r: RouteLocationNormalizedLoadedGeneric): number | null {
   const stepString = r.query.step?.toString()
@@ -104,7 +115,7 @@ setStepFromRoute()
             variant="flat"
             rounded
             v-else
-            @click="setupStore.startProcessing"
+            @click="startProcessing"
             >Start</v-btn
           >
         </div>

@@ -19,38 +19,38 @@ const showErrorDetails = (snack: Snack) => {
 <template>
   <div class="snackbar-container">
     <transition-group name="snack-fade" tag="div" class="snack-stack">
-      <v-snackbar
-        v-for="(snack, i) in snackbarsStore.queue"
-        :key="snack.id"
-        v-model="snack.open"
-        :timeout="snack.timeout"
-        :color="snackColor(snack)"
-        multi-line
-        location="bottom"
-        rounded="pill"
-        class="stacked-snackbar"
-        :style="{ bottom: `${i * 75}px` }"
-      >
-        {{ snack.message }}
+      <div v-for="(snack, i) in snackbarsStore.queue" :key="snack.id">
+        <v-snackbar
+          v-model="snack.open"
+          :timeout="snack.timeout"
+          :color="snackColor(snack)"
+          multi-line
+          location="bottom"
+          rounded="pill"
+          class="stacked-snackbar"
+          :style="{ bottom: `${i * 75}px` }"
+        >
+          {{ snack.message }}
 
-        <template #actions>
-          <v-btn
-            v-if="snack.error"
-            :color="'on-' + snackColor(snack)"
-            variant="text"
-            icon="mdi-information-outline"
-            @click="showErrorDetails(snack)"
-          >
-          </v-btn>
-          <v-btn
-            :color="'on-' + snackColor(snack)"
-            variant="text"
-            @click="snack.open = false"
-            icon="mdi-close"
-          >
-          </v-btn>
-        </template>
-      </v-snackbar>
+          <template #actions>
+            <v-btn
+              v-if="snack.error"
+              :color="'on-' + snackColor(snack)"
+              variant="text"
+              icon="mdi-information-outline"
+              @click="showErrorDetails(snack)"
+            >
+            </v-btn>
+            <v-btn
+              :color="'on-' + snackColor(snack)"
+              variant="text"
+              @click="snack.open = false"
+              icon="mdi-close"
+            >
+            </v-btn>
+          </template>
+        </v-snackbar>
+      </div>
     </transition-group>
 
     <v-dialog v-model="dialog" max-width="700">
@@ -59,6 +59,9 @@ const showErrorDetails = (snack: Snack) => {
           >Error: <strong>{{ selectedSnack.error.name }}</strong></v-card-title
         >
         <v-card-text>
+          <div v-if="selectedSnack.error?.response?.data?.error" class="mb-4">
+            {{ selectedSnack.error?.response?.data?.error }}
+          </div>
           <p><strong>Message:</strong> {{ selectedSnack.error.message }}</p>
           <pre v-if="selectedSnack.error.stack"><strong>Stack Trace:</strong>
             {{ selectedSnack.error.stack }}</pre>

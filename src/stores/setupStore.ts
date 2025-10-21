@@ -11,7 +11,9 @@ import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
 export const useSetupStore = defineStore('setup', () => {
   // --- STATE ---
-  const needsWelcome: Ref<boolean | null> = ref(null)
+  const needsWelcome: Ref<boolean | null> = ref(
+    localStorage.getItem('welcomeNeeded') === null ? null : localStorage.welcomeNeeded === 'true',
+  )
   const disks: Ref<DiskResponse | null> = ref(null)
   const isLoading: Ref<boolean> = ref(false)
   const folders: Ref<string[] | null> = ref(null)
@@ -56,7 +58,7 @@ export const useSetupStore = defineStore('setup', () => {
     try {
       await setupService.startProcessing({ user_folder: userFolder })
     } catch (error) {
-      console.error(`Failed to start processing processing`, error)
+      snackbarStore.error(`Failed to start processing.`, error)
     } finally {
       isLoading.value = false
     }

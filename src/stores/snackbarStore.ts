@@ -99,7 +99,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
    */
   function error(message: string, error: unknown | null = null): void {
     if (error instanceof Error) {
-      console.error('Message: ', message, error.message, error)
+      console.error('Snack Error: ', message, error.message, error)
       enqueue({ message, color: 'error', timeout: 15000, error })
     } else if (error === null) {
       enqueue({ message, color: 'error', timeout: 1500000 })

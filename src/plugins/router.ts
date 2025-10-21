@@ -38,8 +38,8 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
-      path: '/welcome',
-      name: 'welcome',
+      path: '/register',
+      name: 'register',
       meta: { guest: true },
       component: () => import('../views/RegisterView.vue'),
     },
@@ -69,13 +69,10 @@ export function registerNavigationGuard() {
       await setupStore.checkWelcomeStatus()
     }
     if (setupStore.needsWelcome) {
-      if (to.name !== 'welcome') {
+      if (to.name !== 'register') {
         // If they try to go anywhere else, redirect them.
-        return next({ name: 'welcome' })
+        return next({ name: 'register' })
       }
-    } else if (to.name === 'welcome') {
-      // If setup is NOT needed, but they try to go to 'welcome', redirect them away.
-      return next({ name: 'login' })
     }
 
     const accessToken = authStore.accessToken

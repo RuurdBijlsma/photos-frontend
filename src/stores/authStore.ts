@@ -1,6 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
-import router from '@/plugins/router'
 import authService from '@/script/services/authService'
 import type { CreateUser, LoginUser, User } from '@/script/types/api/auth'
 import { isAxiosError } from 'axios'
@@ -61,7 +60,6 @@ export const useAuthStore = defineStore('auth', () => {
       await fetchCurrentUser()
 
       status.value = 'success'
-      await router.push('/')
     } catch (error) {
       if (error instanceof Error) snackbarStore.error('Failed to login. ' + error.message, error)
       status.value = 'error'
@@ -70,7 +68,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (isAxiosError(error) && error.response) {
         // Use the error message from the backend if it exists, otherwise a default
         errorMessage =
-          error.response.data?.message || `Error ${error.response.status}: Login failed.`
+          error.response.data?.error ?? `Error ${error.response.status}: Login failed.`
       }
 
       snackbarsStore.error(errorMessage)
@@ -97,7 +95,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (isAxiosError(error) && error.response) {
         // Use the error message from the backend if it exists, otherwise a default
         errorMessage =
-          error.response.data?.message || `Error ${error.response.status}: Register failed.`
+          error.response.data?.error ?? `Error ${error.response.status}: Register failed.`
       }
 
       snackbarsStore.error(errorMessage, error)
@@ -126,9 +124,6 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('setup-needed')
-
-    // Redirect to login page
-    await router.push('/login')
   }
 
   // --- RETURN ---

@@ -5,10 +5,10 @@ import MyAlert from '@/components/my-theme/MyAlert.vue'
 import SetupLayout from '@/components/my-theme/SetupLayout.vue'
 import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
 import { useAuthStore } from '@/stores/authStore.ts'
-import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
-const snackbarStore = useSnackbarsStore()
+const router = useRouter()
 
 const userInput: Ref<null | HTMLElement> = ref(null)
 const form: Ref<null | VForm> = ref(null)
@@ -40,8 +40,6 @@ async function register() {
   isLoading.value = true
   if (password1.value !== password2.value) return
 
-  // todo: add register func
-  //todo: handle result
   try {
     // This will either succeed and navigate away, or throw an error.
     const result = await authStore.register({
@@ -50,10 +48,11 @@ async function register() {
       password: password1.value,
     })
     console.log('Register result', result)
-  } catch (error) {
-    // The authStore already showed the snackbar. We just need to handle
-    // the UI state here.
-    if (error instanceof Error) snackbarStore.error('Register failed. ' + error.message, error)
+    if (result.media_folder === null) {
+      await router.push({ name: 'setup' })
+    } else {
+      await router.push({ name: 'home' })
+    }
   } finally {
     // This will run whether the login succeeds or fails.
     isLoading.value = false

@@ -4,9 +4,11 @@ import type { VForm } from 'vuetify/components'
 import MyAlert from '@/components/my-theme/MyAlert.vue'
 import { useAuthStore } from '@/stores/authStore.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
 const snackbarStore = useSnackbarsStore()
+const router = useRouter()
 
 const emailInput: Ref<null | HTMLElement> = ref(null)
 const form: Ref<null | VForm> = ref(null)
@@ -36,6 +38,7 @@ async function login() {
       email: email.value,
       password: password.value,
     })
+    await router.push({ name: 'home' })
   } catch (error) {
     // The authStore already showed the snackbar. We just need to handle
     // the UI state here.
