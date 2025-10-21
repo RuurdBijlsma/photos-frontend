@@ -5,6 +5,8 @@ import MyAlert from '@/components/my-theme/MyAlert.vue'
 import { useAuthStore } from '@/stores/authStore.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 import { useRouter } from 'vue-router'
+import MyMainContainer from '@/components/my-theme/MyMainContainer.vue'
+import { isAxiosError } from 'axios'
 
 const authStore = useAuthStore()
 const snackbarStore = useSnackbarsStore()
@@ -27,22 +29,25 @@ const showPassword = ref(false)
 const email = ref('')
 const password = ref('')
 const isSubmitted = ref(false)
-const errorMessage: Ref<string | null> = ref(null)
+const errorMessage: Ref<string | undefined> = ref(undefined)
 const isLoading = ref(false)
 
 async function login() {
   isLoading.value = true
   try {
+    errorMessage.value = undefined
     // This will either succeed and navigate away, or throw an error.
     await authStore.login({
       email: email.value,
       password: password.value,
     })
     await router.push({ name: 'home' })
-  } catch (error) {
-    // The authStore already showed the snackbar. We just need to handle
-    // the UI state here.
-    if (error instanceof Error) snackbarStore.error('Login failed. ' + error.message, error)
+  } catch (e) {
+    if (e instanceof Error) {
+      snackbarStore.error('Could not log in: ' + e.message, e as Error)
+    } else if (isAxiosError(e)) {
+      errorMessage.value = e.response?.data.error
+    }
   } finally {
     // This will run whether the login succeeds or fails.
     isLoading.value = false
@@ -51,7 +56,7 @@ async function login() {
 </script>
 
 <template>
-  <v-main class="login-main">
+  <my-main-container>
     <div class="login-container">
       <div class="left-pane">
         <div :class="{ rotating: isLoading }" class="big-image"></div>
@@ -71,6 +76,7 @@ async function login() {
             color="primary"
             base-color="outline"
             placeholder="user@example.com"
+            autocomplete="email"
           />
           <v-btn
             variant="plain"
@@ -94,11 +100,12 @@ async function login() {
             color="primary"
             base-color="outline"
             label="Password"
+            autocomplete="password"
           ></v-text-field>
           <v-btn
             class="mt-4"
             type="submit"
-            variant="flat"
+            variant="tonal"
             color="primary"
             rounded
             density="default"
@@ -108,9 +115,21 @@ async function login() {
           </v-btn>
         </v-form>
 
+        <div class="mt-10 register-link text-caption">
+          <span class="mr-2">Don't have an account?</span>
+          <v-btn
+            variant="plain"
+            class="ml-2"
+            color="primary"
+            to="/register"
+            rounded
+            density="compact"
+            >Register
+          </v-btn>
+        </div>
+
         <my-alert
-          v-if="errorMessage"
-          :text="errorMessage"
+          v-model="errorMessage"
           icon="mdi-alert-octagon"
           class="mt-8"
           background-color="error-container"
@@ -118,31 +137,12 @@ async function login() {
         />
       </div>
     </div>
-  </v-main>
+  </my-main-container>
 </template>
 
 <style scoped>
-.login-main {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background-color: rgb(var(--v-theme-surface-variant));
-}
-
 .login-container {
-  background: rgb(227, 222, 255, 0.7);
-  background: linear-gradient(
-    0deg,
-    rgba(var(--v-theme-background), 0.5) 0%,
-    rgb(var(--v-theme-background), 0.8) 100%
-  );
-  flex-grow: 1;
-  border-radius: 30px;
-  overflow: hidden;
-  box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
-  max-width: 800px;
-  padding: 60px;
-  margin: 100px auto 0;
+  padding: 20px;
   display: flex;
 }
 
@@ -197,5 +197,13 @@ async function login() {
   100% {
     transform: rotate(360deg);
   }
+}
+
+.register-link {
+  display: flex;
+  justify-content: center;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  vertical-align: middle;
+  line-height: 24px;
 }
 </style>

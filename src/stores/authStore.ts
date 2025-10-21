@@ -63,15 +63,6 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       if (error instanceof Error) snackbarStore.error('Failed to login. ' + error.message, error)
       status.value = 'error'
-      // 3. Extract a user-friendly message and show the snackbar
-      let errorMessage = 'An unexpected error occurred.'
-      if (isAxiosError(error) && error.response) {
-        // Use the error message from the backend if it exists, otherwise a default
-        errorMessage =
-          error.response.data?.error ?? `Error ${error.response.status}: Login failed.`
-      }
-
-      snackbarsStore.error(errorMessage)
       // Propagate the error to the component for UI feedback (e.g., showing a snackbar)
       throw error
     }
@@ -90,16 +81,6 @@ export const useAuthStore = defineStore('auth', () => {
       return response.data
     } catch (error) {
       status.value = 'error'
-      // 3. Extract a user-friendly message and show the snackbar
-      let errorMessage = 'An unexpected error occurred.'
-      if (isAxiosError(error) && error.response) {
-        // Use the error message from the backend if it exists, otherwise a default
-        errorMessage =
-          error.response.data?.error ?? `Error ${error.response.status}: Register failed.`
-      }
-
-      snackbarsStore.error(errorMessage, error)
-      // Propagate the error to the component for UI feedback (e.g., showing a snackbar)
       throw error
     }
   }

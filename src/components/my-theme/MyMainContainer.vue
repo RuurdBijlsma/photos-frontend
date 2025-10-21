@@ -2,12 +2,7 @@
 
 <template>
   <v-main class="main">
-    <div
-      class="container"
-      :style="{
-        background: ``,
-      }"
-    >
+    <div class="container">
       <slot />
     </div>
   </v-main>
@@ -31,14 +26,14 @@
   border-radius: 40px;
   overflow: hidden;
   box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
+  padding: 40px;
   max-width: 800px;
-  padding: 40px 60px;
   display: flex;
   flex-direction: column;
   background: linear-gradient(
     0deg,
-    rgba(var(--v-theme-background), 70) 0%,
-    rgba(var(--v-theme-background), 90) 100%
+    rgba(var(--v-theme-background), 0.7) 0%,
+    rgba(var(--v-theme-background), 1) 100%
   );
 }
 

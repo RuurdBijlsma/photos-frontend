@@ -65,22 +65,9 @@ export function registerNavigationGuard() {
 
   // --- Global Navigation Guard ---
   router.beforeEach(async (to, from, next) => {
-    if (setupStore.needsWelcome === null) {
-      await setupStore.checkWelcomeStatus()
-    }
-    if (setupStore.needsWelcome) {
-      if (to.name !== 'register') {
-        // If they try to go anywhere else, redirect them.
-        return next({ name: 'register' })
-      }
-    }
-
     const accessToken = authStore.accessToken
 
     // Handle Initial App Load
-    // If the user object is not yet loaded but a token exists,
-    // it means the user has refreshed the page on a protected route.
-    // We must wait for the user data to be fetched before proceeding.
     if (accessToken && !authStore.user) {
       try {
         await authStore.fetchCurrentUser()
@@ -89,6 +76,7 @@ export function registerNavigationGuard() {
         // the authStore's interceptor should handle logout.
         // We'll proceed with the navigation, and subsequent checks will redirect to login.
         snackbarStore.error('Session could not be restored. Redirecting to login.', error)
+        return next({ name: 'login' })
       }
     }
 

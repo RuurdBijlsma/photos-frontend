@@ -1,18 +1,23 @@
 <script setup lang="ts">
 defineProps<{
-  text: string
   icon: string
-  backgroundColor: string
-  textColor: string
 }>()
+
+const errorMessage = defineModel({
+  type: String,
+  default: '',
+  required: false,
+})
 </script>
 
 <template>
-  <v-alert variant="flat" :color="backgroundColor" class="server-alert">
-    <v-icon :color="textColor" :icon="icon" />
-    <p class="text-caption" :style="{ color: textColor }">
-      {{ text }}
+  <v-alert v-if="errorMessage" variant="flat" color="error" class="server-alert">
+    <v-icon color="on-error" :icon="icon" />
+    <p class="text-caption on-error-text">
+      {{ errorMessage }}
     </p>
+    <v-spacer></v-spacer>
+    <v-btn @click="errorMessage = ''" icon="mdi-close" variant="plain" density="compact" />
   </v-alert>
 </template>
 
@@ -27,5 +32,9 @@ defineProps<{
   align-items: center;
   gap: 20px;
   padding-left: 10px;
+}
+
+.on-error-text {
+  color: rgb(var(--v-theme-on-error));
 }
 </style>

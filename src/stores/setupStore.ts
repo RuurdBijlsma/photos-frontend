@@ -11,33 +11,12 @@ import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
 export const useSetupStore = defineStore('setup', () => {
   // --- STATE ---
-  const needsWelcome: Ref<boolean | null> = ref(
-    localStorage.getItem('welcomeNeeded') === null ? null : localStorage.welcomeNeeded === 'true',
-  )
   const disks: Ref<DiskResponse | null> = ref(null)
   const isLoading: Ref<boolean> = ref(false)
   const folders: Ref<string[] | null> = ref(null)
   const mediaSamples: Ref<MediaSampleResponse | null> = ref(null)
   const unsupportedFiles: Ref<UnsupportedFilesResponse | null> = ref(null)
   const snackbarStore = useSnackbarsStore()
-
-  // --- ACTIONS ---
-  async function checkWelcomeStatus() {
-    if (localStorage.getItem('welcomeNeeded') === 'false') {
-      needsWelcome.value = false
-      return
-    }
-    isLoading.value = true
-    try {
-      const response = await setupService.isWelcomeNeeded()
-      needsWelcome.value = response.data
-      localStorage.setItem('welcomeNeeded', response.data.toString())
-    } catch (error) {
-      snackbarStore.error('Failed to check setup status', error)
-    } finally {
-      isLoading.value = false
-    }
-  }
 
   async function fetchDiskInfo() {
     isLoading.value = true
@@ -67,14 +46,12 @@ export const useSetupStore = defineStore('setup', () => {
   // --- RETURN ---
   return {
     // State
-    needsWelcome,
     disks,
     isLoading,
     folders,
     mediaSamples,
     unsupportedFiles,
     // Actions
-    checkWelcomeStatus,
     fetchDiskInfo,
     startProcessing,
   }

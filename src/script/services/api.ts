@@ -77,7 +77,7 @@ apiClient.interceptors.response.use(
 
       const refreshToken = authStore.refreshToken
       if (!refreshToken) {
-        snackbarStore.error('No refresh token available. Logging out.')
+        console.warn('No refresh token available. Logging out.')
         authStore.logout().then(() => console.info('Logged out'))
         return Promise.reject(error)
       }
