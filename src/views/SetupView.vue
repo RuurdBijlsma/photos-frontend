@@ -20,6 +20,7 @@ async function startProcessing() {
   isLoading.value = true
   try {
     await setupStore.startProcessing()
+    console.log('Pushing ', { name: 'home' })
     await router.push({ name: 'home' })
   } finally {
     isLoading.value = false

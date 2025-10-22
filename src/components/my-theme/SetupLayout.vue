@@ -4,7 +4,7 @@ interface Props {
   captionText?: boolean
   hideLogo?: boolean
 }
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   captionText: false,
   hideLogo: false,
 })

@@ -34,7 +34,13 @@
   </v-app-bar>
   <v-navigation-drawer permanent color="transparent" floating>
     <v-list color="primary-darken-1" class="nav-list">
-      <v-list-item rounded prepend-icon="mdi-image-outline" title="Photos" to="/" exact />
+      <v-list-item
+        rounded
+        prepend-icon="mdi-image-outline"
+        title="Photos"
+        to="/"
+        :active="$route.path === '/'"
+      />
       <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
       <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
     </v-list>

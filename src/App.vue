@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { RouterView } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import SnackbarQueue from '@/components/SnackbarQueue.vue'
+import { useBackgroundStore } from '@/stores/backgroundStore'
+
+// Instantiate stores
+const backgroundStore = useBackgroundStore()
+const { backgroundUrl } = storeToRefs(backgroundStore)
+
+// Initialize the systems. Order doesn't matter
+// themeStore.initialize()
+backgroundStore.initialize()
+</script>
+
 <template>
   <div class="blurred-background">
     <div class="blur-filter"></div>
@@ -15,21 +30,6 @@
   <snackbar-queue />
 </template>
 
-<script setup lang="ts">
-import { RouterView } from 'vue-router'
-import { storeToRefs } from 'pinia'
-import SnackbarQueue from '@/components/SnackbarQueue.vue'
-import { useBackgroundStore } from '@/stores/backgroundStore'
-
-// Instantiate stores
-const backgroundStore = useBackgroundStore()
-const { backgroundUrl } = storeToRefs(backgroundStore)
-
-// Initialize the systems. Order doesn't matter
-// themeStore.initialize()
-backgroundStore.initialize()
-</script>
-
 <style scoped>
 .main-content {
   width: 100%;
@@ -42,7 +42,7 @@ backgroundStore.initialize()
   position: fixed;
   width: 100%;
   height: 100%;
-  background-color: #7878ff;
+  background-color: #363654;
   z-index: 0;
 }
 

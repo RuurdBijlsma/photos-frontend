@@ -8,6 +8,7 @@ import type {
 } from '@/script/types/api/setup.ts'
 import { usePickFolderStore } from '@/stores/pickFolderStore.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
+import { useAuthStore } from '@/stores/authStore.ts'
 
 export const useSetupStore = defineStore('setup', () => {
   // --- STATE ---
@@ -17,6 +18,7 @@ export const useSetupStore = defineStore('setup', () => {
   const mediaSamples: Ref<MediaSampleResponse | null> = ref(null)
   const unsupportedFiles: Ref<UnsupportedFilesResponse | null> = ref(null)
   const snackbarStore = useSnackbarsStore()
+  const authStore = useAuthStore()
 
   async function fetchDiskInfo() {
     isLoading.value = true
@@ -36,6 +38,9 @@ export const useSetupStore = defineStore('setup', () => {
     const userFolder = pickFolderStore.viewedFolder.join('/')
     try {
       await setupService.startProcessing({ user_folder: userFolder })
+      if (authStore.user) {
+        authStore.user.media_folder = userFolder
+      }
     } catch (error) {
       snackbarStore.error(`Failed to start processing.`, error)
     } finally {

@@ -1,6 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
-import authService from './authService'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
 const apiClient = axios.create({
@@ -83,10 +82,11 @@ apiClient.interceptors.response.use(
       }
 
       try {
-        const response = await authService.refreshSession({
-          refresh_token: refreshToken,
+        const response = await fetch(apiClient.defaults.baseURL + '/auth/refresh', {
+          method: 'POST',
+          body: JSON.stringify({ refresh_token: refreshToken }),
         })
-        const { access_token, refresh_token } = response.data
+        const { access_token, refresh_token } = await response.json()
 
         // Update the store with the new tokens
         authStore.setTokens(access_token, refresh_token)
@@ -102,7 +102,7 @@ apiClient.interceptors.response.use(
         // Retry the original request
         return apiClient(originalRequest)
       } catch (refreshError) {
-        snackbarStore.error('Refreshing token failed. Logging out.', refreshError as Error)
+        console.warn('Refreshing token failed. Logging out.', refreshError)
         processQueue(refreshError as Error, null)
         authStore.logout()
         return Promise.reject(refreshError)

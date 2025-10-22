@@ -2,7 +2,6 @@ import { computed, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import authService from '@/script/services/authService'
 import type { CreateUser, LoginUser, User } from '@/script/types/api/auth'
-import { isAxiosError } from 'axios'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
 // The 'status' type can be defined for clarity
@@ -39,11 +38,12 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function fetchCurrentUser() {
     if (!accessToken.value) return
-    try {
+    try{
       const response = await authService.getMe()
       user.value = response.data
-    } catch (error) {
-      snackbarStore.error('Failed to fetch current user from server.', error)
+    }catch(error){
+      user.value = null
+      throw error
     }
   }
 
@@ -52,7 +52,6 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function login(credentials: LoginUser) {
     status.value = 'loading'
-    const snackbarsStore = useSnackbarsStore()
     try {
       const response = await authService.login(credentials)
       setTokens(response.data.access_token, response.data.refresh_token)

@@ -68,7 +68,6 @@ export const usePickFolderStore = defineStore(
       if (viewedFolder.value.join('/') !== requestFolder) return
 
       mediaSamples.value = response.data
-      console.log(JSON.parse(JSON.stringify(mediaSamples.value?.samples)))
 
       N_SAMPLES = mediaSamples.value.samples.length
       if (samples.value.length > N_SAMPLES) {

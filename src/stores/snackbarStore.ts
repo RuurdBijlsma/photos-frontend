@@ -102,6 +102,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
       console.error('Snack Error: ', message, error.message, error)
       enqueue({ message, color: 'error', timeout: 15000, error })
     } else if (error === null) {
+      console.error('Unknown snack error: ', message, error)
       enqueue({ message, color: 'error', timeout: 1500000 })
     } else {
       console.warn('Logged error not shown because the error type is not error', message, error)
