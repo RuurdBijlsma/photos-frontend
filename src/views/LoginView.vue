@@ -41,7 +41,7 @@ async function login() {
       email: email.value,
       password: password.value,
     })
-    await router.push({ name: 'home' })
+    await router.push({ name: 'photos-library' })
   } catch (e) {
     if (e instanceof Error) {
       snackbarStore.error('Could not log in: ' + e.message, e as Error)

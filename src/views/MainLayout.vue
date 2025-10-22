@@ -1,4 +1,5 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+</script>
 
 <template>
   <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
@@ -144,9 +145,16 @@
 }
 
 .router-view {
+  height: calc(100% - 10px);
+  width: calc(100% - 20px);
+  margin: 10px;
+  margin-bottom: 0;
+  border-radius: 55px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  overflow: hidden;
   overflow-y: auto;
-  height: 100%;
-  width: 100%;
+
   -ms-overflow-style: none;
   scrollbar-width: none;
 }

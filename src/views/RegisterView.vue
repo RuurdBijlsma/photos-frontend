@@ -55,8 +55,8 @@ async function register() {
       console.log('Pushing router to setup')
       await router.push({ name: 'setup' })
     } else {
-      console.log('Pushing router to home')
-      await router.push({ name: 'home' })
+      console.log('Pushing router to photos-library')
+      await router.push({ name: 'photos-library' })
     }
   } catch (e) {
     console.log("Is axios error", isAxiosError(e))

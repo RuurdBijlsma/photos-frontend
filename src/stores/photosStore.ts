@@ -1,6 +1,6 @@
 import { type Ref, ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { MediaItemDto, TimelineMonthInfo } from '@/script/types/api/photos'
+import type { MonthGroup, TimelineMonthInfo } from '@/script/types/api/photos'
 import photosService from '@/script/services/photosService.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
@@ -8,25 +8,46 @@ export const usePhotosStore = defineStore('photos', () => {
   // --- STATE ---
   const timelineSummary = ref<TimelineMonthInfo[]>([])
   const isLoading = ref(false)
-  const monthData: Ref<{ [key: string]: MediaItemDto[] }> = ref({})
+  const months: Ref<MonthGroup[]> = ref([])
+  const loadedMonths: Ref<Set<string>> = ref(new Set())
   const snackbarStore = useSnackbarsStore()
 
   /**
    * Fetches media items for a given set of months.
-   * @param months - An array of "YYYY-MM" formatted strings.
+   * @param monthsQuery - An array of "YYYY-MM" formatted strings.
    */
-  async function fetchMediaByMonth(months: { month: number; year: number }[]) {
-    if (months.length === 0) return
+  async function fetchMediaByMonth(monthsQuery: { month: number; year: number }[]) {
+    if (!monthsQuery || monthsQuery.length === 0) {
+      return
+    }
 
-    isLoading.value = true
     try {
-      const monthStrings = months.map((m) => `${m.year}-${m.month}`)
-      console.log(monthStrings)
-      const response = await photosService.getMediaByMonth(monthStrings)
-      console.log('response.data', response.data)
-      for (const month of response.data.months) {
-        monthData.value[month.month] = month.mediaItems
+      // Determine which months are new and need to be fetched.
+      const monthStringsToFetch = monthsQuery
+        .map((m) => `${m.year}-${String(m.month).padStart(2, '0')}`)
+        .filter((monthString) => !loadedMonths.value.has(monthString))
+
+      if (monthStringsToFetch.length === 0) {
+        console.warn('All requested months have already been loaded.')
+        return
       }
+
+      isLoading.value = true
+
+      // Fetch data only for the new months.
+      const response = await photosService.getMediaByMonth(monthStringsToFetch)
+      const newMonthGroups = response.data.months
+
+      if (!newMonthGroups || newMonthGroups.length === 0) {
+        // No new media was returned.
+        console.warn("Nothing returned by the api!")
+        return
+      }
+
+      newMonthGroups.forEach((group) => loadedMonths.value.add(group.month))
+      months.value = [...months.value, ...newMonthGroups].sort((a, b) =>
+        b.month.localeCompare(a.month),
+      )
     } catch (err) {
       snackbarStore.error('Failed to fetch the timeline summary.', err as Error)
     } finally {
@@ -90,7 +111,7 @@ export const usePhotosStore = defineStore('photos', () => {
       let countBefore = 0 // for newer photos (lower index)
       let countAfter = 0 // for older photos (higher index)
 
-      // Add the central month where the date falls.
+      // Add the central month when the date falls.
       const centralMonth = timelineSummary.value[bestIndex]
       if (!centralMonth) {
         console.warn('No central month found.')
@@ -139,8 +160,9 @@ export const usePhotosStore = defineStore('photos', () => {
   return {
     // State
     timelineSummary,
-    monthData,
+    months,
     isLoading,
+    loadedMonths,
 
     // Actions
     fetchTimelineSummary,

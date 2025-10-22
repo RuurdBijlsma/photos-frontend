@@ -98,8 +98,8 @@ export function registerNavigationGuard() {
         return next() // User is authenticated and an admin, allow access.
       } else {
         snackbarsStore.error("You don't have permission to access this page.")
-        // Redirect to a safe page, like home.
-        return next({ name: 'home' })
+        // Redirect to a safe page, like photos-library.
+        return next({ name: 'photos-library' })
       }
     }
 
@@ -117,7 +117,7 @@ export function registerNavigationGuard() {
     if (to.meta.guest) {
       if (isAuthenticated) {
         // User is already logged in, redirect them away from login/register.
-        return next({ name: 'home' })
+        return next({ name: 'photos-library' })
       } else {
         return next() // User is not logged in, allow access to guest page.
       }
