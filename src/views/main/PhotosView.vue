@@ -182,7 +182,7 @@ watch(containerWidth, calculateTimelineGrid)
   <div class="photo-grid-container" ref="photoGridContainer">
     <!-- Loop through years -->
     <div v-for="year in timeline" :key="year.year" class="year-group">
-      <h1>{{ year.year }}</h1>
+      <h1 v-if="year.year !== (new Date()).getFullYear()">{{ year.year }}</h1>
 
       <!-- Loop through months in each year -->
       <div v-for="month in year.months" :key="month.month" class="month-group">
@@ -213,7 +213,7 @@ watch(containerWidth, calculateTimelineGrid)
 
 <style scoped>
 .year-group h1 {
-  padding: 20px 0;
+  padding: 58px 0 0px;
   text-align: center;
 }
 
@@ -223,7 +223,10 @@ watch(containerWidth, calculateTimelineGrid)
 }
 
 .month-group h2 {
-  padding: 10px 0 15px 5px; /* Added some padding */
+  /* Added some padding */
+  padding: 20px 0 10px 15px;
+  font-weight: 500;
+  font-size: 24px;
 }
 
 .photo-row {
