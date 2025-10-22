@@ -103,7 +103,7 @@ export const usePickFolderStore = defineStore(
       const baseFolder = viewedFolder.value.join('/')
 
       try {
-        await setupService.makeFolder({ base_folder: baseFolder, new_name: folderName })
+        await setupService.makeFolder({ baseFolder, newName: folderName })
       } catch (e) {
         snackbarStore.error("Can't make folder", e)
       } finally {

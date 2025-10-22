@@ -51,7 +51,7 @@ async function register() {
       password: password1.value,
     })
     console.log('Register result', result)
-    if (result.media_folder === null) {
+    if (result.mediaFolder === null) {
       console.log('Pushing router to setup')
       await router.push({ name: 'setup' })
     } else {

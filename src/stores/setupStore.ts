@@ -37,9 +37,9 @@ export const useSetupStore = defineStore('setup', () => {
     isLoading.value = true
     const userFolder = pickFolderStore.viewedFolder.join('/')
     try {
-      await setupService.startProcessing({ user_folder: userFolder })
+      await setupService.startProcessing({ userFolder })
       if (authStore.user) {
-        authStore.user.media_folder = userFolder
+        authStore.user.mediaFolder = userFolder
       }
     } catch (error) {
       snackbarStore.error(`Failed to start processing.`, error)

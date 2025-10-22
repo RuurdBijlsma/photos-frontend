@@ -1,6 +1,6 @@
 import { type Ref, ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { DayGroup, TimelineMonthInfo } from '@/script/types/api/photos'
+import type { MediaItemDto, TimelineMonthInfo } from '@/script/types/api/photos'
 import photosService from '@/script/services/photosService.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
@@ -8,7 +8,7 @@ export const usePhotosStore = defineStore('photos', () => {
   // --- STATE ---
   const timelineSummary = ref<TimelineMonthInfo[]>([])
   const isLoading = ref(false)
-  const monthData: Ref<{ [key: string]: DayGroup[] }> = ref({})
+  const monthData: Ref<{ [key: string]: MediaItemDto[] }> = ref({})
   const snackbarStore = useSnackbarsStore()
 
   /**
@@ -23,8 +23,9 @@ export const usePhotosStore = defineStore('photos', () => {
       const monthStrings = months.map((m) => `${m.year}-${m.month}`)
       console.log(monthStrings)
       const response = await photosService.getMediaByMonth(monthStrings)
+      console.log('response.data', response.data)
       for (const month of response.data.months) {
-        monthData.value[month.month] = month.days
+        monthData.value[month.month] = month.mediaItems
       }
     } catch (err) {
       snackbarStore.error('Failed to fetch the timeline summary.', err as Error)
@@ -114,7 +115,7 @@ export const usePhotosStore = defineStore('photos', () => {
           const monthInfo = timelineSummary.value[beforePtr]
           beforePtr--
           if (monthInfo === undefined) continue
-          countBefore += monthInfo.media_count
+          countBefore += monthInfo.mediaCount
           monthsToFetch.add(monthInfo)
         }
 
@@ -123,7 +124,7 @@ export const usePhotosStore = defineStore('photos', () => {
           const monthInfo = timelineSummary.value[afterPtr]
           afterPtr++
           if (monthInfo === undefined) continue
-          countAfter += monthInfo.media_count
+          countAfter += monthInfo.mediaCount
           monthsToFetch.add(monthInfo)
         }
       }

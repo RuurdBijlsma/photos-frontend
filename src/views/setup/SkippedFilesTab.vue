@@ -30,20 +30,20 @@ const pickFolderStore = usePickFolderStore()
   <div
     v-if="
       pickFolderStore.unsupportedFiles &&
-      (pickFolderStore.unsupportedFiles.unsupported_count > 0 ||
-        pickFolderStore.unsupportedFiles.inaccessible_entries.length > 0)
+      (pickFolderStore.unsupportedFiles.unsupportedCount > 0 ||
+        pickFolderStore.unsupportedFiles.inaccessibleEntries.length > 0)
     "
   >
     <!-- Unsupported Files -->
     <unsupported-files
-      v-if="pickFolderStore.unsupportedFiles.unsupported_count > 0"
+      v-if="pickFolderStore.unsupportedFiles.unsupportedCount > 0"
       :summary="pickFolderStore.unsupportedFiles"
     />
 
     <!-- Inaccessible Files and Folders -->
     <inaccessible-entries
       :summary="pickFolderStore.unsupportedFiles"
-      v-if="pickFolderStore.unsupportedFiles.inaccessible_entries.length > 0"
+      v-if="pickFolderStore.unsupportedFiles.inaccessibleEntries.length > 0"
     />
   </div>
   <v-alert

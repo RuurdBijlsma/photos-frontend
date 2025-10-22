@@ -54,7 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
     status.value = 'loading'
     try {
       const response = await authService.login(credentials)
-      setTokens(response.data.access_token, response.data.refresh_token)
+      setTokens(response.data.accessToken, response.data.refreshToken)
 
       await fetchCurrentUser()
 
@@ -91,7 +91,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Call the backend to invalidate the refresh token if it exists.
     if (refreshToken.value) {
       try {
-        await authService.logout({ refresh_token: refreshToken.value })
+        await authService.logout({ refreshToken: refreshToken.value })
       } catch (err) {
         console.warn('Logout API call failed, but logging out client-side anyway.', err)
       }

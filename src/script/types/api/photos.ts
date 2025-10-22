@@ -1,14 +1,14 @@
 import type { Theme } from '@/script/types/themeColor.ts'
 
 export interface RandomPhotoResponse {
-  media_id: string
+  mediaId: string
   themes: null | Theme[]
 }
 
 export interface TimelineMonthInfo {
   year: number
   month: number
-  media_count: number
+  mediaCount: number
 }
 
 export interface MediaItemDto {
@@ -21,14 +21,9 @@ export interface MediaItemDto {
   d: number | null
 }
 
-export interface DayGroup {
-  date: string
-  media_items: MediaItemDto[]
-}
-
 export interface MonthGroup {
   month: string
-  days: DayGroup[]
+  mediaItems: MediaItemDto[]
 }
 
 export interface PaginatedMediaResponse {

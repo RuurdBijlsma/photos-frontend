@@ -40,7 +40,7 @@ export const useBackgroundStore = defineStore('background', () => {
         return
       }
 
-      const newBgUrl = photosService.getPhotoThumbnail(photo.media_id, 1080)
+      const newBgUrl = photosService.getPhotoThumbnail(photo.mediaId, 1080)
       const newTheme = photo.themes?.[0]
 
       if (newTheme) {

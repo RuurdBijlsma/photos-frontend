@@ -3,19 +3,19 @@ export type UserRole = 'admin' | 'user'
 
 // Maps to the Tokens schema
 export interface Tokens {
-  access_token: string
-  refresh_token: string
+  accessToken: string
+  refreshToken: string
 }
 
 // Maps to the User schema
 export interface User {
   id: number
-  created_at: string // ISO date string
-  updated_at: string // ISO date string
+  createdAt: string // ISO date string
+  updatedAt: string // ISO date string
   email: string
   name: string
   role: UserRole
-  media_folder?: string | null
+  mediaFolder?: string | null
 }
 
 // Maps to request body schemas for type safety in our service calls
@@ -31,5 +31,5 @@ export interface CreateUser {
 }
 
 export interface RefreshTokenPayload {
-  refresh_token: string
+  refreshToken: string
 }

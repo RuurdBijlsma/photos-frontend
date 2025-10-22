@@ -35,14 +35,14 @@ refreshFolderSummary().then()
   <section v-if="setupStore.disks">
     <!-- Media Folder -->
     <full-folder-status
-      :folder="setupStore.disks.media_folder"
+      :folder="setupStore.disks.mediaFolder"
       env-var="MEDIA_DIR"
       title-icon="mdi-camera"
     />
 
     <!-- Thumbnails Folder -->
     <full-folder-status
-      :folder="setupStore.disks.thumbnails_folder"
+      :folder="setupStore.disks.thumbnailsFolder"
       env-var="THUMBNAILS_DIR"
       title-icon="mdi-image-multiple"
     />

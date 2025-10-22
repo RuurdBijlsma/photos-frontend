@@ -59,8 +59,8 @@ const showErrorDetails = (snack: Snack) => {
           >Error: <strong>{{ selectedSnack.error.name }}</strong></v-card-title
         >
         <v-card-text>
-          <div v-if="selectedSnack.error?.response?.data?.error" class="mb-4">
-            {{ selectedSnack.error?.response?.data?.error }}
+          <div v-if="selectedSnack.errorData?.error" class="mb-4">
+            {{ selectedSnack.errorData?.error }}
           </div>
           <p><strong>Message:</strong> {{ selectedSnack.error.message }}</p>
           <pre v-if="selectedSnack.error.stack"><strong>Stack Trace:</strong>

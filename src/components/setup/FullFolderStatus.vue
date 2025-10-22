@@ -17,10 +17,10 @@ defineProps<{
       <v-spacer />
       <v-chip
         class="ml-2"
-        :color="folder.read_access ? 'secondary-container' : 'error'"
+        :color="folder.readAccess ? 'secondary-container' : 'error'"
         size="small"
       >
-        {{ folder.read_access ? 'Connected' : 'No Access' }}
+        {{ folder.readAccess ? 'Connected' : 'No Access' }}
       </v-chip>
     </v-card-title>
     <v-card-text>
@@ -28,11 +28,11 @@ defineProps<{
         <div class="d-flex justify-space-between mb-2 disk-text-container mt-3">
           <span class="text-caption disk-uppercase">{{ envVar }} </span>
           <span class="text-caption black-text"
-            >{{ prettyBytes(folder.disk_used) }} / {{ prettyBytes(folder.disk_total) }}</span
+            >{{ prettyBytes(folder.diskUsed) }} / {{ prettyBytes(folder.diskTotal) }}</span
           >
         </div>
         <v-progress-linear
-          :model-value="(folder.disk_used / folder.disk_total) * 100"
+          :model-value="(folder.diskUsed / folder.diskTotal) * 100"
           class="linear-progress mt-0"
           color="primary"
           rounded
@@ -42,22 +42,22 @@ defineProps<{
           <v-chip
             variant="tonal"
             density="compact"
-            :color="folder.read_access ? 'primary' : 'error'"
+            :color="folder.readAccess ? 'primary' : 'error'"
           >
-            <v-icon class="mr-2" :icon="folder.read_access ? 'mdi-check' : 'mdi-close'"></v-icon>
+            <v-icon class="mr-2" :icon="folder.readAccess ? 'mdi-check' : 'mdi-close'"></v-icon>
             Read
           </v-chip>
           <v-chip
             variant="tonal"
             density="compact"
-            :color="folder.write_access ? 'primary' : 'error'"
+            :color="folder.writeAccess ? 'primary' : 'error'"
           >
-            <v-icon class="mr-2" :icon="folder.write_access ? 'mdi-check' : 'mdi-close'"></v-icon>
+            <v-icon class="mr-2" :icon="folder.writeAccess ? 'mdi-check' : 'mdi-close'"></v-icon>
             Write
           </v-chip>
         </div>
       </div>
-      <div v-if="!folder.read_access || !folder.write_access" class="mt-4 text-error">
+      <div v-if="!folder.readAccess || !folder.writeAccess" class="mt-4 text-error">
         <v-icon icon="mdi-alert" class="mr-3"></v-icon>
         This folder has permission issues. Please check read/write access.
       </div>

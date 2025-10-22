@@ -82,9 +82,9 @@ export function registerNavigationGuard() {
 
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
-    const needsSetup = isAdmin && authStore.user?.media_folder === null
+    const needsSetup = isAdmin && authStore.user?.mediaFolder === null
 
-    console.log({ isAdmin, media_folder: authStore.user?.media_folder, needsSetup })
+    console.log({ isAdmin, mediaFolder: authStore.user?.mediaFolder, needsSetup })
     if (needsSetup) {
       // setup needed
       if (to.name !== 'setup') {
