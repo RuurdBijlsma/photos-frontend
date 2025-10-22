@@ -14,3 +14,5 @@
   theme.
 * make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
   music
+* er is ineens een transition als je de main page inlaad, de nav menu gaat van boven naar beneden
+* WAAR IS DE TRANSITION

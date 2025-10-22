@@ -2,13 +2,12 @@
 import { usePhotosStore } from '@/stores/photosStore.ts'
 import { useRoute } from 'vue-router'
 import photosService from '@/script/services/photosService.ts'
-import { onMounted, type Ref, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useElementSize } from '@vueuse/core'
 import type { MediaItemDto } from '@/script/types/api/photos.ts'
 
-const photosStore = usePhotosStore()
-const route = useRoute()
-const MONTHS = [
+// --- Constants for Clarity and Configuration ---
+const MONTH_NAMES = [
   'January',
   'February',
   'March',
@@ -22,119 +21,190 @@ const MONTHS = [
   'November',
   'December',
 ]
+const BASE_ROW_HEIGHT = 320 // Target height for photos in a row
+const PHOTO_GAP = 2 // Gap between photos in pixels
+const MAX_RESIZE_RATIO = 1.3 // Prevents rows with few images from becoming huge
+const MEDIA_FETCH_LIMIT = 100 // Number of photos to fetch around the initial date
+const THUMB_HEIGHT_OPTIONS = [240, 360, 480, 720, 1080, 1440]
 
-photosStore.fetchTimelineSummary().then(async () => {
-  const dateString = (
-    route.query['date'] ??
-    new Date().toISOString().split('T')[0] ??
-    ''
-  ).toString()
-  const date = new Date(dateString)
-  console.log('date', date)
-  const monthsToFetch = photosStore.fetchMediaAroundDate(date, 100)
-  if (monthsToFetch) await photosStore.fetchMediaByMonth(Array.from(monthsToFetch))
-  console.log(photosStore.months)
-  calculateGrid()
-})
-
-// how to render grid
-// 1. get reactive width of photos container (.images)
-// 2. loop over images per month, divide up into rows, using width and photo aspect ratios and desired photo height
-const photoGrid = ref(null)
-const photoGridSize = useElementSize(photoGrid)
-onMounted(() => {
-  watch(photoGridSize.width, () => calculateGrid())
-  watch(
-    () => photosStore.months,
-    () => calculateGrid(),
-  )
-  calculateGrid()
-})
-
-interface Row {
+// --- Type Definitions for our new, cleaner data structure ---
+interface DisplayRow {
+  id: string // A unique key for the v-for
   mediaItems: MediaItemDto[]
   height: number
-  key: number
-  newMonth?: number
-  newYear?: number
+  thumbHeight: number
 }
-const rows: Ref<Row[]> = ref([])
-const MAX_ROW_HEIGHT = 320
-const PHOTO_GAP = 2
-const MAX_GROW_RATIO = 1.3
 
-function calculateGrid() {
-  const photoGridWidth = photoGridSize.width.value
-  if (photoGridWidth == 0 || Object.keys(photosStore.months).length == 0) {
+interface DisplayMonth {
+  month: number
+  monthName: string
+  rows: DisplayRow[]
+}
+
+interface DisplayYear {
+  year: number
+  months: DisplayMonth[]
+}
+
+// --- Component State ---
+const photosStore = usePhotosStore()
+const route = useRoute()
+const photoGridContainer = ref<HTMLElement | null>(null)
+const { width: containerWidth } = useElementSize(photoGridContainer)
+const timeline = ref<DisplayYear[]>([])
+
+// --- Initial Data Loading ---
+onMounted(async () => {
+  // Wait for the timeline summary (e.g., list of available months) to load
+  await photosStore.fetchTimelineSummary()
+
+  // Determine the starting date from the URL query or default to today
+  const dateString = route.query['date']?.toString() || new Date().toISOString()
+  const initialDate = new Date(dateString)
+
+  // Ask the store which specific months we need to fetch around that date
+  const monthsToFetch = photosStore.fetchMediaAroundDate(initialDate, MEDIA_FETCH_LIMIT)
+
+  // Fetch the actual media items for those months
+  if (monthsToFetch && monthsToFetch.size > 0) {
+    await photosStore.fetchMediaByMonth(Array.from(monthsToFetch))
+  }
+})
+
+// --- Grid Calculation Logic ---
+
+/**
+ * Transforms the flat month data from the store into a structured timeline
+ * for rendering a justified photo grid.
+ */
+function calculateTimelineGrid() {
+  const width = containerWidth.value
+  // Don't calculate if the container has no width or if there are no photos to display
+  if (width === 0 || photosStore.months.length === 0) {
+    timeline.value = []
     return
   }
-  console.warn('Calculate Grid')
-  const newRows: Row[] = []
-  let index = 0
 
-  let activeMonth = -1
-  let activeYear = -1
-  const addNewRow = (row: MediaItemDto[], rowWidth: number, yearMonthString: string) => {
-    const [year, month] = yearMonthString.split('-').map((n) => +n)
-    // Photos overflow the row
-    let newMonth = undefined
-    let newYear = undefined
-    if (month !== activeMonth) {
-      activeMonth = month
-      newMonth = month
-    }
-    if (year !== activeYear) {
-      activeYear = year
-      newYear = year
-    }
-    let growRatio = photoGridWidth / rowWidth
-    if (growRatio > MAX_GROW_RATIO) growRatio = 1
-    newRows.push({
-      key: index++,
-      mediaItems: row,
-      height: MAX_ROW_HEIGHT * growRatio,
-      newMonth,
-      newYear,
-    })
-  }
+  const newTimeline: DisplayYear[] = []
+  let rowKey = 0
 
-  for (const month of photosStore.months) {
-    let row: MediaItemDto[] = []
-    // Start with -PHOTO_GAP because for N photos there should be N-1 PHOTO_GAPs counted.
-    let rowWidth = -PHOTO_GAP
-    for (const mediaItem of month.mediaItems) {
-      const itemRatio = mediaItem.w / mediaItem.h
-      rowWidth += MAX_ROW_HEIGHT * itemRatio + PHOTO_GAP
-      row.push(mediaItem)
-      if (rowWidth >= photoGridWidth) {
-        addNewRow(row, rowWidth, month.month)
-        row = []
-        rowWidth = 0
+  for (const monthGroup of photosStore.months) {
+    const [year, month] = monthGroup.month.split('-').map(Number)
+
+    // Find or create the year and month groups in our new structure
+    let currentYear = newTimeline.find((y) => y.year === year)
+    if (!currentYear) {
+      currentYear = { year, months: [] }
+      newTimeline.push(currentYear)
+    }
+
+    let currentMonth = currentYear.months.find((m) => m.month === month)
+    if (!currentMonth) {
+      currentMonth = { month, monthName: MONTH_NAMES[month - 1], rows: [] }
+      currentYear.months.push(currentMonth)
+    }
+
+    let currentRowItems: MediaItemDto[] = []
+    // Start with a negative gap to account for N-1 gaps for N photos
+    let currentWidth = -PHOTO_GAP
+
+    for (const mediaItem of monthGroup.mediaItems) {
+      // Calculate the aspect ratio to determine the item's width at the base height
+      const aspectRatio = mediaItem.w / mediaItem.h
+      currentWidth += BASE_ROW_HEIGHT * aspectRatio + PHOTO_GAP
+      currentRowItems.push(mediaItem)
+
+      // When the row is full, process and add it
+      if (currentWidth >= width) {
+        // Calculate the ratio needed to make the row fit the container width perfectly
+        const justificationRatio = width / currentWidth
+
+        // Cap the growth to prevent excessive distortion for rows with few items
+        const finalRatio = Math.min(justificationRatio, MAX_RESIZE_RATIO)
+        let rowHeight = BASE_ROW_HEIGHT * finalRatio
+        let usedThumbHeight = 0
+        for (const thumbHeight of THUMB_HEIGHT_OPTIONS) {
+          if (thumbHeight > rowHeight) {
+            usedThumbHeight = thumbHeight
+            break
+          }
+        }
+
+        currentMonth.rows.push({
+          id: `row-${rowKey++}`,
+          mediaItems: currentRowItems,
+          height: rowHeight,
+          thumbHeight: usedThumbHeight,
+        })
+
+        // Reset for the next row
+        currentRowItems = []
+        currentWidth = -PHOTO_GAP
       }
     }
 
-    if (row.length > 0) {
-      // Month ended, but there's still photos to place
-      addNewRow(row, rowWidth, month.month)
+    // Add any remaining photos that didn't fill a full row
+    if (currentRowItems.length > 0) {
+      // If these items are close to filling a row, justify them
+      let rowRatio = width / currentWidth
+      let height = BASE_ROW_HEIGHT
+      if (rowRatio < MAX_RESIZE_RATIO) {
+        height = BASE_ROW_HEIGHT * rowRatio
+      }
+      currentMonth.rows.push({
+        id: `row-${rowKey++}`,
+        mediaItems: currentRowItems,
+        height,
+        thumbHeight: 360,
+      })
     }
   }
-  // console.log('rows', newRows)
-  rows.value = newRows
+
+  timeline.value = newTimeline
 }
+
+// --- Watchers to Trigger Recalculation ---
+
+// Recalculate grid when photo data changes
+watch(() => photosStore.months, calculateTimelineGrid, { deep: true })
+
+// OPTION 1: Recalculate grid on resize, but debounce to avoid performance issues
+// watchDebounced(containerWidth, calculateTimelineGrid, {
+//   debounce: RESIZE_DEBOUNCE_MS,
+// })
+// OPTION 2: Middenweg - Add requestAnimationFrame to schedule the calc for a good moment
+// watch(containerWidth, () => requestAnimationFrame(calculateTimelineGrid))
+// OPTION 3: Performance is fine, and it looks very cool to recalc every frame.
+watch(containerWidth, calculateTimelineGrid)
 </script>
 
 <template>
-  <div class="images" ref="photoGrid">
-    <div class="row" v-for="row in rows" :key="row.key">
-      <h1 v-if="row.newYear">{{ row.newYear }}</h1>
-      <h2 v-if="row.newMonth">{{ MONTHS[row.newMonth - 1] }}</h2>
-      <div class="photo-row">
-        <div class="media-item" v-for="media in row.mediaItems" :key="media.i">
-          <img
-            :src="photosService.getPhotoThumbnail(media.i, 240)"
-            :height="row.height"
-            alt="User photo or video."
-          />
+  <div class="photo-grid-container" ref="photoGridContainer">
+    <!-- Loop through years -->
+    <div v-for="year in timeline" :key="year.year" class="year-group">
+      <h1>{{ year.year }}</h1>
+
+      <!-- Loop through months in each year -->
+      <div v-for="month in year.months" :key="month.month" class="month-group">
+        <h2>{{ month.monthName }}</h2>
+
+        <div class="month-photo-group">
+          <!-- Loop through the calculated rows in each month -->
+          <div
+            v-for="row in month.rows"
+            :key="row.id"
+            class="photo-row"
+            :style="{ gap: `${PHOTO_GAP}px`, marginBottom: `${PHOTO_GAP}px` }"
+          >
+            <div v-for="media in row.mediaItems" :key="media.i" class="media-item">
+              <img
+                :src="photosService.getPhotoThumbnail(media.i, row.thumbHeight)"
+                :height="row.height"
+                :width="(media.w / media.h) * row.height"
+                alt="User photo or video."
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -142,22 +212,26 @@ function calculateGrid() {
 </template>
 
 <style scoped>
-.row h1 {
+.year-group h1 {
   padding: 20px 0;
   text-align: center;
 }
 
-.row h2 {
-  padding: 10px 0;
+.month-photo-group {
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.month-group h2 {
+  padding: 10px 0 15px 5px; /* Added some padding */
 }
 
 .photo-row {
   display: flex;
-  gap: 2px;
-  margin-bottom: 2px;
+  align-items: flex-start; /* Align items to the top */
 }
 
-.photo-row img {
-  display: block;
+.media-item img {
+  display: block; /* Removes bottom space under the image */
 }
 </style>
