@@ -16,7 +16,8 @@
     "lint:eslint": "eslint . --fix",
     "lint:format": "prettier --write src/",
     "lint": "run-s lint:*",
-    "prettier:check": "prettier --check src/"
+    "prettier:check": "prettier --check src/",
+    "proto:gen": "protoc --plugin=protoc-gen-ts_proto=.\\node_modules\\.bin\\protoc-gen-ts_proto.cmd --ts_proto_out=./src/generated --ts_proto_opt=esModuleInterop=true --proto_path=./src/proto ./src/proto/ratios.proto"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -45,6 +46,7 @@
     "npm-run-all2": "^8.0.4",
     "oxlint": "~1.11.0",
     "prettier": "3.6.2",
+    "ts-proto": "^2.8.1",
     "typescript": "~5.9.0",
     "vite": "npm:rolldown-vite@latest",
     "vite-plugin-vue-devtools": "^8.0.2",

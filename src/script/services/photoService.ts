@@ -5,6 +5,7 @@ import type {
   RandomPhotoResponse,
   TimelineMonthInfo,
 } from '@/script/types/api/photos.ts'
+import { AllPhotoRatiosResponse } from '@/generated/ratios.ts' // This service handles all API calls related to the initial application setup.
 
 // This service handles all API calls related to the initial application setup.
 const photosService = {
@@ -35,14 +36,20 @@ const photosService = {
    * @param months - An array of "YYYY-MM" strings.
    * @returns A promise that resolves to a PaginatedMediaResponse.
    */
-  getMediaByMonth(
-    months: string[],
-  ): Promise<AxiosResponse<PaginatedMediaResponse>> {
+  getMediaByMonth(months: string[]): Promise<AxiosResponse<PaginatedMediaResponse>> {
     return apiClient.get<PaginatedMediaResponse>('/photos/by-month', {
       params: {
         months: months.join(','),
       },
     })
+  },
+
+  async getPhotoRatios(): Promise<AllPhotoRatiosResponse> {
+    const response = await apiClient.get('/photos/ratios.pb', {
+      responseType: 'arraybuffer',
+    })
+    const buffer = new Uint8Array(response.data)
+    return AllPhotoRatiosResponse.decode(buffer)
   },
 }
 

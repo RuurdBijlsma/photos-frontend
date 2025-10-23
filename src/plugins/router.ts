@@ -75,7 +75,6 @@ export function registerNavigationGuard() {
         // If fetching the user fails (e.g., token is invalid),
         // the authStore's interceptor should handle logout.
         // We'll proceed with the navigation, and subsequent checks will redirect to login.
-        snackbarStore.error('Session could not be restored. Redirecting to login.', error)
         return next({ name: 'login' })
       }
     }

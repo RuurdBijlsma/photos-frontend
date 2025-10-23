@@ -1,16 +1,70 @@
 import { type Ref, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { MonthGroup, TimelineMonthInfo } from '@/script/types/api/photos'
-import photosService from '@/script/services/photosService.ts'
+import photoService from '@/script/services/photoService.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
-export const usePhotosStore = defineStore('photos', () => {
+export const usePhotoStore = defineStore('photos', () => {
   // --- STATE ---
   const timelineSummary = ref<TimelineMonthInfo[]>([])
   const isLoading = ref(false)
   const months: Ref<MonthGroup[]> = ref([])
   const loadedMonths: Ref<Set<string>> = ref(new Set())
   const snackbarStore = useSnackbarsStore()
+
+  function getPhotoRatios(N: number = 40000) {
+    if (N <= 0) {
+      return []
+    }
+    const minChunkSize = Math.floor(N / 200)
+    const maxChunkSize = Math.floor(N / 100)
+
+    // 1. Generate N random floats between 0.5 and 1.7
+    const floats = []
+    for (let i = 0; i < N; i++) {
+      const randomFloat = Math.random() * (1.7 - 0.5) + 0.5
+      floats.push(randomFloat)
+    }
+
+    // If N is too small to be chunked, return as a single chunk.
+    if (N < minChunkSize) {
+      return [floats]
+    }
+
+    // 2. Determine the number of chunks to create.
+    // This is calculated randomly based on the min/max chunk size.
+    const minGroups = Math.ceil(N / maxChunkSize)
+    const maxGroups = Math.floor(N / minChunkSize)
+    const numGroups = Math.floor(Math.random() * (maxGroups - minGroups + 1)) + minGroups
+
+    // 3. Determine the size of each chunk to make them as even as possible.
+    const chunkSizes = []
+    const baseSize = Math.floor(N / numGroups)
+    const remainder = N % numGroups
+
+    for (let i = 0; i < numGroups; i++) {
+      // Distribute the remainder among the first 'remainder' chunks.
+      chunkSizes.push(i < remainder ? baseSize + 1 : baseSize)
+    }
+
+    // 4. Shuffle the chunk sizes. This ensures that the slightly larger
+    // chunks (from the remainder) are not all at the start.
+    for (let i = chunkSizes.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[chunkSizes[i], chunkSizes[j]] = [chunkSizes[j], chunkSizes[i]]
+    }
+
+    // 5. Create the groups based on the calculated chunk sizes.
+    const groupedFloats = []
+    let currentIndex = 0
+    for (const size of chunkSizes) {
+      const chunk = floats.slice(currentIndex, currentIndex + size)
+      groupedFloats.push(chunk)
+      currentIndex += size
+    }
+
+    return groupedFloats
+  }
 
   /**
    * Fetches media items for a given set of months.
@@ -40,7 +94,7 @@ export const usePhotosStore = defineStore('photos', () => {
 
       if (!newMonthGroups || newMonthGroups.length === 0) {
         // No new media was returned.
-        console.warn("Nothing returned by the api!")
+        console.warn('Nothing returned by the api!')
         return
       }
 
@@ -169,5 +223,6 @@ export const usePhotosStore = defineStore('photos', () => {
     fetchMediaByMonth,
     findClosestTimelineIndex,
     fetchMediaAroundDate,
+    getPhotoRatios,
   }
 })
