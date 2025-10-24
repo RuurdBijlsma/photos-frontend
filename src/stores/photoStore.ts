@@ -1,6 +1,6 @@
 import { type Ref, ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { MonthGroup, TimelineMonthInfo } from '@/script/types/api/photos'
+import type { MediaItemDto, TimelineMonthInfo } from '@/script/types/api/photos'
 import photoService from '@/script/services/photoService.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
@@ -8,69 +8,34 @@ export const usePhotoStore = defineStore('photos', () => {
   // --- STATE ---
   const timelineSummary = ref<TimelineMonthInfo[]>([])
   const isLoading = ref(false)
-  const months: Ref<MonthGroup[]> = ref([])
-  const loadedMonths: Ref<Set<string>> = ref(new Set())
+  const months: Ref<{ [key: string]: MediaItemDto[] }> = ref({})
   const snackbarStore = useSnackbarsStore()
 
-  function getPhotoRatios(N: number = 40000) {
-    if (N <= 0) {
-      return []
+  async function fetchMediaByMonth(monthId: string) {
+    try {
+      if (months.value.hasOwnProperty(monthId)) {
+        console.warn('All requested months have already been loaded.')
+        return
+      }
+
+      isLoading.value = true
+
+      // Fetch data only for the new months.
+      const response = await photoService.getMediaByMonth(monthId)
+      console.log("MONTH RESPONSE", response)
+      months.value[response.month] = response.mediaItems
+    } catch (err) {
+      snackbarStore.error('Failed to fetch the month.', err as Error)
+    } finally {
+      isLoading.value = false
     }
-    const minChunkSize = Math.floor(N / 200)
-    const maxChunkSize = Math.floor(N / 100)
-
-    // 1. Generate N random floats between 0.5 and 1.7
-    const floats = []
-    for (let i = 0; i < N; i++) {
-      const randomFloat = Math.random() * (1.7 - 0.5) + 0.5
-      floats.push(randomFloat)
-    }
-
-    // If N is too small to be chunked, return as a single chunk.
-    if (N < minChunkSize) {
-      return [floats]
-    }
-
-    // 2. Determine the number of chunks to create.
-    // This is calculated randomly based on the min/max chunk size.
-    const minGroups = Math.ceil(N / maxChunkSize)
-    const maxGroups = Math.floor(N / minChunkSize)
-    const numGroups = Math.floor(Math.random() * (maxGroups - minGroups + 1)) + minGroups
-
-    // 3. Determine the size of each chunk to make them as even as possible.
-    const chunkSizes = []
-    const baseSize = Math.floor(N / numGroups)
-    const remainder = N % numGroups
-
-    for (let i = 0; i < numGroups; i++) {
-      // Distribute the remainder among the first 'remainder' chunks.
-      chunkSizes.push(i < remainder ? baseSize + 1 : baseSize)
-    }
-
-    // 4. Shuffle the chunk sizes. This ensures that the slightly larger
-    // chunks (from the remainder) are not all at the start.
-    for (let i = chunkSizes.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[chunkSizes[i], chunkSizes[j]] = [chunkSizes[j], chunkSizes[i]]
-    }
-
-    // 5. Create the groups based on the calculated chunk sizes.
-    const groupedFloats = []
-    let currentIndex = 0
-    for (const size of chunkSizes) {
-      const chunk = floats.slice(currentIndex, currentIndex + size)
-      groupedFloats.push(chunk)
-      currentIndex += size
-    }
-
-    return groupedFloats
   }
 
   /**
    * Fetches media items for a given set of months.
    * @param monthsQuery - An array of "YYYY-MM" formatted strings.
    */
-  async function fetchMediaByMonth(monthsQuery: { month: number; year: number }[]) {
+  async function fetchMediaByMonths(monthsQuery: { month: number; year: number }[]) {
     if (!monthsQuery || monthsQuery.length === 0) {
       return
     }
@@ -79,7 +44,7 @@ export const usePhotoStore = defineStore('photos', () => {
       // Determine which months are new and need to be fetched.
       const monthStringsToFetch = monthsQuery
         .map((m) => `${m.year}-${String(m.month).padStart(2, '0')}`)
-        .filter((monthString) => !loadedMonths.value.has(monthString))
+        .filter((monthString) => !months.value.hasOwnProperty(monthString))
 
       if (monthStringsToFetch.length === 0) {
         console.warn('All requested months have already been loaded.')
@@ -89,7 +54,7 @@ export const usePhotoStore = defineStore('photos', () => {
       isLoading.value = true
 
       // Fetch data only for the new months.
-      const response = await photosService.getMediaByMonth(monthStringsToFetch)
+      const response = await photoService.getMediaByMonths(monthStringsToFetch)
       const newMonthGroups = response.data.months
 
       if (!newMonthGroups || newMonthGroups.length === 0) {
@@ -98,12 +63,11 @@ export const usePhotoStore = defineStore('photos', () => {
         return
       }
 
-      newMonthGroups.forEach((group) => loadedMonths.value.add(group.month))
-      months.value = [...months.value, ...newMonthGroups].sort((a, b) =>
-        b.month.localeCompare(a.month),
-      )
+      for (const nmg of newMonthGroups) {
+        months.value[nmg.month] = nmg.mediaItems
+      }
     } catch (err) {
-      snackbarStore.error('Failed to fetch the timeline summary.', err as Error)
+      snackbarStore.error('Failed to fetch the months.', err as Error)
     } finally {
       isLoading.value = false
     }
@@ -138,7 +102,7 @@ export const usePhotoStore = defineStore('photos', () => {
   async function fetchTimelineSummary() {
     isLoading.value = true
     try {
-      const response = await photosService.getTimelineSummary()
+      const response = await photoService.getTimelineSummary()
       timelineSummary.value = response.data
     } catch (err) {
       snackbarStore.error('Failed to fetch the timeline summary.', err as Error)
@@ -216,13 +180,11 @@ export const usePhotoStore = defineStore('photos', () => {
     timelineSummary,
     months,
     isLoading,
-    loadedMonths,
 
     // Actions
     fetchTimelineSummary,
     fetchMediaByMonth,
     findClosestTimelineIndex,
     fetchMediaAroundDate,
-    getPhotoRatios,
   }
 })

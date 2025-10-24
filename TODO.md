@@ -16,3 +16,6 @@
   music
 * er is ineens een transition als je de main page inlaad, de nav menu gaat van boven naar beneden
 * WAAR IS DE TRANSITION
+* maak virtual scroll met ratios.pb af
+* probeer virtual scroll zonder alles van tevoren te laden
+* probeer virtual scroll met ratios en v-virtual-scroll (we weten alle heights nu)

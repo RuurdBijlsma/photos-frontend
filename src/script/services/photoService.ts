@@ -5,10 +5,10 @@ import type {
   RandomPhotoResponse,
   TimelineMonthInfo,
 } from '@/script/types/api/photos.ts'
-import { AllPhotoRatiosResponse } from '@/generated/ratios.ts' // This service handles all API calls related to the initial application setup.
+import { GetMonthlyRatiosResponse, MonthGroup } from '@/generated/ratios.ts' // This service handles all API calls related to the initial application setup.
 
 // This service handles all API calls related to the initial application setup.
-const photosService = {
+const photoService = {
   /**
    * Get random photo id from db, and get the themes associated with that photo.
    * @returns A promise that resolves to a RandomPhotoResponse.
@@ -36,7 +36,7 @@ const photosService = {
    * @param months - An array of "YYYY-MM" strings.
    * @returns A promise that resolves to a PaginatedMediaResponse.
    */
-  getMediaByMonth(months: string[]): Promise<AxiosResponse<PaginatedMediaResponse>> {
+  getMediaByMonths(months: string[]): Promise<AxiosResponse<PaginatedMediaResponse>> {
     return apiClient.get<PaginatedMediaResponse>('/photos/by-month', {
       params: {
         months: months.join(','),
@@ -44,13 +44,22 @@ const photosService = {
     })
   },
 
-  async getPhotoRatios(): Promise<AllPhotoRatiosResponse> {
+  async getPhotoRatios(): Promise<GetMonthlyRatiosResponse> {
     const response = await apiClient.get('/photos/ratios.pb', {
       responseType: 'arraybuffer',
     })
     const buffer = new Uint8Array(response.data)
-    return AllPhotoRatiosResponse.decode(buffer)
+    return GetMonthlyRatiosResponse.decode(buffer)
+  },
+
+  async getMediaByMonth(month: string): Promise<MonthGroup> {
+    const response = await apiClient.get('/photos/by-month.pb', {
+      responseType: 'arraybuffer',
+      params: { month },
+    })
+    const buffer = new Uint8Array(response.data)
+    return MonthGroup.decode(buffer)
   },
 }
 
-export default photosService
+export default photoService

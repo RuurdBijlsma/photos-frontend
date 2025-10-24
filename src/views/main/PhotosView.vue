@@ -3,12 +3,14 @@ import { type Ref, ref, watch } from 'vue'
 import { useElementSize } from '@vueuse/core'
 import SuperLazy from '@/components/SuperLazy.vue'
 import photoService from '@/script/services/photoService.ts'
-import { AllPhotoRatiosResponse } from '@/generated/ratios.ts'
+import MonthView, { type MonthLayout, type RowLayout } from '@/components/photo-grid/MonthView.vue'
+import type { GetMonthlyRatiosResponse } from '@/generated/ratios.ts'
+import type { LayoutItem } from 'vuetify/lib/composables/layout'
 
 const photoGridContainer = ref<HTMLElement | null>(null)
 const { width: containerWidth } = useElementSize(photoGridContainer)
 
-const startup =async () => {
+const startup = async () => {
   const now = performance.now()
   const photos = await photoService.getPhotoRatios()
   // const photoStore = usePhotoStore()
@@ -22,24 +24,25 @@ const startup =async () => {
 }
 startup()
 
-const months: Ref<any[]> = ref([])
+const months: Ref<MonthLayout[]> = ref([])
 
 const DESIRED_HEIGHT = 240
 const PHOTO_GAP = 2
 const MAX_GROW_RATIO = 1.5
 
-function calculateGrid(photos: AllPhotoRatiosResponse) {
+function calculateGrid(photos: GetMonthlyRatiosResponse) {
   if (containerWidth.value === 0) return
-  const newMonths = []
-  let rows = []
+  const newMonths: MonthLayout[] = []
+  let rows: RowLayout[] = []
   let monthHeight = -PHOTO_GAP
-  for (const month of photos.months) {
+  for (const month of photos.results) {
+    let index = 0
     let rowWidth = -PHOTO_GAP
-    let rowItems = []
+    let rowItems: LayoutItem[] = []
     for (const ratio of month.ratios) {
       const photoWidth = ratio * DESIRED_HEIGHT
       rowWidth += photoWidth + PHOTO_GAP
-      rowItems.push(ratio)
+      rowItems.push({ ratio, index: index++ })
 
       if (rowWidth > containerWidth.value) {
         let growRatio = containerWidth.value / rowWidth
@@ -48,8 +51,8 @@ function calculateGrid(photos: AllPhotoRatiosResponse) {
         const rowHeight = Math.ceil(DESIRED_HEIGHT * growRatio)
         monthHeight += rowHeight + PHOTO_GAP
         rows.push({
-          ratios: rowItems,
-          rowHeight,
+          items: rowItems,
+          height: rowHeight,
         })
         rowItems = []
         rowWidth = -PHOTO_GAP
@@ -62,14 +65,15 @@ function calculateGrid(photos: AllPhotoRatiosResponse) {
       const rowHeight = Math.ceil(DESIRED_HEIGHT * growRatio)
       monthHeight += rowHeight + PHOTO_GAP
       rows.push({
-        ratios: rowItems,
-        rowHeight,
+        items: rowItems,
+        height: rowHeight,
       })
     }
     if (rows.length > 0) {
       newMonths.push({
         height: monthHeight,
         rows,
+        id: month.month,
       })
       rows = []
       monthHeight = -PHOTO_GAP
@@ -93,44 +97,10 @@ watch(containerWidth, () => {
       margin="1500px"
       v-for="(month, k) in months"
       :key="k"
-      class="month"
     >
-      <h1 class="ml-10">Month {{ k }}</h1>
-      <super-lazy
-        :height="row.rowHeight + PHOTO_GAP + 'px'"
-        margin="1000px"
-        v-for="(row, n) in month.rows"
-        :key="n"
-        class="row"
-      >
-        <div
-          class="item"
-          v-for="(ratio, j) in row.ratios"
-          :key="j"
-          :style="{
-            backgroundColor: 'black',
-            width: row.rowHeight * ratio + 'px',
-            height: row.rowHeight + 'px',
-          }"
-        >
-          <img
-            src="http://localhost:9475/thumbnails/_aIBG7n2c_/360p.avif"
-            :height="row.rowHeight"
-            :width="row.rowHeight * ratio"
-          />
-        </div>
-      </super-lazy>
+      <month-view :month="month" :photo-gap="PHOTO_GAP"></month-view>
     </super-lazy>
   </div>
 </template>
 
-<style scoped>
-.row {
-  display: flex;
-  gap: 2px;
-}
-
-.month h1 {
-  padding: 20px 0 20px 15px;
-}
-</style>
+<style scoped></style>

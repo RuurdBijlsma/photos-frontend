@@ -198,7 +198,7 @@ watch(containerWidth, calculateTimelineGrid)
           >
             <div v-for="media in row.mediaItems" :key="media.i" class="media-item">
               <img
-                :src="photosService.getPhotoThumbnail(media.i, row.thumbHeight)"
+                :src="photoService.getPhotoThumbnail(media.i, row.thumbHeight)"
                 :height="row.height"
                 :width="(media.w / media.h) * row.height"
                 alt="User photo or video."
