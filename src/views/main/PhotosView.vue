@@ -1,19 +1,27 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useElementSize } from '@vueuse/core'
-import SuperLazy from '@/components/SuperLazy.vue'
-import MonthView, {
-  type LayoutItem,
-  type MonthLayout,
-  type RowLayout,
-} from '@/components/photo-grid/MonthView.vue'
 import type { MonthlyRatios } from '@/generated/ratios'
 import { usePhotoStore } from '@/stores/photoStore'
+import GridItem from '@/components/photo-grid/GridItem.vue'
+
+export interface LayoutItem {
+  ratio: number
+  index: number
+  key: string
+}
+
+export interface RowLayout {
+  items: LayoutItem[]
+  monthId: string
+  height: number
+  firstOfTheMonth: boolean
+}
 
 const photoGridContainer = ref<HTMLElement | null>(null)
-const { width: containerWidth } = useElementSize(photoGridContainer)
+const { width: containerWidth, height: containerHeight } = useElementSize(photoGridContainer)
 const photoStore = usePhotoStore()
-const months = ref<MonthLayout[]>([])
+const rows = ref<RowLayout[]>([])
 
 const DESIRED_HEIGHT = 240
 const PHOTO_GAP = 2
@@ -21,30 +29,29 @@ const MAX_GROW_RATIO = 1.5
 const LOAD_BUFFER = 2
 
 photoStore.fetchLayoutRatios().then(() => {
-  let now = performance.now()
+  const now = performance.now()
   if (photoStore.timeline.ratios) updateGrid(photoStore.timeline.ratios)
   console.log('updateGrid', performance.now() - now, 'ms')
 })
 
 function updateGrid(monthlyRatios: MonthlyRatios[]) {
   if (!containerWidth.value) return
-  const newMonths: MonthLayout[] = []
+  const newRows: RowLayout[] = []
 
   for (const { month, ratios } of monthlyRatios) {
-    const rows: RowLayout[] = []
     let row: LayoutItem[] = []
     let rowWidth = -PHOTO_GAP
-    let monthHeight = -PHOTO_GAP
+    let firstOfTheMonth = true
 
     for (const [i, ratio] of ratios.entries()) {
       rowWidth += ratio * DESIRED_HEIGHT + PHOTO_GAP
-      row.push({ ratio, index: i })
+      row.push({ ratio, index: i, key: month + i })
 
       if (rowWidth > containerWidth.value) {
         const grow = Math.min(containerWidth.value / rowWidth, MAX_GROW_RATIO)
         const rowHeight = Math.ceil(DESIRED_HEIGHT * grow)
-        rows.push({ items: row, height: rowHeight })
-        monthHeight += rowHeight + PHOTO_GAP
+        newRows.push({ items: row, height: rowHeight, firstOfTheMonth, monthId: month })
+        firstOfTheMonth = false
         row = []
         rowWidth = -PHOTO_GAP
       }
@@ -53,14 +60,11 @@ function updateGrid(monthlyRatios: MonthlyRatios[]) {
     if (row.length) {
       const grow = Math.min(containerWidth.value / rowWidth, MAX_GROW_RATIO)
       const rowHeight = Math.ceil(DESIRED_HEIGHT * grow)
-      rows.push({ items: row, height: rowHeight })
-      monthHeight += rowHeight + PHOTO_GAP
+      newRows.push({ items: row, height: rowHeight, monthId: month, firstOfTheMonth })
     }
-
-    newMonths.push({ id: month, rows, height: monthHeight })
   }
 
-  months.value = newMonths
+  rows.value = newRows
 }
 
 watch(containerWidth, () => {
@@ -70,10 +74,13 @@ watch(containerWidth, () => {
 let monthInView = ''
 async function handleIsVisible(isVisible: boolean, id: string) {
   if (!isVisible) return
-  monthInView = id
-  loadAroundMonth(id, LOAD_BUFFER)
-  setTimeout(() => monthInView === id && loadAroundMonth(id, LOAD_BUFFER * 3), 500)
-  setTimeout(() => monthInView === id && loadAroundMonth(id, LOAD_BUFFER * 6), 2500)
+  if (id !== monthInView) {
+    console.log("Call funcies")
+    monthInView = id
+    loadAroundMonth(id, LOAD_BUFFER)
+    setTimeout(() => monthInView === id && loadAroundMonth(id, LOAD_BUFFER * 3), 1000)
+    setTimeout(() => monthInView === id && loadAroundMonth(id, LOAD_BUFFER * 6), 3000)
+  }
 }
 
 async function loadAroundMonth(id: string, buffer: number) {
@@ -88,14 +95,55 @@ async function loadAroundMonth(id: string, buffer: number) {
 
 <template>
   <div class="photo-grid-container" ref="photoGridContainer">
-    <super-lazy
-      v-for="m in months"
-      :key="m.id"
-      :height="m.height + 88 + 'px'"
-      margin="10000px"
-      @is-visible="(e) => handleIsVisible(e, m.id)"
+    <v-virtual-scroll
+      :items="rows"
+      :height="containerHeight"
+      item-key="key"
+      class="scroll-container"
     >
-      <month-view :layout="m" :items="photoStore.months.get(m.id) ?? null" :photo-gap="PHOTO_GAP" />
-    </super-lazy>
+      <template v-slot:default="{ item }">
+        <h1 class="month-title" v-if="item.firstOfTheMonth">{{ item.monthId }}</h1>
+        <div
+          v-intersect="(e) => handleIsVisible(e, item.monthId)"
+          class="row"
+          :style="{
+            height: item.height + PHOTO_GAP + 'px',
+          }"
+        >
+          <grid-item
+            v-for="ratio in item.items"
+            :key="ratio.index"
+            :media-item="photoStore.months.get(item.monthId)?.[ratio.index]"
+            :height="item.height"
+            :width="item.height * ratio.ratio"
+          />
+        </div>
+      </template>
+    </v-virtual-scroll>
   </div>
 </template>
+
+<style scoped>
+.scroll-container {
+  padding-bottom: 10px;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-container::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+.row {
+  display: flex;
+  gap: v-bind(PHOTO_GAP + 'px');
+}
+
+.month-title {
+  padding: 20px 0 20px 15px;
+  margin-left: 20px;
+}
+</style>

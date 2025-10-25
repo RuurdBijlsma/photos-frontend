@@ -18,7 +18,7 @@ const photoService = {
   },
 
   getPhotoThumbnail(id: string | null | undefined, size: number): string {
-    if (id === null || id === undefined) return 'img/placeholder.png'
+    if (id === null || id === undefined) return ''
     const baseUrl = apiClient.defaults.baseURL
     const path = `/thumbnails/${id}/${size}p.avif`
     return new URL(path, baseUrl).href

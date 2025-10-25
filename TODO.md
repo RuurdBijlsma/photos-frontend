@@ -19,3 +19,4 @@
 * maak virtual scroll met ratios.pb af
 * probeer virtual scroll zonder alles van tevoren te laden
 * probeer virtual scroll met ratios en v-virtual-scroll (we weten alle heights nu)
+* vuetify discord vragen of het mogelijk is en nut heeft om alle item heights in een virtual scroll toe te voegen.
