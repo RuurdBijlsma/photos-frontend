@@ -5,7 +5,7 @@ import type {
   RandomPhotoResponse,
   TimelineMonthInfo,
 } from '@/script/types/api/photos.ts'
-import { GetMonthlyRatiosResponse, MonthGroup } from '@/generated/ratios.ts' // This service handles all API calls related to the initial application setup.
+import { GetMonthlyRatiosResponse, MonthGroup, MultiMonthGroup } from '@/generated/ratios.ts'
 
 // This service handles all API calls related to the initial application setup.
 const photoService = {
@@ -59,6 +59,15 @@ const photoService = {
     })
     const buffer = new Uint8Array(response.data)
     return MonthGroup.decode(buffer)
+  },
+
+  async getLatestMonths(nMonths: number): Promise<MultiMonthGroup> {
+    const response = await apiClient.get('/photos/latest-months.pb', {
+      responseType: 'arraybuffer',
+      params: { nMonths },
+    })
+    const buffer = new Uint8Array(response.data)
+    return MultiMonthGroup.decode(buffer)
   },
 }
 

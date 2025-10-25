@@ -26,9 +26,9 @@ const props = defineProps<{
 const photoStore = usePhotoStore()
 
 async function getPhotos() {
-  const now = performance.now()
-  await photoStore.fetchMediaByMonth(props.month.id)
-  console.log('fetch month photos: ', performance.now() - now, 'ms')
+  // const now = performance.now()
+  // await photoStore.fetchMediaByMonth(props.month.id)
+  // console.log('fetch month photos: ', performance.now() - now, 'ms')
 }
 
 getPhotos()

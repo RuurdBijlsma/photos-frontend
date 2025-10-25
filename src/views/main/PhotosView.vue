@@ -3,9 +3,8 @@ import { type Ref, ref, watch } from 'vue'
 import { useElementSize } from '@vueuse/core'
 import SuperLazy from '@/components/SuperLazy.vue'
 import photoService from '@/script/services/photoService.ts'
-import MonthView, { type MonthLayout, type RowLayout } from '@/components/photo-grid/MonthView.vue'
+import MonthView, { type MonthLayout, type RowLayout, type LayoutItem } from '@/components/photo-grid/MonthView.vue'
 import type { GetMonthlyRatiosResponse } from '@/generated/ratios.ts'
-import type { LayoutItem } from 'vuetify/lib/composables/layout'
 
 const photoGridContainer = ref<HTMLElement | null>(null)
 const { width: containerWidth } = useElementSize(photoGridContainer)
@@ -13,8 +12,6 @@ const { width: containerWidth } = useElementSize(photoGridContainer)
 const startup = async () => {
   const now = performance.now()
   const photos = await photoService.getPhotoRatios()
-  // const photoStore = usePhotoStore()
-  // const photos = photoStore.getPhotoRatios()
   console.log('Get Photos: ', performance.now() - now, 'ms')
   console.log({ photos })
 

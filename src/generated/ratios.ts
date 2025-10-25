@@ -35,6 +35,10 @@ export interface MonthGroup {
   mediaItems: MediaItem[];
 }
 
+export interface MultiMonthGroup {
+  months: MonthGroup[];
+}
+
 function createBaseMonthlyRatios(): MonthlyRatios {
   return { month: "", ratios: [] };
 }
@@ -383,6 +387,66 @@ export const MonthGroup: MessageFns<MonthGroup> = {
     const message = createBaseMonthGroup();
     message.month = object.month ?? "";
     message.mediaItems = object.mediaItems?.map((e) => MediaItem.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseMultiMonthGroup(): MultiMonthGroup {
+  return { months: [] };
+}
+
+export const MultiMonthGroup: MessageFns<MultiMonthGroup> = {
+  encode(message: MultiMonthGroup, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.months) {
+      MonthGroup.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MultiMonthGroup {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMultiMonthGroup();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.months.push(MonthGroup.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MultiMonthGroup {
+    return {
+      months: globalThis.Array.isArray(object?.months) ? object.months.map((e: any) => MonthGroup.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: MultiMonthGroup): unknown {
+    const obj: any = {};
+    if (message.months?.length) {
+      obj.months = message.months.map((e) => MonthGroup.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MultiMonthGroup>, I>>(base?: I): MultiMonthGroup {
+    return MultiMonthGroup.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MultiMonthGroup>, I>>(object: I): MultiMonthGroup {
+    const message = createBaseMultiMonthGroup();
+    message.months = object.months?.map((e) => MonthGroup.fromPartial(e)) || [];
     return message;
   },
 };

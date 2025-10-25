@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import type { MediaItemDto, TimelineMonthInfo } from '@/script/types/api/photos'
 import photoService from '@/script/services/photoService.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
+import { useAuthStore } from '@/stores/authStore.ts'
 
 export const usePhotoStore = defineStore('photos', () => {
   // --- STATE ---
@@ -10,6 +11,28 @@ export const usePhotoStore = defineStore('photos', () => {
   const isLoading = ref(false)
   const months: Ref<{ [key: string]: MediaItemDto[] }> = ref({})
   const snackbarStore = useSnackbarsStore()
+  const authStore = useAuthStore()
+
+  async function fetchLatestMonths(nMonths: number = 2) {
+    try {
+      isLoading.value = true
+
+      // Fetch data only for the new months.
+      const response = await photoService.getLatestMonths(nMonths)
+      console.log('LATEST MONTHS RESPONSE', response)
+      for (const month of response.months) {
+        months.value[month.month] = month.mediaItems
+      }
+    } catch (err) {
+      snackbarStore.error('Failed to fetch the latest months.', err as Error)
+    } finally {
+      isLoading.value = false
+    }
+  }
+  if (authStore.isAuthenticated)
+    fetchLatestMonths().then(() => {
+      console.log('latest months fetched')
+    })
 
   async function fetchMediaByMonth(monthId: string) {
     try {
@@ -22,7 +45,7 @@ export const usePhotoStore = defineStore('photos', () => {
 
       // Fetch data only for the new months.
       const response = await photoService.getMediaByMonth(monthId)
-      console.log("MONTH RESPONSE", response)
+      console.log('MONTH RESPONSE', response)
       months.value[response.month] = response.mediaItems
     } catch (err) {
       snackbarStore.error('Failed to fetch the month.', err as Error)
@@ -186,5 +209,6 @@ export const usePhotoStore = defineStore('photos', () => {
     fetchMediaByMonth,
     findClosestTimelineIndex,
     fetchMediaAroundDate,
+    fetchLatestMonths,
   }
 })
