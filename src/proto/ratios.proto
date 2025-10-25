@@ -1,11 +1,9 @@
 syntax = "proto3";
 
 package api;
-//todo suffix all these with Pb or something to differentiate them
+
 message MonthlyRatios {
-  // The month identifier as a string, e.g., "2024-02".
   string month = 1;
-  // A list of media item aspect ratios calculated for that month.
   repeated float ratios = 2;
 }
 

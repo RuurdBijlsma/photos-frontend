@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import SuperLazy from '@/components/SuperLazy.vue'
 import photoService from '@/script/services/photoService.ts'
-import { usePhotoStore } from '@/stores/photoStore.ts'
 import type { MediaItemDto } from '@/script/types/api/photos.ts'
 
 export interface LayoutItem {
@@ -20,13 +19,11 @@ export interface MonthLayout {
   rows: RowLayout[]
 }
 
-const props = defineProps<{
+defineProps<{
   layout: MonthLayout
   items: MediaItemDto[] | null
   photoGap: number
 }>()
-
-const photoStore = usePhotoStore()
 </script>
 
 <template>
@@ -43,13 +40,13 @@ const photoStore = usePhotoStore()
       v-for="(item, j) in row.items"
       :key="j"
       :style="{
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         width: row.height * item.ratio + 'px',
         height: row.height + 'px',
-        backgroundImage: items?.[item.index]?.i ? `url(${photoService.getPhotoThumbnail(items[item.index]?.i ?? 'img/placeholder.svg', 240)})` : 'none',
+        backgroundImage: items?.[item.index]?.i
+          ? `url(${photoService.getPhotoThumbnail(items[item.index]?.i ?? 'img/placeholder.svg', 240)})`
+          : 'none',
       }"
-    >
-    </div>
+    ></div>
   </super-lazy>
 </template>
 
@@ -62,5 +59,11 @@ const photoStore = usePhotoStore()
 .month-title {
   padding: 20px 0 20px 15px;
   margin-left: 20px;
+}
+
+.item {
+  background-color: rgba(255, 255, 255, 0.1);
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 </style>
