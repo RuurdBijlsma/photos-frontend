@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import SuperLazy from '@/components/SuperLazy.vue'
+import photoService from '@/script/services/photoService.ts'
 import { usePhotoStore } from '@/stores/photoStore.ts'
+import type { MediaItemDto } from '@/script/types/api/photos.ts'
 
 export interface LayoutItem {
   ratio: number
@@ -19,27 +21,20 @@ export interface MonthLayout {
 }
 
 const props = defineProps<{
-  month: MonthLayout
+  layout: MonthLayout
+  items: MediaItemDto[] | null
   photoGap: number
 }>()
 
 const photoStore = usePhotoStore()
-
-async function getPhotos() {
-  // const now = performance.now()
-  // await photoStore.fetchMediaByMonth(props.month.id)
-  // console.log('fetch month photos: ', performance.now() - now, 'ms')
-}
-
-getPhotos()
 </script>
 
 <template>
-  <h1 class="month-title">Month {{ month.id }}</h1>
+  <h1 class="month-title">Month {{ layout.id }}</h1>
   <super-lazy
     :height="row.height + photoGap + 'px'"
-    margin="1000px"
-    v-for="(row, n) in month.rows"
+    margin="5000px"
+    v-for="(row, n) in layout.rows"
     :key="n"
     class="row"
   >
@@ -48,14 +43,12 @@ getPhotos()
       v-for="(item, j) in row.items"
       :key="j"
       :style="{
-        backgroundColor: 'black',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         width: row.height * item.ratio + 'px',
         height: row.height + 'px',
+        backgroundImage: items?.[item.index]?.i ? `url(${photoService.getPhotoThumbnail(items[item.index]?.i ?? 'img/placeholder.svg', 240)})` : 'none',
       }"
     >
-      <template v-if="photoStore.months[props.month.id]">
-        {{ photoStore.months[props.month.id][item.index].i }}
-      </template>
     </div>
   </super-lazy>
 </template>

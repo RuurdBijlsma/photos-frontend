@@ -8,6 +8,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+const emit = defineEmits(['isVisible'])
 const props = defineProps({
   width: {
     type: String,
@@ -17,10 +18,9 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  // Add a new prop for the margin
   margin: {
     type: String,
-    default: '0px', // Default to no margin
+    default: '250px',
   },
 })
 
@@ -31,12 +31,12 @@ const placeholderStyle = computed(() => ({
   height: props.height,
 }))
 
-// Create a computed options object for the v-intersect directive
 const intersectOptions = computed(() => ({
   rootMargin: props.margin,
 }))
 
 function onIntersect(isIntersecting: boolean) {
   isVisible.value = isIntersecting
+  emit('isVisible', isIntersecting)
 }
 </script>

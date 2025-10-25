@@ -2,37 +2,36 @@
 import { type Ref, ref, watch } from 'vue'
 import { useElementSize } from '@vueuse/core'
 import SuperLazy from '@/components/SuperLazy.vue'
-import photoService from '@/script/services/photoService.ts'
-import MonthView, { type MonthLayout, type RowLayout, type LayoutItem } from '@/components/photo-grid/MonthView.vue'
-import type { GetMonthlyRatiosResponse } from '@/generated/ratios.ts'
+import MonthView, {
+  type LayoutItem,
+  type MonthLayout,
+  type RowLayout,
+} from '@/components/photo-grid/MonthView.vue'
+import type { MonthlyRatios } from '@/generated/ratios.ts'
+import { usePhotoStore } from '@/stores/photoStore.ts'
 
 const photoGridContainer = ref<HTMLElement | null>(null)
 const { width: containerWidth } = useElementSize(photoGridContainer)
-
-const startup = async () => {
-  const now = performance.now()
-  const photos = await photoService.getPhotoRatios()
-  console.log('Get Photos: ', performance.now() - now, 'ms')
-  console.log({ photos })
-
-  const now2 = performance.now()
-  calculateGrid(photos)
-  console.log('Initial, calc grid: ', performance.now() - now2, 'ms')
-}
-startup()
-
+const photoStore = usePhotoStore()
 const months: Ref<MonthLayout[]> = ref([])
 
 const DESIRED_HEIGHT = 240
 const PHOTO_GAP = 2
 const MAX_GROW_RATIO = 1.5
+const LOADED_MONTH_BUFFER = 2
 
-function calculateGrid(photos: GetMonthlyRatiosResponse) {
+photoStore.fetchLayoutRatios().then(() => {
+  const now = performance.now()
+  if (photoStore.timeline.ratios !== null) calculateGrid(photoStore.timeline.ratios)
+  console.log('Initial, calc grid: ', performance.now() - now, 'ms')
+})
+
+function calculateGrid(monthlyRatios: MonthlyRatios[]) {
   if (containerWidth.value === 0) return
   const newMonths: MonthLayout[] = []
   let rows: RowLayout[] = []
   let monthHeight = -PHOTO_GAP
-  for (const month of photos.results) {
+  for (const month of monthlyRatios) {
     let index = 0
     let rowWidth = -PHOTO_GAP
     let rowItems: LayoutItem[] = []
@@ -81,21 +80,71 @@ function calculateGrid(photos: GetMonthlyRatiosResponse) {
 }
 
 watch(containerWidth, () => {
-  // const now = performance.now()
-  // // calculateGrid()
-  // console.log('Resize watch, calc grid: ', performance.now() - now, 'ms')
+  const now = performance.now()
+  if (photoStore.timeline.ratios !== null) calculateGrid(photoStore.timeline.ratios)
+  console.log('Resize -> calc grid: ', performance.now() - now, 'ms')
 })
+
+let monthInView: string = ''
+function handleIsVisible(isVisible: boolean, monthId: string) {
+  if (!isVisible) return
+  monthInView = monthId
+  fetchAroundMonthId(monthId, LOADED_MONTH_BUFFER).then(() => {
+    setTimeout(() => {
+      if (monthInView === monthId) fetchAroundMonthId(monthInView, LOADED_MONTH_BUFFER * 3)
+    }, 500)
+    setTimeout(() => {
+      if (monthInView === monthId) fetchAroundMonthId(monthInView, LOADED_MONTH_BUFFER * 6)
+    }, 2500)
+  })
+}
+
+watch(
+  () => photoStore.months,
+  () => {
+    console.log('loaded months', photoStore.months.keys())
+  },
+  { deep: true },
+)
+
+async function fetchAroundMonthId(monthId: string, load_buffer: number = 2) {
+  const monthIndex = photoStore.timeline.months.indexOf(monthId)
+  const monthsToFetch: string[] = []
+  for (let i = -load_buffer; i <= load_buffer; i++) {
+    const fetchIndex = monthIndex + i
+    if (fetchIndex >= 0 && fetchIndex < photoStore.timeline.months.length) {
+      const monthId = photoStore.timeline.months[fetchIndex]
+      if (
+        monthId !== undefined &&
+        !photoStore.months.has(monthId) &&
+        !photoStore.monthsLoading.has(monthId)
+      ) {
+        monthsToFetch.push(monthId)
+      }
+    }
+  }
+  if (monthsToFetch.length > 0) {
+    const now = performance.now()
+    await photoStore.fetchMediaByMonths(monthsToFetch)
+    console.log('fetchMediaByMonths took', performance.now() - now, 'ms')
+  }
+}
 </script>
 
 <template>
   <div class="photo-grid-container" ref="photoGridContainer">
     <super-lazy
       :height="month.height + 88 + 'px'"
-      margin="1500px"
-      v-for="(month, k) in months"
-      :key="k"
+      margin="10000px"
+      v-for="month in months"
+      :key="month.id"
+      @is-visible="(e) => handleIsVisible(e, month.id)"
     >
-      <month-view :month="month" :photo-gap="PHOTO_GAP"></month-view>
+      <month-view
+        :layout="month"
+        :items="photoStore.months.get(month.id) ?? null"
+        :photo-gap="PHOTO_GAP"
+      />
     </super-lazy>
   </div>
 </template>
