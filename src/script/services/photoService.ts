@@ -17,7 +17,8 @@ const photoService = {
     return apiClient.get<RandomPhotoResponse>('/photos/random')
   },
 
-  getPhotoThumbnail(id: string, size: number): string {
+  getPhotoThumbnail(id: string | null | undefined, size: number): string {
+    if (id === null || id === undefined) return 'img/placeholder.png'
     const baseUrl = apiClient.defaults.baseURL
     const path = `/thumbnails/${id}/${size}p.avif`
     return new URL(path, baseUrl).href

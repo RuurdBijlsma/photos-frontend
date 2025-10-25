@@ -1,87 +1,61 @@
-import { type Ref, ref, shallowRef } from 'vue'
+import { ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
 import type { MediaItemDto } from '@/script/types/api/photos'
-import photoService from '@/script/services/photoService.ts'
-import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
-import type { MonthlyRatios } from '@/generated/ratios.ts'
-
-interface TimelineInfo {
-  ratios: MonthlyRatios[] | null
-  months: string[]
-}
+import photoService from '@/script/services/photoService'
+import { useSnackbarsStore } from '@/stores/snackbarStore'
+import type { MonthlyRatios } from '@/generated/ratios'
 
 export const usePhotoStore = defineStore('photos', () => {
-  // --- STATE ---
   const isLoading = ref(false)
   const months = shallowRef(new Map<string, MediaItemDto[]>())
-  const monthsLoading: Ref<Set<string>> = ref(new Set())
+  const monthsLoading = ref(new Set<string>())
   const snackbarStore = useSnackbarsStore()
-  const timeline: Ref<TimelineInfo> = ref({
+  const timeline = ref<{ ratios: MonthlyRatios[] | null; months: string[] }>({
     ratios: null,
     months: [],
   })
 
   async function fetchLayoutRatios() {
-    const now = performance.now()
-    const response = await photoService.getPhotoRatios()
-    timeline.value.ratios = response.results
-    timeline.value.months = response.results.map((m) => m.month)
-    console.log('getPhotoRatios: ', performance.now() - now, 'ms')
-    console.log({ timeline })
+    const t0 = performance.now()
+    try {
+      const res = await photoService.getPhotoRatios()
+      timeline.value.ratios = res.results
+      timeline.value.months = res.results.map((m) => m.month)
+    } catch (e) {
+      snackbarStore.error('Failed to fetch grid layout.', e as Error)
+    } finally {
+      console.log('getPhotoRatios:', performance.now() - t0, 'ms')
+    }
   }
 
   async function fetchMediaByMonths(monthIds: string[]) {
-    if (!monthIds || monthIds.length === 0) {
-      return
-    }
-    const now1 = performance.now()
-    const unfetchedMonths = monthIds.filter(
-      (m) => !months.value.has(m) && !monthsLoading.value.has(m),
-    )
-    if (unfetchedMonths.length === 0) {
-      console.warn('All requested months have already been loaded.')
-      return
-    }
+    const targets = monthIds.filter((m) => !months.value.has(m) && !monthsLoading.value.has(m))
+    if (!targets.length) return
+
+    targets.forEach((m) => monthsLoading.value.add(m))
+    isLoading.value = true
 
     try {
-      unfetchedMonths.forEach((m) => monthsLoading.value.add(m))
-      isLoading.value = true
-      // Fetch data only for the new months.
-      console.log('now1', performance.now() - now1)
-      const now2 = performance.now()
-      const response = await photoService.getMediaByMonths(unfetchedMonths)
-      console.log('now2', performance.now() - now2, 'ms')
-      const newMonthGroups = response.data.months
-
-      if (!newMonthGroups || newMonthGroups.length === 0) {
-        console.warn('Nothing returned by the api!')
-        return
+      const t0 = performance.now()
+      const { data } = await photoService.getMediaByMonths(targets)
+      for (const nmg of data.months??[]) {
+        months.value.set(nmg.month, nmg.mediaItems)
       }
-
-      const now3 = performance.now()
-      // todo: hoe kan dit nou 100 ms kosten?
-      const updated = new Map(months.value)
-      for (const nmg of newMonthGroups) {
-        updated.set(nmg.month, nmg.mediaItems)
-      }
-      months.value = updated
-      console.log('now3', performance.now() - now3, 'ms')
-    } catch (err) {
-      snackbarStore.error('Failed to fetch the months.', err as Error)
+      triggerRef(months)
+      console.log('fetchMediaByMonths:', performance.now() - t0, 'ms')
+    } catch (e) {
+      snackbarStore.error('Failed to fetch media.', e as Error)
     } finally {
-      unfetchedMonths.forEach((m) => monthsLoading.value.delete(m))
+      targets.forEach((m) => monthsLoading.value.delete(m))
       isLoading.value = false
     }
   }
 
   return {
-    // State
     months,
     timeline,
     monthsLoading,
-
-    // Actions
-    fetchMediaByMonths,
     fetchLayoutRatios,
+    fetchMediaByMonths,
   }
 })
