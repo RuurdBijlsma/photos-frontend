@@ -12,23 +12,17 @@ const props = defineProps<{
 const thumbnail = computed(() =>
   props.mediaItem?.i === null ? '' : photoService.getPhotoThumbnail(props.mediaItem?.i, 240),
 )
-const bigPic = computed(() =>
-  props.mediaItem?.i === null ? '' : photoService.getPhotoThumbnail(props.mediaItem?.i, 1440),
-)
 </script>
 
 <template>
-  <a
-    target="_blank"
-    rel="noopener noreferrer"
-    :href="bigPic"
+  <div
     class="grid-item"
     :style="{
       width: width + 'px',
       height: height + 'px',
       backgroundImage: `url(${thumbnail})`,
     }"
-  ></a>
+  ></div>
 </template>
 
 <style scoped>

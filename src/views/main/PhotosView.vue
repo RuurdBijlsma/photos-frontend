@@ -75,11 +75,10 @@ let monthInView = ''
 async function handleIsVisible(isVisible: boolean, id: string) {
   if (!isVisible) return
   if (id !== monthInView) {
-    console.log("Call funcies")
+    console.log('Call funcies')
     monthInView = id
     loadAroundMonth(id, LOAD_BUFFER)
-    setTimeout(() => monthInView === id && loadAroundMonth(id, LOAD_BUFFER * 3), 1000)
-    setTimeout(() => monthInView === id && loadAroundMonth(id, LOAD_BUFFER * 6), 3000)
+    requestIdleCallback(() => monthInView === id && loadAroundMonth(id, LOAD_BUFFER * 5))
   }
 }
 
