@@ -25,3 +25,4 @@
 * make fetch months photostore function take ~0 ms on main thread.
 * make api.ts abstraction for protobuf endpoints.
 * border radius around every month grouping like i had before
+* bad performance on firefox

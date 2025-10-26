@@ -38,10 +38,10 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function fetchCurrentUser() {
     if (!accessToken.value) return
-    try{
+    try {
       const response = await authService.getMe()
       user.value = response.data
-    }catch(error){
+    } catch (error) {
       user.value = null
       throw error
     }
@@ -72,7 +72,6 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function register(credentials: CreateUser): Promise<User> {
     status.value = 'loading'
-    const snackbarsStore = useSnackbarsStore()
     try {
       const response = await authService.register(credentials)
       await login(credentials)

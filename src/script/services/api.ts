@@ -1,7 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
-import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
-import type { RefreshTokenPayload, Tokens } from '@/script/types/api/auth.ts'
+import type { Tokens } from '@/script/types/api/auth.ts'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:9475',
@@ -51,7 +50,6 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean
     }
-    const snackbarStore = useSnackbarsStore()
     const authStore = useAuthStore()
 
     // Check for 401 Unauthorized and ensure it's not a retry request
@@ -87,7 +85,7 @@ apiClient.interceptors.response.use(
           method: 'POST',
           body: JSON.stringify({ refreshToken }),
         })
-        const apiResult = await response.json() as Tokens
+        const apiResult = (await response.json()) as Tokens
 
         // Update the store with the new tokens (refresh token also changes)
         authStore.setTokens(apiResult.refreshToken, apiResult.refreshToken)

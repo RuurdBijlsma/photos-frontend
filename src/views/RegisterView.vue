@@ -59,11 +59,11 @@ async function register() {
       await router.push({ name: 'photos-library' })
     }
   } catch (e) {
-    console.log("Is axios error", isAxiosError(e))
+    console.log('Is axios error', isAxiosError(e))
     if (isAxiosError(e)) {
-      console.log("emv=", e.response?.data.error)
+      console.log('emv=', e.response?.data.error)
       errorMessage.value = e.response?.data.error
-    }else if (e instanceof Error) {
+    } else if (e instanceof Error) {
       snackbarStore.error('Could not register: ' + e.message, e as Error)
     }
   } finally {

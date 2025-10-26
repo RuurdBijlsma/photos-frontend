@@ -103,7 +103,7 @@ async function loadAroundMonth(id: string, buffer: number) {
       <template v-slot:default="{ item }">
         <h1 class="month-title" v-if="item.firstOfTheMonth">{{ item.monthId }}</h1>
         <div
-          v-intersect="(e) => handleIsVisible(e, item.monthId)"
+          v-intersect="(e: boolean) => handleIsVisible(e, item.monthId)"
           class="row"
           :style="{
             height: item.height + PHOTO_GAP + 'px',

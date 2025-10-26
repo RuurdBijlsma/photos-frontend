@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
-import { useSetupStore } from '@/stores/setupStore.ts'
 import setupService from '@/script/services/setupService.ts'
 import { debounce } from '@/script/utils.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
@@ -22,7 +21,6 @@ export const usePickFolderStore = defineStore(
     const samples: Ref<{ imageUrl: string; relPath: string }[]> = ref(
       [...Array(N_SAMPLES)].map(() => ({ imageUrl: '', relPath: '' })),
     )
-    const setupStore = useSetupStore()
     const snackbarStore = useSnackbarsStore()
 
     const dbRefreshMediaSample = debounce(refreshMediaSample, 500)

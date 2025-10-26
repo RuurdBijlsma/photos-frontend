@@ -3,7 +3,6 @@ import MainLayout from '@/views/MainLayout.vue'
 import PhotosView from '@/views/main/PhotosView.vue'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 import { useAuthStore } from '@/stores/authStore.ts'
-import { useSetupStore } from '@/stores/setupStore.ts'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,8 +59,6 @@ const router = createRouter({
 export function registerNavigationGuard() {
   const authStore = useAuthStore()
   const snackbarsStore = useSnackbarsStore()
-  const setupStore = useSetupStore()
-  const snackbarStore = useSnackbarsStore()
 
   // --- Global Navigation Guard ---
   router.beforeEach(async (to, from, next) => {
@@ -71,7 +68,7 @@ export function registerNavigationGuard() {
     if (accessToken && !authStore.user) {
       try {
         await authStore.fetchCurrentUser()
-      } catch (error) {
+      } catch {
         // If fetching the user fails (e.g., token is invalid),
         // the authStore's interceptor should handle logout.
         // We'll proceed with the navigation, and subsequent checks will redirect to login.
