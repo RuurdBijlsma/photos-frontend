@@ -20,3 +20,7 @@
 * probeer virtual scroll zonder alles van tevoren te laden
 * probeer virtual scroll met ratios en v-virtual-scroll (we weten alle heights nu)
 * vuetify discord vragen of het mogelijk is en nut heeft om alle item heights in een virtual scroll toe te voegen.
+* possible bug: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
+  out of sync (ratios & photos). Its better to just not refresh the ratios i think
+* make fetch months photostore function take ~0 ms on main thread.
+* make api.ts abstraction for protobuf endpoints.

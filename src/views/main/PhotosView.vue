@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useElementSize } from '@vueuse/core'
-import type { MonthlyRatios } from '@/generated/ratios'
 import { usePhotoStore } from '@/stores/photoStore'
 import GridItem from '@/components/photo-grid/GridItem.vue'
+import { MonthTimeline } from '@/generated/ratios.ts'
 
 export interface LayoutItem {
   ratio: number
@@ -28,29 +28,29 @@ const PHOTO_GAP = 2
 const MAX_GROW_RATIO = 1.5
 const LOAD_BUFFER = 2
 
-photoStore.fetchLayoutRatios().then(() => {
+photoStore.fetchTimeline().then(() => {
   const now = performance.now()
-  if (photoStore.timeline.ratios) updateGrid(photoStore.timeline.ratios)
+  if (photoStore.timeline) updateGrid(photoStore.timeline)
   console.log('updateGrid', performance.now() - now, 'ms')
 })
 
-function updateGrid(monthlyRatios: MonthlyRatios[]) {
+function updateGrid(timelineMonths: MonthTimeline[]) {
   if (!containerWidth.value) return
   const newRows: RowLayout[] = []
 
-  for (const { month, ratios } of monthlyRatios) {
+  for (const { monthId, ratios } of timelineMonths) {
     let row: LayoutItem[] = []
     let rowWidth = -PHOTO_GAP
     let firstOfTheMonth = true
 
     for (const [i, ratio] of ratios.entries()) {
       rowWidth += ratio * DESIRED_HEIGHT + PHOTO_GAP
-      row.push({ ratio, index: i, key: month + i })
+      row.push({ ratio, index: i, key: monthId + i })
 
       if (rowWidth > containerWidth.value) {
         const grow = Math.min(containerWidth.value / rowWidth, MAX_GROW_RATIO)
         const rowHeight = Math.ceil(DESIRED_HEIGHT * grow)
-        newRows.push({ items: row, height: rowHeight, firstOfTheMonth, monthId: month })
+        newRows.push({ items: row, height: rowHeight, firstOfTheMonth, monthId })
         firstOfTheMonth = false
         row = []
         rowWidth = -PHOTO_GAP
@@ -60,7 +60,7 @@ function updateGrid(monthlyRatios: MonthlyRatios[]) {
     if (row.length) {
       const grow = Math.min(containerWidth.value / rowWidth, MAX_GROW_RATIO)
       const rowHeight = Math.ceil(DESIRED_HEIGHT * grow)
-      newRows.push({ items: row, height: rowHeight, monthId: month, firstOfTheMonth })
+      newRows.push({ items: row, height: rowHeight, monthId, firstOfTheMonth })
     }
   }
 
@@ -68,7 +68,7 @@ function updateGrid(monthlyRatios: MonthlyRatios[]) {
 }
 
 watch(containerWidth, () => {
-  if (photoStore.timeline.ratios) updateGrid(photoStore.timeline.ratios)
+  if (photoStore.timeline) updateGrid(photoStore.timeline)
 })
 
 let monthInView = ''
@@ -83,10 +83,10 @@ async function handleIsVisible(isVisible: boolean, id: string) {
 }
 
 async function loadAroundMonth(id: string, buffer: number) {
-  const index = photoStore.timeline.months.indexOf(id)
-  const toFetch = photoStore.timeline.months
+  const index = photoStore.timelineMonths.indexOf(id)
+  const toFetch = photoStore.timelineMonths
     .slice(Math.max(0, index - buffer), index + buffer + 1)
-    .filter((m) => !photoStore.months.has(m) && !photoStore.monthsLoading.has(m))
+    .filter((m) => !photoStore.mediaItems.has(m) && !photoStore.mediaMonthsLoading.has(m))
 
   if (toFetch.length) await photoStore.fetchMediaByMonths(toFetch)
 }
@@ -112,7 +112,7 @@ async function loadAroundMonth(id: string, buffer: number) {
           <grid-item
             v-for="ratio in item.items"
             :key="ratio.index"
-            :media-item="photoStore.months.get(item.monthId)?.[ratio.index]"
+            :media-item="photoStore.mediaItems.get(item.monthId)?.[ratio.index]"
             :height="item.height"
             :width="item.height * ratio.ratio"
           />

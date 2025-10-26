@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { MediaItemDto } from '@/script/types/api/photos.ts'
 import photoService from '@/script/services/photoService.ts'
 import { computed } from 'vue'
+import type { MediaItem } from '@/generated/ratios.ts'
 
 const props = defineProps<{
-  mediaItem: MediaItemDto | undefined
+  mediaItem: MediaItem | undefined
   height: number
   width: number
 }>()
 
 const thumbnail = computed(() =>
-  props.mediaItem?.i === null ? '' : photoService.getPhotoThumbnail(props.mediaItem?.i, 240),
+  props.mediaItem?.id === null ? '' : photoService.getPhotoThumbnail(props.mediaItem?.id, 240),
 )
 </script>
 

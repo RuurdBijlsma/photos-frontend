@@ -1,61 +1,63 @@
-import { ref, shallowRef, triggerRef } from 'vue'
+import { computed, ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
-import type { MediaItemDto } from '@/script/types/api/photos'
 import photoService from '@/script/services/photoService'
 import { useSnackbarsStore } from '@/stores/snackbarStore'
-import type { MonthlyRatios } from '@/generated/ratios'
+import { type MediaItem, MonthTimeline } from '@/generated/ratios'
 
 export const usePhotoStore = defineStore('photos', () => {
   const isLoading = ref(false)
-  const months = shallowRef(new Map<string, MediaItemDto[]>())
-  const monthsLoading = ref(new Set<string>())
+  const mediaItems = shallowRef(new Map<string, MediaItem[]>())
+  const mediaMonthsLoading = ref(new Set<string>())
+  const timeline = ref<MonthTimeline[] | null>(null)
+  const timelineMonths = computed(() => timeline.value?.map((m) => m.monthId) ?? [])
   const snackbarStore = useSnackbarsStore()
-  const timeline = ref<{ ratios: MonthlyRatios[] | null; months: string[] }>({
-    ratios: null,
-    months: [],
-  })
 
-  async function fetchLayoutRatios() {
+  async function fetchTimeline() {
     const t0 = performance.now()
     try {
-      const res = await photoService.getPhotoRatios()
-      timeline.value.ratios = res.results
-      timeline.value.months = res.results.map((m) => m.month)
+      const timelineResponse = await photoService.getTimeline()
+      timeline.value = timelineResponse.months
     } catch (e) {
       snackbarStore.error('Failed to fetch grid layout.', e as Error)
     } finally {
-      console.log('getPhotoRatios:', performance.now() - t0, 'ms')
+      console.log('fetchTimeline:', performance.now() - t0, 'ms')
     }
   }
 
   async function fetchMediaByMonths(monthIds: string[]) {
-    const targets = monthIds.filter((m) => !months.value.has(m) && !monthsLoading.value.has(m))
+    const targets = monthIds.filter(
+      (m) => !mediaItems.value.has(m) && !mediaMonthsLoading.value.has(m),
+    )
     if (!targets.length) return
 
-    targets.forEach((m) => monthsLoading.value.add(m))
+    targets.forEach((m) => mediaMonthsLoading.value.add(m))
     isLoading.value = true
 
     try {
       const t0 = performance.now()
-      const { data } = await photoService.getMediaByMonths(targets)
-      for (const nmg of data.months??[]) {
-        months.value.set(nmg.month, nmg.mediaItems)
+      const { months } = await photoService.getMediaByMonths(targets)
+      for (const monthMedia of months ?? []) {
+        mediaItems.value.set(monthMedia.monthId, monthMedia.items)
       }
-      triggerRef(months)
+      triggerRef(mediaItems)
       console.log('fetchMediaByMonths:', performance.now() - t0, 'ms')
     } catch (e) {
       snackbarStore.error('Failed to fetch media.', e as Error)
     } finally {
-      targets.forEach((m) => monthsLoading.value.delete(m))
+      targets.forEach((m) => mediaMonthsLoading.value.delete(m))
       isLoading.value = false
     }
   }
 
   return {
-    months,
+    // State
+    mediaItems,
+    mediaMonthsLoading,
     timeline,
-    monthsLoading,
-    fetchLayoutRatios,
+    timelineMonths,
+
+    // Actions
+    fetchTimeline,
     fetchMediaByMonths,
   }
 })
