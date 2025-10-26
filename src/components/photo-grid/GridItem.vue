@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import photoService from '@/script/services/photoService.ts'
 import { computed } from 'vue'
-import type { MediaItem } from '@/generated/ratios.ts'
+import type { MediaItem } from '@/generated/photos'
 
 const props = defineProps<{
   mediaItem: MediaItem | undefined
@@ -20,7 +20,7 @@ const thumbnail = computed(() =>
     :style="{
       width: width + 'px',
       height: height + 'px',
-      backgroundImage: `url(${thumbnail})`,
+      backgroundImage: `url(${thumbnail})`
     }"
   ></div>
 </template>

@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useElementSize } from '@vueuse/core'
 import { usePhotoStore } from '@/stores/photoStore'
 import GridItem from '@/components/photo-grid/GridItem.vue'
-import { MonthTimeline } from '@/generated/ratios.ts'
+import type { TimelineMonth } from '@/generated/photos'
 
 export interface LayoutItem {
   ratio: number
@@ -34,7 +34,7 @@ photoStore.fetchTimeline().then(() => {
   console.log('updateGrid', performance.now() - now, 'ms')
 })
 
-function updateGrid(timelineMonths: MonthTimeline[]) {
+function updateGrid(timelineMonths: TimelineMonth[]) {
   if (!containerWidth.value) return
   const newRows: RowLayout[] = []
 

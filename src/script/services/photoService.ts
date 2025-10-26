@@ -1,7 +1,7 @@
 import type { AxiosResponse } from 'axios'
 import apiClient from './api'
 import type { RandomPhotoResponse } from '@/script/types/api/photos.ts'
-import { PhotosByMonthResponse, TimelineResponse } from '@/generated/ratios.ts'
+import { ByMonthResponse, TimelineResponse } from '@/generated/photos.ts'
 
 // This service handles all API calls related to the initial application setup.
 const photoService = {
@@ -17,22 +17,22 @@ const photoService = {
   },
 
   async getTimeline(): Promise<TimelineResponse> {
-    const response = await apiClient.get('/photos/timeline.pb', {
+    const response = await apiClient.get('/photos/timeline', {
       responseType: 'arraybuffer',
     })
     const buffer = new Uint8Array(response.data)
     return TimelineResponse.decode(buffer)
   },
 
-  async getMediaByMonths(months: string[]): Promise<PhotosByMonthResponse> {
-    const response = await apiClient.get('/photos/by-month.pb', {
+  async getMediaByMonths(months: string[]): Promise<ByMonthResponse> {
+    const response = await apiClient.get('/photos/by-month', {
       responseType: 'arraybuffer',
       params: {
         months: months.join(','),
       },
     })
     const buffer = new Uint8Array(response.data)
-    return PhotosByMonthResponse.decode(buffer)
+    return ByMonthResponse.decode(buffer)
   },
 }
 

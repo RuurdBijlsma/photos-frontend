@@ -2,7 +2,7 @@
 // versions:
 //   protoc-gen-ts_proto  v2.8.1
 //   protoc               v6.33.0
-// source: ratios.proto
+// source: photos.proto
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
@@ -11,21 +11,21 @@ export const protobufPackage = "api";
 
 /** Contains ratios and amount of media items per month, grouped by month. */
 export interface TimelineResponse {
-  months: MonthTimeline[];
+  months: TimelineMonth[];
 }
 
-export interface MonthTimeline {
+export interface TimelineMonth {
   monthId: string;
   count: number;
   ratios: number[];
 }
 
 /** Contains detailed information for media items for the requested months, grouped by month. */
-export interface PhotosByMonthResponse {
-  months: MonthMedia[];
+export interface ByMonthResponse {
+  months: MediaMonth[];
 }
 
-export interface MonthMedia {
+export interface MediaMonth {
   monthId: string;
   items: MediaItem[];
 }
@@ -45,7 +45,7 @@ function createBaseTimelineResponse(): TimelineResponse {
 export const TimelineResponse: MessageFns<TimelineResponse> = {
   encode(message: TimelineResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.months) {
-      MonthTimeline.encode(v!, writer.uint32(10).fork()).join();
+      TimelineMonth.encode(v!, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -62,7 +62,7 @@ export const TimelineResponse: MessageFns<TimelineResponse> = {
             break;
           }
 
-          message.months.push(MonthTimeline.decode(reader, reader.uint32()));
+          message.months.push(TimelineMonth.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -76,14 +76,14 @@ export const TimelineResponse: MessageFns<TimelineResponse> = {
 
   fromJSON(object: any): TimelineResponse {
     return {
-      months: globalThis.Array.isArray(object?.months) ? object.months.map((e: any) => MonthTimeline.fromJSON(e)) : [],
+      months: globalThis.Array.isArray(object?.months) ? object.months.map((e: any) => TimelineMonth.fromJSON(e)) : [],
     };
   },
 
   toJSON(message: TimelineResponse): unknown {
     const obj: any = {};
     if (message.months?.length) {
-      obj.months = message.months.map((e) => MonthTimeline.toJSON(e));
+      obj.months = message.months.map((e) => TimelineMonth.toJSON(e));
     }
     return obj;
   },
@@ -93,17 +93,17 @@ export const TimelineResponse: MessageFns<TimelineResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<TimelineResponse>, I>>(object: I): TimelineResponse {
     const message = createBaseTimelineResponse();
-    message.months = object.months?.map((e) => MonthTimeline.fromPartial(e)) || [];
+    message.months = object.months?.map((e) => TimelineMonth.fromPartial(e)) || [];
     return message;
   },
 };
 
-function createBaseMonthTimeline(): MonthTimeline {
+function createBaseTimelineMonth(): TimelineMonth {
   return { monthId: "", count: 0, ratios: [] };
 }
 
-export const MonthTimeline: MessageFns<MonthTimeline> = {
-  encode(message: MonthTimeline, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const TimelineMonth: MessageFns<TimelineMonth> = {
+  encode(message: TimelineMonth, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.monthId !== "") {
       writer.uint32(10).string(message.monthId);
     }
@@ -118,10 +118,10 @@ export const MonthTimeline: MessageFns<MonthTimeline> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): MonthTimeline {
+  decode(input: BinaryReader | Uint8Array, length?: number): TimelineMonth {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMonthTimeline();
+    const message = createBaseTimelineMonth();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -168,7 +168,7 @@ export const MonthTimeline: MessageFns<MonthTimeline> = {
     return message;
   },
 
-  fromJSON(object: any): MonthTimeline {
+  fromJSON(object: any): TimelineMonth {
     return {
       monthId: isSet(object.monthId) ? globalThis.String(object.monthId) : "",
       count: isSet(object.count) ? globalThis.Number(object.count) : 0,
@@ -176,7 +176,7 @@ export const MonthTimeline: MessageFns<MonthTimeline> = {
     };
   },
 
-  toJSON(message: MonthTimeline): unknown {
+  toJSON(message: TimelineMonth): unknown {
     const obj: any = {};
     if (message.monthId !== "") {
       obj.monthId = message.monthId;
@@ -190,11 +190,11 @@ export const MonthTimeline: MessageFns<MonthTimeline> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<MonthTimeline>, I>>(base?: I): MonthTimeline {
-    return MonthTimeline.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<TimelineMonth>, I>>(base?: I): TimelineMonth {
+    return TimelineMonth.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<MonthTimeline>, I>>(object: I): MonthTimeline {
-    const message = createBaseMonthTimeline();
+  fromPartial<I extends Exact<DeepPartial<TimelineMonth>, I>>(object: I): TimelineMonth {
+    const message = createBaseTimelineMonth();
     message.monthId = object.monthId ?? "";
     message.count = object.count ?? 0;
     message.ratios = object.ratios?.map((e) => e) || [];
@@ -202,22 +202,22 @@ export const MonthTimeline: MessageFns<MonthTimeline> = {
   },
 };
 
-function createBasePhotosByMonthResponse(): PhotosByMonthResponse {
+function createBaseByMonthResponse(): ByMonthResponse {
   return { months: [] };
 }
 
-export const PhotosByMonthResponse: MessageFns<PhotosByMonthResponse> = {
-  encode(message: PhotosByMonthResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const ByMonthResponse: MessageFns<ByMonthResponse> = {
+  encode(message: ByMonthResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.months) {
-      MonthMedia.encode(v!, writer.uint32(10).fork()).join();
+      MediaMonth.encode(v!, writer.uint32(10).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): PhotosByMonthResponse {
+  decode(input: BinaryReader | Uint8Array, length?: number): ByMonthResponse {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePhotosByMonthResponse();
+    const message = createBaseByMonthResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -226,7 +226,7 @@ export const PhotosByMonthResponse: MessageFns<PhotosByMonthResponse> = {
             break;
           }
 
-          message.months.push(MonthMedia.decode(reader, reader.uint32()));
+          message.months.push(MediaMonth.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -238,36 +238,36 @@ export const PhotosByMonthResponse: MessageFns<PhotosByMonthResponse> = {
     return message;
   },
 
-  fromJSON(object: any): PhotosByMonthResponse {
+  fromJSON(object: any): ByMonthResponse {
     return {
-      months: globalThis.Array.isArray(object?.months) ? object.months.map((e: any) => MonthMedia.fromJSON(e)) : [],
+      months: globalThis.Array.isArray(object?.months) ? object.months.map((e: any) => MediaMonth.fromJSON(e)) : [],
     };
   },
 
-  toJSON(message: PhotosByMonthResponse): unknown {
+  toJSON(message: ByMonthResponse): unknown {
     const obj: any = {};
     if (message.months?.length) {
-      obj.months = message.months.map((e) => MonthMedia.toJSON(e));
+      obj.months = message.months.map((e) => MediaMonth.toJSON(e));
     }
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<PhotosByMonthResponse>, I>>(base?: I): PhotosByMonthResponse {
-    return PhotosByMonthResponse.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<ByMonthResponse>, I>>(base?: I): ByMonthResponse {
+    return ByMonthResponse.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<PhotosByMonthResponse>, I>>(object: I): PhotosByMonthResponse {
-    const message = createBasePhotosByMonthResponse();
-    message.months = object.months?.map((e) => MonthMedia.fromPartial(e)) || [];
+  fromPartial<I extends Exact<DeepPartial<ByMonthResponse>, I>>(object: I): ByMonthResponse {
+    const message = createBaseByMonthResponse();
+    message.months = object.months?.map((e) => MediaMonth.fromPartial(e)) || [];
     return message;
   },
 };
 
-function createBaseMonthMedia(): MonthMedia {
+function createBaseMediaMonth(): MediaMonth {
   return { monthId: "", items: [] };
 }
 
-export const MonthMedia: MessageFns<MonthMedia> = {
-  encode(message: MonthMedia, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const MediaMonth: MessageFns<MediaMonth> = {
+  encode(message: MediaMonth, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.monthId !== "") {
       writer.uint32(10).string(message.monthId);
     }
@@ -277,10 +277,10 @@ export const MonthMedia: MessageFns<MonthMedia> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): MonthMedia {
+  decode(input: BinaryReader | Uint8Array, length?: number): MediaMonth {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMonthMedia();
+    const message = createBaseMediaMonth();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -309,14 +309,14 @@ export const MonthMedia: MessageFns<MonthMedia> = {
     return message;
   },
 
-  fromJSON(object: any): MonthMedia {
+  fromJSON(object: any): MediaMonth {
     return {
       monthId: isSet(object.monthId) ? globalThis.String(object.monthId) : "",
       items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => MediaItem.fromJSON(e)) : [],
     };
   },
 
-  toJSON(message: MonthMedia): unknown {
+  toJSON(message: MediaMonth): unknown {
     const obj: any = {};
     if (message.monthId !== "") {
       obj.monthId = message.monthId;
@@ -327,11 +327,11 @@ export const MonthMedia: MessageFns<MonthMedia> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<MonthMedia>, I>>(base?: I): MonthMedia {
-    return MonthMedia.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<MediaMonth>, I>>(base?: I): MediaMonth {
+    return MediaMonth.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<MonthMedia>, I>>(object: I): MonthMedia {
-    const message = createBaseMonthMedia();
+  fromPartial<I extends Exact<DeepPartial<MediaMonth>, I>>(object: I): MediaMonth {
+    const message = createBaseMediaMonth();
     message.monthId = object.monthId ?? "";
     message.items = object.items?.map((e) => MediaItem.fromPartial(e)) || [];
     return message;

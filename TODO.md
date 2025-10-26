@@ -24,3 +24,4 @@
   out of sync (ratios & photos). Its better to just not refresh the ratios i think
 * make fetch months photostore function take ~0 ms on main thread.
 * make api.ts abstraction for protobuf endpoints.
+* border radius around every month grouping like i had before
