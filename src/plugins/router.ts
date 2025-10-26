@@ -3,7 +3,6 @@ import MainLayout from '@/views/MainLayout.vue'
 import PhotosView from '@/views/main/PhotosView.vue'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 import { useAuthStore } from '@/stores/authStore.ts'
-import { useSetupStore } from '@/stores/setupStore.ts'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,8 +37,8 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
-      path: '/welcome',
-      name: 'welcome',
+      path: '/register',
+      name: 'register',
       meta: { guest: true },
       component: () => import('../views/RegisterView.vue'),
     },
@@ -60,46 +59,28 @@ const router = createRouter({
 export function registerNavigationGuard() {
   const authStore = useAuthStore()
   const snackbarsStore = useSnackbarsStore()
-  const setupStore = useSetupStore()
-  const snackbarStore = useSnackbarsStore()
 
   // --- Global Navigation Guard ---
   router.beforeEach(async (to, from, next) => {
-    if (setupStore.needsWelcome === null) {
-      await setupStore.checkWelcomeStatus()
-    }
-    if (setupStore.needsWelcome) {
-      if (to.name !== 'welcome') {
-        // If they try to go anywhere else, redirect them.
-        return next({ name: 'welcome' })
-      }
-    } else if (to.name === 'welcome') {
-      // If setup is NOT needed, but they try to go to 'welcome', redirect them away.
-      return next({ name: 'login' })
-    }
-
     const accessToken = authStore.accessToken
 
     // Handle Initial App Load
-    // If the user object is not yet loaded but a token exists,
-    // it means the user has refreshed the page on a protected route.
-    // We must wait for the user data to be fetched before proceeding.
     if (accessToken && !authStore.user) {
       try {
         await authStore.fetchCurrentUser()
-      } catch (error) {
+      } catch {
         // If fetching the user fails (e.g., token is invalid),
         // the authStore's interceptor should handle logout.
         // We'll proceed with the navigation, and subsequent checks will redirect to login.
-        snackbarStore.error('Session could not be restored. Redirecting to login.', error)
+        return next({ name: 'login' })
       }
     }
 
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
-    const needsSetup = isAdmin && authStore.user?.media_folder === null
+    const needsSetup = isAdmin && authStore.user?.mediaFolder === null
 
-    console.log({ isAdmin, media_folder: authStore.user?.media_folder, needsSetup })
+    console.log({ isAdmin, mediaFolder: authStore.user?.mediaFolder, needsSetup })
     if (needsSetup) {
       // setup needed
       if (to.name !== 'setup') {
@@ -113,8 +94,8 @@ export function registerNavigationGuard() {
         return next() // User is authenticated and an admin, allow access.
       } else {
         snackbarsStore.error("You don't have permission to access this page.")
-        // Redirect to a safe page, like home.
-        return next({ name: 'home' })
+        // Redirect to a safe page, like photos-library.
+        return next({ name: 'photos-library' })
       }
     }
 
@@ -132,7 +113,7 @@ export function registerNavigationGuard() {
     if (to.meta.guest) {
       if (isAuthenticated) {
         // User is already logged in, redirect them away from login/register.
-        return next({ name: 'home' })
+        return next({ name: 'photos-library' })
       } else {
         return next() // User is not logged in, allow access to guest page.
       }

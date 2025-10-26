@@ -7,7 +7,7 @@ const props = defineProps<{
 }>()
 
 const virtualScrollHeight = computed(() => {
-  const count = props.summary.inaccessible_entries.length
+  const count = props.summary.inaccessibleEntries.length
   if (count >= 8) {
     return 500
   }
@@ -19,14 +19,14 @@ const virtualScrollHeight = computed(() => {
   <v-card class="mb-6 folder-card" variant="text" rounded color="primary">
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
-      Inaccessible Entries ({{ summary.inaccessible_entries.length.toLocaleString() }})
+      Inaccessible Entries ({{ summary.inaccessibleEntries.length.toLocaleString() }})
     </v-card-title>
     <v-card-text>
       <p class="mb-3 text-caption text-medium-emphasis">
         Some items couldn't be accessed, so their contents won't be included.
       </p>
-      <div class="ext-list" v-if="summary.unsupported_count > 0">
-        <v-virtual-scroll :height="virtualScrollHeight" :items="summary.inaccessible_entries">
+      <div class="ext-list" v-if="summary.unsupportedCount > 0">
+        <v-virtual-scroll :height="virtualScrollHeight" :items="summary.inaccessibleEntries">
           <template v-slot:default="{ item }">
             <v-list-item density="compact" rounded-xl :title="item" class="ma-1" />
           </template>

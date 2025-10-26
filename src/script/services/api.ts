@@ -1,7 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
-import authService from './authService'
-import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
+import type { Tokens } from '@/script/types/api/auth.ts'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:9475',
@@ -51,7 +50,6 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean
     }
-    const snackbarStore = useSnackbarsStore()
     const authStore = useAuthStore()
 
     // Check for 401 Unauthorized and ensure it's not a retry request
@@ -77,32 +75,33 @@ apiClient.interceptors.response.use(
 
       const refreshToken = authStore.refreshToken
       if (!refreshToken) {
-        snackbarStore.error('No refresh token available. Logging out.')
+        console.warn('No refresh token available. Logging out.')
         authStore.logout().then(() => console.info('Logged out'))
         return Promise.reject(error)
       }
 
       try {
-        const response = await authService.refreshSession({
-          refresh_token: refreshToken,
+        const response = await fetch(apiClient.defaults.baseURL + '/auth/refresh', {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
         })
-        const { access_token, refresh_token } = response.data
+        const apiResult = (await response.json()) as Tokens
 
-        // Update the store with the new tokens
-        authStore.setTokens(access_token, refresh_token)
+        // Update the store with the new tokens (refresh token also changes)
+        authStore.setTokens(apiResult.refreshToken, apiResult.refreshToken)
 
         // Update the header of the original request
         if (originalRequest.headers) {
-          originalRequest.headers['Authorization'] = `Bearer ${access_token}`
+          originalRequest.headers['Authorization'] = `Bearer ${apiResult.accessToken}`
         }
 
         // Process the queue with the new token
-        processQueue(null, access_token)
+        processQueue(null, apiResult.accessToken)
 
         // Retry the original request
         return apiClient(originalRequest)
       } catch (refreshError) {
-        snackbarStore.error('Refreshing token failed. Logging out.', refreshError as Error)
+        console.warn('Refreshing token failed. Logging out.', refreshError)
         processQueue(refreshError as Error, null)
         authStore.logout()
         return Promise.reject(refreshError)

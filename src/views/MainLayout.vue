@@ -1,51 +1,61 @@
 <script setup lang="ts"></script>
 
 <template>
-  <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
-    <h1 class="appbar-title"><span>Ruurd</span> Photos</h1>
-    <v-spacer />
-    <label class="search-bar">
-      <span class="search-icon-div">
-        <v-icon class="search-icon" icon="mdi-magnify"></v-icon>
-      </span>
-      <v-text-field
-        class="search-text-field"
-        placeholder="Search..."
-        rounded
-        hide-details
-        clearable
-      />
-    </label>
-    <v-spacer />
-    <div class="header-buttons">
-      <v-btn variant="plain" rounded>
-        <v-icon icon="mdi-upload"></v-icon>
-        Upload
-      </v-btn>
-      <v-btn icon variant="plain">
-        <v-icon icon="mdi-cog"></v-icon>
-      </v-btn>
-      <v-btn icon>
-        <v-avatar>
-          <v-img src="img/avatar.jpg"></v-img>
-        </v-avatar>
-      </v-btn>
-    </div>
-  </v-app-bar>
-  <v-navigation-drawer permanent color="transparent" floating>
-    <v-list color="primary-darken-1" class="nav-list">
-      <v-list-item rounded prepend-icon="mdi-image-outline" title="Photos" to="/" exact />
-      <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
-      <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
-    </v-list>
-  </v-navigation-drawer>
-  <v-main class="layout-body">
-    <div class="router-view-container">
-      <RouterView class="router-view" />
-    </div>
+  <!-- v-layout is the key -->
+  <v-layout>
+    <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
+      <h1 class="appbar-title"><span>Ruurd</span> Photos</h1>
+      <v-spacer />
+      <label class="search-bar">
+        <span class="search-icon-div">
+          <v-icon class="search-icon" icon="mdi-magnify"></v-icon>
+        </span>
+        <v-text-field
+          class="search-text-field"
+          placeholder="Search..."
+          rounded
+          hide-details
+          clearable
+        />
+      </label>
+      <v-spacer />
+      <div class="header-buttons">
+        <v-btn variant="plain" rounded>
+          <v-icon icon="mdi-upload"></v-icon>
+          Upload
+        </v-btn>
+        <v-btn icon variant="plain">
+          <v-icon icon="mdi-cog"></v-icon>
+        </v-btn>
+        <v-btn icon>
+          <v-avatar>
+            <v-img src="img/avatar.jpg"></v-img>
+          </v-avatar>
+        </v-btn>
+      </div>
+    </v-app-bar>
 
-    <div class="scroll-area"></div>
-  </v-main>
+    <v-navigation-drawer permanent color="transparent" floating>
+      <v-list color="primary-darken-1" class="nav-list">
+        <v-list-item
+          rounded
+          prepend-icon="mdi-image-outline"
+          title="Photos"
+          to="/"
+          :active="$route.path === '/'"
+        />
+        <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
+        <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-main class="layout-body">
+      <div class="router-view-container">
+        <RouterView class="router-view" />
+      </div>
+      <div class="scroll-area"></div>
+    </v-main>
+  </v-layout>
 </template>
 
 <style scoped>
@@ -138,9 +148,16 @@
 }
 
 .router-view {
+  height: calc(100% - 10px);
+  width: calc(100% - 20px);
+  margin: 10px;
+  margin-bottom: 0;
+  border-radius: 55px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  overflow: hidden;
   overflow-y: auto;
-  height: 100%;
-  width: 100%;
+
   -ms-overflow-style: none;
   scrollbar-width: none;
 }

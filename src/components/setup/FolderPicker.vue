@@ -28,7 +28,7 @@ pickFolderStore.refreshFolders().then()
 </script>
 
 <template>
-  <v-card variant="flat" class="folder-picker" color="surface-container-highest">
+  <v-card variant="flat" class="folder-picker" color="surface-container">
     <v-card-text>
       <div class="picker-header">
         <div class="header-buttons">

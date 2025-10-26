@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build": "run-p lint:type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
     "lint:type-check": "vue-tsc --build",
@@ -16,10 +16,12 @@
     "lint:eslint": "eslint . --fix",
     "lint:format": "prettier --write src/",
     "lint": "run-s lint:*",
-    "prettier:check": "prettier --check src/"
+    "prettier:check": "prettier --check src/",
+    "proto:gen": "protoc --plugin=protoc-gen-ts_proto=.\\node_modules\\.bin\\protoc-gen-ts_proto.cmd --ts_proto_out=./src/generated --ts_proto_opt=esModuleInterop=true --proto_path=./src/proto ./src/proto/photos.proto"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
+    "@vueuse/core": "^14.0.0",
     "axios": "^1.12.2",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.5.0",
@@ -44,6 +46,7 @@
     "npm-run-all2": "^8.0.4",
     "oxlint": "~1.11.0",
     "prettier": "3.6.2",
+    "ts-proto": "^2.8.1",
     "typescript": "~5.9.0",
     "vite": "npm:rolldown-vite@latest",
     "vite-plugin-vue-devtools": "^8.0.2",

@@ -11,14 +11,6 @@ import type {
 // This service handles all API calls related to the initial application setup.
 const setupService = {
   /**
-   * Check if the initial setup is required (i.e., if any admin user exists).
-   * @returns A promise that resolves to a boolean.
-   */
-  isWelcomeNeeded(): Promise<AxiosResponse<boolean>> {
-    return apiClient.get<boolean>('/setup/welcome-needed')
-  },
-
-  /**
    * Get information about the configured media and thumbnail disks.
    * @returns A promise that resolves to the disk information.
    */

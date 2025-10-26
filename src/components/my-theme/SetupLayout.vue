@@ -1,17 +1,24 @@
 <script setup lang="ts">
-defineProps<{
+interface Props {
   text: string
-  captionText: boolean
-}>()
+  captionText?: boolean
+  hideLogo?: boolean
+}
+withDefaults(defineProps<Props>(), {
+  captionText: false,
+  hideLogo: false,
+})
 </script>
 
 <template>
   <div class="title-box">
-    <div class="left-title">
+    <div class="left-title" v-if="!hideLogo">
       <div class="big-image"></div>
     </div>
     <div class="right-title">
-      <h1>Set Up <span>Ruurd Photos</span></h1>
+      <slot>
+        <h1>Set Up <span>Ruurd Photos</span></h1>
+      </slot>
       <p
         class="mt-2"
         :class="{

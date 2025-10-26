@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, type Ref, watch } from 'vue'
+import { isAxiosError } from 'axios'
 
 /**
  * Interface representing a single snackbar notification.
@@ -10,7 +11,8 @@ export interface Snack {
   open: boolean
   timeout: number
   color?: 'success' | 'info' | 'warning' | 'error' | string
-  error?: Error | null
+  error?: Error
+  errorData?: { error: string }
 }
 
 /**
@@ -98,10 +100,14 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
    * @param error Optional error object
    */
   function error(message: string, error: unknown | null = null): void {
-    if (error instanceof Error) {
-      console.error('Message: ', message, error.message, error)
+    if (isAxiosError(error)) {
+      console.error('Snack Error: ', message, error.message, error.response?.data, error)
+      enqueue({ message, color: 'error', timeout: 15000, error, errorData: error.response?.data })
+    } else if (error instanceof Error) {
+      console.error('Snack Error: ', message, error.message, error)
       enqueue({ message, color: 'error', timeout: 15000, error })
     } else if (error === null) {
+      console.error('Unknown snack error: ', message, error)
       enqueue({ message, color: 'error', timeout: 1500000 })
     } else {
       console.warn('Logged error not shown because the error type is not error', message, error)

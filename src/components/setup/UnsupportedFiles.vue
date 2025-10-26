@@ -7,7 +7,7 @@ const props = defineProps<{
 }>()
 
 const virtualScrollHeight = computed(() => {
-  const count = Object.keys(props.summary.unsupported_files).length
+  const count = Object.keys(props.summary.unsupportedFiles).length
   if (count >= 8) {
     return 300
   }
@@ -19,7 +19,7 @@ const virtualScrollHeight = computed(() => {
   <v-card class="mb-6 folder-card" variant="text" rounded color="primary">
     <v-card-title class="d-flex align-center card-title">
       <v-icon icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
-      Unsupported Files ({{ summary.unsupported_count.toLocaleString() }})
+      Unsupported Files ({{ summary.unsupportedCount.toLocaleString() }})
     </v-card-title>
     <v-card-text>
       <p class="mb-3 text-caption text-medium-emphasis">
@@ -29,7 +29,7 @@ const virtualScrollHeight = computed(() => {
       <div class="ext-list">
         <v-virtual-scroll
           :height="virtualScrollHeight"
-          :items="Object.keys(summary.unsupported_files)"
+          :items="Object.keys(summary.unsupportedFiles)"
         >
           <template v-slot:default="{ item }">
             <v-dialog max-width="500">
@@ -50,11 +50,11 @@ const virtualScrollHeight = computed(() => {
 
               <template v-slot:default="{ isActive }">
                 <v-card
-                  :title="`${summary.unsupported_files[item]?.length?.toLocaleString?.()} Unsupported .${item} Files`"
+                  :title="`${summary.unsupportedFiles[item]?.length?.toLocaleString?.()} Unsupported .${item} Files`"
                 >
                   <v-card-text>
                     <v-list>
-                      <v-virtual-scroll :height="400" :items="summary.unsupported_files[item]">
+                      <v-virtual-scroll :height="400" :items="summary.unsupportedFiles[item]">
                         <template v-slot:default="{ item }">
                           <v-list-item>
                             <template v-slot:prepend>

@@ -30,30 +30,30 @@ const pickFolderStore = usePickFolderStore()
   <div
     v-if="
       pickFolderStore.unsupportedFiles &&
-      (pickFolderStore.unsupportedFiles.unsupported_count > 0 ||
-        pickFolderStore.unsupportedFiles.inaccessible_entries.length > 0)
+      (pickFolderStore.unsupportedFiles.unsupportedCount > 0 ||
+        pickFolderStore.unsupportedFiles.inaccessibleEntries.length > 0)
     "
   >
     <!-- Unsupported Files -->
     <unsupported-files
-      v-if="pickFolderStore.unsupportedFiles.unsupported_count > 0"
+      v-if="pickFolderStore.unsupportedFiles.unsupportedCount > 0"
       :summary="pickFolderStore.unsupportedFiles"
     />
 
     <!-- Inaccessible Files and Folders -->
     <inaccessible-entries
       :summary="pickFolderStore.unsupportedFiles"
-      v-if="pickFolderStore.unsupportedFiles.inaccessible_entries.length > 0"
+      v-if="pickFolderStore.unsupportedFiles.inaccessibleEntries.length > 0"
     />
   </div>
   <v-alert
     variant="flat"
-    color="primary-container"
+    color="surface-container"
     v-else-if="pickFolderStore.unsupportedFiles"
     class="rounded-xl text-md-caption"
     icon="mdi-check"
   >
-    <p :style="{ color: 'rgb(var(--v-theme-on-primary-container))' }">
+    <p :style="{ color: 'rgb(var(--v-theme-on-surface-container))' }">
       Great news! There are no unsupported files in your selection. Everything looks good!
     </p>
   </v-alert>

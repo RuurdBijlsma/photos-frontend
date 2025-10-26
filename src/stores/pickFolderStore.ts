@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
-import { useSetupStore } from '@/stores/setupStore.ts'
 import setupService from '@/script/services/setupService.ts'
 import { debounce } from '@/script/utils.ts'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
@@ -22,7 +21,6 @@ export const usePickFolderStore = defineStore(
     const samples: Ref<{ imageUrl: string; relPath: string }[]> = ref(
       [...Array(N_SAMPLES)].map(() => ({ imageUrl: '', relPath: '' })),
     )
-    const setupStore = useSetupStore()
     const snackbarStore = useSnackbarsStore()
 
     const dbRefreshMediaSample = debounce(refreshMediaSample, 500)
@@ -58,16 +56,16 @@ export const usePickFolderStore = defineStore(
     }
 
     async function refreshMediaSample() {
+      console.warn('Refreshing media samples')
       const requestFolder = viewedFolder.value.join('/')
 
       mediaSampleLoading.value = true
       const response = await setupService.getMediaSample(requestFolder)
       mediaSampleLoading.value = false
       // Ignore result if the viewed folder has changed since making the request
-      if (viewedFolder.value.join('/') !== requestFolder || setupStore.mediaSamples === null) return
+      if (viewedFolder.value.join('/') !== requestFolder) return
 
       mediaSamples.value = response.data
-      console.log(JSON.parse(JSON.stringify(mediaSamples.value?.samples)))
 
       N_SAMPLES = mediaSamples.value.samples.length
       if (samples.value.length > N_SAMPLES) {
@@ -103,7 +101,7 @@ export const usePickFolderStore = defineStore(
       const baseFolder = viewedFolder.value.join('/')
 
       try {
-        await setupService.makeFolder({ base_folder: baseFolder, new_name: folderName })
+        await setupService.makeFolder({ baseFolder, newName: folderName })
       } catch (e) {
         snackbarStore.error("Can't make folder", e)
       } finally {

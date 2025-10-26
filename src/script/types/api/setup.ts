@@ -1,44 +1,44 @@
 // Maps to the PathInfoResponse schema
 export interface PathInfoResponse {
   folder: string
-  disk_available: number
-  disk_used: number
-  disk_total: number
-  read_access: boolean
-  write_access: boolean
+  diskAvailable: number
+  diskUsed: number
+  diskTotal: number
+  readAccess: boolean
+  writeAccess: boolean
 }
 
 // Maps to the DiskResponse schema
 export interface DiskResponse {
-  media_folder: PathInfoResponse
-  thumbnails_folder: PathInfoResponse
+  mediaFolder: PathInfoResponse
+  thumbnailsFolder: PathInfoResponse
 }
 
 // Maps to the MakeFolderBody schema
 export interface MakeFolderBody {
-  base_folder: string
-  new_name: string
+  baseFolder: string
+  newName: string
 }
 
 // Maps to the MakeFolderBody schema
 export interface StartProcessingBody {
-  user_folder: string
+  userFolder: string
 }
 
 // Maps to the MediaSampleResponse schema
 export interface MediaSampleResponse {
-  read_access: boolean
+  readAccess: boolean
   folder: string
-  photo_count: number
-  video_count: number
+  photoCount: number
+  videoCount: number
   samples: string[]
 }
 
 // Maps to the UnsupportedFilesResponse schema
 export interface UnsupportedFilesResponse {
-  read_access: boolean
+  readAccess: boolean
   folder: string
-  inaccessible_entries: string[]
-  unsupported_files: Record<string, string[]> // Represents a dictionary of string arrays
-  unsupported_count: number
+  inaccessibleEntries: string[]
+  unsupportedFiles: Record<string, string[]> // Represents a dictionary of string arrays
+  unsupportedCount: number
 }
