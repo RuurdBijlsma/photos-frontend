@@ -20,7 +20,7 @@ const thumbnail = computed(() =>
     :style="{
       width: width + 'px',
       height: height + 'px',
-      backgroundImage: `url(${thumbnail})`
+      backgroundImage: `url(${thumbnail})`,
     }"
   ></div>
 </template>
