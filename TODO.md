@@ -26,3 +26,5 @@
 * make api.ts abstraction for protobuf endpoints.
 * border radius around every month grouping like i had before
 * bad performance on firefox
+* make func to refresh frontpage, call it after setup is done after 10s, then every 5s;
+* desync in ratios en photos

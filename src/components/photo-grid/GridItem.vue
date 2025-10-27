@@ -28,7 +28,7 @@ const thumbnail = computed(() =>
 <style scoped>
 .grid-item {
   background-color: rgba(255, 255, 255, 0.1);
-  background-size: cover;
+  background-size: contain;
   display: block;
 
   content-visibility: auto;
