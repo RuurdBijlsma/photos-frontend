@@ -3,6 +3,7 @@
 * ✅ merge pickfolderstore and setup store
 * ✅ make global showError function that spawns a snackbar and logs it to console
 * ✅ na register word je niet geredirect naar setup
+* ✅ desync in ratios en photos
 * on login redirect to where you were
 * standardize font sizes everywhere
 * main content is not taking up entire width
@@ -27,4 +28,3 @@
 * border radius around every month grouping like i had before
 * bad performance on firefox
 * make func to refresh frontpage, call it after setup is done after 10s, then every 5s;
-* desync in ratios en photos

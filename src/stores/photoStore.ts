@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef, triggerRef } from 'vue'
+import { computed, type ComputedRef, ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
 import photoService from '@/script/services/photoService'
 import { useSnackbarsStore } from '@/stores/snackbarStore'
@@ -9,7 +9,9 @@ export const usePhotoStore = defineStore('photos', () => {
   const mediaItems = shallowRef(new Map<string, MediaItem[]>())
   const mediaMonthsLoading = ref(new Set<string>())
   const timeline = ref<TimelineMonth[] | null>(null)
-  const timelineMonths = computed(() => timeline.value?.map((m) => m.monthId) ?? [])
+  const timelineMonths: ComputedRef<string[]> = computed(
+    () => timeline.value?.map((m) => m.monthId) ?? [],
+  )
   const snackbarStore = useSnackbarsStore()
 
   async function fetchTimeline() {
