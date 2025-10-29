@@ -78,19 +78,21 @@ export const useBackgroundStore = defineStore('background', () => {
       }
     }
 
-    // --- Step 2: Fetch fresh data for the next session ---
-    if (authStore.isAuthenticated) {
-      fetchAndCacheNextBackground()
-    }
+    requestIdleCallback(() => {
+      // --- Step 2: Fetch fresh data for the next session ---
+      if (authStore.isAuthenticated) {
+        fetchAndCacheNextBackground()
+      }
 
-    watch(
-      () => authStore.isAuthenticated,
-      (isNowAuthenticated) => {
-        if (isNowAuthenticated) {
-          fetchAndCacheNextBackground()
-        }
-      },
-    )
+      watch(
+        () => authStore.isAuthenticated,
+        (isNowAuthenticated) => {
+          if (isNowAuthenticated) {
+            fetchAndCacheNextBackground()
+          }
+        },
+      )
+    })
   }
 
   return {

@@ -57,70 +57,62 @@ const router = createRouter({
 })
 
 export function registerNavigationGuard() {
-  const authStore = useAuthStore()
   const snackbarsStore = useSnackbarsStore()
 
-  // --- Global Navigation Guard ---
   router.beforeEach(async (to, from, next) => {
-    const accessToken = authStore.accessToken
+    const authStore = useAuthStore()
 
-    // Handle Initial App Load
-    if (accessToken && !authStore.user) {
-      try {
-        await authStore.fetchCurrentUser()
-      } catch {
-        // If fetching the user fails (e.g., token is invalid),
-        // the authStore's interceptor should handle logout.
-        // We'll proceed with the navigation, and subsequent checks will redirect to login.
-        return next({ name: 'login' })
-      }
+    // 1. Initialization Gate:
+    const now = performance.now()
+    if (!authStore.isInitialized) {
+      await authStore.initialize()
     }
+    console.log('authStore.initialize', performance.now() - now, 'ms')
 
+    // After initialization, we can trust the state in the store.
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
-    const needsSetup = isAdmin && authStore.user?.mediaFolder === null
 
-    console.log({ isAdmin, mediaFolder: authStore.user?.mediaFolder, needsSetup })
-    if (needsSetup) {
-      // setup needed
-      if (to.name !== 'setup') {
-        return next({ name: 'setup' })
-      }
+    // 2. "Setup Needed" Redirect Logic:
+    const needsSetup = isAdmin && authStore.user?.mediaFolder === null
+    if (needsSetup && to.name !== 'setup') {
+      return next({ name: 'setup' })
+    }
+    // If setup is needed, but we are already going to the setup page, allow it.
+    if (needsSetup && to.name === 'setup') {
+      return next()
     }
 
-    // --- Logic for Admin Routes ---
+    // 3. Admin Route Logic:
     if (to.meta.requiresAdmin) {
       if (isAuthenticated && isAdmin) {
-        return next() // User is authenticated and an admin, allow access.
+        return next()
       } else {
         snackbarsStore.error("You don't have permission to access this page.")
-        // Redirect to a safe page, like photos-library.
         return next({ name: 'photos-library' })
       }
     }
 
-    // --- Logic for Authenticated Routes ---
+    // 4. Authenticated Route Logic:
     if (to.meta.requiresAuth) {
       if (isAuthenticated) {
-        return next() // User is authenticated, allow access.
+        return next()
       } else {
-        // User is not authenticated, redirect to the login page.
         return next({ name: 'login' })
       }
     }
 
-    // --- Logic for Guest Routes ---
+    // 5. Guest Route Logic:
     if (to.meta.guest) {
       if (isAuthenticated) {
-        // User is already logged in, redirect them away from login/register.
         return next({ name: 'photos-library' })
       } else {
-        return next() // User is not logged in, allow access to guest page.
+        return next()
       }
     }
 
-    // --- For all other public routes ---
-    return next() // No specific meta field, so it's a public route.
+    // 6. Fallback for public routes:
+    return next()
   })
 }
 

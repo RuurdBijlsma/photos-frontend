@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useElementSize } from '@vueuse/core'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { usePhotoStore } from '@/stores/photoStore'
 import GridItem from '@/components/photo-grid/GridItem.vue'
 import type { TimelineMonth } from '@/generated/photos'
@@ -19,7 +18,23 @@ export interface RowLayout {
 }
 
 const photoGridContainer = ref<HTMLElement | null>(null)
-const { width: containerWidth, height: containerHeight } = useElementSize(photoGridContainer)
+const containerWidth = ref(0)
+const containerHeight = ref(0)
+const onWindowResize = () => {
+  const element = photoGridContainer.value
+  if (!element) return
+  const box = element.getBoundingClientRect()
+  containerWidth.value = box.width
+  containerHeight.value = box.height
+}
+onMounted(() => {
+  window.addEventListener('resize', onWindowResize)
+  requestIdleCallback(onWindowResize)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', onWindowResize)
+})
+
 const photoStore = usePhotoStore()
 const rows = ref<RowLayout[]>([])
 
@@ -27,6 +42,7 @@ const DESIRED_HEIGHT = 240
 const PHOTO_GAP = 2
 const MAX_GROW_RATIO = 1.5
 const LOAD_BUFFER = 2
+
 
 photoStore.fetchTimeline().then(() => {
   const now = performance.now()
