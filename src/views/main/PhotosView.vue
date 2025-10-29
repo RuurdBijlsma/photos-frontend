@@ -43,7 +43,6 @@ const PHOTO_GAP = 2
 const MAX_GROW_RATIO = 1.5
 const LOAD_BUFFER = 2
 
-
 photoStore.fetchTimeline().then(() => {
   const now = performance.now()
   if (photoStore.timeline) updateGrid(photoStore.timeline)
@@ -86,6 +85,12 @@ function updateGrid(timelineMonths: TimelineMonth[]) {
 watch(containerWidth, () => {
   if (photoStore.timeline) updateGrid(photoStore.timeline)
 })
+watch(
+  () => photoStore.timelineMonths,
+  () => {
+    if (photoStore.timeline) updateGrid(photoStore.timeline)
+  },
+)
 
 let monthInView = ''
 async function handleIsVisible(isVisible: boolean, id: string) {

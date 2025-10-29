@@ -62,38 +62,46 @@ export function registerNavigationGuard() {
   router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore()
 
-    // 1. Initialization Gate:
-    const now = performance.now()
-    if (!authStore.isInitialized) {
-      await authStore.initialize()
+    // --- Authentication Initialization ---
+    // If we have a token but no user data, attempt to fetch it. This is crucial for page reloads.
+    if (authStore.accessToken && !authStore.user) {
+      try {
+        await authStore.fetchCurrentUser()
+      } catch (error) {
+        // If the token is invalid, the fetch will fail. Log the user out completely.
+        console.error('Session restore failed:', error)
+        await authStore.logout()
+        // No need to proceed further, just go to login.
+        return next({ name: 'login' })
+      }
     }
-    console.log('authStore.initialize', performance.now() - now, 'ms')
 
-    // After initialization, we can trust the state in the store.
+    // --- Get Fresh Auth State ---
+    // This ensures `isAuthenticated` and `isAdmin` have the most up-to-date values.
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
 
-    // 2. "Setup Needed" Redirect Logic:
+    // --- "Setup Needed" Redirect Logic ---
     const needsSetup = isAdmin && authStore.user?.mediaFolder === null
     if (needsSetup && to.name !== 'setup') {
       return next({ name: 'setup' })
     }
-    // If setup is needed, but we are already going to the setup page, allow it.
+    // If setup is needed and we are already going to the setup page, allow it.
     if (needsSetup && to.name === 'setup') {
       return next()
     }
 
-    // 3. Admin Route Logic:
+    // --- Admin Route Logic ---
     if (to.meta.requiresAdmin) {
       if (isAuthenticated && isAdmin) {
         return next()
       } else {
         snackbarsStore.error("You don't have permission to access this page.")
-        return next({ name: 'photos-library' })
+        return next(isAuthenticated ? { name: 'photos-library' } : { name: 'login' })
       }
     }
 
-    // 4. Authenticated Route Logic:
+    // --- Authenticated Route Logic ---
     if (to.meta.requiresAuth) {
       if (isAuthenticated) {
         return next()
@@ -102,7 +110,7 @@ export function registerNavigationGuard() {
       }
     }
 
-    // 5. Guest Route Logic:
+    // --- Guest Route Logic (for pages like Login and Register) ---
     if (to.meta.guest) {
       if (isAuthenticated) {
         return next({ name: 'photos-library' })
@@ -111,7 +119,7 @@ export function registerNavigationGuard() {
       }
     }
 
-    // 6. Fallback for public routes:
+    // --- Fallback for public routes ---
     return next()
   })
 }

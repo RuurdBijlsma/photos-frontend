@@ -1,7 +1,7 @@
 import { computed, ref, type Ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import authService from '@/script/services/authService'
-import type { CreateUser, LoginUser, User, Tokens } from '@/script/types/api/auth'
+import type { CreateUser, LoginUser, Tokens, User } from '@/script/types/api/auth'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 import { useRouter } from 'vue-router'
 
@@ -20,8 +20,6 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.getItem('expiry') ? Number(localStorage.getItem('expiry')) : null,
   )
   const status: Ref<AuthStatus> = ref('idle')
-  // A new state property to track if the initial auth check is complete.
-  const isInitialized: Ref<boolean> = ref(false)
   const snackbarStore = useSnackbarsStore()
   const router = useRouter()
 
@@ -32,7 +30,6 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('authUser')
     }
   })
-
 
   // --- GETTERS ---
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
@@ -55,18 +52,28 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Refreshes the access token using the refresh token.
+   * If successful, it updates the tokens in the store and returns them.
+   * If it fails, it will trigger a logout and throw an error.
    */
   async function refreshTokens(): Promise<Tokens> {
     if (!refreshToken.value) {
       await logout()
-      throw new Error("No refresh token available.")
+      throw new Error('No refresh token available.')
     }
     try {
       const response = await authService.refreshSession({ refreshToken: refreshToken.value })
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken, expiry: newExpiry } = response.data
+      const {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        expiry: newExpiry,
+      } = response.data
       setTokens(newAccessToken, newRefreshToken, newExpiry)
+
+      requestIdleCallback(fetchCurrentUser)
+
       return response.data
     } catch (error) {
+      // If refresh fails, log the user out completely
       await logout()
       throw error
     }
@@ -81,43 +88,10 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.getMe()
       user.value = response.data
     } catch (error) {
-      user.value = null
+      // Let the interceptor handle potential 401s
       throw error
     }
   }
-
-  /**
-   * Initializes the auth state on app startup. Checks for an existing session,
-   * validates the token, and refreshes it if necessary.
-   */
-  async function initialize() {
-    if (isInitialized.value) return
-
-    if (!refreshToken.value) {
-      isInitialized.value = true
-      return
-    }
-
-    try {
-      // Check if the token is expired or nearing expiry (e.g., within 60 seconds)
-      const buffer = 60 * 1000; // 60-second buffer
-      if (!expiry.value || (expiry.value * 1000) - buffer < Date.now()) {
-        await refreshTokens()
-      }
-
-      // If we have a valid token but no user data in the store, fetch it.
-      if (accessToken.value && !user.value) {
-        await fetchCurrentUser()
-      }
-
-    } catch (error) {
-      // refreshTokens() already handles logout on failure.
-      console.error('App initialization failed:', error)
-    } finally {
-      isInitialized.value = true
-    }
-  }
-
 
   /**
    * Logs the user in, fetches tokens, and gets user data.
@@ -143,6 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
     status.value = 'loading'
     try {
       const response = await authService.register(credentials)
+      // Log in automatically after successful registration
       await login({ email: credentials.email, password: credentials.password })
       status.value = 'success'
       return response.data
@@ -164,18 +139,20 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
 
+    // Reset all state
     user.value = null
     accessToken.value = null
     refreshToken.value = null
     expiry.value = null
 
+    // Clear all related items from localStorage
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('expiry')
     localStorage.removeItem('authUser')
 
-    // Using `window.location` can be more reliable for ensuring a clean state after logout.
-    router.push({ name: 'login' }) // Replace with your login route name
+    // Redirect to the login page to ensure the user isn't stuck on a protected route.
+    await router.push({ name: 'login' })
   }
 
   // --- RETURN ---
@@ -186,12 +163,10 @@ export const useAuthStore = defineStore('auth', () => {
     status,
     isAuthenticated,
     isAdmin,
-    isInitialized,
     register,
     login,
     logout,
     fetchCurrentUser,
     refreshTokens,
-    initialize,
   }
 })
