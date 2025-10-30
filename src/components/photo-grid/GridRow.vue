@@ -16,6 +16,8 @@ export interface RowLayout {
   lastOfTheMonth: boolean
 }
 
+const emit = defineEmits(['hoverItem'])
+
 defineProps<{
   row: RowLayout
   photoGap: number
@@ -35,6 +37,15 @@ defineProps<{
     }"
   >
     <grid-item
+      @mouseenter="
+        emit(
+          'hoverItem',
+          mediaItems?.[ratio.index]?.timestamp === undefined
+            ? null
+            : new Date(mediaItems?.[ratio.index]?.timestamp),
+        )
+      "
+      @mouseleave="emit('hoverItem', null)"
       v-for="ratio in row.items"
       :key="ratio.index"
       :media-item="mediaItems?.[ratio.index]"
