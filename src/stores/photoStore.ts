@@ -85,3 +85,6 @@ export const usePhotoStore = defineStore('photos', () => {
     initialize,
   }
 })
+
+export type PhotoStore = ReturnType<typeof usePhotoStore>
+
