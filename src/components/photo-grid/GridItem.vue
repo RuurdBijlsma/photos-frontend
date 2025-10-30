@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import type { MediaItem } from '@/generated/photos'
 
 const props = defineProps<{
-  mediaItem: MediaItem | undefined
+  mediaItem?: MediaItem
   height: number
   width: number
 }>()

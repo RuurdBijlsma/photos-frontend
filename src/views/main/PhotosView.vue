@@ -1,21 +1,10 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { usePhotoStore } from '@/stores/photoStore'
-import GridItem from '@/components/photo-grid/GridItem.vue'
 import type { TimelineMonth } from '@/generated/photos'
-
-export interface LayoutItem {
-  ratio: number
-  index: number
-  key: string
-}
-
-export interface RowLayout {
-  items: LayoutItem[]
-  monthId: string
-  height: number
-  firstOfTheMonth: boolean
-}
+import GridRow, { type RowLayout } from '@/components/photo-grid/GridRow.vue'
+import type { LayoutItem } from 'vuetify/lib/composables/layout'
+import GridRowHeader from '@/components/photo-grid/GridRowHeader.vue'
 
 const photoGridContainer = ref<HTMLElement | null>(null)
 const containerWidth = ref(0)
@@ -65,7 +54,13 @@ function updateGrid(timelineMonths: TimelineMonth[]) {
       if (rowWidth > containerWidth.value) {
         const grow = Math.min(containerWidth.value / rowWidth, MAX_GROW_RATIO)
         const rowHeight = Math.ceil(DESIRED_HEIGHT * grow)
-        newRows.push({ items: row, height: rowHeight, firstOfTheMonth, monthId })
+        newRows.push({
+          items: row,
+          height: rowHeight,
+          monthId,
+          firstOfTheMonth,
+          lastOfTheMonth: i === ratios.length - 1,
+        })
         firstOfTheMonth = false
         row = []
         rowWidth = -PHOTO_GAP
@@ -75,7 +70,13 @@ function updateGrid(timelineMonths: TimelineMonth[]) {
     if (row.length) {
       const grow = Math.min(containerWidth.value / rowWidth, MAX_GROW_RATIO)
       const rowHeight = Math.ceil(DESIRED_HEIGHT * grow)
-      newRows.push({ items: row, height: rowHeight, monthId, firstOfTheMonth })
+      newRows.push({
+        items: row,
+        height: rowHeight,
+        monthId,
+        firstOfTheMonth,
+        lastOfTheMonth: true,
+      })
     }
   }
 
@@ -122,22 +123,13 @@ async function loadAroundMonth(id: string, buffer: number) {
       class="scroll-container"
     >
       <template v-slot:default="{ item }">
-        <h1 class="month-title" v-if="item.firstOfTheMonth">{{ item.monthId }}</h1>
-        <div
+        <grid-row-header v-if="item.firstOfTheMonth" :row="item" />
+        <grid-row
+          :photo-gap="PHOTO_GAP"
+          :media-items="photoStore.mediaItems.get(item.monthId)"
+          :row="item"
           v-intersect="(e: boolean) => handleIsVisible(e, item.monthId)"
-          class="row"
-          :style="{
-            height: item.height + PHOTO_GAP + 'px',
-          }"
-        >
-          <grid-item
-            v-for="ratio in item.items"
-            :key="ratio.index"
-            :media-item="photoStore.mediaItems.get(item.monthId)?.[ratio.index]"
-            :height="item.height"
-            :width="item.height * ratio.ratio"
-          />
-        </div>
+        />
       </template>
     </v-virtual-scroll>
   </div>
@@ -155,15 +147,5 @@ async function loadAroundMonth(id: string, buffer: number) {
   width: 0;
   height: 0;
   background: transparent;
-}
-
-.row {
-  display: flex;
-  gap: v-bind(PHOTO_GAP + 'px');
-}
-
-.month-title {
-  padding: 20px 0 20px 15px;
-  margin-left: 20px;
 }
 </style>
