@@ -60,7 +60,7 @@ defineProps<{
   display: flex;
   gap: v-bind(photoGap + 'px');
   overflow: hidden;
-  --row-radius: 30px;
+  --row-radius: 20px;
 }
 
 .top-row {

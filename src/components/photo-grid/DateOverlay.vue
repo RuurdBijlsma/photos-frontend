@@ -21,12 +21,11 @@ defineProps<{
   text-align: left;
   font-weight: 500;
   border-radius: 40px;
-  background-color: rgba(var(--v-theme-surface-container-highest), 0.5);
-  color: rgba(var(--v-theme-on-surface), 1);
+  background-color: rgba(var(--v-theme-surface-variant), 1);
+  color: rgba(var(--v-theme-on-surface-variant), 1);
   box-shadow:
     0 4px 8px 0 rgba(0, 0, 0, 0.2),
     0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  backdrop-filter: saturate(150%) brightness(70%) blur(20px) contrast(100%);
 }
 
 .date-view-date {
