@@ -1,6 +1,6 @@
 import { type Ref, ref, watch } from 'vue'
 import type { TimelineMonth } from '@/generated/photos.ts'
-import type { RowLayout } from '@/components/photo-grid/GridRow.vue'
+import type { RowLayout, LayoutItem } from '@/components/photo-grid/GridRow.vue'
 import type { PhotoStore } from '@/stores/photoStore.ts'
 
 export function usePhotoGrid(containerWidth: Ref<number>, photoStore: PhotoStore) {
@@ -14,13 +14,13 @@ export function usePhotoGrid(containerWidth: Ref<number>, photoStore: PhotoStore
     const newRows: RowLayout[] = []
 
     for (const { monthId, ratios } of timelineMonths) {
-      let row = []
+      let row: LayoutItem[] = []
       let rowWidth = -PHOTO_GAP
       let firstOfTheMonth = true
 
       for (const [i, ratio] of ratios.entries()) {
         rowWidth += ratio * DESIRED_HEIGHT + PHOTO_GAP
-        row.push({ ratio, index: i, key: monthId + i })
+        row.push({ ratio, index: i })
         if (rowWidth > containerWidth.value) {
           const grow = Math.min(containerWidth.value / rowWidth, MAX_GROW_RATIO)
           newRows.push({

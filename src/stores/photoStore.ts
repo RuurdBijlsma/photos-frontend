@@ -4,18 +4,40 @@ import photoService from '@/script/services/photoService'
 import { useSnackbarsStore } from '@/stores/snackbarStore'
 import { type MediaItem, type TimelineMonth } from '@/generated/photos'
 import { useAuthStore } from '@/stores/authStore.ts'
+import type { FullMediaItem } from '@/script/types/api/fullPhoto.ts'
 
 export const usePhotoStore = defineStore('photos', () => {
   const isLoading = ref(false)
   const fetchingTimeline = ref(false)
   const mediaItems = shallowRef(new Map<string, MediaItem[]>())
+  const mediaCache = shallowRef(new Map<string, FullMediaItem>())
   const mediaMonthsLoading = ref(new Set<string>())
   const timeline = ref<TimelineMonth[] | null>(null)
   const timelineMonths: ComputedRef<string[]> = computed(
     () => timeline.value?.map((m) => m.monthId) ?? [],
   )
+  const fetchingMedia = ref(new Set<string>())
   const snackbarStore = useSnackbarsStore()
   const authStore = useAuthStore()
+
+  async function fetchMedia(id: string | undefined) {
+    if (id === undefined) return
+    if (fetchingMedia.value.has(id) || mediaCache.value.has(id)) {
+      return
+    }
+    fetchingMedia.value.add(id)
+    const now = performance.now()
+    try {
+      const { data } = await photoService.fetchMediaItem(id)
+      console.log('FULL MEDIA ITEM', data)
+      mediaCache.value.set(id, data)
+    } catch (e) {
+      snackbarStore.error('Failed to fetch full media item.', e as Error)
+    } finally {
+      console.log(`fetchMedia[${id}]:`, performance.now() - now, 'ms')
+      fetchingMedia.value.delete(id)
+    }
+  }
 
   async function fetchTimeline() {
     if (fetchingTimeline.value) return
@@ -78,13 +100,14 @@ export const usePhotoStore = defineStore('photos', () => {
     mediaMonthsLoading,
     timeline,
     timelineMonths,
+    mediaCache,
 
     // Actions
     fetchTimeline,
     fetchMediaByMonths,
     initialize,
+    fetchMedia,
   }
 })
 
 export type PhotoStore = ReturnType<typeof usePhotoStore>
-

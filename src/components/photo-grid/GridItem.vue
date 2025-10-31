@@ -2,6 +2,11 @@
 import photoService from '@/script/services/photoService.ts'
 import { computed } from 'vue'
 import type { MediaItem } from '@/generated/photos'
+import { useRouter } from 'vue-router'
+import { usePhotoStore } from '@/stores/photoStore.ts'
+
+const photoStore = usePhotoStore()
+const router = useRouter()
 
 const props = defineProps<{
   mediaItem?: MediaItem
@@ -12,10 +17,17 @@ const props = defineProps<{
 const thumbnail = computed(() =>
   props.mediaItem?.id === null ? '' : photoService.getPhotoThumbnail(props.mediaItem?.id, 240),
 )
+
+async function openImage() {
+  const id = props.mediaItem?.id
+  if (id) await router.push({ path: `/view/${id}` })
+}
 </script>
 
 <template>
   <div
+    @dblclick="openImage"
+    @mousedown="photoStore.fetchMedia(props.mediaItem?.id)"
     class="grid-item"
     :style="{
       width: width + 'px',

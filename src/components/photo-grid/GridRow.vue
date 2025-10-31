@@ -5,7 +5,6 @@ import type { MediaItem } from '@/generated/photos.ts'
 export interface LayoutItem {
   ratio: number
   index: number
-  key: string
 }
 
 export interface RowLayout {
@@ -33,7 +32,7 @@ defineProps<{
       'bottom-row': row.lastOfTheMonth,
     }"
     :style="{
-      height: row.height + photoGap + 'px',
+      height: row.height + photoGap + 'px'
     }"
   >
     <grid-item

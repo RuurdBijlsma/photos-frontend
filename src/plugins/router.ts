@@ -3,6 +3,7 @@ import MainLayout from '@/views/MainLayout.vue'
 import PhotosView from '@/views/main/PhotosView.vue'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 import { useAuthStore } from '@/stores/authStore.ts'
+import ViewPhoto from '@/views/main/ViewPhoto.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +18,13 @@ const router = createRouter({
           path: '/',
           name: 'photos-library',
           component: PhotosView,
+          children: [
+            {
+              path: '/view/:id',
+              name: 'view-photo',
+              component: ViewPhoto,
+            },
+          ],
         },
         {
           path: '/explore',

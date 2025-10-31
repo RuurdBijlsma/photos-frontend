@@ -2,6 +2,7 @@ import type { AxiosResponse } from 'axios'
 import apiClient from './api'
 import type { RandomPhotoResponse } from '@/script/types/api/photos.ts'
 import { ByMonthResponse, TimelineResponse } from '@/generated/photos.ts'
+import type { FullMediaItem } from '@/script/types/api/fullPhoto.ts'
 
 // This service handles all API calls related to the initial application setup.
 const photoService = {
@@ -14,6 +15,12 @@ const photoService = {
 
   getRandomPhoto(): Promise<AxiosResponse<RandomPhotoResponse>> {
     return apiClient.get<RandomPhotoResponse>('/photos/random')
+  },
+
+  fetchMediaItem(id: string): Promise<AxiosResponse<FullMediaItem>> {
+    return apiClient.get<FullMediaItem>('/photos/item', {
+      params: { id },
+    })
   },
 
   async getTimeline(): Promise<TimelineResponse> {

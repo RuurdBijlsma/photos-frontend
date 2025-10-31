@@ -52,7 +52,7 @@
 
     <v-main class="layout-body">
       <div class="router-view-container">
-        <RouterView class="router-view" />
+        <router-view class="router-view" />
       </div>
       <div class="scroll-area"></div>
     </v-main>
