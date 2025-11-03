@@ -105,7 +105,7 @@ export function registerNavigationGuard() {
         return next()
       } else {
         snackbarsStore.error("You don't have permission to access this page.")
-        return next(isAuthenticated ? { name: 'photos-library' } : { name: 'login' })
+        return next(isAuthenticated ? { name: 'timeline' } : { name: 'login' })
       }
     }
 
@@ -121,7 +121,7 @@ export function registerNavigationGuard() {
     // --- Guest Route Logic (for pages like Login and Register) ---
     if (to.meta.guest) {
       if (isAuthenticated) {
-        return next({ name: 'photos-library' })
+        return next({ name: 'timeline' })
       } else {
         return next()
       }
