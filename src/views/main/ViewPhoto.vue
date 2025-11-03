@@ -77,9 +77,12 @@ viewStore.setFromRoute()
 
 <template>
   <v-theme-provider class="theme-prov" theme="darkView">
-    <div class="view-container" :style="{
-      backgroundColor: settings.useImageGlow ? 'rgb(var(--v-theme-background))' : 'black',
-    }">
+    <div
+      class="view-container"
+      :style="{
+        backgroundColor: settings.useImageGlow ? 'rgb(var(--v-theme-background))' : 'black',
+      }"
+    >
       <div
         v-if="settings.useImageGlow"
         class="blurry-bg"

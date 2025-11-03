@@ -128,7 +128,9 @@ export const useThemeStore = defineStore('theme', () => {
 
   // --- ACTION ---
 
-  function themeFromJson(themeData: Theme): null|{ light: ThemeDefinition; dark: ThemeDefinition } {
+  function themeFromJson(
+    themeData: Theme,
+  ): null | { light: ThemeDefinition; dark: ThemeDefinition } {
     if (!themeData) {
       console.warn('setThemesFromJson called with empty or invalid theme data.')
       return null
@@ -148,7 +150,7 @@ export const useThemeStore = defineStore('theme', () => {
    * @param themeData The theme object from your backend.
    */
   function setThemesFromJson(themeData: Theme) {
-    const theme= themeFromJson(themeData)
+    const theme = themeFromJson(themeData)
     currentTheme.value = theme
 
     console.warn('Apply theme')

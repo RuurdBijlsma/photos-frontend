@@ -51,7 +51,7 @@ async function preventOpen(e: PointerEvent) {
   background-color: rgba(255, 255, 255, 0.1);
   background-size: contain;
   display: block;
-  cursor:default;
+  cursor: default;
 
   content-visibility: auto;
   contain-intrinsic-size: 240px;

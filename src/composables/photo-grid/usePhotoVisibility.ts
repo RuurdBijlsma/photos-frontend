@@ -28,7 +28,9 @@ export function usePhotoVisibility(timelineStore: TimelineStore) {
     const index = timelineStore.timelineMonths.indexOf(id)
     const toFetch = timelineStore.timelineMonths
       .slice(Math.max(0, index - buffer), index + buffer + 1)
-      .filter((m: string) => !timelineStore.mediaItems.has(m) && !timelineStore.mediaMonthsLoading.has(m))
+      .filter(
+        (m: string) => !timelineStore.mediaItems.has(m) && !timelineStore.mediaMonthsLoading.has(m),
+      )
 
     if (toFetch.length) await timelineStore.fetchMediaByMonths(toFetch)
   }

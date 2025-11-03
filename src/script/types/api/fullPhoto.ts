@@ -1,3 +1,5 @@
+import type { Theme } from '@/script/types/themeColor.ts'
+
 export interface Location {
   name: string | null
   admin1: string | null
@@ -52,12 +54,13 @@ export interface QualityData {
 }
 
 export interface ColorData {
-  themes: any[]
+  themes: Theme[]
   prominent_colors: string[] | null
   average_hue: number
   average_saturation: number
   average_lightness: number
-  histogram: any | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  histogram: { [key: string]: any } | null
 }
 
 export interface CaptionData {
@@ -128,7 +131,8 @@ export interface Details {
   video_fps: number | null
   is_nightsight: boolean
   is_timelapse: boolean
-  exif: any | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  exif: { [key: string]: any }
 }
 
 export interface CaptureDetails {

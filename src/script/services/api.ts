@@ -29,6 +29,7 @@ apiClient.interceptors.request.use(
 // A variable to track if a token refresh is currently in progress
 let isRefreshing = false
 // A queue to hold requests that failed due to an expired token
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let failedQueue: { resolve: (value: unknown) => void; reject: (reason?: any) => void }[] = []
 
 /**
@@ -37,7 +38,7 @@ let failedQueue: { resolve: (value: unknown) => void; reject: (reason?: any) => 
  * @param token - The new access token if the refresh was successful.
  */
 const processQueue = (error: Error | null, token: string | null = null) => {
-  failedQueue.forEach(prom => {
+  failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error)
     } else {
@@ -48,7 +49,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 }
 
 apiClient.interceptors.response.use(
-  response => {
+  (response) => {
     // Any status code that lie within the range of 2xx cause this function to trigger
     return response
   },
@@ -63,14 +64,14 @@ apiClient.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
         })
-          .then(token => {
+          .then((token) => {
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`
             }
             // Retry the original request with the new token
             return apiClient(originalRequest)
           })
-          .catch(err => {
+          .catch((err) => {
             return Promise.reject(err)
           })
       }
@@ -101,6 +102,5 @@ apiClient.interceptors.response.use(
     return Promise.reject(error)
   },
 )
-
 
 export default apiClient
