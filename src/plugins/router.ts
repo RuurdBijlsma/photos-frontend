@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/views/MainLayout.vue'
-import PhotosView from '@/views/main/PhotosView.vue'
+import TimelineView from '@/views/main/TimelineView.vue'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 import { useAuthStore } from '@/stores/authStore.ts'
+import ViewPhoto from '@/views/main/ViewPhoto.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,8 +16,15 @@ const router = createRouter({
       children: [
         {
           path: '/',
-          name: 'photos-library',
-          component: PhotosView,
+          name: 'timeline',
+          component: TimelineView,
+          children: [
+            {
+              path: '/view/:id',
+              name: 'view-photo',
+              component: ViewPhoto,
+            },
+          ],
         },
         {
           path: '/explore',
@@ -57,70 +65,70 @@ const router = createRouter({
 })
 
 export function registerNavigationGuard() {
-  const authStore = useAuthStore()
   const snackbarsStore = useSnackbarsStore()
 
-  // --- Global Navigation Guard ---
   router.beforeEach(async (to, from, next) => {
-    const accessToken = authStore.accessToken
+    const authStore = useAuthStore()
 
-    // Handle Initial App Load
-    if (accessToken && !authStore.user) {
+    // --- Authentication Initialization ---
+    // If we have a token but no user data, attempt to fetch it. This is crucial for page reloads.
+    if (authStore.accessToken && !authStore.user) {
       try {
         await authStore.fetchCurrentUser()
-      } catch {
-        // If fetching the user fails (e.g., token is invalid),
-        // the authStore's interceptor should handle logout.
-        // We'll proceed with the navigation, and subsequent checks will redirect to login.
+      } catch (error) {
+        // If the token is invalid, the fetch will fail. Log the user out completely.
+        console.error('Session restore failed:', error)
+        await authStore.logout()
+        // No need to proceed further, just go to login.
         return next({ name: 'login' })
       }
     }
 
+    // --- Get Fresh Auth State ---
+    // This ensures `isAuthenticated` and `isAdmin` have the most up-to-date values.
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
-    const needsSetup = isAdmin && authStore.user?.mediaFolder === null
 
-    console.log({ isAdmin, mediaFolder: authStore.user?.mediaFolder, needsSetup })
-    if (needsSetup) {
-      // setup needed
-      if (to.name !== 'setup') {
-        return next({ name: 'setup' })
-      }
+    // --- "Setup Needed" Redirect Logic ---
+    const needsSetup = isAdmin && authStore.user?.mediaFolder === null
+    if (needsSetup && to.name !== 'setup') {
+      return next({ name: 'setup' })
+    }
+    // If setup is needed and we are already going to the setup page, allow it.
+    if (needsSetup && to.name === 'setup') {
+      return next()
     }
 
-    // --- Logic for Admin Routes ---
+    // --- Admin Route Logic ---
     if (to.meta.requiresAdmin) {
       if (isAuthenticated && isAdmin) {
-        return next() // User is authenticated and an admin, allow access.
+        return next()
       } else {
         snackbarsStore.error("You don't have permission to access this page.")
-        // Redirect to a safe page, like photos-library.
-        return next({ name: 'photos-library' })
+        return next(isAuthenticated ? { name: 'timeline' } : { name: 'login' })
       }
     }
 
-    // --- Logic for Authenticated Routes ---
+    // --- Authenticated Route Logic ---
     if (to.meta.requiresAuth) {
       if (isAuthenticated) {
-        return next() // User is authenticated, allow access.
+        return next()
       } else {
-        // User is not authenticated, redirect to the login page.
         return next({ name: 'login' })
       }
     }
 
-    // --- Logic for Guest Routes ---
+    // --- Guest Route Logic (for pages like Login and Register) ---
     if (to.meta.guest) {
       if (isAuthenticated) {
-        // User is already logged in, redirect them away from login/register.
-        return next({ name: 'photos-library' })
+        return next({ name: 'timeline' })
       } else {
-        return next() // User is not logged in, allow access to guest page.
+        return next()
       }
     }
 
-    // --- For all other public routes ---
-    return next() // No specific meta field, so it's a public route.
+    // --- Fallback for public routes ---
+    return next()
   })
 }
 

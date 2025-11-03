@@ -6,8 +6,12 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import vuetify from 'vite-plugin-vuetify'
 
-// https://vite.dev/config/
+const repoName = 'photos-frontend'
+
+// https://vitejs.dev/config/
 export default defineConfig({
+  // Conditionally set the base path for GitHub Pages deployment
+  base: process.env.GITHUB_PAGES ? `/${repoName}/` : '/',
   plugins: [
     vue(),
     vueJsx(),

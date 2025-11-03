@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { storeToRefs } from 'pinia'
 import SnackbarQueue from '@/components/SnackbarQueue.vue'
 import { useBackgroundStore } from '@/stores/backgroundStore'
+import { useTimelineStore } from '@/stores/timelineStore.ts'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
-const { backgroundUrl } = storeToRefs(backgroundStore)
+const timelineStore = useTimelineStore()
 
-// Initialize the systems. Order doesn't matter
-// themeStore.initialize()
+// Initialize the stores.
+timelineStore.initialize()
 backgroundStore.initialize()
 </script>
 
@@ -19,7 +19,7 @@ backgroundStore.initialize()
     <div
       class="background-image"
       :style="{
-        backgroundImage: `url(${backgroundUrl})`,
+        backgroundImage: `url(${backgroundStore.backgroundUrl})`,
       }"
     ></div>
   </div>

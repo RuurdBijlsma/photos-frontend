@@ -20,8 +20,8 @@ async function startProcessing() {
   isLoading.value = true
   try {
     await setupStore.startProcessing()
-    console.log('Pushing ', { name: 'photos-library' })
-    await router.push({ name: 'photos-library' })
+    console.log('Pushing ', { name: 'timeline' })
+    await router.push({ name: 'timeline' })
   } finally {
     isLoading.value = false
   }

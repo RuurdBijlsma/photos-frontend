@@ -51,7 +51,7 @@
 
     <v-main class="layout-body">
       <div class="router-view-container">
-        <RouterView class="router-view" />
+        <router-view class="router-view" />
       </div>
       <div class="scroll-area"></div>
     </v-main>
@@ -135,8 +135,8 @@
   background: rgb(227, 222, 255);
   background: linear-gradient(
     0deg,
-    rgba(var(--v-theme-background), 0.6) 0%,
-    rgba(var(--v-theme-background), 0.6) 100%
+    rgba(var(--v-theme-surface), 0.8) 0%,
+    rgba(var(--v-theme-surface), 0.9) 100%
   );
   flex-grow: 1;
   border-top-left-radius: 60px;

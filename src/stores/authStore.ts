@@ -1,36 +1,82 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, type Ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import authService from '@/script/services/authService'
-import type { CreateUser, LoginUser, User } from '@/script/types/api/auth'
+import type { CreateUser, LoginUser, Tokens, User } from '@/script/types/api/auth'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
+import { useRouter } from 'vue-router'
 
-// The 'status' type can be defined for clarity
 type AuthStatus = 'idle' | 'loading' | 'error' | 'success'
 
 export const useAuthStore = defineStore('auth', () => {
   // --- STATE ---
-  // All state properties are now refs
-  const user: Ref<User | null> = ref(null)
+  const user: Ref<User | null> = ref(
+    localStorage.getItem('authUser') === null
+      ? null
+      : JSON.parse(localStorage.getItem('authUser')!),
+  )
   const accessToken: Ref<string | null> = ref(localStorage.getItem('accessToken') || null)
   const refreshToken: Ref<string | null> = ref(localStorage.getItem('refreshToken') || null)
+  const expiry: Ref<number | null> = ref(
+    localStorage.getItem('expiry') ? Number(localStorage.getItem('expiry')) : null,
+  )
   const status: Ref<AuthStatus> = ref('idle')
   const snackbarStore = useSnackbarsStore()
+  const router = useRouter()
+
+  watch(user, (newUser) => {
+    if (newUser) {
+      localStorage.setItem('authUser', JSON.stringify(newUser))
+    } else {
+      localStorage.removeItem('authUser')
+    }
+  })
 
   // --- GETTERS ---
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
 
   // --- ACTIONS ---
-  // Actions are regular functions defined within the setup scope
 
   /**
-   * Internal helper function to manage token state and persistence.
+   * Internal helper to manage token state and persistence.
    */
-  function setTokens(newAccessToken: string, newRefreshToken: string) {
+  function setTokens(newAccessToken: string, newRefreshToken: string, newExpiry: number) {
     accessToken.value = newAccessToken
     refreshToken.value = newRefreshToken
+    expiry.value = newExpiry
+
     localStorage.setItem('accessToken', newAccessToken)
     localStorage.setItem('refreshToken', newRefreshToken)
+    localStorage.setItem('expiry', newExpiry.toString())
+  }
+
+  /**
+   * Refreshes the access token using the refresh token.
+   * If successful, it updates the tokens in the store and returns them.
+   * If it fails, it will trigger a logout and throw an error.
+   */
+  async function refreshTokens(): Promise<Tokens> {
+    if (!refreshToken.value) {
+      await logout()
+      throw new Error('No refresh token available.')
+    }
+    try {
+      const response = await authService.refreshSession({ refreshToken: refreshToken.value })
+      const {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        expiry: newExpiry,
+      } = response.data
+      setTokens(newAccessToken, newRefreshToken, newExpiry)
+
+      requestIdleCallback(fetchCurrentUser)
+
+      return response.data
+    } catch (error) {
+      // If refresh fails, log the user out completely
+      await logout()
+      throw error
+    }
   }
 
   /**
@@ -38,13 +84,8 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function fetchCurrentUser() {
     if (!accessToken.value) return
-    try {
-      const response = await authService.getMe()
-      user.value = response.data
-    } catch (error) {
-      user.value = null
-      throw error
-    }
+    const response = await authService.getMe()
+    user.value = response.data
   }
 
   /**
@@ -54,15 +95,12 @@ export const useAuthStore = defineStore('auth', () => {
     status.value = 'loading'
     try {
       const response = await authService.login(credentials)
-      setTokens(response.data.accessToken, response.data.refreshToken)
-
+      setTokens(response.data.accessToken, response.data.refreshToken, response.data.expiry)
       await fetchCurrentUser()
-
       status.value = 'success'
     } catch (error) {
       if (error instanceof Error) snackbarStore.error('Failed to login. ' + error.message, error)
       status.value = 'error'
-      // Propagate the error to the component for UI feedback (e.g., showing a snackbar)
       throw error
     }
   }
@@ -74,7 +112,8 @@ export const useAuthStore = defineStore('auth', () => {
     status.value = 'loading'
     try {
       const response = await authService.register(credentials)
-      await login(credentials)
+      // Log in automatically after successful registration
+      await login({ email: credentials.email, password: credentials.password })
       status.value = 'success'
       return response.data
     } catch (error) {
@@ -84,10 +123,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * Logs the user out, clears all auth state, and redirects to the login page.
+   * Logs the user out, clears all auth state, and redirects.
    */
   async function logout() {
-    // Call the backend to invalidate the refresh token if it exists.
     if (refreshToken.value) {
       try {
         await authService.logout({ refreshToken: refreshToken.value })
@@ -96,31 +134,34 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
 
-    // Clear all local state
+    // Reset all state
     user.value = null
     accessToken.value = null
     refreshToken.value = null
+    expiry.value = null
+
+    // Clear all related items from localStorage
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
-    localStorage.removeItem('setup-needed')
+    localStorage.removeItem('expiry')
+    localStorage.removeItem('authUser')
+
+    // Redirect to the login page to ensure the user isn't stuck on a protected route.
+    await router.push({ name: 'login' })
   }
 
   // --- RETURN ---
-  // Expose state, getters, and actions
   return {
-    // State
     user,
     accessToken,
     refreshToken,
     status,
-    // Getters
     isAuthenticated,
     isAdmin,
-    // Actions
     register,
     login,
     logout,
     fetchCurrentUser,
-    setTokens,
+    refreshTokens,
   }
 })

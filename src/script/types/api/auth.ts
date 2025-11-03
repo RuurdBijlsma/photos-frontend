@@ -5,6 +5,7 @@ export type UserRole = 'admin' | 'user'
 export interface Tokens {
   accessToken: string
   refreshToken: string
+  expiry: number
 }
 
 // Maps to the User schema
