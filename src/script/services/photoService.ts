@@ -17,14 +17,18 @@ const photoService = {
     return apiClient.get<RandomPhotoResponse>('/photos/random')
   },
 
-  fetchMediaItem(id: string): Promise<AxiosResponse<FullMediaItem>> {
+  getMediaItem(id: string): Promise<AxiosResponse<FullMediaItem>> {
     return apiClient.get<FullMediaItem>('/photos/item', {
       params: { id },
     })
   },
 
-  async getTimeline(): Promise<TimelineResponse> {
-    const response = await apiClient.get('/photos/timeline', {
+  getTimelineIds(): Promise<AxiosResponse<string[]>> {
+    return apiClient.get<string[]>('/photos/timeline/ids')
+  },
+
+  async getTimelineRatios(): Promise<TimelineResponse> {
+    const response = await apiClient.get('/photos/timeline/ratios', {
       responseType: 'arraybuffer',
     })
     const buffer = new Uint8Array(response.data)

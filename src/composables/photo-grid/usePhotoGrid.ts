@@ -1,9 +1,9 @@
 import { type Ref, ref, watch } from 'vue'
 import type { TimelineMonth } from '@/generated/photos.ts'
-import type { RowLayout, LayoutItem } from '@/components/photo-grid/GridRow.vue'
-import type { PhotoStore } from '@/stores/photoStore.ts'
+import type { LayoutItem, RowLayout } from '@/components/photo-grid/GridRow.vue'
+import type { TimelineStore } from '@/stores/timelineStore.ts'
 
-export function usePhotoGrid(containerWidth: Ref<number>, photoStore: PhotoStore) {
+export function usePhotoGrid(containerWidth: Ref<number>, timelineStore: TimelineStore) {
   const rows = ref<RowLayout[]>([])
   const DESIRED_HEIGHT = 240
   const PHOTO_GAP = 2
@@ -52,8 +52,15 @@ export function usePhotoGrid(containerWidth: Ref<number>, photoStore: PhotoStore
   }
 
   watch(containerWidth, () => {
-    if (photoStore.timeline) updateGrid(photoStore.timeline)
+    if (timelineStore.timeline) updateGrid(timelineStore.timeline)
   })
+
+  watch(
+    () => timelineStore.timeline,
+    () => {
+      if (timelineStore.timeline) updateGrid(timelineStore.timeline)
+    },
+  )
 
   return { rows, updateGrid, PHOTO_GAP }
 }

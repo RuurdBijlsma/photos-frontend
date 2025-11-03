@@ -3,9 +3,9 @@ import photoService from '@/script/services/photoService.ts'
 import { computed } from 'vue'
 import type { MediaItem } from '@/generated/photos'
 import { useRouter } from 'vue-router'
-import { usePhotoStore } from '@/stores/photoStore.ts'
+import { useMediaStore } from '@/stores/mediaStore.ts'
 
-const photoStore = usePhotoStore()
+const mediaStore = useMediaStore()
 const router = useRouter()
 
 const props = defineProps<{
@@ -22,19 +22,28 @@ async function openImage() {
   const id = props.mediaItem?.id
   if (id) await router.push({ path: `/view/${id}` })
 }
+
+async function preventOpen(e: PointerEvent) {
+  if (e.button === 0 && !e.ctrlKey) {
+    e.preventDefault()
+  }
+}
 </script>
 
 <template>
-  <div
-    @dblclick="openImage"
-    @mousedown="photoStore.fetchMedia(props.mediaItem?.id)"
-    class="grid-item"
-    :style="{
-      width: width + 'px',
-      height: height + 'px',
-      backgroundImage: `url(${thumbnail})`,
-    }"
-  ></div>
+  <router-link :to="`/view/${props.mediaItem?.id}`">
+    <div
+      @click="preventOpen"
+      @dblclick="openImage"
+      @mousedown="mediaStore.fetchItem(props.mediaItem?.id)"
+      class="grid-item"
+      :style="{
+        width: width + 'px',
+        height: height + 'px',
+        backgroundImage: `url(${thumbnail})`,
+      }"
+    ></div>
+  </router-link>
 </template>
 
 <style scoped>
@@ -42,6 +51,7 @@ async function openImage() {
   background-color: rgba(255, 255, 255, 0.1);
   background-size: contain;
   display: block;
+  cursor:default;
 
   content-visibility: auto;
   contain-intrinsic-size: 240px;

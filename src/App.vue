@@ -2,14 +2,14 @@
 import { RouterView } from 'vue-router'
 import SnackbarQueue from '@/components/SnackbarQueue.vue'
 import { useBackgroundStore } from '@/stores/backgroundStore'
-import { usePhotoStore } from '@/stores/photoStore.ts'
+import { useTimelineStore } from '@/stores/timelineStore.ts'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
-const photoStore = usePhotoStore()
+const timelineStore = useTimelineStore()
 
 // Initialize the stores.
-photoStore.initialize()
+timelineStore.initialize()
 backgroundStore.initialize()
 </script>
 

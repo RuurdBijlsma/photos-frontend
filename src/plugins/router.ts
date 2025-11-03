@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/views/MainLayout.vue'
-import PhotosView from '@/views/main/PhotosView.vue'
+import TimelineView from '@/views/main/TimelineView.vue'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 import { useAuthStore } from '@/stores/authStore.ts'
 import ViewPhoto from '@/views/main/ViewPhoto.vue'
@@ -16,8 +16,8 @@ const router = createRouter({
       children: [
         {
           path: '/',
-          name: 'photos-library',
-          component: PhotosView,
+          name: 'timeline',
+          component: TimelineView,
           children: [
             {
               path: '/view/:id',

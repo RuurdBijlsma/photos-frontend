@@ -52,11 +52,9 @@ async function register() {
     })
     console.log('Register result', result)
     if (result.mediaFolder === null) {
-      console.log('Pushing router to setup')
       await router.push({ name: 'setup' })
     } else {
-      console.log('Pushing router to photos-library')
-      await router.push({ name: 'photos-library' })
+      await router.push({ name: 'timeline' })
     }
   } catch (e) {
     console.log('Is axios error', isAxiosError(e))

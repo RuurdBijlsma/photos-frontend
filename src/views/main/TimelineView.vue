@@ -4,19 +4,18 @@ import { useDateOverlay } from '@/composables/photo-grid/useDateOverlay.ts'
 import { usePhotoVisibility } from '@/composables/photo-grid/usePhotoVisibility.ts'
 import { usePhotoGrid } from '@/composables/photo-grid/usePhotoGrid.ts'
 import { useContainerResize } from '@/composables/photo-grid/useContainerResize.ts'
-import { usePhotoStore } from '@/stores/photoStore.ts'
+import { useTimelineStore } from '@/stores/timelineStore.ts'
 import GridRowHeader from '@/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/components/photo-grid/GridRow.vue'
 
-const photoStore = usePhotoStore()
+const timelineStore = useTimelineStore()
+
 const { container, width, height } = useContainerResize()
-const { rows, updateGrid, PHOTO_GAP } = usePhotoGrid(width, photoStore)
-const { handleIsVisible, rowInViewDate } = usePhotoVisibility(photoStore)
+const { rows, PHOTO_GAP } = usePhotoGrid(width, timelineStore)
+const { handleIsVisible, rowInViewDate } = usePhotoVisibility(timelineStore)
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
 
-photoStore.fetchTimeline().then(() => {
-  if (photoStore.timeline) updateGrid(photoStore.timeline)
-})
+timelineStore.fetchRatios()
 </script>
 
 <template>
@@ -35,7 +34,7 @@ photoStore.fetchTimeline().then(() => {
           <grid-row
             @hover-item="(date) => (hoverDate = date)"
             :photo-gap="PHOTO_GAP"
-            :media-items="photoStore.mediaItems.get(item.monthId)"
+            :media-items="timelineStore.mediaItems.get(item.monthId)"
             :row="item"
             v-intersect="(e: boolean) => handleIsVisible(e, item)"
           />
@@ -43,7 +42,7 @@ photoStore.fetchTimeline().then(() => {
       </v-virtual-scroll>
     </div>
     <teleport to="body">
-    <router-view class="my-router-view" />
+      <router-view class="my-router-view" />
     </teleport>
   </div>
 </template>

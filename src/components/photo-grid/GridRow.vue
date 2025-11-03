@@ -32,7 +32,7 @@ defineProps<{
       'bottom-row': row.lastOfTheMonth,
     }"
     :style="{
-      height: row.height + photoGap + 'px'
+      height: row.height + photoGap + 'px',
     }"
   >
     <grid-item
@@ -40,7 +40,7 @@ defineProps<{
         emit(
           'hoverItem',
           mediaItems?.[ratio.index]?.timestamp === undefined
-            ? null
+            ? null // @ts-expect-error dumb ts
             : new Date(mediaItems?.[ratio.index]?.timestamp),
         )
       "

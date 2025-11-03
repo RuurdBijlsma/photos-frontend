@@ -23,8 +23,12 @@
 * vuetify discord vragen of het mogelijk is en nut heeft om alle item heights in een virtual scroll toe te voegen.
 * possible bug: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
   out of sync (ratios & photos). Its better to just not refresh the ratios i think
-* make fetch months photostore function take ~0 ms on main thread.
+* make fetch months timelineStore function take ~0 ms on main thread.
 * make api.ts abstraction for protobuf endpoints.
 * border radius around every month grouping like i had before
 * bad performance on firefox
 * make func to refresh frontpage, call it after setup is done after 10s, then every 5s;
+* view-option (like gmail), split view: if you single click a photo it opens in a right half of the window pane. Only
+  works with enough screen width (desktop).
+* ik kan nog een layout maken voor login/setup/register net zoals MainLayout.vue dat voor de main pages doet. Misschien
+  met extra blurry etna BG

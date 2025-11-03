@@ -84,13 +84,8 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function fetchCurrentUser() {
     if (!accessToken.value) return
-    try {
-      const response = await authService.getMe()
-      user.value = response.data
-    } catch (error) {
-      // Let the interceptor handle potential 401s
-      throw error
-    }
+    const response = await authService.getMe()
+    user.value = response.data
   }
 
   /**

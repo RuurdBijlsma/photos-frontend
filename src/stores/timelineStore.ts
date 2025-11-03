@@ -4,52 +4,47 @@ import photoService from '@/script/services/photoService'
 import { useSnackbarsStore } from '@/stores/snackbarStore'
 import { type MediaItem, type TimelineMonth } from '@/generated/photos'
 import { useAuthStore } from '@/stores/authStore.ts'
-import type { FullMediaItem } from '@/script/types/api/fullPhoto.ts'
 
-export const usePhotoStore = defineStore('photos', () => {
+export const useTimelineStore = defineStore('timeline', () => {
   const isLoading = ref(false)
   const fetchingTimeline = ref(false)
+  const fetchingIds = ref(false)
   const mediaItems = shallowRef(new Map<string, MediaItem[]>())
-  const mediaCache = shallowRef(new Map<string, FullMediaItem>())
   const mediaMonthsLoading = ref(new Set<string>())
   const timeline = ref<TimelineMonth[] | null>(null)
+  const ids = ref<string[]>([])
   const timelineMonths: ComputedRef<string[]> = computed(
     () => timeline.value?.map((m) => m.monthId) ?? [],
   )
-  const fetchingMedia = ref(new Set<string>())
   const snackbarStore = useSnackbarsStore()
   const authStore = useAuthStore()
 
-  async function fetchMedia(id: string | undefined) {
-    if (id === undefined) return
-    if (fetchingMedia.value.has(id) || mediaCache.value.has(id)) {
-      return
-    }
-    fetchingMedia.value.add(id)
-    const now = performance.now()
+  async function fetchIds() {
+    if (fetchingIds.value) return
+    fetchingIds.value = true
+    const t0 = performance.now()
     try {
-      const { data } = await photoService.fetchMediaItem(id)
-      console.log('FULL MEDIA ITEM', data)
-      mediaCache.value.set(id, data)
+      const { data } = await photoService.getTimelineIds()
+      ids.value = data
     } catch (e) {
-      snackbarStore.error('Failed to fetch full media item.', e as Error)
+      snackbarStore.error('Failed to fetch all ids.', e)
     } finally {
-      console.log(`fetchMedia[${id}]:`, performance.now() - now, 'ms')
-      fetchingMedia.value.delete(id)
+      console.log('fetchIds:', performance.now() - t0, 'ms')
+      fetchingIds.value = false
     }
   }
 
-  async function fetchTimeline() {
+  async function fetchRatios() {
     if (fetchingTimeline.value) return
     fetchingTimeline.value = true
     const t0 = performance.now()
     try {
-      const timelineResponse = await photoService.getTimeline()
+      const timelineResponse = await photoService.getTimelineRatios()
       timeline.value = timelineResponse.months
     } catch (e) {
-      snackbarStore.error('Failed to fetch grid layout.', e as Error)
+      snackbarStore.error('Failed to fetch grid layout.', e)
     } finally {
-      console.log('fetchTimeline:', performance.now() - t0, 'ms')
+      console.log('fetchRatios:', performance.now() - t0, 'ms')
       fetchingTimeline.value = false
     }
   }
@@ -80,7 +75,7 @@ export const usePhotoStore = defineStore('photos', () => {
 
   async function initialize() {
     if (!authStore.isAuthenticated) return
-    await fetchTimeline()
+    await fetchRatios()
 
     if (timeline.value === null) return
     let nPhotos = 100
@@ -92,6 +87,7 @@ export const usePhotoStore = defineStore('photos', () => {
     }
     console.log('toRequest:', toRequest)
     await fetchMediaByMonths(toRequest)
+    requestIdleCallback(fetchIds)
   }
 
   return {
@@ -100,14 +96,14 @@ export const usePhotoStore = defineStore('photos', () => {
     mediaMonthsLoading,
     timeline,
     timelineMonths,
-    mediaCache,
+    ids,
 
     // Actions
-    fetchTimeline,
+    fetchRatios,
+    fetchIds,
     fetchMediaByMonths,
     initialize,
-    fetchMedia,
   }
 })
 
-export type PhotoStore = ReturnType<typeof usePhotoStore>
+export type TimelineStore = ReturnType<typeof useTimelineStore>
