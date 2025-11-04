@@ -7,11 +7,18 @@ export const useSettingStore = defineStore('settings', () => {
       ? false
       : localStorage.settingsImageGlow === 'true',
   )
+  const useBackdropBlur = ref(
+    localStorage.getItem('settingsBackdropBlur') === null
+      ? false
+      : localStorage.settingsBackdropBlur === 'true',
+  )
   watch(useImageGlow, () => (localStorage.settingsImageGlow = useImageGlow.value.toString()))
+  watch(useBackdropBlur, () => (localStorage.settingsBackdropBlur = useBackdropBlur.value.toString()))
 
   return {
     // State
     useImageGlow,
+    useBackdropBlur,
     // Actions
   }
 })

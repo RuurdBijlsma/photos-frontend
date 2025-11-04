@@ -50,6 +50,7 @@ timelineStore.fetchRatios()
 <style scoped>
 .photo-grid-container {
   height: 100%;
+  margin-top: -7px;
 }
 
 .scroll-container {

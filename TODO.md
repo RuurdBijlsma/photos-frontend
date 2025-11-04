@@ -32,3 +32,5 @@
   works with enough screen width (desktop).
 * ik kan nog een layout maken voor login/setup/register net zoals MainLayout.vue dat voor de main pages doet. Misschien
   met extra blurry etna BG
+* [BUG] if you quickly scroll through viewphoto photos then it doesnt load full media item properly. Why? Also route seems to
+  be wrong somehow. Doesnt match actual address in addressbalk

@@ -21,12 +21,12 @@ body {
 
 ::-moz-selection {
   color: white;
-  background: #9f84e8;
+  background: #6c51b1;
 }
 
 ::selection {
   color: white;
-  background: #9f84e8;
+  background: #6c51b1;
 }
 
 /* Width and height of the scrollbar */

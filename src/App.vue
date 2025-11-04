@@ -3,10 +3,12 @@ import { RouterView } from 'vue-router'
 import SnackbarQueue from '@/components/SnackbarQueue.vue'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import { useTimelineStore } from '@/stores/timelineStore.ts'
+import { useSettingStore } from '@/stores/settingsStore.ts'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
 const timelineStore = useTimelineStore()
+const settings = useSettingStore()
 
 // Initialize the stores.
 timelineStore.initialize()
@@ -23,7 +25,7 @@ backgroundStore.initialize()
       }"
     ></div>
   </div>
-  <v-app class="main-content">
+  <v-app class="main-content" :class="{'backdrop-blur': settings.useBackdropBlur}">
     <RouterView />
   </v-app>
 
@@ -63,7 +65,7 @@ backgroundStore.initialize()
 .blur-filter {
   background-image: linear-gradient(
     180deg,
-    rgba(var(--v-theme-background), 0.95) 0%,
+    rgba(var(--v-theme-background), .95) 0%,
     rgba(var(--v-theme-background), 0.4) 100%
   );
   backdrop-filter: saturate(150%) brightness(70%) blur(15px) contrast(100%);
