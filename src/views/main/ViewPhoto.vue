@@ -67,6 +67,8 @@ function handleKeyDown(e: KeyboardEvent) {
     router.push({ path: `/view/${prevId.value}` })
   } else if (e.key === 'ArrowRight' && nextId.value) {
     router.push({ path: `/view/${nextId.value}` })
+  } else if (e.key === 'Escape') {
+    router.push({ path: parentPath.value })
   }
 }
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
@@ -91,7 +93,7 @@ const timestampString = computed(() => {
 const locationString = computed(() => {
   if (!fullImage.value?.gps?.location) return ''
   const location = fullImage.value.gps.location
-  let finalParts;
+  let finalParts
   if (location.name && location.admin1) {
     finalParts = [location.name, location.admin1]
   } else {
@@ -108,10 +110,10 @@ const locationString = computed(() => {
 })
 
 const parentPath = computed(() => {
-  const pathSegments = route.path.split('/');
-  const parentSegments = pathSegments.slice(0, -2);
-  return parentSegments.join('/') || '/';
-});
+  const pathSegments = route.path.split('/')
+  const parentSegments = pathSegments.slice(0, -2)
+  return parentSegments.join('/') || '/'
+})
 
 // Init
 watch(id, () => {

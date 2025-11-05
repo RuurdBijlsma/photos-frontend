@@ -39,7 +39,7 @@ export const useSetupStore = defineStore('setup', () => {
     try {
       await setupService.startProcessing({ userFolder })
       if (authStore.user) {
-        authStore.user.mediaFolder = userFolder
+        authStore.user = { ...authStore.user, mediaFolder: userFolder }
       }
     } catch (error) {
       snackbarStore.error(`Failed to start processing.`, error)
