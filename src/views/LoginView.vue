@@ -44,7 +44,7 @@ async function login() {
     await router.push({ name: 'timeline' })
   } catch (e) {
     if (e instanceof Error) {
-      snackbarStore.error('Could not log in: ' + e.message, e as Error)
+      snackbarStore.error('Could not log in', e as Error)
     } else if (isAxiosError(e)) {
       errorMessage.value = e.response?.data.error
     }

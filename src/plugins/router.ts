@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import MainLayout from '@/views/MainLayout.vue'
+import MainLayout from '@/views/layouts/MainLayout.vue'
 import TimelineView from '@/views/main/TimelineView.vue'
 import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 import { useAuthStore } from '@/stores/authStore.ts'
@@ -94,7 +94,7 @@ export function registerNavigationGuard() {
     if (needsSetup && to.name !== 'setup') {
       return next({ name: 'setup' })
     }
-    // If setup is needed and we are already going to the setup page, allow it.
+    // If setup is needed, and we are already going to the setup page, allow it.
     if (needsSetup && to.name === 'setup') {
       return next()
     }

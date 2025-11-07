@@ -1,7 +1,29 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useBackgroundStore } from '@/stores/backgroundStore'
+import { useTimelineStore } from '@/stores/timelineStore.ts'
+import { useSettingStore } from '@/stores/settingsStore.ts'
+
+// Instantiate stores
+const backgroundStore = useBackgroundStore()
+const timelineStore = useTimelineStore()
+const settings = useSettingStore()
+
+// Initialize the stores.
+timelineStore.initialize()
+backgroundStore.initialize()
+</script>
 
 <template>
-  <!-- v-layout is the key -->
+  <div class="blurred-background">
+    <div v-if="settings.imageBackground" class="blur-filter"></div>
+    <div
+      class="background-image"
+      :style="{
+        backgroundImage: settings.imageBackground ? `url(${backgroundStore.backgroundUrl})` : '',
+      }"
+    ></div>
+  </div>
+
   <v-layout>
     <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
       <h1 class="appbar-title"><span>Ruurd</span> Photos</h1>
@@ -59,6 +81,39 @@
 </template>
 
 <style scoped>
+.blurred-background {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background-color: #363654;
+  z-index: 0;
+}
+
+.blurred-background > div {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+.background-image {
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(var(--v-theme-surface-container-high));
+}
+
+.blur-filter {
+  background-image: linear-gradient(
+    180deg,
+    rgba(var(--v-theme-background), 0.95) 0%,
+    rgba(var(--v-theme-background), 0.4) 100%
+  );
+  backdrop-filter: saturate(150%) brightness(70%) blur(15px) contrast(100%);
+  z-index: 1;
+}
+
 .appbar-title {
   font-weight: 600;
   font-size: 20px;

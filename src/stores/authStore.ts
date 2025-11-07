@@ -99,7 +99,7 @@ export const useAuthStore = defineStore('auth', () => {
       await fetchCurrentUser()
       status.value = 'success'
     } catch (error) {
-      if (error instanceof Error) snackbarStore.error('Failed to login. ' + error.message, error)
+      if (error instanceof Error) console.warn('Failed to login. ' + error.message, error)
       status.value = 'error'
       throw error
     }

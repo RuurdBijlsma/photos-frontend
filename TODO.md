@@ -13,6 +13,8 @@
 * ✅ probeer virtual scroll met ratios en v-virtual-scroll (we weten alle heights nu)
 * ✅ border radius around every month grouping like i had before
 * ✅ fix auth refresh token expire handling (is dit stuk?)
+* ✅ if you quickly scroll/press next through viewphoto photos then it doesnt load full media item properly. Why? Also route seems to
+  be wrong somehow. Doesnt match actual address in addressbalk
 * ✅ in settings, add option to have solid color background, with fitting theme. or custom image as wallpaper with fitting
   theme.
 * on login redirect to where you were
@@ -22,7 +24,7 @@
 * make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
   music
 * vuetify discord vragen of het mogelijk is en nut heeft om alle item heights in een virtual scroll toe te voegen.
-* possible bug: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
+* [bug]: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
   out of sync (ratios & photos). Its better to just not refresh the ratios i think
 * make fetch months timelineStore function take ~0 ms on main thread.
 * make api.ts abstraction for protobuf endpoints.
@@ -32,5 +34,3 @@
   works with enough screen width (desktop).
 * ik kan nog een layout maken voor login/setup/register net zoals MainLayout.vue dat voor de main pages doet. Misschien
   met extra blurry etna BG
-* [BUG] if you quickly scroll/press next through viewphoto photos then it doesnt load full media item properly. Why? Also route seems to
-  be wrong somehow. Doesnt match actual address in addressbalk

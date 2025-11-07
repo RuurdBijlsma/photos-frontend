@@ -31,9 +31,9 @@ export const useSettingStore = defineStore('settings', () => {
   }
 
   const useImageGlow = usePersistentSetting('settingsImageGlow', false)
-  const useBackdropBlur = usePersistentSetting('settingsBackdropBlur', false)
+  const useBackdropBlur = usePersistentSetting('settingsBackdropBlur', true)
   const imageBackground = usePersistentSetting('settingsImageBackground', true)
-  const customThemeColor = usePersistentSetting('settingsCustomThemeColor', '#732de8')
+  const customThemeColor = usePersistentSetting('settingsCustomThemeColor', '#462de8')
   const timelineRowHeight = usePersistentSetting('settingsTimelineRowHeight', 240)
 
   return {

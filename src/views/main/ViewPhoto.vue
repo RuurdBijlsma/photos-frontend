@@ -19,6 +19,7 @@ const router = useRouter()
 
 const id = computed(() => {
   const rawId = route.params.id
+  console.log('ID RIGHT NOW: ', rawId)
   if (rawId && !Array.isArray(rawId)) return rawId
   console.warn('WEIRD ID IN ROUTE DETECTED')
   return ''
@@ -27,11 +28,12 @@ const id = computed(() => {
 const fullImage = ref<undefined | FullMediaItem>(undefined)
 
 async function initialize() {
-  await mediaStore.fetchItem(id.value)
-  fullImage.value = mediaStore.cache.get(id.value)
-  if (id.value === '') {
-    return router.push({ name: 'timeline' })
-  }
+  const loadingId = id.value
+  if (loadingId === '') return router.push({ name: 'timeline' })
+  await mediaStore.fetchItem(loadingId)
+  if (id.value !== loadingId) return
+  console.log('FULL MEDIA ITEM', mediaStore.cache.get(loadingId))
+  fullImage.value = mediaStore.cache.get(loadingId)
   const imageTheme = fullImage.value?.visual_analyses[0]?.colors?.themes?.[0]
   if (!imageTheme) return
   const vTheme = themeStore.themeFromJson(imageTheme)
