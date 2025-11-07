@@ -16,17 +16,17 @@ html {
 
 html,
 body {
-  background-color: #1f1a2d !important;
+  background-color: #101010 !important;
 }
 
 ::-moz-selection {
   color: white;
-  background: #9f84e8;
+  background: #6c51b1;
 }
 
 ::selection {
   color: white;
-  background: #9f84e8;
+  background: #6c51b1;
 }
 
 /* Width and height of the scrollbar */
