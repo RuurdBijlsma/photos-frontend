@@ -1,11 +1,8 @@
-import { type Ref, ref, watch } from 'vue'
+import { type Ref, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { ThemeDefinition } from 'vuetify'
 import type { DynamicScheme, Palette, Theme } from '@/script/types/themeColor.ts'
 import { useTheme } from 'vuetify/framework'
-import { useSettingStore } from '@/stores/settingsStore.ts'
-import photoService from '@/script/services/photoService.ts'
-import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
 type VuetifyColors = ThemeDefinition['colors']
 
@@ -127,8 +124,6 @@ export const useThemeStore = defineStore('theme', () => {
   // --- STATE ---
   const currentTheme: Ref<{ light: ThemeDefinition; dark: ThemeDefinition } | null> = ref(null)
   const vuetifyTheme = useTheme()
-  const settingsStore = useSettingStore()
-  const snackbarStore = useSnackbarsStore()
 
   // --- ACTION ---
 

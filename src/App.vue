@@ -21,8 +21,7 @@ backgroundStore.initialize()
     <div
       class="background-image"
       :style="{
-        backgroundImage:
-          settings.imageBackground ? `url(${backgroundStore.backgroundUrl})` : '',
+        backgroundImage: settings.imageBackground ? `url(${backgroundStore.backgroundUrl})` : '',
       }"
     ></div>
   </div>

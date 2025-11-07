@@ -45,12 +45,6 @@ async function initialize() {
   }
 }
 
-const isDarkTheme = computed(() => vuetifyTheme.global.current.value.dark)
-const theme = computed(() =>
-  isDarkTheme.value ? vuetifyTheme.themes.value.darkView : vuetifyTheme.themes.value.lightView,
-)
-const colors = computed(() => theme.value!.colors)
-
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
 
