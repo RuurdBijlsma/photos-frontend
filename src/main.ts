@@ -2,10 +2,10 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 
-import App from './App.vue'
-import router, { registerNavigationGuard } from '@/plugins/router'
-import { vuetify } from '@/plugins/vuetify'
-import { pinia } from '@/plugins/pinia'
+import App from './vues/App.vue'
+import router, { registerNavigationGuard } from '@/scripts/plugins/router'
+import { vuetify } from '@/scripts/plugins/vuetify'
+import { pinia } from '@/scripts/plugins/pinia'
 
 const app = createApp(App)
 
