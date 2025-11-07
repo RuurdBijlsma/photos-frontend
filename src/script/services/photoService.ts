@@ -3,6 +3,7 @@ import apiClient from './api'
 import type { RandomPhotoResponse } from '@/script/types/api/photos.ts'
 import { ByMonthResponse, TimelineResponse } from '@/generated/photos.ts'
 import type { FullMediaItem } from '@/script/types/api/fullPhoto.ts'
+import type { Theme } from '@/script/types/themeColor.ts'
 
 // This service handles all API calls related to the initial application setup.
 const photoService = {
@@ -15,6 +16,12 @@ const photoService = {
 
   getRandomPhoto(): Promise<AxiosResponse<RandomPhotoResponse>> {
     return apiClient.get<RandomPhotoResponse>('/photos/random')
+  },
+
+  getTheme(color: string): Promise<AxiosResponse<Theme>> {
+    return apiClient.get<Theme>('/photos/theme', {
+      params: { color },
+    })
   },
 
   getMediaItem(id: string): Promise<AxiosResponse<FullMediaItem>> {

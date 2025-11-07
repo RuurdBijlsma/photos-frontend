@@ -17,15 +17,16 @@ backgroundStore.initialize()
 
 <template>
   <div class="blurred-background">
-    <div class="blur-filter"></div>
+    <div v-if="settings.imageBackground" class="blur-filter"></div>
     <div
       class="background-image"
       :style="{
-        backgroundImage: `url(${backgroundStore.backgroundUrl})`,
+        backgroundImage:
+          settings.imageBackground ? `url(${backgroundStore.backgroundUrl})` : '',
       }"
     ></div>
   </div>
-  <v-app class="main-content" :class="{'backdrop-blur': settings.useBackdropBlur}">
+  <v-app class="main-content" :class="{ 'backdrop-blur': settings.useBackdropBlur }">
     <RouterView />
   </v-app>
 
@@ -60,12 +61,13 @@ backgroundStore.initialize()
   background-position: center;
   width: 100%;
   height: 100%;
+  background-color: rgb(var(--v-theme-surface-container-high));
 }
 
 .blur-filter {
   background-image: linear-gradient(
     180deg,
-    rgba(var(--v-theme-background), .95) 0%,
+    rgba(var(--v-theme-background), 0.95) 0%,
     rgba(var(--v-theme-background), 0.4) 100%
   );
   backdrop-filter: saturate(150%) brightness(70%) blur(15px) contrast(100%);

@@ -1,30 +1,31 @@
 // src/stores/backgroundStore.ts
 
-import { ref, watch } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
 import type { Theme } from '@/script/types/themeColor.ts'
 import photoService from '@/script/services/photoService.ts'
+import { useSettingStore } from '@/stores/settingsStore.ts'
+import { useSnackbarsStore } from '@/stores/snackbarStore.ts'
 
 // The single key we will use for localStorage
-const CACHE_KEY = 'cachedBackgroundData'
+const BG_CACHE_KEY = 'cachedBackgroundData'
+const COLOR_CACHE_KEY = 'cacheColorData'
 const DEFAULT_IMAGE_URL = 'img/etna.jpg'
-
-// The structure of our cached data
-interface CachedBackground {
-  url: string
-  theme: Theme
-}
 
 export const useBackgroundStore = defineStore('background', () => {
   // --- STATE ---
   const backgroundUrl = ref(DEFAULT_IMAGE_URL)
   const hasFetchedForThisSession = ref(false)
+  const backgroundTheme = shallowRef<Theme | null>(null)
+  const colorTheme = shallowRef<Theme | null>(null)
 
   // --- STORES ---
   const themeStore = useThemeStore()
   const authStore = useAuthStore()
+  const settings = useSettingStore()
+  const snackbarStore = useSnackbarsStore()
 
   // --- PRIVATE HELPERS ---
 
@@ -45,11 +46,11 @@ export const useBackgroundStore = defineStore('background', () => {
 
       if (newTheme) {
         // Create a single object containing the coupled data
-        const newCachedData: CachedBackground = {
+        const newCachedData = {
           url: newBgUrl,
           theme: newTheme,
         }
-        localStorage.setItem(CACHE_KEY, JSON.stringify(newCachedData))
+        localStorage.setItem(BG_CACHE_KEY, JSON.stringify(newCachedData))
         console.log('Fetched and cached new background object for next session.')
       } else {
         console.warn('NO theme in the random photo result, not using it.')
@@ -59,24 +60,74 @@ export const useBackgroundStore = defineStore('background', () => {
     }
   }
 
+  const fetchColorTheme = async (color = settings.customThemeColor) => {
+    // Check variable
+    if (colorTheme.value && colorTheme.value.source === color) {
+      return colorTheme.value
+    }
+
+    // Check localStorage
+    const localItem = localStorage.getItem(COLOR_CACHE_KEY)
+    if (localItem !== null) {
+      const data = JSON.parse(localItem) as { color: string; theme: Theme }
+      if (data.color === color) {
+        colorTheme.value = data.theme
+        return data.theme
+      }
+    }
+
+    // Get from API
+    try {
+      const { data } = await photoService.getTheme(color)
+      localStorage.setItem(COLOR_CACHE_KEY, JSON.stringify({ color, theme: data }))
+      colorTheme.value = data
+      return data
+    } catch (e) {
+      snackbarStore.error('Could not get theme from color', e)
+    }
+
+    // Fail
+    return null
+  }
+
+  const getBackgroundTheme = () => {
+    // Check variable
+    if (backgroundTheme.value) return backgroundTheme.value
+
+    // Check localStorage
+    const localItem = localStorage.getItem(BG_CACHE_KEY)
+    if (localItem !== null) {
+      const data = JSON.parse(localItem) as { url: string; theme: Theme }
+      backgroundTheme.value = data.theme
+      backgroundUrl.value = data.url
+      return data.theme
+    }
+
+    // Fallback
+    backgroundUrl.value = DEFAULT_IMAGE_URL
+    return null
+  }
+
+  const setCorrectTheme = async () => {
+    const theme = settings.imageBackground ? getBackgroundTheme() : await fetchColorTheme()
+    if (theme) themeStore.setThemesFromJson(theme)
+  }
+
+  watch(
+    () => settings.customThemeColor,
+    () => setCorrectTheme(),
+  )
+
+  watch(
+    () => settings.imageBackground,
+    () => setCorrectTheme(),
+  )
+
   // --- ACTION ---
 
   function initialize() {
     // --- Step 1: Immediately load the UI from the single cache entry ---
-    const storedData = localStorage.getItem(CACHE_KEY)
-
-    if (storedData) {
-      try {
-        // Parse the entire object
-        const parsedData = JSON.parse(storedData) as CachedBackground
-        // Apply both the background and theme from the same source
-        backgroundUrl.value = parsedData.url
-        themeStore.setThemesFromJson(parsedData.theme)
-      } catch (e) {
-        console.warn("Couldn't parse or apply cached background data.", e)
-        // If parsing fails, we fall back to the defaults.
-      }
-    }
+    setCorrectTheme().then()
 
     requestIdleCallback(() => {
       // --- Step 2: Fetch fresh data for the next session ---
@@ -98,5 +149,7 @@ export const useBackgroundStore = defineStore('background', () => {
   return {
     backgroundUrl,
     initialize,
+    backgroundTheme,
+    colorTheme,
   }
 })

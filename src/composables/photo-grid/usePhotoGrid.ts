@@ -2,15 +2,22 @@ import { type Ref, ref, watch } from 'vue'
 import type { TimelineMonth } from '@/generated/photos.ts'
 import type { LayoutItem, RowLayout } from '@/components/photo-grid/GridRow.vue'
 import type { TimelineStore } from '@/stores/timelineStore.ts'
+import type { SettingsStore } from '@/stores/settingsStore.ts'
 
-export function usePhotoGrid(containerWidth: Ref<number>, timelineStore: TimelineStore) {
+export function usePhotoGrid(
+  containerWidthRef: Ref<number>,
+  settings: SettingsStore,
+  timelineStore: TimelineStore,
+) {
   const rows = ref<RowLayout[]>([])
-  const DESIRED_HEIGHT = 240
   const PHOTO_GAP = 2
   const MAX_GROW_RATIO = 1.5
 
-  function updateGrid(timelineMonths: TimelineMonth[]) {
-    if (!containerWidth.value) return
+  function updateGrid(
+    timelineMonths: TimelineMonth[],
+    desiredRowHeight: number,
+    containerWidth: number,
+  ) {
     const newRows: RowLayout[] = []
 
     for (const { monthId, ratios } of timelineMonths) {
@@ -19,13 +26,13 @@ export function usePhotoGrid(containerWidth: Ref<number>, timelineStore: Timelin
       let firstOfTheMonth = true
 
       for (const [i, ratio] of ratios.entries()) {
-        rowWidth += ratio * DESIRED_HEIGHT + PHOTO_GAP
+        rowWidth += ratio * desiredRowHeight + PHOTO_GAP
         row.push({ ratio, index: i })
-        if (rowWidth > containerWidth.value) {
-          const grow = Math.min(containerWidth.value / rowWidth, MAX_GROW_RATIO)
+        if (rowWidth > containerWidth) {
+          const grow = Math.min(containerWidth / rowWidth, MAX_GROW_RATIO)
           newRows.push({
             items: row,
-            height: Math.ceil(DESIRED_HEIGHT * grow),
+            height: Math.ceil(desiredRowHeight * grow),
             monthId,
             firstOfTheMonth,
             lastOfTheMonth: i === ratios.length - 1,
@@ -37,10 +44,10 @@ export function usePhotoGrid(containerWidth: Ref<number>, timelineStore: Timelin
       }
 
       if (row.length) {
-        const grow = Math.min(containerWidth.value / rowWidth, MAX_GROW_RATIO)
+        const grow = Math.min(containerWidth / rowWidth, MAX_GROW_RATIO)
         newRows.push({
           items: row,
-          height: Math.ceil(DESIRED_HEIGHT * grow),
+          height: Math.ceil(desiredRowHeight * grow),
           monthId,
           firstOfTheMonth,
           lastOfTheMonth: true,
@@ -51,14 +58,24 @@ export function usePhotoGrid(containerWidth: Ref<number>, timelineStore: Timelin
     rows.value = newRows
   }
 
-  watch(containerWidth, () => {
-    if (timelineStore.timeline) updateGrid(timelineStore.timeline)
+  watch(
+    () => settings.timelineRowHeight,
+    () => {
+      if (timelineStore.timeline)
+        updateGrid(timelineStore.timeline, settings.timelineRowHeight, containerWidthRef.value)
+    },
+  )
+
+  watch(containerWidthRef, () => {
+    if (timelineStore.timeline)
+      updateGrid(timelineStore.timeline, settings.timelineRowHeight, containerWidthRef.value)
   })
 
   watch(
     () => timelineStore.timeline,
     () => {
-      if (timelineStore.timeline) updateGrid(timelineStore.timeline)
+      if (timelineStore.timeline)
+        updateGrid(timelineStore.timeline, settings.timelineRowHeight, containerWidthRef.value)
     },
   )
 

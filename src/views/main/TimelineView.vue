@@ -7,11 +7,13 @@ import { useContainerResize } from '@/composables/photo-grid/useContainerResize.
 import { useTimelineStore } from '@/stores/timelineStore.ts'
 import GridRowHeader from '@/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/components/photo-grid/GridRow.vue'
+import { useSettingStore } from '@/stores/settingsStore.ts'
 
 const timelineStore = useTimelineStore()
+const settings = useSettingStore()
 
 const { container, width, height } = useContainerResize()
-const { rows, PHOTO_GAP } = usePhotoGrid(width, timelineStore)
+const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, timelineStore)
 const { handleIsVisible, rowInViewDate } = usePhotoVisibility(timelineStore)
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
 
