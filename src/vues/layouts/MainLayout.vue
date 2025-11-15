@@ -69,6 +69,8 @@ backgroundStore.initialize()
         <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
         <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
       </v-list>
+      <a href="web+burger:cheeseburger">cheeseburger</a>
+
     </v-navigation-drawer>
 
     <v-main class="layout-body">

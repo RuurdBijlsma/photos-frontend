@@ -34,3 +34,9 @@
 * make func to refresh frontpage, call it after setup is done after 10s, then every 5s;
 * view-option (like gmail), split view: if you single click a photo it opens in a right half of the window pane. Only
   works with enough screen width (desktop).
+* implement frontend for share via registerProtocolHandler link
+  * On login, Alice allows her website to register the protocol for photoshare://
+  * bob wants to share album, generates share link: photos.bob.com/share?t=as8df89sad89asdf98, sends it to alice
+    * as8df89sad89asdf98 contains bob's link, bob's username, and the secret token string.
+  * alice opens link, finds public page on bobs frontend with a button to share the link: photoshare:as8df89sad89asdf98
+  * alice's frontend automatically opens this and asks to import this album

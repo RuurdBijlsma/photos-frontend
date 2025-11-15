@@ -33,16 +33,10 @@ const pickFolderStore = usePickFolderStore()
 
     <!-- Media Files Section -->
     <media-sample
-      v-if="pickFolderStore.mediaSamples"
       class="mt-3 media-sample"
       :media-samples="pickFolderStore.mediaSamples"
       :images="pickFolderStore.samples"
     />
-    <v-skeleton-loader
-      :loading="pickFolderStore.mediaSampleLoading"
-      v-else
-      type="card-avatar, heading, paragraph, card"
-    ></v-skeleton-loader>
   </section>
 </template>
 

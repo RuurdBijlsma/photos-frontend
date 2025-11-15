@@ -90,7 +90,8 @@ export function registerNavigationGuard() {
     const isAdmin = authStore.isAdmin
 
     // --- "Setup Needed" Redirect Logic ---
-    const needsSetup = isAdmin && authStore.user?.mediaFolder === null
+    const needsSetup = isAdmin && (authStore.user?.mediaFolder === null || authStore.user?.mediaFolder === undefined)
+    console.log({ needsSetup, isAdmin, mf: authStore.user?.mediaFolder })
     if (needsSetup && to.name !== 'setup') {
       return next({ name: 'setup' })
     }
