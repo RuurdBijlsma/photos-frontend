@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import FullFolderStatus from '@/vues/components/setup/FullFolderStatus.vue'
+import FullFolderStatus from '@/vues/components/onboarding/FullFolderStatus.vue'
 import { ref } from 'vue'
-import { useSetupStore } from '@/scripts/stores/setupStore.ts'
+import { useOnboardingStore } from '@/scripts/stores/onboardingStore.ts'
 
-const setupStore = useSetupStore()
+const onboardingStore = useOnboardingStore()
 const refreshLoading = ref(false)
 
 async function refreshFolderSummary() {
   refreshLoading.value = true
-  await setupStore.fetchDiskInfo()
+  await onboardingStore.fetchDiskInfo()
   refreshLoading.value = false
 }
 
@@ -32,17 +32,17 @@ refreshFolderSummary().then()
       >Refresh
     </v-btn>
   </div>
-  <section v-if="setupStore.disks">
+  <section v-if="onboardingStore.disks">
     <!-- Media Folder -->
     <full-folder-status
-      :folder="setupStore.disks.mediaFolder"
+      :folder="onboardingStore.disks.mediaFolder"
       env-var="MEDIA_DIR"
       title-icon="mdi-camera"
     />
 
     <!-- Thumbnails Folder -->
     <full-folder-status
-      :folder="setupStore.disks.thumbnailsFolder"
+      :folder="onboardingStore.disks.thumbnailsFolder"
       env-var="THUMBNAILS_DIR"
       title-icon="mdi-image-multiple"
     />

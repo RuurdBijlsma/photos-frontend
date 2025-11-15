@@ -51,10 +51,10 @@ const router = createRouter({
       component: () => import('@/vues/views/auth/RegisterView.vue'),
     },
     {
-      path: '/setup',
-      name: 'setup',
+      path: '/onboarding',
+      name: 'onboarding',
       meta: { requiresAuth: true, requiresAdmin: true },
-      component: () => import('@/vues/views/SetupView.vue'),
+      component: () => import('@/vues/views/OnboardingView.vue'),
     },
     {
       path: '/:pathMatch(.*)*',
@@ -89,14 +89,14 @@ export function registerNavigationGuard() {
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
 
-    // --- "Setup Needed" Redirect Logic ---
-    const needsSetup = isAdmin && (authStore.user?.mediaFolder === null || authStore.user?.mediaFolder === undefined)
-    console.log({ needsSetup, isAdmin, mf: authStore.user?.mediaFolder })
-    if (needsSetup && to.name !== 'setup') {
-      return next({ name: 'setup' })
+    // --- "Onboarding Needed" Redirect Logic ---
+    const needsOnboarding = isAdmin && (authStore.user?.mediaFolder === null || authStore.user?.mediaFolder === undefined)
+    console.log({ needsOnboarding, isAdmin, mf: authStore.user?.mediaFolder })
+    if (needsOnboarding && to.name !== 'onboarding') {
+      return next({ name: 'onboarding' })
     }
-    // If setup is needed, and we are already going to the setup page, allow it.
-    if (needsSetup && to.name === 'setup') {
+    // If onboarding is needed, and we are already going to the onboarding page, allow it.
+    if (needsOnboarding && to.name === 'onboarding') {
       return next()
     }
 

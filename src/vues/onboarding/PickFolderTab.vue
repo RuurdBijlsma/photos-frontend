@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import MediaSample from '@/vues/components/setup/MediaSample.vue'
-import FolderPicker from '@/vues/components/setup/FolderPicker.vue'
-import ShowSelectedFolder from '@/vues/components/setup/ShowSelectedFolder.vue'
+
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import FolderPicker from '@/vues/components/onboarding/FolderPicker.vue'
+import ShowSelectedFolder from '@/vues/components/onboarding/ShowSelectedFolder.vue'
+import MediaSample from '@/vues/components/onboarding/MediaSample.vue'
 
 const authStore = useAuthStore()
 const pickFolderStore = usePickFolderStore()

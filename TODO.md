@@ -13,7 +13,7 @@
 * ✅ probeer virtual scroll met ratios en v-virtual-scroll (we weten alle heights nu)
 * ✅ border radius around every month grouping like i had before
 * ✅ fix auth refresh token expire handling (is dit stuk?)
-* ✅ ik kan nog een layout maken voor login/setup/register net zoals MainLayout.vue dat voor de main pages doet. Misschien
+* ✅ ik kan nog een layout maken voor login/onboarding/register net zoals MainLayout.vue dat voor de main pages doet. Misschien
   met extra blurry etna BG
 * ✅ if you quickly scroll/press next through viewphoto photos then it doesnt load full media item properly. Why? Also route seems to
   be wrong somehow. Doesnt match actual address in addressbalk
@@ -31,7 +31,7 @@
 * make fetch months timelineStore function take ~0 ms on main thread.
 * make api.ts abstraction for protobuf endpoints.
 * bad performance on firefox
-* make func to refresh frontpage, call it after setup is done after 10s, then every 5s;
+* make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
 * view-option (like gmail), split view: if you single click a photo it opens in a right half of the window pane. Only
   works with enough screen width (desktop).
 * implement frontend for share via registerProtocolHandler link
@@ -40,3 +40,4 @@
     * as8df89sad89asdf98 contains bob's link, bob's username, and the secret token string.
   * alice opens link, finds public page on bobs frontend with a button to share the link: photoshare:as8df89sad89asdf98
   * alice's frontend automatically opens this and asks to import this album
+* don't allow user to go to /onboarding if onboarding is done already.

@@ -5,7 +5,6 @@ import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
 import type { Theme } from '@/scripts/types/themeColor.ts'
 import { ByMonthResponse, TimelineResponse } from '@/scripts/types/generated/photos.ts'
 
-// This service handles all API calls related to the initial application setup.
 const photoService = {
   getPhotoThumbnail(id: string | null | undefined, size: number): string {
     if (id === null || id === undefined) return ''

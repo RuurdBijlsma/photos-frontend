@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import UnsupportedFiles from '@/vues/components/setup/UnsupportedFiles.vue'
-import InaccessibleEntries from '@/vues/components/setup/InaccessibleEntries.vue'
-import ShowSelectedFolder from '@/vues/components/setup/ShowSelectedFolder.vue'
+import UnsupportedFiles from '@/vues/components/onboarding/UnsupportedFiles.vue'
+import InaccessibleEntries from '@/vues/components/onboarding/InaccessibleEntries.vue'
+import ShowSelectedFolder from '@/vues/components/onboarding/ShowSelectedFolder.vue'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 
 const pickFolderStore = usePickFolderStore()
