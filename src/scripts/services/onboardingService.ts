@@ -67,7 +67,7 @@ const onboardingService = {
    * @returns A promise that resolves to the Axios response containing the file as a Blob.
    */
   getFullMediaFile(relative_path: string): Promise<AxiosResponse<Blob>> {
-    return apiClient.get<Blob>('/download/full-file', {
+    return apiClient.get<Blob>('/photos/download', {
       params: { path: relative_path },
       responseType: 'blob',
     })

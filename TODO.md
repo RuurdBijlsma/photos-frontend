@@ -41,3 +41,4 @@
   * alice opens link, finds public page on bobs frontend with a button to share the link: photoshare:as8df89sad89asdf98
   * alice's frontend automatically opens this and asks to import this album
 * don't allow user to go to /onboarding if onboarding is done already.
+* setting: usebackdropblur doesnt apply everywhere.
