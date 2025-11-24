@@ -40,7 +40,9 @@ async function preventOpen(e: PointerEvent) {
       :style="{
         width: width + 'px',
         height: height + 'px',
-        // backgroundImage: `url(${thumbnail})`, // todo: bring back
+        containIntrinsicWidth: width + 'px',
+        containIntrinsicHeight: height + 'px',
+        backgroundImage: `url(${thumbnail})`,
       }"
     ></div>
   </router-link>
@@ -54,7 +56,6 @@ async function preventOpen(e: PointerEvent) {
   cursor: default;
 
   content-visibility: auto;
-  contain-intrinsic-size: 240px;
   contain: size layout paint;
   transform: translateZ(0);
 }
