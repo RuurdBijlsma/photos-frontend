@@ -42,7 +42,7 @@ async function preventOpen(e: PointerEvent) {
         height: height + 'px',
         containIntrinsicWidth: width + 'px',
         containIntrinsicHeight: height + 'px',
-        // backgroundImage: `url(${thumbnail})`,
+        backgroundImage: `url(${thumbnail})`,
       }"
     ></div>
   </router-link>
