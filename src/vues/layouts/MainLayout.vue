@@ -10,7 +10,7 @@ const settings = useSettingStore()
 
 // Initialize the stores.
 timelineStore.initialize()
-backgroundStore.initialize()
+// backgroundStore.initialize() // todo: enable
 </script>
 
 <template>
