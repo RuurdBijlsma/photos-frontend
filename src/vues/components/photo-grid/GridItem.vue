@@ -31,7 +31,7 @@ async function preventOpen(e: PointerEvent) {
 </script>
 
 <template>
-  <router-link :to="`/view/${props.mediaItem?.id}`">
+  <router-link class="router-link" :to="`/view/${props.mediaItem?.id}`">
     <div
       @click="preventOpen"
       @dblclick="openImage"
@@ -40,7 +40,7 @@ async function preventOpen(e: PointerEvent) {
       :style="{
         width: width + 'px',
         height: height + 'px',
-        backgroundImage: `url(${thumbnail})`,
+        // backgroundImage: `url(${thumbnail})`, // todo: bring back
       }"
     ></div>
   </router-link>

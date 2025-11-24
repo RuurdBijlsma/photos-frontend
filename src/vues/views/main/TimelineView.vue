@@ -44,7 +44,7 @@ timelineStore.fetchRatios()
       </v-virtual-scroll>
     </div>
     <teleport to="body">
-      <router-view class="my-router-view" />
+      <router-view/>
     </teleport>
   </div>
 </template>

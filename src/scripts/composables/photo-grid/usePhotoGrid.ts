@@ -61,21 +61,30 @@ export function usePhotoGrid(
   watch(
     () => settings.timelineRowHeight,
     () => {
-      if (timelineStore.timeline)
+      if (timelineStore.timeline) {
+        const now = performance.now()
         updateGrid(timelineStore.timeline, settings.timelineRowHeight, containerWidthRef.value)
+        console.log('updateGrid', performance.now() - now)
+      }
     },
   )
 
   watch(containerWidthRef, () => {
-    if (timelineStore.timeline)
+    if (timelineStore.timeline) {
+      const now = performance.now()
       updateGrid(timelineStore.timeline, settings.timelineRowHeight, containerWidthRef.value)
+      console.log('updateGrid', performance.now() - now)
+    }
   })
 
   watch(
     () => timelineStore.timeline,
     () => {
-      if (timelineStore.timeline)
+      if (timelineStore.timeline) {
+        const now = performance.now()
         updateGrid(timelineStore.timeline, settings.timelineRowHeight, containerWidthRef.value)
+        console.log('updateGrid', performance.now() - now)
+      }
     },
   )
 

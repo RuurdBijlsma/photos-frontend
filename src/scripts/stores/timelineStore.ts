@@ -87,7 +87,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
     console.log('toRequest:', toRequest)
     await fetchMediaByMonths(toRequest)
-    requestIdleCallback(fetchIds)
+    // requestIdleCallback(fetchIds) // todo: bring back
   }
 
   return {
