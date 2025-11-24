@@ -15,7 +15,7 @@ export function useDateOverlay(rowInViewDate: Ref<Date | null>) {
 
     scrollOverride.value = true
     restoreOverride()
-  }, 100)
+  }, 25)
 
   const dateInViewString = computed(() => {
     if (hideDateOverlay.value) return null

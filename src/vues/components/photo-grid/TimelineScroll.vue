@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import type { TimelineMonth } from '@/scripts/types/generated/photos.ts'
 
 // --- Props & Emits ---
@@ -32,8 +32,10 @@ const STYLES = {
 const parseYear = (monthId: string) => monthId.split('-')[0]
 const parseMonthName = (monthId: string) => {
   const [y, m] = monthId.split('-')
-  const date = new Date(parseInt(y), parseInt(m) - 1)
-  return date.toLocaleString('default', { month: 'short' })
+  if (y && m) {
+    const date = new Date(parseInt(y), parseInt(m) - 1)
+    return date.toLocaleString('default', { month: 'short' })
+  }
 }
 
 // --- Drawing Logic ---
@@ -60,14 +62,15 @@ const draw = () => {
   let lastLabelY = -100 // Track last drawn text to avoid overlap
 
   props.months.forEach((month, index) => {
-    const centerY = (index * itemHeight) + (itemHeight / 2)
+    const centerY = index * itemHeight + itemHeight / 2
     const year = parseYear(month.monthId)
+    if (!year) return
     const prevMonth = props.months[index - 1]
     const prevYear = prevMonth ? parseYear(prevMonth.monthId) : null
 
     // Determine if we should draw a Year Label or a Tick (Dot)
     const isNewYear = year !== prevYear
-    const hasSpace = (centerY - lastLabelY) > STYLES.minLabelSpacing
+    const hasSpace = centerY - lastLabelY > STYLES.minLabelSpacing
 
     // Draw Logic
     if (isNewYear && hasSpace) {
@@ -101,16 +104,16 @@ const drawHoverEffect = (
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  itemHeight: number
+  itemHeight: number,
 ) => {
   if (hoverY.value === null) return
 
-  // Find closest month to mouse position
+  // Find the closest month to mouse position
   const index = Math.floor(hoverY.value / itemHeight)
   const safeIndex = Math.max(0, Math.min(index, props.months.length - 1))
-  const targetMonth = props.months[safeIndex]
+  const targetMonth = props.months[safeIndex]!
 
-  const centerY = (safeIndex * itemHeight) + (itemHeight / 2)
+  const centerY = safeIndex * itemHeight + itemHeight / 2
 
   // Draw the blue selection dot
   ctx.beginPath()
@@ -127,7 +130,7 @@ const drawHoverEffect = (
   const bubbleWidth = textMetrics.width + 16
   const bubbleHeight = 24
   const bubbleX = width - STYLES.paddingRight - 20 - bubbleWidth
-  const bubbleY = centerY - (bubbleHeight / 2)
+  const bubbleY = centerY - bubbleHeight / 2
 
   // Bubble Background (Rounded Rect)
   ctx.fillStyle = STYLES.bubbleBg
@@ -137,23 +140,27 @@ const drawHoverEffect = (
   // Bubble Text
   ctx.fillStyle = STYLES.textColor
   ctx.textAlign = 'center'
-  ctx.fillText(label, bubbleX + (bubbleWidth / 2), centerY)
+  ctx.fillText(label, bubbleX + bubbleWidth / 2, centerY)
 }
 
 // Helper for rounded rectangle
 const roundRect = (
   ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
 ) => {
-  if (w < 2 * r) r = w / 2;
-  if (h < 2 * r) r = h / 2;
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
+  if (w < 2 * r) r = w / 2
+  if (h < 2 * r) r = h / 2
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
 }
 
 // --- Interaction Handlers ---
@@ -163,7 +170,10 @@ const handleInteraction = (event: MouseEvent | TouchEvent) => {
   if (!canvas) return
 
   const rect = canvas.getBoundingClientRect()
-  const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
+  // @ts-expect-error dumb ts
+  const touch = event.touches[0]
+  if (!touch) return
+  const clientY = 'touches' in event ? touch.clientY : event.clientY
 
   // Calculate relative Y
   const y = clientY - rect.top
@@ -177,7 +187,8 @@ const handleInteraction = (event: MouseEvent | TouchEvent) => {
     const itemHeight = rect.height / props.months.length
     const index = Math.floor(hoverY.value / itemHeight)
     const safeIndex = Math.max(0, Math.min(index, props.months.length - 1))
-    emit('scroll-to', props.months[safeIndex].monthId)
+    const timelineMonth = props.months[safeIndex]
+    if (timelineMonth) emit('scroll-to', timelineMonth.monthId)
   }
 }
 
@@ -240,9 +251,13 @@ const resizeCanvas = () => {
 }
 
 // Watch for data changes to redraw
-watch(() => props.months, () => {
-  resizeCanvas()
-}, { deep: true })
+watch(
+  () => props.months,
+  () => {
+    resizeCanvas()
+  },
+  { deep: true },
+)
 
 onMounted(() => {
   window.addEventListener('resize', resizeCanvas)

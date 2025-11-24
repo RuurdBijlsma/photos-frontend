@@ -78,8 +78,7 @@ backgroundStore.initialize()
         <router-view class="router-view" />
       </div>
       <timeline-scroll
-        @scroll-to="(a, b, c) => console.log('TLSCROLL', a, b, c)"
-        :months="timelineStore.timeline"
+        :months="timelineStore.timeline!"
         class="scroll-area"
       />
     </v-main>
