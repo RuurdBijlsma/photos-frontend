@@ -2,6 +2,7 @@
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import TimelineScroll from '@/vues/components/photo-grid/TimelineScroll.vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
@@ -10,7 +11,7 @@ const settings = useSettingStore()
 
 // Initialize the stores.
 timelineStore.initialize()
-// backgroundStore.initialize() // todo: enable
+backgroundStore.initialize()
 </script>
 
 <template>
@@ -70,14 +71,17 @@ timelineStore.initialize()
         <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
       </v-list>
       <a href="web+burger:cheeseburger">cheeseburger</a>
-
     </v-navigation-drawer>
 
     <v-main class="layout-body">
       <div class="router-view-container">
         <router-view class="router-view" />
       </div>
-      <div class="scroll-area"></div>
+      <timeline-scroll
+        @scroll-to="(a, b, c) => console.log('TLSCROLL', a, b, c)"
+        :months="timelineStore.timeline"
+        class="scroll-area"
+      />
     </v-main>
   </v-layout>
 </template>
@@ -224,6 +228,8 @@ timelineStore.initialize()
 }
 
 .scroll-area {
+  margin: 30px 0px;
   width: 50px;
+  height: calc(100% - 60px);
 }
 </style>

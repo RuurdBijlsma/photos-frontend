@@ -13,7 +13,7 @@ message TimelineMonth {
   repeated float ratios = 3;
 }
 
-// Contains detailed information for media items for the requested months, grouped by month.
+// Contains information for media items for the requested months, grouped by month.
 message ByMonthResponse {
   repeated MediaMonth months = 1;
 }
