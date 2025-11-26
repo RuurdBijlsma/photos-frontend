@@ -18,12 +18,12 @@ const context = computed(() => {
   }
   return null
 })
-let needsRender = true
 const verticalPadding = 15
-const horizontalPadding = 10
+const horizontalPadding = 5
 const fontSize = 12
 const fontFamily = 'Montserrat'
 const dotRadius = 2
+const hoveringCanvas = ref(false)
 
 const parseMonthId = (monthId: string) => {
   const parts = monthId.split('-')
@@ -68,8 +68,7 @@ const calculateRenderState = (): RenderState => {
 
     itemCount += timelineMonth.count
   }
-  console.log('RenderState', result)
-  needsRender = true
+  render(true)
   return result
 }
 
@@ -103,10 +102,12 @@ const renderYears = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) =
     prevTextY = textY
 
     // Draw year backdrop (rounded rect)
-    ctx.beginPath()
-    ctx.fillStyle = vuetifyTheme.current.value.colors['surface-container']
-    ctx.roundRect(textX - 7, textY - fontSize - 4, textSize.width + 14, fontSize + 10, 10)
-    ctx.fill()
+    if (hoveringCanvas.value) {
+      ctx.beginPath()
+      ctx.fillStyle = vuetifyTheme.current.value.colors['surface-container']
+      ctx.roundRect(textX - 7, textY - fontSize - 4, textSize.width + 14, fontSize + 10, 10)
+      ctx.fill()
+    }
 
     // Draw year text
     ctx.fillStyle = vuetifyTheme.current.value.colors['on-background'] + 'bb'
@@ -124,19 +125,32 @@ const renderDots = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) =>
   }
 }
 
-let render = () => {}
-render = () => {
+let animationFrameId: number | null = null
+function render(oneFrame = false) {
   const canvas = canvasRef.value
-  const container = containerRef.value
   const ctx = context.value
-  if (!canvas || !container || !ctx) return
-  requestAnimationFrame(render)
-  if (!needsRender) return
-  needsRender = false
-  console.log('RENDERING')
+  if (!canvas || !ctx) return
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.font = `${fontSize}px ${fontFamily}, Arial, sans-serif`
-  renderDots(canvas, ctx)
+
+  if (hoveringCanvas.value) renderDots(canvas, ctx)
   renderYears(canvas, ctx)
+
+  if (!oneFrame)
+    animationFrameId = requestAnimationFrame(() => render(false))
+}
+
+function startRendering() {
+  if (animationFrameId == null)
+    render(false)
+}
+
+function stopRendering() {
+  if (animationFrameId != null) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
 }
 
 const resizeCanvas = () => {
@@ -157,8 +171,6 @@ const resizeCanvas = () => {
   // Set visible size
   canvas.style.width = `${rect.width}px`
   canvas.style.height = `${rect.height}px`
-
-  needsRender = true
 }
 
 // Watch for data changes to redraw
@@ -166,23 +178,37 @@ watch(
   () => props.months,
   () => {
     updateRenderState()
-    needsRender = true
+    render(true)
   },
 )
 
 onMounted(() => {
   window.addEventListener('resize', resizeCanvas)
   setTimeout(resizeCanvas, 50)
-  requestIdleCallback(render)
+  requestIdleCallback(() => render(true))
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', resizeCanvas)
 })
+
+watch(hoveringCanvas, () => {
+  if (hoveringCanvas.value) {
+    startRendering()
+  } else {
+    stopRendering()
+    render(true)
+  }
+})
 </script>
 
 <template>
-  <div ref="containerRef" class="timeline-container">
+  <div
+    ref="containerRef"
+    class="timeline-container"
+    @mouseenter="hoveringCanvas = true"
+    @mouseleave="hoveringCanvas = false"
+  >
     <canvas ref="canvasRef" class="timeline-canvas"></canvas>
   </div>
 </template>

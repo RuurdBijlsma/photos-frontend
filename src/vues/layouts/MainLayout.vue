@@ -207,11 +207,8 @@ backgroundStore.initialize()
 .router-view {
   height: calc(100% - 10px);
   width: calc(100% - 20px);
-  margin: 10px;
-  margin-bottom: 0;
-  border-radius: 55px;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
+  margin: 10px 10px 0;
+  border-radius: 55px 55px 0 0;
   overflow: hidden;
   overflow-y: auto;
 
@@ -224,8 +221,14 @@ backgroundStore.initialize()
 }
 
 .scroll-area {
-  margin: 30px 0px 0px;
+  margin: 30px 0 0;
   width: 50px;
   height: calc(100% - 30px);
+  opacity: 0.6;
+  transition: opacity .2s;
+}
+
+.scroll-area:hover {
+  opacity: 1;
 }
 </style>
