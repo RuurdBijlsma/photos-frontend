@@ -8,9 +8,12 @@ import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import GridRowHeader from '@/vues/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/vues/components/photo-grid/GridRow.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { onMounted, onUnmounted } from 'vue'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
+const authStore = useAuthStore()
 
 const { container, width, height } = useContainerResize()
 const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, timelineStore)
@@ -18,6 +21,22 @@ const { handleIsVisible, rowInViewDate } = usePhotoVisibility(timelineStore)
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
 
 timelineStore.fetchRatios()
+
+let ws: WebSocket | null = null
+
+onMounted(() => {
+  const token = authStore.accessToken
+  ws = new WebSocket('ws://localhost:9475/timeline/ws', ['access_token', token])
+
+  ws.onopen = () => console.log('Connected to websocket for timeline updates!')
+  ws.onmessage = (e) => console.log('New Media')
+})
+
+onUnmounted(() => {
+  if (ws) {
+    ws.close()
+  }
+})
 </script>
 
 <template>
@@ -44,7 +63,7 @@ timelineStore.fetchRatios()
       </v-virtual-scroll>
     </div>
     <teleport to="body">
-      <router-view/>
+      <router-view />
     </teleport>
   </div>
 </template>

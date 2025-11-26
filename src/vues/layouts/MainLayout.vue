@@ -77,10 +77,7 @@ backgroundStore.initialize()
       <div class="router-view-container">
         <router-view class="router-view" />
       </div>
-      <timeline-scroll
-        :months="timelineStore.timeline!"
-        class="scroll-area"
-      />
+      <timeline-scroll :months="timelineStore.timeline!" class="scroll-area" />
     </v-main>
   </v-layout>
 </template>
@@ -227,8 +224,8 @@ backgroundStore.initialize()
 }
 
 .scroll-area {
-  margin: 30px 0px;
+  margin: 30px 0px 0px;
   width: 50px;
-  height: calc(100% - 60px);
+  height: calc(100% - 30px);
 }
 </style>

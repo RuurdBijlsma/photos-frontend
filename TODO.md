@@ -42,3 +42,4 @@
   * alice's frontend automatically opens this and asks to import this album
 * don't allow user to go to /onboarding if onboarding is done already.
 * setting: usebackdropblur doesnt apply everywhere.
+* fix scroll fps (is this possible?)
