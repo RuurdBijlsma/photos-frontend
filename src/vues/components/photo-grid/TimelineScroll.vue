@@ -4,156 +4,178 @@ import type { TimelineMonth } from '@/scripts/types/generated/photos.ts'
 import { useTheme } from 'vuetify/framework'
 import { MONTHS } from '@/scripts/constants.ts'
 
-const vuetifyTheme = useTheme()
-
+// --- Props ---
 const props = defineProps<{
   months: TimelineMonth[] | undefined | null
+  scrollY: number
 }>()
 
+// --- Refs ---
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLElement | null>(null)
-const context = computed(() => {
-  if (canvasRef.value) {
-    return canvasRef.value.getContext('2d')
-  }
-  return null
-})
-const verticalPadding = 15
-const horizontalPadding = 5
-const fontSize = 12
-const fontFamily = 'Montserrat'
-const dotRadius = 2
-const hoveringCanvas = ref(false)
+const hovering = ref(false)
 
+// --- Config ---
+const PADDING = { vertical: 15, horizontal: 5 }
+const FONT = { size: 12, family: 'Montserrat' }
+const DOT_RADIUS = 2
+const MIN_YEAR_SPACING = FONT.size + 10
+
+// --- Theme ---
+const theme = useTheme()
+
+// --- Canvas Context ---
+const ctx = computed(() => canvasRef.value?.getContext('2d') ?? null)
+
+// --- Helpers ---
 const parseMonthId = (monthId: string) => {
-  const parts = monthId.split('-')
-  if (parts.length !== 3) {
-    return { year: 0, month: 0, day: 0 }
-  }
-  return { year: Number(parts[0]), month: Number(parts[1]), day: Number(parts[2]) }
+  const [year, month, day] = monthId.split('-').map(Number)
+  return { year: year ?? 0, month: month ?? 0, day: day ?? 0 }
 }
 
+// --- Render State ---
 interface RenderState {
-  years: { year: string; y: number }[]
-  months: { month: string; y: number }[]
+  years: { label: string; y: number }[]
+  months: { label: string; y: number }[]
+  scrollThumbHeight: number
 }
 
-const calculateRenderState = (): RenderState => {
-  const timelineMonths = props.months
-  if (!timelineMonths) return { years: [], months: [] }
-  let totalItems = 0
-  for (const timelineMonth of timelineMonths) {
-    totalItems += timelineMonth.count
-  }
-  const result: RenderState = {
-    years: [],
-    months: [],
-  }
-  let shownYear = -1
-  let itemCount = 0
-  for (const timelineMonth of timelineMonths) {
-    const date = parseMonthId(timelineMonth.monthId)
-    if (date.year != shownYear) {
-      result.years.push({
-        year: date.year,
-        y: itemCount / totalItems,
-      })
-      shownYear = date.year
+let renderState: RenderState = { years: [], months: [], scrollThumbHeight: 0 }
+
+function buildRenderState(): RenderState {
+  const items = props.months
+  if (!items) return { years: [], months: [], scrollThumbHeight: 0 }
+
+  const totalCount = items.reduce((acc, m) => acc + m.count, 0)
+  let cumulative = 0
+  let lastYear = -1
+
+  const years: RenderState['years'] = []
+  const months: RenderState['months'] = []
+
+  for (const item of items) {
+    cumulative += item.count
+    const date = parseMonthId(item.monthId)
+    const y = cumulative / totalCount
+
+    if (date.year !== lastYear) {
+      years.push({ label: String(date.year), y })
+      lastYear = date.year
     }
 
-    result.months.push({
-      month: `${MONTHS[date.month - 1].substring(0, 3)} ${date.year}`,
-      y: itemCount / totalItems,
+    months.push({
+      label: `${MONTHS[date.month - 1]!.substring(0, 3)} ${date.year}`,
+      y,
     })
-
-    itemCount += timelineMonth.count
   }
-  render(true)
-  return result
+
+  const minScrollThumbHeight = 0.01
+  const approxItemsPerPage = 15
+  const scrollThumbHeight = Math.max(approxItemsPerPage / totalCount, minScrollThumbHeight)
+  console.log(years, months, scrollThumbHeight)
+  return { years, months, scrollThumbHeight }
 }
 
-let renderState = calculateRenderState()
-const updateRenderState = () => (renderState = calculateRenderState())
-
-const yPos = (v: number) => {
-  const canvasHeight = canvasRef.value?.height
-  if (!canvasHeight) return 0
-  return verticalPadding + v * (canvasHeight - verticalPadding * 2)
+// Convenience Y position
+function yPos(v: number): number {
+  const h = canvasRef.value?.height ?? 0
+  return PADDING.vertical + v * (h - PADDING.vertical * 2)
 }
 
-const renderYears = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
-  let prevTextY = -Infinity
-  const minimumDistance = fontSize + 10
+// --- Rendering ---
+let raf: number | null = null
+
+function renderFrame() {
+  const canvas = canvasRef.value
+  const c = ctx.value
+  if (!canvas || !c) return
+  console.log('render')
+
+  c.clearRect(0, 0, canvas.width, canvas.height)
+  c.font = `${FONT.size}px ${FONT.family}, Arial, sans-serif`
+
+  if (hovering.value) renderDots(canvas, c)
+  renderYears(canvas, c)
+
+  // Only animate if hovering
+  if (hovering.value) raf = requestAnimationFrame(renderFrame)
+
+  c.fillStyle = theme.current.value.colors.primary
+  c.beginPath()
+  c.roundRect(
+    canvas.width - PADDING.horizontal - 1,
+    yPos(props.scrollY),
+    4,
+    renderState.scrollThumbHeight * (canvas.height - PADDING.vertical * 2),
+    3,
+  )
+  c.fill()
+}
+
+function renderOnce() {
+  cancelRender()
+  renderFrame()
+}
+
+function startRender() {
+  if (raf == null) raf = requestAnimationFrame(renderFrame)
+}
+
+function cancelRender() {
+  if (raf != null) cancelAnimationFrame(raf)
+  raf = null
+}
+
+// --- Drawing ---
+function renderYears(canvas: HTMLCanvasElement, c: CanvasRenderingContext2D) {
+  let prevY = -Infinity
+
+  const textColor = theme.current.value.colors['on-background'] + 'bb'
+  const bgColor = theme.current.value.colors['surface-container']!
 
   for (let i = 0; i < renderState.years.length; i++) {
-    const renderYear = renderState.years[i]!
-    const yearStr = renderYear.year.toString()
-    const textSize = ctx.measureText(yearStr)
-    const textX = canvas.width - textSize.width - horizontalPadding
-    let textY = yPos(renderYear.y)
-    // Prevent overlap
-    if (i !== renderState.years.length - 1 && i > 0 && textY - prevTextY < minimumDistance) continue
-    if (i == renderState.years.length - 1 && i > 0) {
-      const distY = textY - prevTextY
-      if (distY < minimumDistance) {
-        textY += minimumDistance - distY
-      }
-    }
-    prevTextY = textY
+    const { label, y } = renderState.years[i]!
+    const targetY = yPos(y)
 
-    // Draw year backdrop (rounded rect)
-    if (hoveringCanvas.value) {
-      ctx.beginPath()
-      ctx.fillStyle = vuetifyTheme.current.value.colors['surface-container']
-      ctx.roundRect(textX - 7, textY - fontSize - 4, textSize.width + 14, fontSize + 10, 10)
-      ctx.fill()
+    // Skip overlapping labels except last one
+    if (i > 0 && targetY - prevY < MIN_YEAR_SPACING && i !== renderState.years.length - 1) continue
+
+    let finalY = targetY
+    if (i > 0) {
+      const diff = targetY - prevY
+      if (diff < MIN_YEAR_SPACING) finalY += MIN_YEAR_SPACING - diff
     }
 
-    // Draw year text
-    ctx.fillStyle = vuetifyTheme.current.value.colors['on-background'] + 'bb'
-    ctx.fillText(yearStr, textX, textY)
+    prevY = finalY
+    const textWidth = c.measureText(label).width
+    const x = canvas.width - textWidth - PADDING.horizontal - 5
+
+    if (hovering.value) {
+      c.fillStyle = bgColor
+      c.beginPath()
+      c.roundRect(x - 7, finalY - FONT.size - 4, textWidth + 14, FONT.size + 10, 10)
+      c.fill()
+    }
+
+    c.fillStyle = textColor
+    c.fillText(label, x, finalY)
   }
 }
 
-const renderDots = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
-  for (const renderMonth of renderState.months) {
-    const y = yPos(renderMonth.y)
-    ctx.fillStyle = vuetifyTheme.current.value.colors['surface-container-highest']
-    ctx.beginPath()
-    ctx.arc(canvas.width - horizontalPadding, y, dotRadius, 0, Math.PI * 2)
-    ctx.fill()
+function renderDots(canvas: HTMLCanvasElement, c: CanvasRenderingContext2D) {
+  const dotColor = theme.current.value.colors['surface-container-highest']!
+  const x = canvas.width - PADDING.horizontal + DOT_RADIUS / 2
+
+  for (const m of renderState.months) {
+    c.fillStyle = dotColor
+    c.beginPath()
+    c.arc(x, yPos(m.y), DOT_RADIUS, 0, Math.PI * 2)
+    c.fill()
   }
 }
 
-let animationFrameId: number | null = null
-function render(oneFrame = false) {
-  const canvas = canvasRef.value
-  const ctx = context.value
-  if (!canvas || !ctx) return
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.font = `${fontSize}px ${fontFamily}, Arial, sans-serif`
-
-  if (hoveringCanvas.value) renderDots(canvas, ctx)
-  renderYears(canvas, ctx)
-
-  if (!oneFrame)
-    animationFrameId = requestAnimationFrame(() => render(false))
-}
-
-function startRendering() {
-  if (animationFrameId == null)
-    render(false)
-}
-
-function stopRendering() {
-  if (animationFrameId != null) {
-    cancelAnimationFrame(animationFrameId)
-    animationFrameId = null
-  }
-}
-
-const resizeCanvas = () => {
+// --- Resize Handler ---
+function resizeCanvas() {
   const canvas = canvasRef.value
   const container = containerRef.value
   if (!canvas || !container) return
@@ -161,44 +183,51 @@ const resizeCanvas = () => {
   const dpr = window.devicePixelRatio || 1
   const rect = container.getBoundingClientRect()
 
-  // Set actual size in memory (scaled to account for extra pixel density)
   canvas.width = rect.width * dpr
   canvas.height = rect.height * dpr
 
-  // Normalize coordinate system to use css pixels
-  if (context.value) context.value.scale(dpr, dpr)
-
-  // Set visible size
   canvas.style.width = `${rect.width}px`
   canvas.style.height = `${rect.height}px`
+
+  if (ctx.value) ctx.value.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+  renderOnce()
 }
 
-// Watch for data changes to redraw
+// --- Watchers ---
 watch(
-  () => props.months,
+  () => props.scrollY,
   () => {
-    updateRenderState()
-    render(true)
+    renderOnce()
   },
 )
 
+watch(
+  () => props.months,
+  () => {
+    renderState = buildRenderState()
+    renderOnce()
+  },
+)
+
+watch(hovering, (isHovering) => {
+  if (isHovering) {
+    startRender()
+  } else {
+    renderOnce()
+  }
+})
+
+// --- Lifecycle ---
 onMounted(() => {
   window.addEventListener('resize', resizeCanvas)
-  setTimeout(resizeCanvas, 50)
-  requestIdleCallback(() => render(true))
+  renderState = buildRenderState()
+  resizeCanvas()
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', resizeCanvas)
-})
-
-watch(hoveringCanvas, () => {
-  if (hoveringCanvas.value) {
-    startRendering()
-  } else {
-    stopRendering()
-    render(true)
-  }
+  cancelRender()
 })
 </script>
 
@@ -206,8 +235,8 @@ watch(hoveringCanvas, () => {
   <div
     ref="containerRef"
     class="timeline-container"
-    @mouseenter="hoveringCanvas = true"
-    @mouseleave="hoveringCanvas = false"
+    @mouseenter="hovering = true"
+    @mouseleave="hovering = false"
   >
     <canvas ref="canvasRef" class="timeline-canvas"></canvas>
   </div>

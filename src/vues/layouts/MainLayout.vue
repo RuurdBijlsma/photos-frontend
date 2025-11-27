@@ -3,11 +3,18 @@ import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import TimelineScroll from '@/vues/components/photo-grid/TimelineScroll.vue'
+import { ref } from 'vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
+const scrollY = ref(0)
+
+function setScrollY(e: WheelEvent) {
+  // @ts-expect-error dummy ts
+  scrollY.value = e.target.scrollTop / e.target.scrollHeight
+}
 
 // Initialize the stores.
 timelineStore.initialize()
@@ -75,9 +82,9 @@ backgroundStore.initialize()
 
     <v-main class="layout-body">
       <div class="router-view-container">
-        <router-view class="router-view" />
+        <router-view class="router-view" @on-scroll="setScrollY" />
       </div>
-      <timeline-scroll :months="timelineStore.timeline!" class="scroll-area" />
+      <timeline-scroll :scroll-y="scrollY" :months="timelineStore.timeline!" class="scroll-area" />
     </v-main>
   </v-layout>
 </template>
@@ -225,7 +232,7 @@ backgroundStore.initialize()
   width: 50px;
   height: calc(100% - 30px);
   opacity: 0.6;
-  transition: opacity .2s;
+  transition: opacity 0.2s;
 }
 
 .scroll-area:hover {

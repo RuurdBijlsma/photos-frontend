@@ -10,15 +10,23 @@ import GridRow from '@/vues/components/photo-grid/GridRow.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import { useThrottleFn } from '@vueuse/core'
 
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
 
+const emit = defineEmits(['onScroll'])
+
 const { container, width, height } = useContainerResize()
 const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, timelineStore)
 const { handleIsVisible, rowInViewDate } = usePhotoVisibility(timelineStore)
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
+
+const onScrollEvent = useThrottleFn((e: WheelEvent) => {
+  emit('onScroll', e)
+  activateScrollOverride(e)
+}, 25)
 
 timelineStore.fetchRatios()
 
@@ -44,7 +52,7 @@ onUnmounted(() => {
     <date-overlay :date="dateInViewString" />
     <div class="photo-grid-container" ref="container">
       <v-virtual-scroll
-        @scroll="activateScrollOverride"
+        @scroll="onScrollEvent"
         :items="rows"
         :height="height"
         item-key="key"
