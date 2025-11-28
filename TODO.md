@@ -54,3 +54,5 @@
 * on timeline, once loading of in view months in done, just loop until all months are loaded, starting with the ones
   near the viewed month
 * refactor timeline into reusable photogrid
+* you can't scroll to most recent photo with timeline scroll
+* date overlay doesnt update if you click scroll to unloaded area in virtual scroller
