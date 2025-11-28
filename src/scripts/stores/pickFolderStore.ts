@@ -3,7 +3,10 @@ import { type Ref, ref } from 'vue'
 import onboardingService from '@/scripts/services/onboardingService.ts'
 import { debounce } from '@/scripts/utils.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import type { MediaSampleResponse, UnsupportedFilesResponse } from '@/scripts/types/api/onboarding.ts'
+import type {
+  MediaSampleResponse,
+  UnsupportedFilesResponse,
+} from '@/scripts/types/api/onboarding.ts'
 
 export const usePickFolderStore = defineStore(
   'pickFolder',

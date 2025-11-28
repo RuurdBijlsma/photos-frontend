@@ -90,7 +90,8 @@ export function registerNavigationGuard() {
     const isAdmin = authStore.isAdmin
 
     // --- "Onboarding Needed" Redirect Logic ---
-    const needsOnboarding = isAdmin && (authStore.user?.mediaFolder === null || authStore.user?.mediaFolder === undefined)
+    const needsOnboarding =
+      isAdmin && (authStore.user?.mediaFolder === null || authStore.user?.mediaFolder === undefined)
     console.log({ needsOnboarding, isAdmin, mf: authStore.user?.mediaFolder })
     if (needsOnboarding && to.name !== 'onboarding') {
       return next({ name: 'onboarding' })

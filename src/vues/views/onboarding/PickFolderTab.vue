@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import FolderPicker from '@/vues/components/onboarding/FolderPicker.vue'

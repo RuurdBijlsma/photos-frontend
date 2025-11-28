@@ -123,7 +123,7 @@ const monthDots = computed(() => {
 const visibleYears = computed(() => {
   const height = containerHeight.value
   const years = rawYears.value
-  const result: { label: string; style: any }[] = []
+  const result: { label: string; style: { [key: string]: string } }[] = []
 
   let prevY = -Infinity
 
@@ -133,9 +133,7 @@ const visibleYears = computed(() => {
     const targetY = PADDING.top + y * (height - (PADDING.top + PADDING.bottom))
 
     // Collision check
-    // If too close to previous, skip unless it's the last one?
-    // Original logic: if (i > 0 && targetY - prevY < MIN_YEAR_SPACING && i !== years.length - 1) continue
-    // if (i > 0) { const diff = targetY - prevY; if (diff < MIN_YEAR_SPACING) finalY += MIN_YEAR_SPACING - diff }
+    // If too close to previous, skip unless it's the last one
 
     if (i > 0 && targetY - prevY < MIN_YEAR_SPACING && i !== years.length - 1) {
       continue
@@ -176,12 +174,12 @@ const thumbStyle = computed(() => {
   }
 
   const availableHeight = containerHeight.value - (PADDING.top + PADDING.bottom)
-  const translateY = PADDING.top + (normY * availableHeight)
+  const translateY = PADDING.top + normY * availableHeight
 
   return {
     height: `calc(${thumbHeightRatio.value} * (100% - ${PADDING.top + PADDING.bottom}px))`,
     top: '0px',
-    transform: `translateY(${translateY}px) translateZ(0)`
+    transform: `translateY(${translateY}px) translateZ(0)`,
   }
 })
 
@@ -216,7 +214,7 @@ const tooltipStyle = computed(() => {
   const clampedY = Math.max(minY, Math.min(maxY, hoverY.value))
 
   return {
-    transform: `translateY(${clampedY}px) translateZ(0)`
+    transform: `translateY(${clampedY}px) translateZ(0)`,
   }
 })
 
@@ -228,16 +226,13 @@ const trackStyle = computed(() => ({
 // --- Watchers ---
 watch(() => props.months, processData, { immediate: true })
 
-watch(
-  dateInView,
-  () => {
-    isScrolling.value = true
-    if (scrollTimeout) clearTimeout(scrollTimeout)
-    scrollTimeout = window.setTimeout(() => {
-      isScrolling.value = false
-    }, 3000)
-  },
-)
+watch(dateInView, () => {
+  isScrolling.value = true
+  if (scrollTimeout) clearTimeout(scrollTimeout)
+  scrollTimeout = window.setTimeout(() => {
+    isScrolling.value = false
+  }, 3000)
+})
 
 // --- Resize Observer ---
 let ro: ResizeObserver | null = null
@@ -319,7 +314,7 @@ function getDateFromY(y: number): Date | null {
     const parts = firstMonth.label.split(' ')
     const monthName = parts[0]!
     const year = parseInt(parts[1]!)
-    const monthIndex = MONTHS.findIndex(m => m.startsWith(monthName))
+    const monthIndex = MONTHS.findIndex((m) => m.startsWith(monthName))
     return new Date(year, monthIndex, 1)
   }
 
@@ -332,7 +327,7 @@ function getDateFromY(y: number): Date | null {
     const parts = label.split(' ')
     const monthName = parts[0]!
     const year = parseInt(parts[1]!)
-    const monthIndex = MONTHS.findIndex(m => m.startsWith(monthName))
+    const monthIndex = MONTHS.findIndex((m) => m.startsWith(monthName))
     return { year, month: monthIndex + 1 }
   }
 

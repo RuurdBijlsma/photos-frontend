@@ -11,35 +11,35 @@ const dateInView = ref<Date | null>(null)
 const scrollToDate = ref<Date | null>(null)
 
 export function useTimelineScroll() {
-    /**
-     * Set the date currently in view (called by TimelineView)
-     */
-    function setDateInView(date: Date | null) {
-        dateInView.value = date
-    }
+  /**
+   * Set the date currently in view (called by TimelineView)
+   */
+  function setDateInView(date: Date | null) {
+    dateInView.value = date
+  }
 
-    /**
-     * Request to scroll to a specific date (called by TimelineScroll)
-     */
-    function requestScrollToDate(date: Date) {
-        scrollToDate.value = date
-    }
+  /**
+   * Request to scroll to a specific date (called by TimelineScroll)
+   */
+  function requestScrollToDate(date: Date) {
+    scrollToDate.value = date
+  }
 
-    /**
-     * Clear the scroll request after it's been handled
-     */
-    function clearScrollRequest() {
-        scrollToDate.value = null
-    }
+  /**
+   * Clear the scroll request after it's been handled
+   */
+  function clearScrollRequest() {
+    scrollToDate.value = null
+  }
 
-    return {
-        // Reactive state
-        dateInView: dateInView as Ref<Date | null>,
-        scrollToDate: scrollToDate as Ref<Date | null>,
+  return {
+    // Reactive state
+    dateInView: dateInView as Ref<Date | null>,
+    scrollToDate: scrollToDate as Ref<Date | null>,
 
-        // Actions
-        setDateInView,
-        requestScrollToDate,
-        clearScrollRequest,
-    }
+    // Actions
+    setDateInView,
+    requestScrollToDate,
+    clearScrollRequest,
+  }
 }

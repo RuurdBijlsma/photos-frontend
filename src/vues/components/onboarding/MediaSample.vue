@@ -28,7 +28,7 @@ const cardCaption = computed(() => {
 
   let caption = `We've found ${photoText} and ${videoText} in your library.`
   if (photoCount > 0) {
-    caption += " Here’s a preview of your collection:"
+    caption += ' Here’s a preview of your collection:'
   }
   return caption
 })
