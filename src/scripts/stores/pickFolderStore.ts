@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
-import setupService from '@/scripts/services/setupService.ts'
+import onboardingService from '@/scripts/services/onboardingService.ts'
 import { debounce } from '@/scripts/utils.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import type { MediaSampleResponse, UnsupportedFilesResponse } from '@/scripts/types/api/setup.ts'
+import type {
+  MediaSampleResponse,
+  UnsupportedFilesResponse,
+} from '@/scripts/types/api/onboarding.ts'
 
 export const usePickFolderStore = defineStore(
   'pickFolder',
@@ -38,7 +41,7 @@ export const usePickFolderStore = defineStore(
     async function refreshFolders() {
       const folder = viewedFolder.value.join('/')
       try {
-        const response = await setupService.getFolders(folder)
+        const response = await onboardingService.getFolders(folder)
         folderList.value = response.data
       } catch (e) {
         await truncateViewed(viewedFolder.value.length - 2)
@@ -60,7 +63,7 @@ export const usePickFolderStore = defineStore(
       const requestFolder = viewedFolder.value.join('/')
 
       mediaSampleLoading.value = true
-      const response = await setupService.getMediaSample(requestFolder)
+      const response = await onboardingService.getMediaSample(requestFolder)
       mediaSampleLoading.value = false
       // Ignore result if the viewed folder has changed since making the request
       if (viewedFolder.value.join('/') !== requestFolder) return
@@ -88,7 +91,7 @@ export const usePickFolderStore = defineStore(
       const requestFolder = viewedFolder.value.join('/')
 
       unsupportedFilesLoading.value = true
-      const response = await setupService.getUnsupportedFiles(requestFolder)
+      const response = await onboardingService.getUnsupportedFiles(requestFolder)
       unsupportedFilesLoading.value = false
       // Ignore result if the viewed folder has changed since making the request
       if (viewedFolder.value.join('/') !== requestFolder) return
@@ -101,7 +104,7 @@ export const usePickFolderStore = defineStore(
       const baseFolder = viewedFolder.value.join('/')
 
       try {
-        await setupService.makeFolder({ baseFolder, newName: folderName })
+        await onboardingService.makeFolder({ baseFolder, newName: folderName })
       } catch (e) {
         snackbarStore.error("Can't make folder", e)
       } finally {
@@ -113,7 +116,7 @@ export const usePickFolderStore = defineStore(
 
     async function mediaBlobUrl(relative_path: string): Promise<string | null> {
       try {
-        const response = await setupService.getFullMediaFile(relative_path)
+        const response = await onboardingService.getFullMediaFile(relative_path)
         return URL.createObjectURL(response.data)
       } catch (error) {
         snackbarStore.error(`Failed to get full file url: ${relative_path}`, error)

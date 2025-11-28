@@ -2,6 +2,7 @@
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import TimelineScroll from '@/vues/components/photo-grid/TimelineScroll.vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
@@ -69,13 +70,14 @@ backgroundStore.initialize()
         <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
         <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
       </v-list>
+      <a href="web+burger:cheeseburger">cheeseburger</a>
     </v-navigation-drawer>
 
     <v-main class="layout-body">
       <div class="router-view-container">
         <router-view class="router-view" />
       </div>
-      <div class="scroll-area"></div>
+      <timeline-scroll :months="timelineStore.timeline" class="scroll-area" />
     </v-main>
   </v-layout>
 </template>
@@ -190,8 +192,8 @@ backgroundStore.initialize()
   background: rgb(227, 222, 255);
   background: linear-gradient(
     0deg,
-    rgba(var(--v-theme-surface), 0.8) 0%,
-    rgba(var(--v-theme-surface), 0.9) 100%
+    rgba(var(--v-theme-background), 0.8) 0%,
+    rgba(var(--v-theme-background), 0.9) 100%
   );
   flex-grow: 1;
   border-top-left-radius: 60px;
@@ -205,11 +207,8 @@ backgroundStore.initialize()
 .router-view {
   height: calc(100% - 10px);
   width: calc(100% - 20px);
-  margin: 10px;
-  margin-bottom: 0;
-  border-radius: 55px;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
+  margin: 10px 10px 0;
+  border-radius: 55px 55px 0 0;
   overflow: hidden;
   overflow-y: auto;
 
@@ -222,6 +221,14 @@ backgroundStore.initialize()
 }
 
 .scroll-area {
+  margin: 15px 0 0;
   width: 50px;
+  height: calc(100% - 15px);
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.scroll-area:hover {
+  opacity: 1;
 }
 </style>

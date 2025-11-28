@@ -13,6 +13,7 @@ export interface RowLayout {
   height: number
   firstOfTheMonth: boolean
   lastOfTheMonth: boolean
+  key: string
 }
 
 const emit = defineEmits(['hoverItem'])

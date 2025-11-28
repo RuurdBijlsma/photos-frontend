@@ -6,16 +6,16 @@ import type {
   MediaSampleResponse,
   StartProcessingBody,
   UnsupportedFilesResponse,
-} from '@/scripts/types/api/setup.ts'
+} from '@/scripts/types/api/onboarding.ts'
 
-// This service handles all API calls related to the initial application setup.
-const setupService = {
+// This service handles all API calls related to the initial application onboarding.
+const onboardingService = {
   /**
    * Get information about the configured media and thumbnail disks.
    * @returns A promise that resolves to the disk information.
    */
   getDisks(): Promise<AxiosResponse<DiskResponse>> {
-    return apiClient.get<DiskResponse>('/setup/disk-info')
+    return apiClient.get<DiskResponse>('/onboarding/disk-info')
   },
 
   /**
@@ -25,7 +25,7 @@ const setupService = {
    */
   getFolders(folder: string): Promise<AxiosResponse<string[]>> {
     // For GET requests with query parameters, we use the `params` option
-    return apiClient.get<string[]>('/setup/folders', {
+    return apiClient.get<string[]>('/onboarding/folders', {
       params: { folder },
     })
   },
@@ -36,7 +36,7 @@ const setupService = {
    * @returns A promise that resolves when the folder is created (204 No Content).
    */
   makeFolder(data: MakeFolderBody): Promise<AxiosResponse<void>> {
-    return apiClient.post<void>('/setup/make-folder', data)
+    return apiClient.post<void>('/onboarding/make-folder', data)
   },
 
   /**
@@ -45,7 +45,7 @@ const setupService = {
    * @returns A promise that resolves to the media sample response.
    */
   getMediaSample(folder: string): Promise<AxiosResponse<MediaSampleResponse>> {
-    return apiClient.get<MediaSampleResponse>('/setup/media-sample', {
+    return apiClient.get<MediaSampleResponse>('/onboarding/media-sample', {
       params: { folder },
     })
   },
@@ -56,7 +56,7 @@ const setupService = {
    * @returns A promise that resolves to the unsupported files response.
    */
   getUnsupportedFiles(folder: string): Promise<AxiosResponse<UnsupportedFilesResponse>> {
-    return apiClient.get<UnsupportedFilesResponse>('/setup/unsupported-files', {
+    return apiClient.get<UnsupportedFilesResponse>('/onboarding/unsupported-files', {
       params: { folder },
     })
   },
@@ -67,7 +67,7 @@ const setupService = {
    * @returns A promise that resolves to the Axios response containing the file as a Blob.
    */
   getFullMediaFile(relative_path: string): Promise<AxiosResponse<Blob>> {
-    return apiClient.get<Blob>('/download/full-file', {
+    return apiClient.get<Blob>('/photos/download', {
       params: { path: relative_path },
       responseType: 'blob',
     })
@@ -79,8 +79,8 @@ const setupService = {
    * @returns Void axios promise.
    */
   startProcessing(data: StartProcessingBody): Promise<AxiosResponse<void>> {
-    return apiClient.post<void>('/setup/start-processing', data)
+    return apiClient.post<void>('/onboarding/start-processing', data)
   },
 }
 
-export default setupService
+export default onboardingService

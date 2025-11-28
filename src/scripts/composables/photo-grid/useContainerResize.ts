@@ -1,22 +1,29 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 export function useContainerResize() {
   const container = ref<HTMLElement | null>(null)
   const width = ref(0)
   const height = ref(0)
 
-  function updateSize() {
-    if (!container.value) return
-    const box = container.value.getBoundingClientRect()
-    width.value = box.width
-    height.value = box.height
-  }
-
   onMounted(() => {
-    window.addEventListener('resize', updateSize)
-    requestIdleCallback(updateSize)
-  })
-  onUnmounted(() => window.removeEventListener('resize', updateSize))
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      const { width: w, height: h } = entry.contentRect
+      width.value = w
+      height.value = h
+    })
 
-  return { container, width, height, updateSize }
+    if (container.value) {
+      observer.observe(container.value)
+    }
+
+    onUnmounted(() => {
+      if (observer) {
+        observer.disconnect()
+      }
+    })
+  })
+
+  return { container, width, height }
 }

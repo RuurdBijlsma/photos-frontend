@@ -11,7 +11,7 @@ export const useTimelineStore = defineStore('timeline', () => {
   const fetchingIds = ref(false)
   const mediaItems = shallowRef(new Map<string, MediaItem[]>())
   const mediaMonthsLoading = ref(new Set<string>())
-  const timeline = ref<TimelineMonth[] | null>(null)
+  const timeline = shallowRef<TimelineMonth[] | null>(null)
   const ids = ref<string[]>([])
   const timelineMonths: ComputedRef<string[]> = computed(
     () => timeline.value?.map((m: { monthId: string }) => m.monthId) ?? [],
@@ -87,7 +87,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
     console.log('toRequest:', toRequest)
     await fetchMediaByMonths(toRequest)
-    requestIdleCallback(fetchIds)
+    // requestIdleCallback(fetchIds) // todo: bring back
   }
 
   return {

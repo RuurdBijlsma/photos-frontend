@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { type RouteLocationNormalizedLoadedGeneric, useRoute, useRouter } from 'vue-router'
-import CheckDrivesTab from '@/vues/setup/CheckDrivesTab.vue'
-import PickFolderTab from '@/vues/setup/PickFolderTab.vue'
-import SetupLayout from '@/vues/layouts/SetupLayout.vue'
-import SkippedFilesTab from '@/vues/setup/SkippedFilesTab.vue'
+import CheckDrivesTab from '@/vues/views/onboarding/CheckDrivesTab.vue'
+import PickFolderTab from '@/vues/views/onboarding/PickFolderTab.vue'
+import SkippedFilesTab from '@/vues/views/onboarding/SkippedFilesTab.vue'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
-import ConfirmSetupTab from '@/vues/setup/ConfirmSetupTab.vue'
-import { useSetupStore } from '@/scripts/stores/setupStore.ts'
+import ConfirmOnboardingTab from '@/vues/views/onboarding/ConfirmOnboardingTab.vue'
+import { useOnboardingStore } from '@/scripts/stores/onboardingStore.ts'
 import FocusLayout from '@/vues/layouts/FocusLayout.vue'
+import OnboardingLayout from '@/vues/layouts/OnboardingLayout.vue'
 
 const router = useRouter()
 const route = useRoute()
-const setupStore = useSetupStore()
+const onboardingStore = useOnboardingStore()
 const pickFolderStore = usePickFolderStore()
 const isLoading = ref(false)
 
 async function startProcessing() {
   isLoading.value = true
   try {
-    await setupStore.startProcessing()
+    await onboardingStore.startProcessing()
     console.log('Pushing ', { name: 'timeline' })
     await router.push({ name: 'timeline' })
   } finally {
@@ -59,7 +59,7 @@ setStepFromRoute()
 
 <template>
   <focus-layout>
-    <setup-layout
+    <onboarding-layout
       :caption-text="false"
       text="Let's set up your library and preferences.
       Make sure your media folders are linked correctly, then choose a user folder to begin."
@@ -70,7 +70,7 @@ setStepFromRoute()
       v-model="tabIndex"
       class="stepper"
       editable
-      :items="['Drives', 'User folder', 'Skipped files', 'Confirm setup']"
+      :items="['Drives', 'User folder', 'Skipped files', 'Confirm']"
     >
       <!-- eslint-disable vue/valid-v-slot -->
       <template v-slot:item.1>
@@ -86,7 +86,7 @@ setStepFromRoute()
       </template>
 
       <template v-slot:item.4>
-        <confirm-setup-tab />
+        <confirm-onboarding-tab />
       </template>
       <!-- eslint-enable vue/valid-v-slot -->
 

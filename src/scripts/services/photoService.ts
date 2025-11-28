@@ -5,7 +5,6 @@ import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
 import type { Theme } from '@/scripts/types/themeColor.ts'
 import { ByMonthResponse, TimelineResponse } from '@/scripts/types/generated/photos.ts'
 
-// This service handles all API calls related to the initial application setup.
 const photoService = {
   getPhotoThumbnail(id: string | null | undefined, size: number): string {
     if (id === null || id === undefined) return ''
@@ -31,11 +30,11 @@ const photoService = {
   },
 
   getTimelineIds(): Promise<AxiosResponse<string[]>> {
-    return apiClient.get<string[]>('/photos/timeline/ids')
+    return apiClient.get<string[]>('/timeline/ids')
   },
 
   async getTimelineRatios(): Promise<TimelineResponse> {
-    const response = await apiClient.get('/photos/timeline/ratios', {
+    const response = await apiClient.get('/timeline/ratios', {
       responseType: 'arraybuffer',
     })
     const buffer = new Uint8Array(response.data)
@@ -43,7 +42,7 @@ const photoService = {
   },
 
   async getMediaByMonths(months: string[]): Promise<ByMonthResponse> {
-    const response = await apiClient.get('/photos/by-month', {
+    const response = await apiClient.get('/timeline/by-month', {
       responseType: 'arraybuffer',
       params: {
         months: months.join(','),

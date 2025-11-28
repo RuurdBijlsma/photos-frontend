@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
 import { onMounted, type Ref, ref } from 'vue'
-import SetupLayout from '@/vues/layouts/SetupLayout.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { useRouter } from 'vue-router'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { isAxiosError } from 'axios'
 import FocusLayout from '@/vues/layouts/FocusLayout.vue'
 import AppAlert from '@/vues/components/ui/AppAlert.vue'
+import OnboardingLayout from '@/vues/layouts/OnboardingLayout.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -52,7 +52,7 @@ async function register() {
     })
     console.log('Register result', result)
     if (result.mediaFolder === null) {
-      await router.push({ name: 'setup' })
+      await router.push({ name: 'onboarding' })
     } else {
       await router.push({ name: 'timeline' })
     }
@@ -74,9 +74,9 @@ async function register() {
 <template>
   <focus-layout>
     <div class="register-container">
-      <setup-layout :caption-text="false" text="Let's set up your account to get started.">
+      <onboarding-layout :caption-text="false" text="Let's set up your account to get started.">
         <h1 class="nice-h1">Create your account.</h1>
-      </setup-layout>
+      </onboarding-layout>
 
       <v-form class="register-form" @submit.prevent="register()" ref="form">
         <div class="row-input mb-3">

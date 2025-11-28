@@ -1,5 +1,5 @@
 import { computed, type Ref, ref } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
+import { useDebounceFn, useThrottleFn } from '@vueuse/core'
 import { CURRENT_YEAR, DAYS, MONTHS } from '@/scripts/constants.ts'
 
 export function useDateOverlay(rowInViewDate: Ref<Date | null>) {
@@ -9,18 +9,25 @@ export function useDateOverlay(rowInViewDate: Ref<Date | null>) {
   const restoreOverride = useDebounceFn(() => (scrollOverride.value = false), 500)
   const hideDateOverlay = computed(() => scrollTop.value < 400)
 
-  function activateScrollOverride(e: WheelEvent) {
+  const activateScrollOverride = useThrottleFn((e: WheelEvent) => {
     //@ts-expect-error It does exist on there!
     scrollTop.value = e.target?.scrollTop
 
     scrollOverride.value = true
     restoreOverride()
-  }
+  }, 25)
 
-  const dateInViewString = computed(() => {
+  const dateInView = computed(() => {
     if (hideDateOverlay.value) return null
     const date =
       scrollOverride.value || hoverDate.value === null ? rowInViewDate.value : hoverDate.value
+    if (date === null) return null
+
+    return date
+  })
+
+  const dateInViewString = computed(() => {
+    const date = dateInView.value
     if (date === null) return null
 
     const day = DAYS[date.getDay()]!

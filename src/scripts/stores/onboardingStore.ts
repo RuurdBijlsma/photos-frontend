@@ -1,16 +1,16 @@
 import { ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
-import setupService from '@/scripts/services/setupService.ts'
+import onboardingService from '@/scripts/services/onboardingService.ts'
 import type {
   DiskResponse,
   MediaSampleResponse,
   UnsupportedFilesResponse,
-} from '@/scripts/types/api/setup.ts'
+} from '@/scripts/types/api/onboarding.ts'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
-export const useSetupStore = defineStore('setup', () => {
+export const useOnboardingStore = defineStore('onboarding', () => {
   // --- STATE ---
   const disks: Ref<DiskResponse | null> = ref(null)
   const isLoading: Ref<boolean> = ref(false)
@@ -23,7 +23,7 @@ export const useSetupStore = defineStore('setup', () => {
   async function fetchDiskInfo() {
     isLoading.value = true
     try {
-      const response = await setupService.getDisks()
+      const response = await onboardingService.getDisks()
       disks.value = response.data
     } catch (error) {
       snackbarStore.error('Failed to fetch disk info', error)
@@ -37,7 +37,7 @@ export const useSetupStore = defineStore('setup', () => {
     isLoading.value = true
     const userFolder = pickFolderStore.viewedFolder.join('/')
     try {
-      await setupService.startProcessing({ userFolder })
+      await onboardingService.startProcessing({ userFolder })
       if (authStore.user) {
         authStore.user = { ...authStore.user, mediaFolder: userFolder }
       }

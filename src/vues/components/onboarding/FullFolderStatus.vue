@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PathInfoResponse } from '@/scripts/types/api/setup.ts'
+import type { PathInfoResponse } from '@/scripts/types/api/onboarding.ts'
 import { prettyBytes } from '@/scripts/utils.ts'
 
 defineProps<{
