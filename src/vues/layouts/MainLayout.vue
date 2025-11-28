@@ -3,17 +3,11 @@ import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import TimelineScroll from '@/vues/components/photo-grid/TimelineScroll.vue'
-import { ref } from 'vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
-const dateInView = ref<Date | null>(null)
-
-function setDateInView(date: Date) {
-  dateInView.value = date
-}
 
 // Initialize the stores.
 timelineStore.initialize()
@@ -81,14 +75,9 @@ backgroundStore.initialize()
 
     <v-main class="layout-body">
       <div class="router-view-container">
-        <router-view class="router-view" @date-in-view="setDateInView" />
+        <router-view class="router-view" />
       </div>
-      <timeline-scroll
-        :date-in-view="dateInView"
-        :months="timelineStore.timeline"
-        @scroll-to=""
-        class="scroll-area"
-      />
+      <timeline-scroll :months="timelineStore.timeline" class="scroll-area" />
     </v-main>
   </v-layout>
 </template>

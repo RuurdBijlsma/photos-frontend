@@ -2,16 +2,15 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import type { TimelineMonth } from '@/scripts/types/generated/photos.ts'
 import { MONTHS } from '@/scripts/constants.ts'
+import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
 
-// --- Props & Emits ---
+// --- Props ---
 const props = defineProps<{
   months: TimelineMonth[] | undefined | null
-  dateInView: Date | null
 }>()
 
-const emit = defineEmits<{
-  scrollTo: [date: Date]
-}>()
+// --- Timeline Scroll Composable ---
+const { dateInView, requestScrollToDate } = useTimelineScroll()
 
 // --- Refs ---
 const containerRef = ref<HTMLElement | null>(null)
@@ -163,7 +162,7 @@ const visibleYears = computed(() => {
 
 // 3. Thumb Position
 const thumbStyle = computed(() => {
-  const date = props.dateInView
+  const date = dateInView.value
   if (!date || lookupMap.size === 0) return { display: 'none' }
 
   const key = getMonthKey(date)
@@ -227,7 +226,7 @@ const trackStyle = computed(() => ({
 watch(() => props.months, processData, { immediate: true })
 
 watch(
-  () => props.dateInView,
+  dateInView,
   () => {
     isScrolling.value = true
     if (scrollTimeout) clearTimeout(scrollTimeout)
@@ -266,8 +265,7 @@ function handleMouseMove(e: MouseEvent) {
   if (isDragging.value) {
     const date = getDateFromY(hoverY.value)
     if (date) {
-      console.log('scrollTo', date)
-      emit('scrollTo', date)
+      requestScrollToDate(date)
     }
   }
 }

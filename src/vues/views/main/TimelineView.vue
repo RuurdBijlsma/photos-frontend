@@ -8,23 +8,43 @@ import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import GridRowHeader from '@/vues/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/vues/components/photo-grid/GridRow.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import { onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
 
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
 
-const emit = defineEmits(['dateInView'])
-
+const { setDateInView, scrollToDate, clearScrollRequest } = useTimelineScroll()
 const { container, width, height } = useContainerResize()
 const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, timelineStore)
 const { handleIsVisible, rowInViewDate } = usePhotoVisibility(timelineStore)
-const { hoverDate, dateInViewString, activateScrollOverride } =
-  useDateOverlay(rowInViewDate)
+const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
 
+const virtualScrollRef = ref<any>(null)
+
+// Update the shared state when the date in view changes
 watch(rowInViewDate, () => {
-  emit('dateInView', rowInViewDate.value)
+  setDateInView(rowInViewDate.value)
+})
+
+// Handle scroll requests from TimelineScroll
+watch(scrollToDate, (date) => {
+  if (!date) return
+
+  // Find the row index for this date
+  const monthStr = (date.getMonth() + 1).toString().padStart(2, "0")
+  const targetMonthId = `${date.getFullYear()}-${monthStr}-01`
+  const rowIndex = rows.value.findIndex((row) => row.monthId === targetMonthId)
+
+  if (rowIndex !== -1 && virtualScrollRef.value) {
+    // Scroll to the row
+    virtualScrollRef.value.scrollToIndex(rowIndex)
+  }
+
+  // Clear the request
+  clearScrollRequest()
 })
 
 // timelineStore.fetchRatios()
@@ -51,6 +71,7 @@ onUnmounted(() => {
     <date-overlay :date="dateInViewString" />
     <div class="photo-grid-container" ref="container">
       <v-virtual-scroll
+        ref="virtualScrollRef"
         @scroll="activateScrollOverride"
         :items="rows"
         :height="height"
