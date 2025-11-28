@@ -3,10 +3,14 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import type { TimelineMonth } from '@/scripts/types/generated/photos.ts'
 import { MONTHS } from '@/scripts/constants.ts'
 
-// --- Props ---
+// --- Props & Emits ---
 const props = defineProps<{
   months: TimelineMonth[] | undefined | null
   dateInView: Date | null
+}>()
+
+const emit = defineEmits<{
+  scrollTo: [date: Date]
 }>()
 
 // --- Refs ---
@@ -15,6 +19,7 @@ const containerHeight = ref(500) // Default fallback
 const hovering = shallowRef(false)
 const hoverY = shallowRef(0)
 const isScrolling = ref(false)
+const isDragging = ref(false)
 let scrollTimeout: number | null = null
 
 // --- Config ---
@@ -179,7 +184,7 @@ const thumbStyle = computed(() => {
 
 // 4. Hover Tooltip
 const hoverDateLabel = computed(() => {
-  if (!hovering.value) return ''
+  if (!hovering.value && !isDragging.value) return ''
   const y = hoverY.value
   const height = containerHeight.value
   const effectiveHeight = height - (PADDING.top + PADDING.bottom)
@@ -253,12 +258,109 @@ onUnmounted(() => {
 })
 
 function handleMouseMove(e: MouseEvent) {
-  // Get Y relative to container
-  // e.offsetY is usually enough if the target is the container, but if hovering over children it might differ.
-  // Safest is clientY - rect.top
   if (!containerRef.value) return
   const rect = containerRef.value.getBoundingClientRect()
   hoverY.value = e.clientY - rect.top
+
+  // If dragging, emit scroll event with interpolated date
+  if (isDragging.value) {
+    const date = getDateFromY(hoverY.value)
+    if (date) {
+      console.log('scrollTo', date)
+      emit('scrollTo', date)
+    }
+  }
+}
+
+function handleMouseDown(e: MouseEvent) {
+  isDragging.value = true
+  handleMouseMove(e)
+
+  // Add document-wide listeners
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+}
+
+function handleMouseUp() {
+  isDragging.value = false
+
+  // Remove document-wide listeners
+  document.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('mouseup', handleMouseUp)
+}
+
+function getDateFromY(y: number): Date | null {
+  const height = containerHeight.value
+  const effectiveHeight = height - (PADDING.top + PADDING.bottom)
+  if (effectiveHeight <= 0) return null
+
+  // Normalize Y to 0-1 range relative to the track
+  let normY = (y - PADDING.top) / effectiveHeight
+  normY = Math.max(0, Math.min(1, normY))
+
+  // Find the two months that bracket this position
+  const months = rawMonths.value
+  if (months.length === 0) return null
+
+  // Find the first month where m.y >= normY
+  const nextMonthIndex = months.findIndex((m) => m.y >= normY)
+
+  if (nextMonthIndex === -1) {
+    // We're past the last month, return the last month's date
+    const lastMonth = months[months.length - 1]!
+    const parsed = parseMonthId(lastMonth.label.split(' ').reverse().join('-') + '-1')
+    return new Date(parsed.year, parsed.month - 1, 1)
+  }
+
+  if (nextMonthIndex === 0) {
+    // We're before the first month, return the first month's date
+    const firstMonth = months[0]!
+    const parts = firstMonth.label.split(' ')
+    const monthName = parts[0]!
+    const year = parseInt(parts[1]!)
+    const monthIndex = MONTHS.findIndex(m => m.startsWith(monthName))
+    return new Date(year, monthIndex, 1)
+  }
+
+  // Interpolate between the two months
+  const nextMonth = months[nextMonthIndex]!
+  const prevMonth = months[nextMonthIndex - 1]!
+
+  // Parse the month labels (format: "Mon YYYY")
+  const parseLabel = (label: string) => {
+    const parts = label.split(' ')
+    const monthName = parts[0]!
+    const year = parseInt(parts[1]!)
+    const monthIndex = MONTHS.findIndex(m => m.startsWith(monthName))
+    return { year, month: monthIndex + 1 }
+  }
+
+  const prev = parseLabel(prevMonth.label)
+  const next = parseLabel(nextMonth.label)
+
+  // Get the lookup data for these months to find their start positions
+  const prevKey = `${prev.year}-${prev.month}`
+  const nextKey = `${next.year}-${next.month}`
+  const prevData = lookupMap.get(prevKey)
+  const nextData = lookupMap.get(nextKey)
+
+  if (!prevData || !nextData) {
+    // Fallback to next month
+    return new Date(next.year, next.month - 1, 1)
+  }
+
+  // Interpolate within the range
+  const prevEndY = prevMonth.y
+  const nextEndY = nextMonth.y
+  const ratio = (normY - prevEndY) / (nextEndY - prevEndY)
+
+  // Calculate the date
+  const prevDate = new Date(prev.year, prev.month - 1, 1)
+  const nextDate = new Date(next.year, next.month - 1, 1)
+  const timeDiff = nextDate.getTime() - prevDate.getTime()
+  const interpolatedTime = prevDate.getTime() + timeDiff * ratio
+
+  return new Date(interpolatedTime)
 }
 </script>
 
@@ -269,18 +371,19 @@ function handleMouseMove(e: MouseEvent) {
     @mouseenter="hovering = true"
     @mouseleave="hovering = false"
     @mousemove="handleMouseMove"
+    @mousedown="handleMouseDown"
   >
     <!-- Track -->
     <div class="timeline-track" :style="trackStyle"></div>
 
     <!-- Month Dots -->
-    <div v-show="hovering || isScrolling" class="dots-layer">
+    <div v-show="hovering || isScrolling || isDragging" class="dots-layer">
       <div v-for="(dot, i) in monthDots" :key="i" class="month-dot" :style="dot.style"></div>
     </div>
 
     <!-- Years -->
     <Transition name="fade">
-      <div v-show="hovering || isScrolling" class="years-layer">
+      <div v-show="hovering || isScrolling || isDragging" class="years-layer">
         <div
           v-for="(year, i) in visibleYears"
           :key="i"
@@ -296,12 +399,12 @@ function handleMouseMove(e: MouseEvent) {
     <!-- Scroll Thumb -->
     <div
       class="scroll-thumb"
-      :class="{ 'is-protruded': isScrolling || hovering }"
+      :class="{ 'is-protruded': isScrolling || hovering || isDragging }"
       :style="thumbStyle"
     ></div>
 
     <!-- Hover Tooltip -->
-    <div v-show="hovering" class="timeline-tooltip" :style="tooltipStyle">
+    <div v-show="hovering || isDragging" class="timeline-tooltip" :style="tooltipStyle">
       <div class="tooltip-content">
         <span class="tooltip-text">{{ hoverDateLabel }}</span>
         <div class="tooltip-line"></div>
