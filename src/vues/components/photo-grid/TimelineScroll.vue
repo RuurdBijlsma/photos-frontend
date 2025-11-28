@@ -7,7 +7,7 @@ import { MONTHS } from '@/scripts/constants.ts'
 // --- Props ---
 const props = defineProps<{
   months: TimelineMonth[] | undefined | null
-  scrollY: number
+  dateInView: Date | null
 }>()
 
 // --- Refs ---
@@ -47,6 +47,15 @@ function buildRenderState(): RenderState {
   if (!items) return { years: [], months: [], scrollThumbHeight: 0 }
 
   const totalCount = items.reduce((acc, m) => acc + m.count, 0)
+  if (totalCount === 0) return { years: [], months: [], scrollThumbHeight: 0 }
+
+  // Precompute totals per year
+  const yearTotals: Record<number, number> = {}
+  for (const it of items) {
+    const d = parseMonthId(it.monthId)
+    yearTotals[d.year] = (yearTotals[d.year] || 0) + it.count
+  }
+
   let cumulative = 0
   let lastYear = -1
 
@@ -54,18 +63,22 @@ function buildRenderState(): RenderState {
   const months: RenderState['months'] = []
 
   for (const item of items) {
-    cumulative += item.count
     const date = parseMonthId(item.monthId)
-    const y = cumulative / totalCount
-
+    // when we hit a new year, place the year label at the bottom of that year's block:
+    // bottom = (cumulative + totalCountForYear) / totalCount
     if (date.year !== lastYear) {
-      years.push({ label: String(date.year), y })
+      const yearTotal = yearTotals[date.year] || 0
+      const yForYear = (cumulative + yearTotal) / totalCount
+      years.push({ label: String(date.year), y: yForYear })
       lastYear = date.year
     }
 
+    // month y is bottom of month block: (cumulative + item.count) / totalCount
+    cumulative += item.count
+    const yForMonth = cumulative / totalCount
     months.push({
       label: `${MONTHS[date.month - 1]!.substring(0, 3)} ${date.year}`,
-      y,
+      y: yForMonth,
     })
   }
 
@@ -74,6 +87,46 @@ function buildRenderState(): RenderState {
   const scrollThumbHeight = Math.max(approxItemsPerPage / totalCount, minScrollThumbHeight)
   console.log(years, months, scrollThumbHeight)
   return { years, months, scrollThumbHeight }
+}
+
+const scrollThumbY = computed(() => {
+  return scrollYFromDate(props.dateInView)
+})
+
+function scrollYFromDate(date: Date | null): number {
+  return 0
+  // NOTE: assumes new to old sorting
+  // const items = props.months
+  // if (!items || !date) return 0
+  //
+  // const targetYear = date.getFullYear()
+  // const targetMonth = date.getMonth() + 1
+  // const targetDay = date.getDate()
+  //
+  // let cumulative = 0
+  //
+  // for (const item of items) {
+  //   const d = parseMonthId(item.monthId)
+  //
+  //   // If we passed the target month (because list is sorted DESC)
+  //   if (d.year < targetYear) break
+  //   if (d.year === targetYear && d.month < targetMonth) break
+  //
+  //   // If this is the target month: interpolate
+  //   if (d.year === targetYear && d.month === targetMonth) {
+  //     const daysInMonth = new Date(targetYear, targetMonth, 0).getDate()
+  //     const fraction = 1 - Math.min(1, targetDay / daysInMonth) // 0..1
+  //     cumulative += item.count * fraction
+  //     break
+  //   }
+  //
+  //   cumulative += item.count
+  // }
+  //
+  // const totalCount = items.reduce((acc, m) => acc + m.count, 0)
+  // if (totalCount === 0) return 0
+  //
+  // return cumulative / totalCount
 }
 
 // Convenience Y position
@@ -89,27 +142,17 @@ function renderFrame() {
   const canvas = canvasRef.value
   const c = ctx.value
   if (!canvas || !c) return
-  console.log('render')
+  // console.log('render')
 
   c.clearRect(0, 0, canvas.width, canvas.height)
   c.font = `${FONT.size}px ${FONT.family}, Arial, sans-serif`
 
   if (hovering.value) renderDots(canvas, c)
   renderYears(canvas, c)
+  renderThumb(canvas, c)
 
   // Only animate if hovering
   if (hovering.value) raf = requestAnimationFrame(renderFrame)
-
-  c.fillStyle = theme.current.value.colors.primary
-  c.beginPath()
-  c.roundRect(
-    canvas.width - PADDING.horizontal - 1,
-    yPos(props.scrollY),
-    4,
-    renderState.scrollThumbHeight * (canvas.height - PADDING.vertical * 2),
-    3,
-  )
-  c.fill()
 }
 
 function renderOnce() {
@@ -127,6 +170,19 @@ function cancelRender() {
 }
 
 // --- Drawing ---
+function renderThumb(canvas: HTMLCanvasElement, c: CanvasRenderingContext2D) {
+  c.fillStyle = theme.current.value.colors.primary
+  c.beginPath()
+  c.roundRect(
+    canvas.width - PADDING.horizontal - 1,
+    yPos(scrollThumbY.value),
+    4,
+    renderState.scrollThumbHeight * (canvas.height - PADDING.vertical * 2),
+    3,
+  )
+  c.fill()
+}
+
 function renderYears(canvas: HTMLCanvasElement, c: CanvasRenderingContext2D) {
   let prevY = -Infinity
 
@@ -196,7 +252,7 @@ function resizeCanvas() {
 
 // --- Watchers ---
 watch(
-  () => props.scrollY,
+  () => props.dateInView,
   () => {
     renderOnce()
   },

@@ -9,11 +9,10 @@ import { ref } from 'vue'
 const backgroundStore = useBackgroundStore()
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
-const scrollY = ref(0)
+const dateInView = ref<Date | null>(null)
 
-function setScrollY(e: WheelEvent) {
-  // @ts-expect-error dummy ts
-  scrollY.value = e.target.scrollTop / e.target.scrollHeight
+function setDateInView(date: Date) {
+  dateInView.value = date
 }
 
 // Initialize the stores.
@@ -82,9 +81,13 @@ backgroundStore.initialize()
 
     <v-main class="layout-body">
       <div class="router-view-container">
-        <router-view class="router-view" @on-scroll="setScrollY" />
+        <router-view class="router-view" @date-in-view="setDateInView" />
       </div>
-      <timeline-scroll :scroll-y="scrollY" :months="timelineStore.timeline!" class="scroll-area" />
+      <timeline-scroll
+        :date-in-view="dateInView"
+        :months="timelineStore.timeline!"
+        class="scroll-area"
+      />
     </v-main>
   </v-layout>
 </template>

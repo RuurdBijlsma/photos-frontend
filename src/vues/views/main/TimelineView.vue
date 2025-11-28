@@ -8,36 +8,35 @@ import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import GridRowHeader from '@/vues/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/vues/components/photo-grid/GridRow.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
-import { useThrottleFn } from '@vueuse/core'
 
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
 
-const emit = defineEmits(['onScroll'])
+const emit = defineEmits(['dateInView'])
 
 const { container, width, height } = useContainerResize()
 const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, timelineStore)
 const { handleIsVisible, rowInViewDate } = usePhotoVisibility(timelineStore)
-const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
+const { hoverDate, dateInViewString, activateScrollOverride } =
+  useDateOverlay(rowInViewDate)
 
-const onScrollEvent = useThrottleFn((e: WheelEvent) => {
-  emit('onScroll', e)
-  activateScrollOverride(e)
-}, 25)
+watch(rowInViewDate, () => {
+  emit('dateInView', rowInViewDate.value)
+})
 
 timelineStore.fetchRatios()
 
 let ws: WebSocket | null = null
 
 onMounted(() => {
-  const token = authStore.accessToken
+  const token = authStore.accessToken!
   ws = new WebSocket('ws://localhost:9475/timeline/ws', ['access_token', token])
 
   ws.onopen = () => console.log('Connected to websocket for timeline updates!')
-  ws.onmessage = (e) => console.log('New Media')
+  ws.onmessage = () => console.log('New Media')
 })
 
 onUnmounted(() => {
@@ -52,7 +51,7 @@ onUnmounted(() => {
     <date-overlay :date="dateInViewString" />
     <div class="photo-grid-container" ref="container">
       <v-virtual-scroll
-        @scroll="onScrollEvent"
+        @scroll="activateScrollOverride"
         :items="rows"
         :height="height"
         item-key="key"

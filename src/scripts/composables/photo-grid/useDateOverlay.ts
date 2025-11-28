@@ -17,10 +17,17 @@ export function useDateOverlay(rowInViewDate: Ref<Date | null>) {
     restoreOverride()
   }, 25)
 
-  const dateInViewString = computed(() => {
+  const dateInView = computed(() => {
     if (hideDateOverlay.value) return null
     const date =
       scrollOverride.value || hoverDate.value === null ? rowInViewDate.value : hoverDate.value
+    if (date === null) return null
+
+    return date
+  })
+
+  const dateInViewString = computed(() => {
+    const date = dateInView.value
     if (date === null) return null
 
     const day = DAYS[date.getDay()]!
