@@ -176,6 +176,11 @@ const thumbStyle = computed(() => {
   }
 })
 
+const trackStyle = computed(() => ({
+  top: `${PADDING.top}px`,
+  height: `calc(100% - ${PADDING.top + PADDING.bottom}px)`,
+}))
+
 // --- Watchers ---
 watch(() => props.months, processData, { immediate: true })
 
@@ -218,6 +223,9 @@ onUnmounted(() => {
     @mouseenter="hovering = true"
     @mouseleave="hovering = false"
   >
+    <!-- Track -->
+    <div class="timeline-track" :style="trackStyle"></div>
+
     <!-- Month Dots -->
     <div v-show="hovering || isScrolling" class="dots-layer">
       <div v-for="(dot, i) in monthDots" :key="i" class="month-dot" :style="dot.style"></div>
@@ -265,17 +273,18 @@ onUnmounted(() => {
 
 .month-dot {
   position: absolute;
-  right: 4px;
+  right: 3px;
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background-color: rgb(var(--v-theme-surface-container-highest));
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
   transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .year-item {
   position: absolute;
-  right: 5px;
+  right: 7px;
   padding: 5px 7px;
   border-radius: 10px;
   font-family: 'Montserrat', Arial, sans-serif;
@@ -293,14 +302,23 @@ onUnmounted(() => {
 
 .scroll-thumb {
   position: absolute;
-  right: 4px;
-  width: 4px;
+  right: 3px;
+  width: 6px;
   background-color: rgb(var(--v-theme-primary));
   border-radius: 3px;
   pointer-events: none;
   transition:
     top 0.25s cubic-bezier(0.25, 0.8, 0.5, 1),
     height 0.25s cubic-bezier(0.25, 0.8, 0.5, 1);
+}
+
+.timeline-track {
+  position: absolute;
+  right: 3px;
+  width: 6px;
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
+  border-radius: 3px;
+  pointer-events: none;
 }
 
 .fade-enter-active,
