@@ -1,42 +1,98 @@
-# photos-frontend
+Here is a `README.md` for your frontend repository, styled to match the backend reference while accurately reflecting the Vue/Vite/TypeScript stack defined in your `package.json` and file structure.
 
-This template should help get you started developing with Vue 3 in Vite.
+***
 
-## Recommended IDE Setup
+# Photos Frontend
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+The web interface for **Ruurd Photos**, a self-hosted Google Photos alternative. Built with Vue 3, Vuetify, and TypeScript.
 
-## Recommended Browser Setup
+## Features
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+*   **Timeline View:** High-performance virtual scrolling for photo grids organized by date.
+*   **Map View:** Geospatial visualization of your media library.
+*   **Onboarding Wizard:** UI for setting up the server, picking storage folders, and scanning drives.
+*   **Media Viewer:** Full-screen photo and video playback.
+*   **Responsive Design:** Optimized for desktop and mobile web via Vuetify.
 
-## Type Support for `.vue` Imports in TS
+## Prerequisites
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+*   **Node.js**: Version `^20.19.0` or `>=22.12.0` (as required by the build engine).
+*   **Ruurd Photos Backend**: The frontend requires the API to be running.
 
-## Customize configuration
+## Installation
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+### 1. Clone the repo
 
-## Project Setup
+```bash
+git clone https://github.com/RuurdBijlsma/photos-frontend.git
+cd photos-frontend
+```
 
-```sh
+### 2. Install dependencies
+
+```bash
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### 3. Configure Environment
 
-```sh
+Copy the example environment file and configure the connection to your backend.
+
+```bash
+cp example.env .env
+```
+
+Edit `.env` to point to your API URL (usually localhost if running locally):
+
+```properties
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+---
+
+## Usage
+
+### 1. Run Development Server
+
+To start the local development server with Hot Module Replacement (HMR):
+
+```bash
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+Open your browser and navigate to `http://localhost:5173` (or the port shown in the terminal).
 
-```sh
+### 2. Build for Production
+
+To type-check and build the application for production deployment:
+
+```bash
 npm run build
 ```
+
+The output will be generated in the `dist/` directory.
+
+### 3. Generate Protocol Buffers
+
+If you modify the `.proto` definitions in `src/proto`, regenerate the TypeScript types:
+
+```bash
+npm run proto:gen
+```
+
+### 4. Linting & Formatting
+
+*   **Lint:** `npm run lint`
+*   **Format:** `npm run lint:format`
+
+---
+
+## Tech Stack
+
+*   **Framework:** Vue 3 (Composition API)
+*   **Build Tool:** Vite
+*   **UI Library:** Vuetify
+*   **State Management:** Pinia
+*   **Routing:** Vue Router
+*   **Language:** TypeScript
+*   **Data Serialization:** Protocol Buffers
