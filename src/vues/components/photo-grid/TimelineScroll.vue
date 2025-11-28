@@ -17,7 +17,7 @@ const isScrolling = ref(false)
 let scrollTimeout: number | null = null
 
 // --- Config ---
-const PADDING = { top: 5, bottom: 50, horizontal: 5 }
+const PADDING = { top: 5, bottom: 20, horizontal: 5 }
 const FONT_SIZE = 12
 const MIN_YEAR_SPACING = FONT_SIZE + 10
 
