@@ -175,9 +175,13 @@ const thumbStyle = computed(() => {
     normY = data.y + data.fraction * dayRatio
   }
 
+  const availableHeight = containerHeight.value - (PADDING.top + PADDING.bottom)
+  const translateY = PADDING.top + (normY * availableHeight)
+
   return {
     height: `calc(${thumbHeightRatio.value} * (100% - ${PADDING.top + PADDING.bottom}px))`,
-    top: `calc(${PADDING.top}px + ${normY} * (100% - ${PADDING.top + PADDING.bottom}px))`,
+    top: '0px',
+    transform: `translateY(${translateY}px) translateZ(0)`
   }
 })
 
@@ -207,13 +211,12 @@ const tooltipStyle = computed(() => {
   const height = containerHeight.value
   const effectiveHeight = height - (PADDING.top + PADDING.bottom)
 
-  // Clamp the tooltip position to stay within the track
   const minY = PADDING.top
   const maxY = PADDING.top + effectiveHeight
   const clampedY = Math.max(minY, Math.min(maxY, hoverY.value))
 
   return {
-    top: `${clampedY}px`,
+    transform: `translateY(${clampedY}px) translateZ(0)`
   }
 })
 
@@ -440,6 +443,7 @@ function getDateFromY(y: number): Date | null {
   background-color: rgba(var(--v-theme-on-surface), 0.1);
   transform: translateY(-50%);
   pointer-events: none;
+  contain: strict;
 }
 
 .year-item {
@@ -469,9 +473,9 @@ function getDateFromY(y: number): Date | null {
   border-radius: 3px;
   pointer-events: none;
   transition:
-    top 0.25s cubic-bezier(0.25, 0.8, 0.5, 1),
+    transform 0.1s linear,
     height 0.25s cubic-bezier(0.25, 0.8, 0.5, 1);
-  will-change: top, height;
+  will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
@@ -526,6 +530,8 @@ function getDateFromY(y: number): Date | null {
   pointer-events: none;
   overflow: visible;
   z-index: 10;
+  top: 0;
+  will-change: transform;
 }
 
 .tooltip-content {
