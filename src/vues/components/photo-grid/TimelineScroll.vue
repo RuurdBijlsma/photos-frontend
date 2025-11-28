@@ -17,7 +17,7 @@ const isScrolling = ref(false)
 let scrollTimeout: number | null = null
 
 // --- Config ---
-const PADDING = { vertical: 5, horizontal: 5 }
+const PADDING = { top: 5, bottom: 50, horizontal: 5 }
 const FONT_SIZE = 12
 const MIN_YEAR_SPACING = FONT_SIZE + 10
 
@@ -106,11 +106,10 @@ function processData() {
 // 1. Month Dots (Pure CSS positioning)
 const monthDots = computed(() => {
   return rawMonths.value.map((m) => ({
-    // Formula: PADDING.vertical + y * (height - PADDING.vertical * 2)
+    // Formula: PADDING.top + y * (height - (PADDING.top + PADDING.bottom))
     // We express this in % to avoid JS recalculation on resize for dots
-    // top = 15px + y * (100% - 30px)
     style: {
-      top: `calc(${PADDING.vertical}px + ${m.y} * (100% - ${PADDING.vertical * 2}px))`,
+      top: `calc(${PADDING.top}px + ${m.y} * (100% - ${PADDING.top + PADDING.bottom}px))`,
     },
   }))
 })
@@ -126,7 +125,7 @@ const visibleYears = computed(() => {
   for (let i = 0; i < years.length; i++) {
     const { label, y } = years[i]!
     // Calculate ideal pixel position
-    const targetY = PADDING.vertical + y * (height - PADDING.vertical * 2)
+    const targetY = PADDING.top + y * (height - (PADDING.top + PADDING.bottom))
 
     // Collision check
     // If too close to previous, skip unless it's the last one?
@@ -172,8 +171,8 @@ const thumbStyle = computed(() => {
   }
 
   return {
-    height: `calc(${thumbHeightRatio.value} * (100% - ${PADDING.vertical * 2}px))`,
-    top: `calc(${PADDING.vertical}px + ${normY} * (100% - ${PADDING.vertical * 2}px) - (${thumbHeightRatio.value} * (100% - ${PADDING.vertical * 2}px)))`,
+    height: `calc(${thumbHeightRatio.value} * (100% - ${PADDING.top + PADDING.bottom}px))`,
+    top: `calc(${PADDING.top}px + ${normY} * (100% - ${PADDING.top + PADDING.bottom}px))`,
   }
 })
 
@@ -225,17 +224,19 @@ onUnmounted(() => {
     </div>
 
     <!-- Years -->
-    <div v-show="hovering || isScrolling" class="years-layer">
-      <div
-        v-for="(year, i) in visibleYears"
-        :key="i"
-        class="year-item"
-        :class="{ 'is-hovering': hovering }"
-        :style="year.style"
-      >
-        {{ year.label }}
+    <Transition name="fade">
+      <div v-show="hovering || isScrolling" class="years-layer">
+        <div
+          v-for="(year, i) in visibleYears"
+          :key="i"
+          class="year-item"
+          :class="{ 'is-hovering': hovering }"
+          :style="year.style"
+        >
+          {{ year.label }}
+        </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- Scroll Thumb -->
     <div class="scroll-thumb" :style="thumbStyle"></div>
@@ -274,7 +275,7 @@ onUnmounted(() => {
 
 .year-item {
   position: absolute;
-  right: 3px;
+  right: 5px;
   padding: 5px 7px;
   border-radius: 10px;
   font-family: 'Montserrat', Arial, sans-serif;
@@ -297,5 +298,18 @@ onUnmounted(() => {
   background-color: rgb(var(--v-theme-primary));
   border-radius: 3px;
   pointer-events: none;
+  transition:
+    top 0.25s cubic-bezier(0.25, 0.8, 0.5, 1),
+    height 0.25s cubic-bezier(0.25, 0.8, 0.5, 1);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
