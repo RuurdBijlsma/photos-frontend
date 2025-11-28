@@ -1,7 +1,3 @@
-Here is a `README.md` for your frontend repository, styled to match the backend reference while accurately reflecting the Vue/Vite/TypeScript stack defined in your `package.json` and file structure.
-
-***
-
 # Photos Frontend
 
 The web interface for **Ruurd Photos**, a self-hosted Google Photos alternative. Built with Vue 3, Vuetify, and TypeScript.
