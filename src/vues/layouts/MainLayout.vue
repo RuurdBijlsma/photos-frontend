@@ -234,7 +234,7 @@ backgroundStore.initialize()
   margin: 30px 0 0;
   width: 50px;
   height: calc(100% - 30px);
-  opacity: 0.6;
+  opacity: 0.8;
   transition: opacity 0.2s;
 }
 

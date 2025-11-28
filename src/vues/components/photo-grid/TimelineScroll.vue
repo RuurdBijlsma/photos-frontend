@@ -249,7 +249,7 @@ onUnmounted(() => {
     <!-- Scroll Thumb -->
     <div
       class="scroll-thumb"
-      :class="{ 'is-scrolling': isScrolling }"
+      :class="{ 'is-protruded': isScrolling || hovering }"
       :style="thumbStyle"
     ></div>
   </div>
@@ -324,7 +324,8 @@ onUnmounted(() => {
   width: 40px; /* Sufficiently wide to fill the container */
   height: 3px;
   background-color: rgb(var(--v-theme-primary));
-  transform: translateY(-50%) translateX(100%);
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: right center;
   border-radius: 3px 0 0 3px;
   opacity: 0;
   transition:
@@ -332,8 +333,8 @@ onUnmounted(() => {
     opacity 0.2s ease;
 }
 
-.scroll-thumb.is-scrolling::before {
-  transform: translateY(-50%) translateX(0);
+.scroll-thumb.is-protruded::before {
+  transform: translateY(-50%) scaleX(1);
   opacity: 1;
 }
 
