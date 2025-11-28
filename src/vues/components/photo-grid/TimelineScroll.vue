@@ -191,7 +191,7 @@ watch(
     if (scrollTimeout) clearTimeout(scrollTimeout)
     scrollTimeout = window.setTimeout(() => {
       isScrolling.value = false
-    }, 5000)
+    }, 3000)
   },
 )
 
@@ -247,7 +247,11 @@ onUnmounted(() => {
     </Transition>
 
     <!-- Scroll Thumb -->
-    <div class="scroll-thumb" :style="thumbStyle"></div>
+    <div
+      class="scroll-thumb"
+      :class="{ 'is-scrolling': isScrolling }"
+      :style="thumbStyle"
+    ></div>
   </div>
 </template>
 
@@ -284,7 +288,7 @@ onUnmounted(() => {
 
 .year-item {
   position: absolute;
-  right: 7px;
+  right: 9px;
   padding: 5px 7px;
   border-radius: 10px;
   font-family: 'Montserrat', Arial, sans-serif;
@@ -310,6 +314,27 @@ onUnmounted(() => {
   transition:
     top 0.25s cubic-bezier(0.25, 0.8, 0.5, 1),
     height 0.25s cubic-bezier(0.25, 0.8, 0.5, 1);
+}
+
+.scroll-thumb::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 40px; /* Sufficiently wide to fill the container */
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transform: translateY(-50%) translateX(100%);
+  border-radius: 3px 0 0 3px;
+  opacity: 0;
+  transition:
+    transform 0.2s cubic-bezier(0.25, 0.8, 0.5, 1),
+    opacity 0.2s ease;
+}
+
+.scroll-thumb.is-scrolling::before {
+  transform: translateY(-50%) translateX(0);
+  opacity: 1;
 }
 
 .timeline-track {
