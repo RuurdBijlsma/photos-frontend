@@ -49,3 +49,4 @@
 * fix scroll fps (is this possible?)
 * preload 1440p thumbnail on grid item hover
 * er klopt niks van de sync tussen scroll thumb en de year labels / month dots
+* volgens mij is fetchMediaByMonths shittylaggy als je hard scrollt

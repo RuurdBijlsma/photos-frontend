@@ -85,7 +85,7 @@ backgroundStore.initialize()
       </div>
       <timeline-scroll
         :date-in-view="dateInView"
-        :months="timelineStore.timeline!"
+        :months="timelineStore.timeline"
         class="scroll-area"
       />
     </v-main>
