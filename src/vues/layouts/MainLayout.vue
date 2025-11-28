@@ -202,8 +202,8 @@ backgroundStore.initialize()
   background: rgb(227, 222, 255);
   background: linear-gradient(
     0deg,
-    rgba(var(--v-theme-surface), 0.8) 0%,
-    rgba(var(--v-theme-surface), 0.9) 100%
+    rgba(var(--v-theme-background), 0.8) 0%,
+    rgba(var(--v-theme-background), 0.9) 100%
   );
   flex-grow: 1;
   border-top-left-radius: 60px;
@@ -231,9 +231,9 @@ backgroundStore.initialize()
 }
 
 .scroll-area {
-  margin: 30px 0 0;
+  margin: 15px 0 0;
   width: 50px;
-  height: calc(100% - 30px);
+  height: calc(100% - 15px);
   opacity: 0.8;
   transition: opacity 0.2s;
 }

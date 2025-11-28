@@ -13,6 +13,7 @@ const props = defineProps<{
 const containerRef = ref<HTMLElement | null>(null)
 const containerHeight = ref(500) // Default fallback
 const hovering = shallowRef(false)
+const hoverY = shallowRef(0)
 const isScrolling = ref(false)
 let scrollTimeout: number | null = null
 
@@ -176,6 +177,42 @@ const thumbStyle = computed(() => {
   }
 })
 
+// 4. Hover Tooltip
+const hoverDateLabel = computed(() => {
+  if (!hovering.value) return ''
+  const y = hoverY.value
+  const height = containerHeight.value
+  const effectiveHeight = height - (PADDING.top + PADDING.bottom)
+  if (effectiveHeight <= 0) return ''
+
+  // Normalize Y to 0-1 range relative to the track
+  let normY = (y - PADDING.top) / effectiveHeight
+  normY = Math.max(0, Math.min(1, normY))
+
+  // Find the closest month
+  // Since rawMonths are sorted by Y, we can find the first one that is >= normY
+  // or just find the closest one.
+  // Actually, rawMonths stores the END y of the month.
+  // So we want the first month where m.y >= normY
+  const months = rawMonths.value
+  const match = months.find((m) => m.y >= normY)
+  return match ? match.label : (months[months.length - 1]?.label ?? '')
+})
+
+const tooltipStyle = computed(() => {
+  const height = containerHeight.value
+  const effectiveHeight = height - (PADDING.top + PADDING.bottom)
+
+  // Clamp the tooltip position to stay within the track
+  const minY = PADDING.top
+  const maxY = PADDING.top + effectiveHeight
+  const clampedY = Math.max(minY, Math.min(maxY, hoverY.value))
+
+  return {
+    top: `${clampedY}px`,
+  }
+})
+
 const trackStyle = computed(() => ({
   top: `${PADDING.top}px`,
   height: `calc(100% - ${PADDING.top + PADDING.bottom}px)`,
@@ -214,6 +251,15 @@ onMounted(() => {
 onUnmounted(() => {
   if (ro) ro.disconnect()
 })
+
+function handleMouseMove(e: MouseEvent) {
+  // Get Y relative to container
+  // e.offsetY is usually enough if the target is the container, but if hovering over children it might differ.
+  // Safest is clientY - rect.top
+  if (!containerRef.value) return
+  const rect = containerRef.value.getBoundingClientRect()
+  hoverY.value = e.clientY - rect.top
+}
 </script>
 
 <template>
@@ -222,6 +268,7 @@ onUnmounted(() => {
     class="timeline-container"
     @mouseenter="hovering = true"
     @mouseleave="hovering = false"
+    @mousemove="handleMouseMove"
   >
     <!-- Track -->
     <div class="timeline-track" :style="trackStyle"></div>
@@ -252,6 +299,14 @@ onUnmounted(() => {
       :class="{ 'is-protruded': isScrolling || hovering }"
       :style="thumbStyle"
     ></div>
+
+    <!-- Hover Tooltip -->
+    <div v-show="hovering" class="timeline-tooltip" :style="tooltipStyle">
+      <div class="tooltip-content">
+        <span class="tooltip-text">{{ hoverDateLabel }}</span>
+        <div class="tooltip-line"></div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -260,9 +315,9 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   position: relative;
-  overflow: hidden;
   user-select: none;
   transform: translateZ(0);
+  cursor: none;
 }
 
 .dots-layer,
@@ -288,11 +343,12 @@ onUnmounted(() => {
 
 .year-item {
   position: absolute;
-  right: 9px;
+  right: 8px;
   padding: 5px 7px;
   border-radius: 10px;
   font-family: 'Montserrat', Arial, sans-serif;
   font-size: 12px;
+  font-weight: 500;
   color: rgba(var(--v-theme-on-background), 0.73);
   line-height: 1;
   /* Center the pill vertically on the coordinate */
@@ -301,7 +357,7 @@ onUnmounted(() => {
 }
 
 .year-item.is-hovering {
-  background-color: rgb(var(--v-theme-surface-container));
+  background-color: rgba(var(--v-theme-surface-container), 0.5);
 }
 
 .scroll-thumb {
@@ -355,5 +411,58 @@ onUnmounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.timeline-tooltip {
+  position: absolute;
+  right: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 10;
+}
+
+.tooltip-content {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.tooltip-text {
+  position: absolute;
+  right: 3px;
+  bottom: 5px; /* Sits above the line */
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-primary));
+  background-color: rgb(var(--v-theme-primary));
+  padding: 4px 8px;
+  border-radius: 8px 0 0 8px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transform: translateX(10px);
+  animation: slideIn 0.2s ease forwards;
+}
+
+.tooltip-line {
+  position: absolute;
+  right: 3px;
+  top: 0;
+  width: 40px;
+  height: 2px;
+  background-color: rgb(var(--v-theme-primary));
+  border-radius: 2px 0 0 2px;
+  opacity: 0.8;
+  transform: translateY(-50%);
+}
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 </style>

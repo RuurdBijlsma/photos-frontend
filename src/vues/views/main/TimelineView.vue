@@ -27,7 +27,7 @@ watch(rowInViewDate, () => {
   emit('dateInView', rowInViewDate.value)
 })
 
-timelineStore.fetchRatios()
+// timelineStore.fetchRatios()
 
 let ws: WebSocket | null = null
 
@@ -77,7 +77,7 @@ onUnmounted(() => {
 
 <style scoped>
 .photo-grid-container {
-  height: 100%;
+  height: calc(100% + 7px);
   margin-top: -7px;
 }
 
