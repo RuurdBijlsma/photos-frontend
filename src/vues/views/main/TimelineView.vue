@@ -12,6 +12,7 @@ import { ref, watch } from 'vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
 import { useTimelineWebSocket } from '@/scripts/composables/photo-grid/useTimelineWebSocket.ts'
+import type { VVirtualScroll } from 'vuetify/components'
 
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
@@ -24,7 +25,7 @@ const { handleIsVisible, rowInViewDate } = usePhotoVisibility(timelineStore)
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
 useTimelineWebSocket(authStore)
 
-const virtualScrollRef = ref<any>(null)
+const virtualScrollRef = ref<VVirtualScroll | null>(null)
 
 // Update the shared state when the date in view changes
 watch(rowInViewDate, () => {
@@ -48,8 +49,6 @@ watch(scrollToDate, (date) => {
   // Clear the request
   clearScrollRequest()
 })
-
-
 </script>
 
 <template>

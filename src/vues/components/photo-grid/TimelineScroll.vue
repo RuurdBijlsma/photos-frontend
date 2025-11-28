@@ -471,6 +471,9 @@ function getDateFromY(y: number): Date | null {
   transition:
     top 0.25s cubic-bezier(0.25, 0.8, 0.5, 1),
     height 0.25s cubic-bezier(0.25, 0.8, 0.5, 1);
+  will-change: top, height;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .scroll-thumb::before {
@@ -478,20 +481,21 @@ function getDateFromY(y: number): Date | null {
   position: absolute;
   top: 50%;
   right: 0;
-  width: 40px; /* Sufficiently wide to fill the container */
+  width: 40px;
   height: 3px;
   background-color: rgb(var(--v-theme-primary));
-  transform: translateY(-50%) scaleX(0);
+  transform: translateY(-50%) scaleX(0) translateZ(0);
   transform-origin: right center;
   border-radius: 3px 0 0 3px;
   opacity: 0;
   transition:
     transform 0.2s cubic-bezier(0.25, 0.8, 0.5, 1),
     opacity 0.2s ease;
+  will-change: transform, opacity;
 }
 
 .scroll-thumb.is-protruded::before {
-  transform: translateY(-50%) scaleX(1);
+  transform: translateY(-50%) scaleX(1) translateZ(0);
   opacity: 1;
 }
 
