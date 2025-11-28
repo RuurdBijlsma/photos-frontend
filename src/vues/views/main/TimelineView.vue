@@ -8,9 +8,10 @@ import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import GridRowHeader from '@/vues/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/vues/components/photo-grid/GridRow.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
+import { useTimelineWebSocket } from '@/scripts/composables/photo-grid/useTimelineWebSocket.ts'
 
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
@@ -21,6 +22,7 @@ const { container, width, height } = useContainerResize()
 const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, timelineStore)
 const { handleIsVisible, rowInViewDate } = usePhotoVisibility(timelineStore)
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
+useTimelineWebSocket(authStore)
 
 const virtualScrollRef = ref<any>(null)
 
@@ -34,7 +36,7 @@ watch(scrollToDate, (date) => {
   if (!date) return
 
   // Find the row index for this date
-  const monthStr = (date.getMonth() + 1).toString().padStart(2, "0")
+  const monthStr = (date.getMonth() + 1).toString().padStart(2, '0')
   const targetMonthId = `${date.getFullYear()}-${monthStr}-01`
   const rowIndex = rows.value.findIndex((row) => row.monthId === targetMonthId)
 
@@ -47,23 +49,7 @@ watch(scrollToDate, (date) => {
   clearScrollRequest()
 })
 
-// timelineStore.fetchRatios()
 
-let ws: WebSocket | null = null
-
-onMounted(() => {
-  const token = authStore.accessToken!
-  ws = new WebSocket('ws://localhost:9475/timeline/ws', ['access_token', token])
-
-  ws.onopen = () => console.log('Connected to websocket for timeline updates!')
-  ws.onmessage = () => console.log('New Media')
-})
-
-onUnmounted(() => {
-  if (ws) {
-    ws.close()
-  }
-})
 </script>
 
 <template>
