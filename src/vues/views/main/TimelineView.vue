@@ -27,7 +27,6 @@ useTimelineWebSocket(authStore)
 
 const virtualScrollRef = ref<VVirtualScroll | null>(null)
 
-// Update the shared state when the date in view changes
 watch(rowInViewDate, () => {
   setDateInView(rowInViewDate.value)
 })
@@ -36,14 +35,29 @@ watch(rowInViewDate, () => {
 watch(scrollToDate, (date) => {
   if (!date) return
 
-  // Find the row index for this date
+  // Format the month ID to match the rows (YYYY-MM-01)
   const monthStr = (date.getMonth() + 1).toString().padStart(2, '0')
   const targetMonthId = `${date.getFullYear()}-${monthStr}-01`
-  const rowIndex = rows.value.findIndex((row) => row.monthId === targetMonthId)
+  const startIndex = rows.value.findIndex((row) => row.monthId === targetMonthId)
 
-  if (rowIndex !== -1 && virtualScrollRef.value) {
-    // Scroll to the row
-    virtualScrollRef.value.scrollToIndex(rowIndex)
+  if (startIndex !== -1 && virtualScrollRef.value) {
+    setDateInView(date)
+    // Interpolate to row in month
+    // -- Count rows in month:
+    let monthRowCount = 0
+    for (let i = startIndex; i < rows.value.length; i++) {
+      if (rows.value[i]!.monthId === targetMonthId) {
+        monthRowCount++
+      } else {
+        break // Stop when we hit the next month
+      }
+    }
+    // -- Interpolate to right row based on target date
+    const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+    const day = date.getDate()
+    const ratio = Math.min(1, Math.max(0, (day - 1) / (daysInMonth - 1 || 1)))
+    const offset = Math.round((monthRowCount - 1) * (1 - ratio))
+    virtualScrollRef.value.scrollToIndex(startIndex + offset)
   }
 
   // Clear the request

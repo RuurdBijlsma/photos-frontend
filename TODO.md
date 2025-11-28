@@ -53,3 +53,4 @@
 * change scrollbar behaviour so dots and more scroll info is shown when scrolling
 * on timeline, once loading of in view months in done, just loop until all months are loaded, starting with the ones
   near the viewed month
+* refactor timeline into reusable photogrid
