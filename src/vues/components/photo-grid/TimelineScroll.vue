@@ -15,6 +15,8 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLElement | null>(null)
 // Use shallowRef for performance on complex objects logic doesn't need to deeply track
 const hovering = shallowRef(false)
+const isScrolling = ref(false)
+let scrollTimeout: number | null = null
 
 // --- Config ---
 const PADDING = { vertical: 15, horizontal: 5 }
@@ -163,7 +165,7 @@ function drawStaticLayer() {
 
   // --- Draw Dots (only if hovering or always? Your logic implies only on hover) ---
   // If we only show dots on hover, we might want to redraw static layer on hover change.
-  if (hovering.value) {
+  if (hovering.value || isScrolling.value) {
     const dotX = width - PADDING.horizontal + DOT_RADIUS / 2
     ctx.fillStyle = dotColor
 
@@ -212,8 +214,10 @@ function drawStaticLayer() {
       ctx.fill()
     }
 
-    ctx.fillStyle = textColor
-    ctx.fillText(label, x, finalY)
+    if (hovering.value || isScrolling.value) {
+      ctx.fillStyle = textColor
+      ctx.fillText(label, x, finalY)
+    }
   }
 
   // Trigger main render to update screen
@@ -290,8 +294,12 @@ function resizeCanvas() {
 // --- Watchers ---
 
 // Very lightweight watcher for the scroll.
-// Just requests a frame. logic happens in renderFrame using pre-calculated map.
 watch(() => props.dateInView, () => {
+  isScrolling.value = true
+  if (scrollTimeout) clearTimeout(scrollTimeout)
+  scrollTimeout = window.setTimeout(() => {
+    isScrolling.value = false
+  }, 1000)
   requestRender()
 })
 
@@ -302,6 +310,10 @@ watch(() => props.months, () => {
 
 watch(hovering, () => {
   drawStaticLayer() // Redraws background to show/hide dots/pills
+})
+
+watch(isScrolling, () => {
+  drawStaticLayer()
 })
 
 watch(() => theme.current.value.dark, () => {
