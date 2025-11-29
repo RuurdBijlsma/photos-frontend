@@ -159,16 +159,32 @@ const visibleYears = computed(() => {
 
 // 3. Thumb Position
 const thumbStyle = computed(() => {
-  const date = dateInView.value
   const { map, thumbHeightRatio } = layoutData.value
+  
+  if (map.size === 0) return { display: 'none' }
 
-  if (!date || map.size === 0) return { display: 'none' }
+  const height = containerHeight.value
+  const effectiveHeight = height - (PADDING.top + PADDING.bottom)
+  const thumbHeightPx = thumbHeightRatio * effectiveHeight
 
-  const normY = getNormYFromDate(date)
-  const translateY = isAtTop.value ? PADDING.top : toPixels(normY, containerHeight.value)
+  let targetCenterY: number
+
+  if (isDragging.value) {
+    const minY = PADDING.top
+    const maxY = PADDING.top + effectiveHeight
+    targetCenterY = Math.max(minY, Math.min(maxY, hoverY.value))
+  } else {
+    const date = dateInView.value
+    if (!date) return { display: 'none' }
+    const normY = getNormYFromDate(date)
+    targetCenterY = isAtTop.value ? PADDING.top : toPixels(normY, height)
+  }
+
+  // Center the thumb on the target Y
+  const translateY = targetCenterY - thumbHeightPx / 2
 
   return {
-    height: `calc(${thumbHeightRatio} * (100% - ${PADDING.top + PADDING.bottom}px))`,
+    height: `${thumbHeightPx}px`,
     top: '0px',
     transform: `translateY(${translateY}px) translateZ(0)`,
   }
@@ -349,7 +365,10 @@ function getDateFromY(y: number): Date | null {
     <!-- Scroll Thumb -->
     <div
       class="scroll-thumb"
-      :class="{ 'is-protruded': isScrolling || hovering || isDragging }"
+      :class="{
+        'is-protruded': isScrolling || hovering || isDragging,
+        'is-dragging': isDragging,
+      }"
       :style="thumbStyle"
     ></div>
 
@@ -427,6 +446,10 @@ function getDateFromY(y: number): Date | null {
   will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+.scroll-thumb.is-dragging {
+  transition: none;
 }
 
 .scroll-thumb::before {
