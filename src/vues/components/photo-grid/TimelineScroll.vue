@@ -196,10 +196,8 @@ const hoverDateLabel = computed(() => {
   normY = Math.max(0, Math.min(1, normY))
 
   // Find the closest month
-  // Since rawMonths are sorted by Y, we can find the first one that is >= normY
-  // or just find the closest one.
-  // Actually, rawMonths stores the END y of the month.
-  // So we want the first month where m.y >= normY
+  // Since rawMonths are sorted by Y,
+  // we want the first month where m.y >= normY
   const months = rawMonths.value
   const match = months.find((m) => m.y >= normY)
   return match ? match.label : (months[months.length - 1]?.label ?? '')
@@ -294,69 +292,27 @@ function getDateFromY(y: number): Date | null {
   let normY = (y - PADDING.top) / effectiveHeight
   normY = Math.max(0, Math.min(1, normY))
 
-  // Find the two months that bracket this position
+  // get months with y-positions
   const months = rawMonths.value
   if (months.length === 0) return null
+  if (!props.months || props.months.length === 0) return null
 
-  // Find the first month where m.y >= normY
-  const nextMonthIndex = months.findIndex((m) => m.y >= normY)
+  // find start and end of month where cursor is
+  const monthIndex = months.findIndex((m) => m.y >= normY)
+  const d = new Date(props.months[monthIndex]!.monthId)
+  const monthStart = new Date(d.getFullYear(), d.getMonth(), 1)
+  const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+  monthEnd.setHours(23, 59, 59)
 
-  if (nextMonthIndex === -1) {
-    // We're past the last month, return the last month's date
-    const lastMonth = months[months.length - 1]!
-    const parsed = parseMonthId(lastMonth.label.split(' ').reverse().join('-') + '-1')
-    return new Date(parsed.year, parsed.month - 1, 1)
-  }
+  // Get y-values of start & end of month where cursor is
+  const previousMonthY = monthIndex === 0 ? 0 : months[monthIndex - 1]!.y
+  const monthY = months[monthIndex]!.y
 
-  if (nextMonthIndex === 0) {
-    // We're before the first month, return the first month's date
-    const firstMonth = months[0]!
-    const parts = firstMonth.label.split(' ')
-    const monthName = parts[0]!
-    const year = parseInt(parts[1]!)
-    const monthIndex = MONTHS.findIndex((m) => m.startsWith(monthName))
-    return new Date(year, monthIndex, 1)
-  }
-
-  // Interpolate between the two months
-  const nextMonth = months[nextMonthIndex]!
-  const prevMonth = months[nextMonthIndex - 1]!
-
-  // Parse the month labels (format: "Mon YYYY")
-  const parseLabel = (label: string) => {
-    const parts = label.split(' ')
-    const monthName = parts[0]!
-    const year = parseInt(parts[1]!)
-    const monthIndex = MONTHS.findIndex((m) => m.startsWith(monthName))
-    return { year, month: monthIndex + 1 }
-  }
-
-  const prev = parseLabel(prevMonth.label)
-  const next = parseLabel(nextMonth.label)
-
-  // Get the lookup data for these months to find their start positions
-  const prevKey = `${prev.year}-${prev.month}`
-  const nextKey = `${next.year}-${next.month}`
-  const prevData = lookupMap.get(prevKey)
-  const nextData = lookupMap.get(nextKey)
-
-  if (!prevData || !nextData) {
-    // Fallback to next month
-    return new Date(next.year, next.month - 1, 1)
-  }
-
-  // Interpolate within the range
-  const prevEndY = prevMonth.y
-  const nextEndY = nextMonth.y
-  const ratio = (normY - prevEndY) / (nextEndY - prevEndY)
-
-  // Calculate the date
-  const prevDate = new Date(prev.year, prev.month - 1, 1)
-  const nextDate = new Date(next.year, next.month - 1, 1)
-  const timeDiff = nextDate.getTime() - prevDate.getTime()
-  const interpolatedTime = prevDate.getTime() + timeDiff * ratio
-
-  return new Date(interpolatedTime)
+  // Calculate cursor progress through month and return interpolated date
+  const progressThroughMonth = 1 - (normY - previousMonthY) / (monthY - previousMonthY)
+  const start = monthStart.getTime()
+  const end = monthEnd.getTime()
+  return new Date(start + (end - start) * progressThroughMonth)
 }
 </script>
 

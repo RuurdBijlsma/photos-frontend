@@ -41,6 +41,7 @@ watch(scrollToDate, (date) => {
   const startIndex = rows.value.findIndex((row) => row.monthId === targetMonthId)
 
   if (startIndex !== -1 && virtualScrollRef.value) {
+    rowInViewDate.value = date
     setDateInView(date)
     // Interpolate to row in month
     // -- Count rows in month:

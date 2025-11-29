@@ -20,8 +20,9 @@
   route seems to
   be wrong somehow. Doesnt match actual address in addressbalk
 * ✅ in settings, add option to have solid color background, with fitting theme. or custom image as wallpaper with
-  fitting
-  theme.
+  fitting theme.
+* ✅ er klopt niks van de sync tussen scroll thumb en de year labels / month dots
+* ✅ change scrollbar behaviour so dots and more scroll info is shown when scrolling
 * on login redirect to where you were
 * standardize font sizes everywhere
 * When processing image, link the image to a hash of the file + filename, so rebuilding is easy
@@ -48,11 +49,10 @@
 * setting: usebackdropblur doesnt apply everywhere.
 * fix scroll fps (is this possible?)
 * preload 1440p thumbnail on grid item hover
-* er klopt niks van de sync tussen scroll thumb en de year labels / month dots
 * volgens mij is fetchMediaByMonths shittylaggy als je hard scrollt
-* change scrollbar behaviour so dots and more scroll info is shown when scrolling
 * on timeline, once loading of in view months in done, just loop until all months are loaded, starting with the ones
   near the viewed month
 * refactor timeline into reusable photogrid
 * you can't scroll to most recent photo with timeline scroll
 * date overlay doesnt update if you click scroll to unloaded area in virtual scroller
+* upper bound op tooltip
