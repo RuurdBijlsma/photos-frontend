@@ -56,3 +56,4 @@
 * you can't scroll to most recent photo with timeline scroll
 * date overlay doesnt update if you click scroll to unloaded area in virtual scroller
 * upper bound op tooltip
+* don't push to history when next-ing trough photos in photoview

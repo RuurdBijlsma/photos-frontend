@@ -22,7 +22,7 @@ const isDragging = ref(false)
 let scrollTimeout: number | null = null
 
 // --- Config ---
-const PADDING = { top: 5, bottom: 20, horizontal: 5 }
+const PADDING = { top: 10, bottom: 20, horizontal: 5 }
 const FONT_SIZE = 12
 const MIN_YEAR_SPACING = FONT_SIZE + 10
 
@@ -160,7 +160,7 @@ const visibleYears = computed(() => {
 // 3. Thumb Position
 const thumbStyle = computed(() => {
   const { map, thumbHeightRatio } = layoutData.value
-  
+
   if (map.size === 0) return { display: 'none' }
 
   const height = containerHeight.value
@@ -322,7 +322,6 @@ function getDateFromNormY(normY: number): Date | null {
   }
   return null
 }
-
 
 function getDateFromY(y: number): Date | null {
   const normY = toNormalized(y, containerHeight.value)
