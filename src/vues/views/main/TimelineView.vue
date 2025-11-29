@@ -18,7 +18,7 @@ const timelineStore = useTimelineStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
 
-const { setDateInView, scrollToDate, clearScrollRequest } = useTimelineScroll()
+const { setDateInView, scrollToDate, clearScrollRequest, setIsAtTop } = useTimelineScroll()
 const { container, width, height } = useContainerResize()
 const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, timelineStore)
 const { handleIsVisible, rowInViewDate } = usePhotoVisibility(timelineStore)
@@ -64,6 +64,14 @@ watch(scrollToDate, (date) => {
   // Clear the request
   clearScrollRequest()
 })
+
+function handleScroll(e: WheelEvent) {
+  activateScrollOverride(e)
+  const target = e.target as HTMLElement
+  if (target) {
+    setIsAtTop(target.scrollTop < 5) // Use a small threshold to be safe
+  }
+}
 </script>
 
 <template>
@@ -72,7 +80,7 @@ watch(scrollToDate, (date) => {
     <div class="photo-grid-container" ref="container">
       <v-virtual-scroll
         ref="virtualScrollRef"
-        @scroll="activateScrollOverride"
+        @scroll="handleScroll"
         :items="rows"
         :height="height"
         item-key="key"

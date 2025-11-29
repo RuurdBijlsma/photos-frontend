@@ -10,7 +10,7 @@ const props = defineProps<{
 }>()
 
 // --- Timeline Scroll Composable ---
-const { dateInView, requestScrollToDate } = useTimelineScroll()
+const { dateInView, requestScrollToDate, isAtTop } = useTimelineScroll()
 
 // --- Refs ---
 const containerRef = ref<HTMLElement | null>(null)
@@ -27,16 +27,16 @@ const FONT_SIZE = 12
 const MIN_YEAR_SPACING = FONT_SIZE + 10
 
 // --- State ---
-// We use a lookup map for O(1) access for the thumb position
-type DateLookup = {
-  y: number // The normalized Y start (0-1)
-  fraction: number // How much specific weight this month has
+// We use a map for O(1) access for the thumb position and layout
+type MonthLayout = {
+  start: number // The normalized Y start (0-1)
+  height: number // The height of this month segment (0-1)
+  label: string // The formatted label for this month
 }
-const lookupMap: Map<string, DateLookup> = new Map()
+const monthPositions: Map<string, MonthLayout> = new Map()
 
 // These are the raw calculated normalized positions
 const rawYears = shallowRef<{ label: string; y: number }[]>([])
-const rawMonths = shallowRef<{ label: string; y: number }[]>([])
 const thumbHeightRatio = ref(0.01)
 
 // --- Helpers ---
@@ -49,11 +49,10 @@ const parseMonthId = (monthId: string) => {
 // --- Data Processing (Run when data changes) ---
 function processData() {
   const items = props.months
-  lookupMap.clear()
+  monthPositions.clear()
 
   if (!items || items.length === 0) {
     rawYears.value = []
-    rawMonths.value = []
     thumbHeightRatio.value = 0.01
     return
   }
@@ -71,17 +70,18 @@ function processData() {
   let lastYear = -1
 
   const years: { label: string; y: number }[] = []
-  const months: { label: string; y: number }[] = []
 
   for (const item of items) {
     const d = parseMonthId(item.monthId)
     const count = item.count
 
-    // --- Lookup Map Construction ---
-    const startY = cumulative / totalCount
-    const weight = count / totalCount
+    // --- Month Positions Construction ---
+    const start = cumulative / totalCount
+    const height = count / totalCount
     const key = `${d.year}-${d.month}`
-    lookupMap.set(key, { y: startY, fraction: weight })
+    const label = `${MONTHS[d.month - 1]?.substring(0, 3) ?? ''} ${d.year}`
+
+    monthPositions.set(key, { start, height, label })
 
     // --- Visual State Construction ---
     if (d.year !== lastYear) {
@@ -92,31 +92,31 @@ function processData() {
     }
 
     cumulative += count
-    const yForMonth = cumulative / totalCount // End of month
-    months.push({
-      label: `${MONTHS[d.month - 1]?.substring(0, 3) ?? ''} ${d.year}`,
-      y: yForMonth,
-    })
   }
 
   const approxItemsPerPage = 15
   thumbHeightRatio.value = Math.max(approxItemsPerPage / (totalCount || 1), 0.01)
 
   rawYears.value = years
-  rawMonths.value = months
 }
 
 // --- Computed Layouts ---
 
 // 1. Month Dots (Pure CSS positioning)
+// 1. Month Dots (Pure CSS positioning)
 const monthDots = computed(() => {
-  return rawMonths.value.map((m) => ({
-    // Formula: PADDING.top + y * (height - (PADDING.top + PADDING.bottom))
-    // We express this in % to avoid JS recalculation on resize for dots
-    style: {
-      top: `calc(${PADDING.top}px + ${m.y} * (100% - ${PADDING.top + PADDING.bottom}px))`,
-    },
-  }))
+  return Array.from(monthPositions.values()).map((m) => {
+    // Use the END of the month for the dot.
+    // m.start is the start. m.height is the length.
+    // So end = m.start + m.height.
+    const endY = m.start + m.height
+
+    return {
+      style: {
+        top: `calc(${PADDING.top}px + ${endY} * (100% - ${PADDING.top + PADDING.bottom}px))`,
+      },
+    }
+  })
 })
 
 // 2. Years (Requires collision detection based on pixel height)
@@ -161,20 +161,12 @@ const visibleYears = computed(() => {
 // 3. Thumb Position
 const thumbStyle = computed(() => {
   const date = dateInView.value
-  if (!date || lookupMap.size === 0) return { display: 'none' }
+  if (!date || monthPositions.size === 0) return { display: 'none' }
 
-  const key = getMonthKey(date)
-  const data = lookupMap.get(key)
-  let normY = 0
-
-  if (data) {
-    const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-    const dayRatio = 1 - Math.min(1, date.getDate() / daysInMonth)
-    normY = data.y + data.fraction * dayRatio
-  }
+  const normY = getNormYFromDate(date)
 
   const availableHeight = containerHeight.value - (PADDING.top + PADDING.bottom)
-  const translateY = PADDING.top + normY * availableHeight
+  const translateY = isAtTop.value ? PADDING.top : PADDING.top + normY * availableHeight
 
   return {
     height: `calc(${thumbHeightRatio.value} * (100% - ${PADDING.top + PADDING.bottom}px))`,
@@ -196,11 +188,19 @@ const hoverDateLabel = computed(() => {
   normY = Math.max(0, Math.min(1, normY))
 
   // Find the closest month
-  // Since rawMonths are sorted by Y,
-  // we want the first month where m.y >= normY
-  const months = rawMonths.value
-  const match = months.find((m) => m.y >= normY)
-  return match ? match.label : (months[months.length - 1]?.label ?? '')
+  // We want the month where the cursor is inside [start, start + height]
+  // Or if we want to match the previous logic: find first where endY >= normY.
+
+  for (const m of monthPositions.values()) {
+    const endY = m.start + m.height
+    if (endY >= normY) {
+      return m.label
+    }
+  }
+
+  // Fallback to last one
+  const last = Array.from(monthPositions.values()).pop()
+  return last?.label ?? ''
 })
 
 const tooltipStyle = computed(() => {
@@ -283,6 +283,51 @@ function handleMouseUp() {
   document.removeEventListener('mouseup', handleMouseUp)
 }
 
+function getNormYFromDate(date: Date): number {
+  if (monthPositions.size === 0) return 0
+  const key = getMonthKey(date)
+  const data = monthPositions.get(key)
+  if (!data) return 0
+
+  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  const dayRatio = 1 - Math.min(1, date.getDate() / daysInMonth)
+  return data.start + data.height * dayRatio
+}
+
+function getDateFromNormY(normY: number): Date | null {
+  if (monthPositions.size === 0) return null
+
+  // Iterate map to find the segment
+  for (const [key, data] of monthPositions.entries()) {
+    const endY = data.start + data.height
+    if (normY >= data.start && normY <= endY) {
+      const [yStr, mStr] = key.split('-')
+      const year = Number(yStr)
+      const month = Number(mStr) // 1-based
+
+      const monthStart = new Date(year, month - 1, 1)
+      const monthEnd = new Date(year, month, 0)
+      monthEnd.setHours(23, 59, 59)
+
+      // Interpolate
+      const relativeY = (normY - data.start) / data.height
+      // relativeY goes from 0 (top/newest) to 1 (bottom/oldest)
+
+      const start = monthStart.getTime()
+      const end = monthEnd.getTime()
+      const time = end - (end - start) * relativeY
+      return new Date(time)
+    }
+  }
+  return null
+}
+
+function getYFromDate(date: Date): number {
+  const normY = getNormYFromDate(date)
+  const availableHeight = containerHeight.value - (PADDING.top + PADDING.bottom)
+  return PADDING.top + normY * availableHeight
+}
+
 function getDateFromY(y: number): Date | null {
   const height = containerHeight.value
   const effectiveHeight = height - (PADDING.top + PADDING.bottom)
@@ -292,27 +337,7 @@ function getDateFromY(y: number): Date | null {
   let normY = (y - PADDING.top) / effectiveHeight
   normY = Math.max(0, Math.min(1, normY))
 
-  // get months with y-positions
-  const months = rawMonths.value
-  if (months.length === 0) return null
-  if (!props.months || props.months.length === 0) return null
-
-  // find start and end of month where cursor is
-  const monthIndex = months.findIndex((m) => m.y >= normY)
-  const d = new Date(props.months[monthIndex]!.monthId)
-  const monthStart = new Date(d.getFullYear(), d.getMonth(), 1)
-  const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0)
-  monthEnd.setHours(23, 59, 59)
-
-  // Get y-values of start & end of month where cursor is
-  const previousMonthY = monthIndex === 0 ? 0 : months[monthIndex - 1]!.y
-  const monthY = months[monthIndex]!.y
-
-  // Calculate cursor progress through month and return interpolated date
-  const progressThroughMonth = 1 - (normY - previousMonthY) / (monthY - previousMonthY)
-  const start = monthStart.getTime()
-  const end = monthEnd.getTime()
-  return new Date(start + (end - start) * progressThroughMonth)
+  return getDateFromNormY(normY)
 }
 </script>
 
