@@ -32,12 +32,9 @@ type MonthLayout = {
   start: number // The normalized Y start (0-1)
   height: number // The height of this month segment (0-1)
   label: string // The formatted label for this month
+  year: number
+  month: number
 }
-const monthPositions: Map<string, MonthLayout> = new Map()
-
-// These are the raw calculated normalized positions
-const rawYears = shallowRef<{ label: string; y: number }[]>([])
-const thumbHeightRatio = ref(0.01)
 
 // --- Helpers ---
 const getMonthKey = (date: Date) => `${date.getFullYear()}-${date.getMonth() + 1}`
@@ -46,21 +43,32 @@ const parseMonthId = (monthId: string) => {
   return { year: year ?? 0, month: month ?? 0, day: day ?? 0 }
 }
 
-// --- Data Processing (Run when data changes) ---
-function processData() {
+// Coordinate transformations
+const toPixels = (normY: number, containerH: number) => {
+  return PADDING.top + normY * (containerH - (PADDING.top + PADDING.bottom))
+}
+
+const toNormalized = (pixelY: number, containerH: number) => {
+  const effectiveHeight = containerH - (PADDING.top + PADDING.bottom)
+  if (effectiveHeight <= 0) return 0
+  const normY = (pixelY - PADDING.top) / effectiveHeight
+  return Math.max(0, Math.min(1, normY))
+}
+
+// --- Computed Layout Data ---
+const layoutData = computed(() => {
   const items = props.months
-  monthPositions.clear()
+  const map = new Map<string, MonthLayout>()
+  const months: MonthLayout[] = []
+  const years: { label: string; y: number }[] = []
 
   if (!items || items.length === 0) {
-    rawYears.value = []
-    thumbHeightRatio.value = 0.01
-    return
+    return { map, months, years, thumbHeightRatio: 0.01 }
   }
 
   const totalCount = items.reduce((acc, m) => acc + m.count, 0)
-
-  // Precompute totals per year for label positioning
   const yearTotals: Record<number, number> = {}
+
   for (const it of items) {
     const d = parseMonthId(it.monthId)
     yearTotals[d.year] = (yearTotals[d.year] || 0) + it.count
@@ -68,8 +76,6 @@ function processData() {
 
   let cumulative = 0
   let lastYear = -1
-
-  const years: { label: string; y: number }[] = []
 
   for (const item of items) {
     const d = parseMonthId(item.monthId)
@@ -81,7 +87,9 @@ function processData() {
     const key = `${d.year}-${d.month}`
     const label = `${MONTHS[d.month - 1]?.substring(0, 3) ?? ''} ${d.year}`
 
-    monthPositions.set(key, { start, height, label })
+    const layout: MonthLayout = { start, height, label, year: d.year, month: d.month }
+    map.set(key, layout)
+    months.push(layout)
 
     // --- Visual State Construction ---
     if (d.year !== lastYear) {
@@ -95,22 +103,17 @@ function processData() {
   }
 
   const approxItemsPerPage = 15
-  thumbHeightRatio.value = Math.max(approxItemsPerPage / (totalCount || 1), 0.01)
+  const thumbHeightRatio = Math.max(approxItemsPerPage / (totalCount || 1), 0.01)
 
-  rawYears.value = years
-}
+  return { map, months, years, thumbHeightRatio }
+})
 
 // --- Computed Layouts ---
 
 // 1. Month Dots (Pure CSS positioning)
-// 1. Month Dots (Pure CSS positioning)
 const monthDots = computed(() => {
-  return Array.from(monthPositions.values()).map((m) => {
-    // Use the END of the month for the dot.
-    // m.start is the start. m.height is the length.
-    // So end = m.start + m.height.
+  return layoutData.value.months.map((m) => {
     const endY = m.start + m.height
-
     return {
       style: {
         top: `calc(${PADDING.top}px + ${endY} * (100% - ${PADDING.top + PADDING.bottom}px))`,
@@ -122,18 +125,14 @@ const monthDots = computed(() => {
 // 2. Years (Requires collision detection based on pixel height)
 const visibleYears = computed(() => {
   const height = containerHeight.value
-  const years = rawYears.value
+  const years = layoutData.value.years
   const result: { label: string; style: { [key: string]: string } }[] = []
 
   let prevY = -Infinity
 
   for (let i = 0; i < years.length; i++) {
     const { label, y } = years[i]!
-    // Calculate ideal pixel position
-    const targetY = PADDING.top + y * (height - (PADDING.top + PADDING.bottom))
-
-    // Collision check
-    // If too close to previous, skip unless it's the last one
+    const targetY = toPixels(y, height)
 
     if (i > 0 && targetY - prevY < MIN_YEAR_SPACING && i !== years.length - 1) {
       continue
@@ -161,15 +160,15 @@ const visibleYears = computed(() => {
 // 3. Thumb Position
 const thumbStyle = computed(() => {
   const date = dateInView.value
-  if (!date || monthPositions.size === 0) return { display: 'none' }
+  const { map, thumbHeightRatio } = layoutData.value
+
+  if (!date || map.size === 0) return { display: 'none' }
 
   const normY = getNormYFromDate(date)
-
-  const availableHeight = containerHeight.value - (PADDING.top + PADDING.bottom)
-  const translateY = isAtTop.value ? PADDING.top : PADDING.top + normY * availableHeight
+  const translateY = isAtTop.value ? PADDING.top : toPixels(normY, containerHeight.value)
 
   return {
-    height: `calc(${thumbHeightRatio.value} * (100% - ${PADDING.top + PADDING.bottom}px))`,
+    height: `calc(${thumbHeightRatio} * (100% - ${PADDING.top + PADDING.bottom}px))`,
     top: '0px',
     transform: `translateY(${translateY}px) translateZ(0)`,
   }
@@ -178,35 +177,23 @@ const thumbStyle = computed(() => {
 // 4. Hover Tooltip
 const hoverDateLabel = computed(() => {
   if (!hovering.value && !isDragging.value) return ''
-  const y = hoverY.value
-  const height = containerHeight.value
-  const effectiveHeight = height - (PADDING.top + PADDING.bottom)
-  if (effectiveHeight <= 0) return ''
 
-  // Normalize Y to 0-1 range relative to the track
-  let normY = (y - PADDING.top) / effectiveHeight
-  normY = Math.max(0, Math.min(1, normY))
+  const normY = toNormalized(hoverY.value, containerHeight.value)
+  const months = layoutData.value.months
 
-  // Find the closest month
-  // We want the month where the cursor is inside [start, start + height]
-  // Or if we want to match the previous logic: find first where endY >= normY.
-
-  for (const m of monthPositions.values()) {
+  for (const m of months) {
     const endY = m.start + m.height
     if (endY >= normY) {
       return m.label
     }
   }
 
-  // Fallback to last one
-  const last = Array.from(monthPositions.values()).pop()
-  return last?.label ?? ''
+  return months[months.length - 1]?.label ?? ''
 })
 
 const tooltipStyle = computed(() => {
   const height = containerHeight.value
   const effectiveHeight = height - (PADDING.top + PADDING.bottom)
-
   const minY = PADDING.top
   const maxY = PADDING.top + effectiveHeight
   const clampedY = Math.max(minY, Math.min(maxY, hoverY.value))
@@ -222,8 +209,6 @@ const trackStyle = computed(() => ({
 }))
 
 // --- Watchers ---
-watch(() => props.months, processData, { immediate: true })
-
 watch(dateInView, () => {
   isScrolling.value = true
   if (scrollTimeout) clearTimeout(scrollTimeout)
@@ -284,9 +269,11 @@ function handleMouseUp() {
 }
 
 function getNormYFromDate(date: Date): number {
-  if (monthPositions.size === 0) return 0
+  const map = layoutData.value.map
+  if (map.size === 0) return 0
+
   const key = getMonthKey(date)
-  const data = monthPositions.get(key)
+  const data = map.get(key)
   if (!data) return 0
 
   const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
@@ -295,15 +282,14 @@ function getNormYFromDate(date: Date): number {
 }
 
 function getDateFromNormY(normY: number): Date | null {
-  if (monthPositions.size === 0) return null
+  const months = layoutData.value.months
+  if (months.length === 0) return null
 
-  // Iterate map to find the segment
-  for (const [key, data] of monthPositions.entries()) {
+  // Iterate array to find the segment
+  for (const data of months) {
     const endY = data.start + data.height
     if (normY >= data.start && normY <= endY) {
-      const [yStr, mStr] = key.split('-')
-      const year = Number(yStr)
-      const month = Number(mStr) // 1-based
+      const { year, month } = data // 1-based month
 
       const monthStart = new Date(year, month - 1, 1)
       const monthEnd = new Date(year, month, 0)
@@ -311,7 +297,6 @@ function getDateFromNormY(normY: number): Date | null {
 
       // Interpolate
       const relativeY = (normY - data.start) / data.height
-      // relativeY goes from 0 (top/newest) to 1 (bottom/oldest)
 
       const start = monthStart.getTime()
       const end = monthEnd.getTime()
@@ -322,21 +307,9 @@ function getDateFromNormY(normY: number): Date | null {
   return null
 }
 
-function getYFromDate(date: Date): number {
-  const normY = getNormYFromDate(date)
-  const availableHeight = containerHeight.value - (PADDING.top + PADDING.bottom)
-  return PADDING.top + normY * availableHeight
-}
 
 function getDateFromY(y: number): Date | null {
-  const height = containerHeight.value
-  const effectiveHeight = height - (PADDING.top + PADDING.bottom)
-  if (effectiveHeight <= 0) return null
-
-  // Normalize Y to 0-1 range relative to the track
-  let normY = (y - PADDING.top) / effectiveHeight
-  normY = Math.max(0, Math.min(1, normY))
-
+  const normY = toNormalized(y, containerHeight.value)
   return getDateFromNormY(normY)
 }
 </script>
