@@ -16,6 +16,11 @@ export const useTimelineStore = defineStore('timeline', () => {
   const timelineMonths: ComputedRef<string[]> = computed(
     () => timeline.value?.map((m: { monthId: string }) => m.monthId) ?? [],
   )
+  const monthToIndex = computed(() => {
+    const map = new Map<string, number>()
+    timeline.value?.forEach((m, i) => map.set(m.monthId, i))
+    return map
+  })
   const snackbarStore = useSnackbarsStore()
   const authStore = useAuthStore()
 
@@ -96,6 +101,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     mediaMonthsLoading,
     timeline,
     timelineMonths,
+    monthToIndex,
     ids,
 
     // Actions
