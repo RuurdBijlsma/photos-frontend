@@ -64,7 +64,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         mediaItems.value.set(monthMedia.monthId, monthMedia.items)
       }
       triggerRef(mediaItems)
-      console.log(`fetchMediaByMonths [${targets}]:`, performance.now() - t0, 'ms')
+      console.log(`fetchMediaByMonths [${targets.length} months]:`, performance.now() - t0, 'ms')
     } catch (e) {
       snackbarStore.error('Failed to fetch media.', e as Error)
     } finally {
