@@ -23,6 +23,13 @@
   fitting theme.
 * ✅ er klopt niks van de sync tussen scroll thumb en de year labels / month dots
 * ✅ change scrollbar behaviour so dots and more scroll info is shown when scrolling
+* ✅ you can't scroll to most recent photo with timeline scroll
+* ✅ date overlay doesnt update if you click scroll to unloaded area in virtual scroller
+* ✅ upper bound op tooltip
+* ✅ fix scroll fps (is this possible?)
+* ✅ volgens mij is fetchMediaByMonths shittylaggy als je hard scrollt
+* ✅ on timeline, once loading of in view months in done, just loop until all months are loaded, starting with the ones
+  near the viewed month
 * on login redirect to where you were
 * standardize font sizes everywhere
 * When processing image, link the image to a hash of the file + filename, so rebuilding is easy
@@ -47,13 +54,6 @@
     * alice's frontend automatically opens this and asks to import this album
 * don't allow user to go to /onboarding if onboarding is done already.
 * setting: usebackdropblur doesnt apply everywhere.
-* fix scroll fps (is this possible?)
 * preload 1440p thumbnail on grid item hover
-* volgens mij is fetchMediaByMonths shittylaggy als je hard scrollt
-* on timeline, once loading of in view months in done, just loop until all months are loaded, starting with the ones
-  near the viewed month
 * refactor timeline into reusable photogrid
-* ✅ you can't scroll to most recent photo with timeline scroll
-* ✅ date overlay doesnt update if you click scroll to unloaded area in virtual scroller
-* ✅ upper bound op tooltip
 * don't push to history when next-ing trough photos in photoview
