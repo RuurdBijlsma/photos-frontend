@@ -30,6 +30,7 @@
 * ✅ volgens mij is fetchMediaByMonths shittylaggy als je hard scrollt
 * ✅ on timeline, once loading of in view months in done, just loop until all months are loaded, starting with the ones
   near the viewed month
+* ✅ don't push to history when next-ing trough photos in photoview
 * on login redirect to where you were
 * standardize font sizes everywhere
 * When processing image, link the image to a hash of the file + filename, so rebuilding is easy
@@ -56,4 +57,3 @@
 * setting: usebackdropblur doesnt apply everywhere.
 * preload 1440p thumbnail on grid item hover
 * refactor timeline into reusable photogrid
-* don't push to history when next-ing trough photos in photoview

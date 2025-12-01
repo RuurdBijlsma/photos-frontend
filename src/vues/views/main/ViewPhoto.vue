@@ -60,11 +60,11 @@ watch(nextId, () => mediaStore.fetchItem(nextId.value))
 
 function handleKeyDown(e: KeyboardEvent) {
   if (e.key === 'ArrowLeft' && prevId.value) {
-    router.push({ path: `/view/${prevId.value}` })
+    router.replace({ path: `/view/${prevId.value}` })
   } else if (e.key === 'ArrowRight' && nextId.value) {
-    router.push({ path: `/view/${nextId.value}` })
+    router.replace({ path: `/view/${nextId.value}` })
   } else if (e.key === 'Escape') {
-    router.push({ path: parentPath.value })
+    router.replace({ path: parentPath.value })
   }
 }
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
@@ -207,7 +207,7 @@ viewStore.setFromRoute()
         </div>
       </div>
       <div
-        @click="router.push({ path: `/view/${prevId}` })"
+        @click="router.replace({ path: `/view/${prevId}` })"
         v-if="prevId !== null"
         class="prev-area"
         @mouseenter="showLeftButton = true"
@@ -222,7 +222,7 @@ viewStore.setFromRoute()
         ></v-btn>
       </div>
       <div
-        @click="router.push({ path: `/view/${nextId}` })"
+        @click="router.replace({ path: `/view/${nextId}` })"
         v-if="nextId !== null"
         class="next-area"
         @mouseenter="showRightButton = true"

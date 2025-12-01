@@ -16,10 +16,10 @@ export const useViewStore = defineStore('view', () => {
   async function setFromRoute() {
     const isTimeline = route.matched.find((r) => r.name === 'timeline')
     if (isTimeline) {
-      if (timelineStore.ids.length === 0) {
-        await timelineStore.fetchIds()
+      if (timelineStore.controller.ids.length === 0) {
+        await timelineStore.controller.fetchIds()
       }
-      orderedIds.value = timelineStore.ids
+      orderedIds.value = timelineStore.controller.ids
     }
   }
 

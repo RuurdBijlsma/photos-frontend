@@ -1,8 +1,8 @@
 import { ref } from 'vue'
-import type { TimelineStore } from '@/scripts/stores/timelineStore.ts'
 import type { RowLayout } from '@/vues/components/photo-grid/GridRow.vue'
+import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
 
-export function usePhotoVisibility(timelineStore: TimelineStore) {
+export function usePhotoVisibility(controller: GenericTimeline) {
   const CHECK_RADIUS = 2
   const BATCH_SIZE = 500
 
@@ -14,7 +14,7 @@ export function usePhotoVisibility(timelineStore: TimelineStore) {
 
     const mediaItemIndex = row.items?.[0]?.index
     if (mediaItemIndex !== undefined) {
-      const rowDateString = timelineStore.mediaItems.get(row.monthId)?.[mediaItemIndex]?.timestamp
+      const rowDateString = controller.mediaItems.get(row.monthId)?.[mediaItemIndex]?.timestamp
       if (rowDateString !== undefined) rowInViewDate.value = new Date(rowDateString)
     }
 
@@ -22,13 +22,15 @@ export function usePhotoVisibility(timelineStore: TimelineStore) {
     if (id !== monthInView.value) {
       monthInView.value = id
       await loadAroundMonth(id, CHECK_RADIUS, BATCH_SIZE)
-      requestIdleCallback(() => monthInView.value === id && loadAroundMonth(id, CHECK_RADIUS * 5, BATCH_SIZE * 2))
+      requestIdleCallback(
+        () => monthInView.value === id && loadAroundMonth(id, CHECK_RADIUS * 5, BATCH_SIZE * 2),
+      )
     }
   }
 
   async function loadAroundMonth(id: string, checkRadius: number, batchSize: number) {
-    const index = timelineStore.monthToIndex.get(id)
-    const timeline = timelineStore.timeline
+    const index = controller.monthToIndex.get(id)
+    const timeline = controller.timeline
     if (index === undefined || !timeline) return
 
     const toFetch = new Set<string>()
@@ -46,7 +48,8 @@ export function usePhotoVisibility(timelineStore: TimelineStore) {
         if (!month) continue
 
         const { monthId, count: monthCount } = month
-        const needsLoad = !timelineStore.mediaItems.has(monthId) && !timelineStore.mediaMonthsLoading.has(monthId)
+        const needsLoad =
+          !controller.mediaItems.has(monthId) && !controller.mediaMonthsLoading.has(monthId)
 
         if (needsLoad) {
           if (radius <= checkRadius) foundGap = true
@@ -61,7 +64,7 @@ export function usePhotoVisibility(timelineStore: TimelineStore) {
     }
 
     if (toFetch.size > 0) {
-      await timelineStore.fetchMediaByMonths(Array.from(toFetch))
+      await controller.fetchMediaByMonths(Array.from(toFetch))
     }
   }
 

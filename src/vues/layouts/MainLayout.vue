@@ -2,7 +2,6 @@
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import TimelineScroll from '@/vues/components/photo-grid/TimelineScroll.vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
@@ -74,10 +73,7 @@ backgroundStore.initialize()
     </v-navigation-drawer>
 
     <v-main class="layout-body">
-      <div class="router-view-container">
-        <router-view class="router-view" />
-      </div>
-      <timeline-scroll :months="timelineStore.timeline" class="scroll-area" />
+      <router-view class="router-view" />
     </v-main>
   </v-layout>
 </template>
@@ -186,49 +182,5 @@ backgroundStore.initialize()
 
 .nav-list:deep(.v-list-item) {
   border-radius: 40px;
-}
-
-.router-view-container {
-  background: rgb(227, 222, 255);
-  background: linear-gradient(
-    0deg,
-    rgba(var(--v-theme-background), 0.8) 0%,
-    rgba(var(--v-theme-background), 0.9) 100%
-  );
-  flex-grow: 1;
-  border-top-left-radius: 60px;
-  border-top-right-radius: 60px;
-  overflow: hidden;
-  box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
-  max-width: calc(100% - 50px);
-  backdrop-filter: saturate(150%) blur(30px) contrast(100%);
-}
-
-.router-view {
-  height: calc(100% - 10px);
-  width: calc(100% - 20px);
-  margin: 10px 10px 0;
-  border-radius: 55px 55px 0 0;
-  overflow: hidden;
-  overflow-y: auto;
-
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.router-view::-webkit-scrollbar {
-  display: none;
-}
-
-.scroll-area {
-  margin: 15px 0 0;
-  width: 50px;
-  height: calc(100% - 15px);
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-
-.scroll-area:hover {
-  opacity: 1;
 }
 </style>

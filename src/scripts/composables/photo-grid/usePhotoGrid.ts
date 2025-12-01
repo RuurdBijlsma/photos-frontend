@@ -1,13 +1,13 @@
 import { type Ref, shallowRef, watch } from 'vue'
 import type { LayoutItem, RowLayout } from '@/vues/components/photo-grid/GridRow.vue'
-import type { TimelineStore } from '@/scripts/stores/timelineStore.ts'
 import type { SettingsStore } from '@/scripts/stores/settingsStore.ts'
 import type { TimelineMonth } from '@/scripts/types/generated/photos.ts'
+import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
 
 export function usePhotoGrid(
   containerWidthRef: Ref<number>,
   settings: SettingsStore,
-  timelineStore: TimelineStore,
+  controller: GenericTimeline,
 ) {
   const rows = shallowRef<RowLayout[]>([])
   const PHOTO_GAP = 2
@@ -63,28 +63,31 @@ export function usePhotoGrid(
   watch(
     () => settings.timelineRowHeight,
     () => {
-      if (timelineStore.timeline) {
+      const timeline = controller.timeline
+      if (timeline) {
         const now = performance.now()
-        updateGrid(timelineStore.timeline, settings.timelineRowHeight, containerWidthRef.value)
+        updateGrid(timeline, settings.timelineRowHeight, containerWidthRef.value)
         console.log('updateGrid', performance.now() - now)
       }
     },
   )
 
   watch(containerWidthRef, () => {
-    if (timelineStore.timeline) {
+    const timeline = controller.timeline
+    if (timeline) {
       const now = performance.now()
-      updateGrid(timelineStore.timeline, settings.timelineRowHeight, containerWidthRef.value)
+      updateGrid(timeline, settings.timelineRowHeight, containerWidthRef.value)
       console.log('updateGrid', performance.now() - now)
     }
   })
 
   watch(
-    () => timelineStore.timeline,
+    () => controller.timeline,
     () => {
-      if (timelineStore.timeline) {
+      const timeline = controller.timeline
+      if (timeline) {
         const now = performance.now()
-        updateGrid(timelineStore.timeline, settings.timelineRowHeight, containerWidthRef.value)
+        updateGrid(timeline, settings.timelineRowHeight, containerWidthRef.value)
         console.log('updateGrid', performance.now() - now)
       }
     },
