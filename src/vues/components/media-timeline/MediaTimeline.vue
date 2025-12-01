@@ -7,10 +7,11 @@ import { useContainerResize } from '@/scripts/composables/photo-grid/useContaine
 import GridRowHeader from '@/vues/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/vues/components/photo-grid/GridRow.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import { ref, watch } from 'vue'
+import { provide, ref, toRefs, watch } from 'vue'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
 import type { VVirtualScroll } from 'vuetify/components'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
+import { ViewContextKey } from '@/scripts/contexts/ViewContext.ts'
 
 const props = defineProps<{
   timelineController: GenericTimeline
@@ -23,6 +24,14 @@ const { container, width, height } = useContainerResize()
 const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, props.timelineController)
 const { handleIsVisible, rowInViewDate } = usePhotoVisibility(props.timelineController)
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
+
+// Photo viewer context:
+const { ids } = toRefs(props.timelineController)
+provide(ViewContextKey, {
+  ids,
+  fetchIds: props.timelineController.fetchIds,
+  parentRoute: '/',
+})
 
 const virtualScrollRef = ref<VVirtualScroll | null>(null)
 

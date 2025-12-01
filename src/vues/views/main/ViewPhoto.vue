@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import photoService from '@/scripts/services/photoService.ts'
 import { useThemeStore } from '@/scripts/stores/themeStore.ts'
 import { useTheme } from 'vuetify/framework'
 import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
-import { useViewStore } from '@/scripts/stores/viewStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
+import { ViewContextKey } from '@/scripts/contexts/ViewContext.ts'
 
 const mediaStore = useMediaStore()
-const viewStore = useViewStore()
 const themeStore = useThemeStore()
 const settings = useSettingStore()
 const vuetifyTheme = useTheme()
 const route = useRoute()
 const router = useRouter()
+
+const viewContext = inject(ViewContextKey, null)
 
 const id = computed(() => {
   const rawId = route.params.id
@@ -50,9 +51,14 @@ async function initialize() {
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
 
-const currentIndex = computed(() => viewStore.orderedIds.findIndex((arrId) => id.value === arrId))
-const nextId = computed(() => viewStore.orderedIds[currentIndex.value + 1] ?? null)
-const prevId = computed(() => viewStore.orderedIds[currentIndex.value - 1] ?? null)
+const orderedIds = computed(() => {
+  if (viewContext) return viewContext.ids.value
+  return id.value ? [id.value] : []
+})
+
+const currentIndex = computed(() => orderedIds.value.findIndex((arrId) => id.value === arrId))
+const nextId = computed(() => orderedIds.value[currentIndex.value + 1] ?? null)
+const prevId = computed(() => orderedIds.value[currentIndex.value - 1] ?? null)
 
 // Pre-fetch
 watch(prevId, () => mediaStore.fetchItem(prevId.value))
@@ -106,6 +112,7 @@ const locationString = computed(() => {
 })
 
 const parentPath = computed(() => {
+  if (viewContext) return viewContext.parentRoute
   const pathSegments = route.path.split('/')
   const parentSegments = pathSegments.slice(0, -2)
   return parentSegments.join('/') || '/'
@@ -116,7 +123,10 @@ watch(id, () => {
   initialize()
 })
 initialize()
-viewStore.setFromRoute()
+
+if (viewContext && viewContext.ids.value.length === 0) {
+  viewContext.fetchIds()
+}
 </script>
 
 <template>
@@ -158,7 +168,7 @@ viewStore.setFromRoute()
           <h3>{{ timestampString }}</h3>
           <p>
             {{ locationString }}{{ currentIndex + 1 }} of
-            {{ viewStore.orderedIds.length }}
+            {{ orderedIds.length }}
           </p>
         </div>
         <div class="right-buttons">

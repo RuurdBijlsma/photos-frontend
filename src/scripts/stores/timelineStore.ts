@@ -4,7 +4,8 @@ import { createTimelineController } from '@/scripts/services/timeline/GenericTim
 import { MainTimelineProvider } from '@/scripts/services/timeline/MainTimelineProvider.ts'
 
 export const useTimelineStore = defineStore('timeline', () => {
-  const controller = createTimelineController(new MainTimelineProvider())
+  const provider = new MainTimelineProvider()
+  const controller = createTimelineController(provider)
   const authStore = useAuthStore()
 
   async function initialize() {
@@ -19,3 +20,4 @@ export const useTimelineStore = defineStore('timeline', () => {
 })
 
 export type TimelineStore = ReturnType<typeof useTimelineStore>
+
