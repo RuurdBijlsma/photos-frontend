@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import photoService from '@/scripts/services/photoService.ts'
 import { useThemeStore } from '@/scripts/stores/themeStore.ts'
 import { useTheme } from 'vuetify/framework'
 import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
-import { ViewContextKey } from '@/scripts/contexts/ViewContext.ts'
+
+const props = withDefaults(
+  defineProps<{
+    ids?: string[]
+    fetchIds?: () => Promise<void>
+  }>(),
+  {
+    ids: () => [],
+  },
+)
 
 const mediaStore = useMediaStore()
 const themeStore = useThemeStore()
@@ -15,8 +24,6 @@ const settings = useSettingStore()
 const vuetifyTheme = useTheme()
 const route = useRoute()
 const router = useRouter()
-
-const viewContext = inject(ViewContextKey, null)
 
 const id = computed(() => {
   const rawId = route.params.id
@@ -26,11 +33,17 @@ const id = computed(() => {
   return ''
 })
 
+function closeViewer() {
+  const parentRoute = route.matched[route.matched.length - 2]
+  if (parentRoute) router.push(parentRoute)
+  else router.push({ path: '/' })
+}
+
 const fullImage = ref<undefined | FullMediaItem>(undefined)
 
 async function initialize() {
   const loadingId = id.value
-  if (loadingId === '') return router.push({ name: 'timeline' })
+  if (loadingId === '') return closeViewer()
   await mediaStore.fetchItem(loadingId)
   if (id.value !== loadingId) return
   console.log('FULL MEDIA ITEM', mediaStore.cache.get(loadingId))
@@ -52,7 +65,7 @@ const showRightButton = ref(false)
 const showLeftButton = ref(false)
 
 const orderedIds = computed(() => {
-  if (viewContext) return viewContext.ids.value
+  if (props.ids.length > 0) return props.ids
   return id.value ? [id.value] : []
 })
 
@@ -70,7 +83,7 @@ function handleKeyDown(e: KeyboardEvent) {
   } else if (e.key === 'ArrowRight' && nextId.value) {
     router.replace({ path: `/view/${nextId.value}` })
   } else if (e.key === 'Escape') {
-    router.replace({ path: parentPath.value })
+    closeViewer()
   }
 }
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
@@ -111,21 +124,14 @@ const locationString = computed(() => {
   return result ? result + ' · ' : ''
 })
 
-const parentPath = computed(() => {
-  if (viewContext) return viewContext.parentRoute
-  const pathSegments = route.path.split('/')
-  const parentSegments = pathSegments.slice(0, -2)
-  return parentSegments.join('/') || '/'
-})
-
 // Init
 watch(id, () => {
   initialize()
 })
 initialize()
 
-if (viewContext && viewContext.ids.value.length === 0) {
-  viewContext.fetchIds()
+if (props.ids.length === 0 && props.fetchIds) {
+  props.fetchIds()
 }
 </script>
 
@@ -149,7 +155,7 @@ if (viewContext && viewContext.ids.value.length === 0) {
       <div class="top-bar">
         <div class="left-buttons">
           <v-btn
-            :to="parentPath"
+            @click="closeViewer"
             color="white"
             rounded
             icon="mdi-close"

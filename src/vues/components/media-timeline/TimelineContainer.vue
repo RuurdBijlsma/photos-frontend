@@ -14,7 +14,6 @@ const props = defineProps<{
 <template>
   <div class="timeline-container">
       <media-timeline
-        class="timeline-grid"
         :timeline-controller="props.timelineController"
       />
     <timeline-scroll :months="timelineStore.controller.timeline" class="scroll-area" />
@@ -27,22 +26,6 @@ const props = defineProps<{
   height: 100%;
   display: flex;
   flex-direction: row;
-}
-
-.timeline-grid {
-  height: calc(100% - 10px);
-  width: calc(100% - 20px);
-  margin: 10px 10px 0;
-  border-radius: 55px 55px 0 0;
-  overflow: hidden;
-  overflow-y: auto;
-
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.timeline-grid::-webkit-scrollbar {
-  display: none;
 }
 
 .scroll-area {
