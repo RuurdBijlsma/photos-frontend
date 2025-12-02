@@ -30,11 +30,12 @@ const photoService = {
   },
 
   getTimelineIds(): Promise<AxiosResponse<string[]>> {
-    return apiClient.get<string[]>('/timeline/ids')
+    return apiClient.get<string[]>('/timeline/ids', { params: { sort: 'asc' } })
   },
 
   async getTimelineRatios(): Promise<TimelineResponse> {
     const response = await apiClient.get('/timeline/ratios', {
+      params: { sort: 'asc' },
       responseType: 'arraybuffer',
     })
     const buffer = new Uint8Array(response.data)
@@ -45,6 +46,7 @@ const photoService = {
     const response = await apiClient.get('/timeline/by-month', {
       responseType: 'arraybuffer',
       params: {
+        sort: 'asc',
         months: months.join(','),
       },
     })

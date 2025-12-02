@@ -16,7 +16,7 @@ const props = defineProps<{
       <media-timeline
         :timeline-controller="props.timelineController"
       />
-    <timeline-scroll :months="timelineStore.controller.timeline" class="scroll-area" />
+    <timeline-scroll sort-order="asc" :months="timelineStore.controller.timeline" class="scroll-area" />
   </div>
 </template>
 

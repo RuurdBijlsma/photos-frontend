@@ -5,9 +5,15 @@ import { MONTHS } from '@/scripts/constants.ts'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
 
 // --- Props ---
-const props = defineProps<{
-  months: TimelineMonth[] | undefined | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    months: TimelineMonth[] | undefined | null
+    sortOrder?: 'asc' | 'desc'
+  }>(),
+  {
+    sortOrder: 'desc',
+  },
+)
 
 // --- Timeline Scroll Composable ---
 const { dateInView, requestScrollToDate, isAtTop } = useTimelineScroll()
@@ -293,7 +299,8 @@ function getNormYFromDate(date: Date): number {
   if (!data) return 0
 
   const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  const dayRatio = 1 - Math.min(1, date.getDate() / daysInMonth)
+  let dayRatio = Math.min(1, date.getDate() / daysInMonth)
+  if (props.sortOrder === 'desc') dayRatio = 1 - dayRatio
   return data.start + data.height * dayRatio
 }
 
@@ -316,7 +323,13 @@ function getDateFromNormY(normY: number): Date | null {
 
       const start = monthStart.getTime()
       const end = monthEnd.getTime()
-      const time = end - (end - start) * relativeY
+      let time: number
+
+      if (props.sortOrder === 'asc') {
+        time = start + (end - start) * relativeY
+      } else {
+        time = end - (end - start) * relativeY
+      }
       return new Date(time)
     }
   }

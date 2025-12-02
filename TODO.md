@@ -31,6 +31,7 @@
 * ✅ on timeline, once loading of in view months in done, just loop until all months are loaded, starting with the ones
   near the viewed month
 * ✅ don't push to history when next-ing trough photos in photoview
+* ✅ refactor timeline into reusable photogrid
 * on login redirect to where you were
 * standardize font sizes everywhere
 * When processing image, link the image to a hash of the file + filename, so rebuilding is easy
@@ -56,4 +57,6 @@
 * don't allow user to go to /onboarding if onboarding is done already.
 * setting: usebackdropblur doesnt apply everywhere.
 * preload 1440p thumbnail on grid item hover
-* refactor timeline into reusable photogrid
+* support other sorting options for reusable timeline component
+  * support backend sort options
+* re-establish ws connection if auth failed and it's refreshed automatically afterwards
