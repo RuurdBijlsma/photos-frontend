@@ -12,9 +12,15 @@ import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineS
 import type { VVirtualScroll } from 'vuetify/components'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
 
-const props = defineProps<{
-  timelineController: GenericTimeline
-}>()
+const props = withDefaults(
+  defineProps<{
+    timelineController: GenericTimeline
+    sortOrder?: 'asc' | 'desc'
+  }>(),
+  {
+    sortOrder: 'desc',
+  },
+)
 
 const settings = useSettingStore()
 
@@ -56,7 +62,12 @@ watch(scrollToDate, (date) => {
     const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
     const day = date.getDate()
     const ratio = Math.min(1, Math.max(0, (day - 1) / (daysInMonth - 1 || 1)))
-    const offset = Math.round((monthRowCount - 1) * (1 - ratio))
+    let offset: number
+    if (props.sortOrder === 'asc') {
+      offset = Math.round((monthRowCount - 1) * ratio)
+    } else {
+      offset = Math.round((monthRowCount - 1) * (1 - ratio))
+    }
     virtualScrollRef.value.scrollToIndex(startIndex + offset)
   }
 

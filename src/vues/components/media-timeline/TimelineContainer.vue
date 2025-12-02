@@ -6,17 +6,24 @@ import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimelin
 
 const timelineStore = useTimelineStore()
 
-const props = defineProps<{
-  timelineController: GenericTimeline
-}>()
+const props = withDefaults(
+  defineProps<{
+    timelineController: GenericTimeline
+    sortOrder?: 'asc' | 'desc'
+  }>(),
+  {
+    sortOrder: 'desc',
+  },
+)
 </script>
 
 <template>
   <div class="timeline-container">
       <media-timeline
         :timeline-controller="props.timelineController"
+        :sort-order="props.sortOrder"
       />
-    <timeline-scroll sort-order="asc" :months="timelineStore.controller.timeline" class="scroll-area" />
+    <timeline-scroll :sort-order="props.sortOrder" :months="timelineStore.controller.timeline" class="scroll-area" />
   </div>
 </template>
 

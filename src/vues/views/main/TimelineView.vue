@@ -10,7 +10,7 @@ useTimelineWebSocket(authStore)
 </script>
 
 <template>
-  <timeline-container class="timeline" :timeline-controller="timelineStore.controller" />
+  <timeline-container class="timeline" :timeline-controller="timelineStore.controller" sort-order="asc" />
 </template>
 
 <style scoped>
