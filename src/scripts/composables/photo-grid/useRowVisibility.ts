@@ -1,8 +1,8 @@
+import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
 import { ref } from 'vue'
 import type { RowLayout } from '@/vues/components/photo-grid/GridRow.vue'
-import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
 
-export function usePhotoVisibility(controller: GenericTimeline) {
+export function useRowVisibility(controller: GenericTimeline) {
   const CHECK_RADIUS = 2
   const BATCH_SIZE = 500
 

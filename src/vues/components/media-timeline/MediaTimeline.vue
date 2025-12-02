@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DateOverlay from '@/vues/components/media-timeline/DateOverlay.vue'
 import { useDateOverlay } from '@/scripts/composables/photo-grid/useDateOverlay.ts'
-import { usePhotoVisibility } from '@/scripts/composables/photo-grid/usePhotoVisibility.ts'
+import { useRowVisibility } from '@/scripts/composables/photo-grid/useRowVisibility.ts'
 import { usePhotoGrid } from '@/scripts/composables/photo-grid/usePhotoGrid.ts'
 import { useContainerResize } from '@/scripts/composables/photo-grid/useContainerResize.ts'
 import GridRowHeader from '@/vues/components/photo-grid/GridRowHeader.vue'
@@ -21,7 +21,7 @@ const settings = useSettingStore()
 const { setDateInView, scrollToDate, clearScrollRequest, setIsAtTop } = useTimelineScroll()
 const { container, width, height } = useContainerResize()
 const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, props.timelineController)
-const { handleIsVisible, rowInViewDate } = usePhotoVisibility(props.timelineController)
+const { handleIsVisible, rowInViewDate } = useRowVisibility(props.timelineController)
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
 
 const virtualScrollRef = ref<VVirtualScroll | null>(null)
