@@ -11,6 +11,7 @@ import { ref, watch } from 'vue'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
 import type { VVirtualScroll } from 'vuetify/components'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
+import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -85,71 +86,36 @@ function handleScroll(e: WheelEvent) {
 </script>
 
 <template>
-  <div class="outer-container">
-    <div class="inner-container">
-      <date-overlay :date="dateInViewString" />
-      <div class="photo-grid-container" ref="container">
-        <v-virtual-scroll
-          ref="virtualScrollRef"
-          @scroll="handleScroll"
-          :items="rows"
-          :height="height"
-          item-key="key"
-          class="scroll-container"
-        >
-          <template #default="{ item }">
-            <grid-row-header v-if="item.firstOfTheMonth" :row="item" />
-            <grid-row
-              @hover-item="(date) => (hoverDate = date)"
-              :photo-gap="PHOTO_GAP"
-              :media-items="timelineController.mediaItems.get(item.monthId)"
-              :row="item"
-              v-intersect="(e: boolean) => handleIsVisible(e, item)"
-            />
-          </template>
-        </v-virtual-scroll>
-      </div>
+  <main-layout-container>
+    <date-overlay :date="dateInViewString" />
+    <div class="photo-grid-container" ref="container">
+      <v-virtual-scroll
+        ref="virtualScrollRef"
+        @scroll="handleScroll"
+        :items="rows"
+        :height="height"
+        item-key="key"
+        class="scroll-container"
+      >
+        <template #default="{ item }">
+          <grid-row-header v-if="item.firstOfTheMonth" :row="item" />
+          <grid-row
+            @hover-item="(date) => (hoverDate = date)"
+            :photo-gap="PHOTO_GAP"
+            :media-items="timelineController.mediaItems.get(item.monthId)"
+            :row="item"
+            v-intersect="(e: boolean) => handleIsVisible(e, item)"
+          />
+        </template>
+      </v-virtual-scroll>
     </div>
-  </div>
+  </main-layout-container>
   <teleport to="body">
     <router-view :ids="timelineController.ids" :fetch-ids="timelineController.fetchIds" />
   </teleport>
 </template>
 
 <style scoped>
-.outer-container {
-  background: linear-gradient(
-    0deg,
-    rgba(var(--v-theme-background), 0.8) 0%,
-    rgba(var(--v-theme-background), 0.9) 100%
-  );
-  flex-grow: 1;
-  border-top-left-radius: 60px;
-  border-top-right-radius: 60px;
-  overflow: hidden;
-  box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
-  max-width: calc(100% - 50px);
-  width: 100%;
-  height: 100%;
-  backdrop-filter: brightness(0%) saturate(250%) blur(30px) contrast(100%);
-}
-
-.inner-container {
-  height: calc(100% - 10px);
-  width: calc(100% - 20px);
-  margin: 10px 10px 0;
-  border-radius: 55px 55px 0 0;
-  overflow: hidden;
-  overflow-y: auto;
-
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.inner-container::-webkit-scrollbar {
-  display: none;
-}
-
 .photo-grid-container {
   height: calc(100% + 7px);
   margin-top: -7px;

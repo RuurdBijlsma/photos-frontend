@@ -32,16 +32,18 @@
   near the viewed month
 * ✅ don't push to history when next-ing trough photos in photoview
 * ✅ refactor timeline into reusable photogrid
+* ✅ support other sorting options for reusable timeline component
+* ✅ support backend sort options
+* ✅ vuetify discord vragen of het mogelijk is en nut heeft om alle item heights in een virtual scroll toe te voegen.
+* ✅ make fetch months timelineStore function take ~0 ms on main thread.
+* ✅ When processing image, link the image to a hash of the file + filename, so rebuilding is easy
 * on login redirect to where you were
 * standardize font sizes everywhere
-* When processing image, link the image to a hash of the file + filename, so rebuilding is easy
 * improve messaging when you load the website and the server is off
 * make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
   music
-* vuetify discord vragen of het mogelijk is en nut heeft om alle item heights in een virtual scroll toe te voegen.
 * [bug]: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
-  out of sync (ratios & photos). Its better to just not refresh the ratios i think
-* make fetch months timelineStore function take ~0 ms on main thread.
+  out of sync (ratios & photos).
 * make api.ts abstraction for protobuf endpoints.
 * bad performance on firefox
 * make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
@@ -57,6 +59,5 @@
 * don't allow user to go to /onboarding if onboarding is done already.
 * setting: usebackdropblur doesnt apply everywhere.
 * preload 1440p thumbnail on grid item hover
-* support other sorting options for reusable timeline component
-  * support backend sort options
 * re-establish ws connection if auth failed and it's refreshed automatically afterwards
+* stomme nav bar start te hoog en animeert naar beneden on page load
