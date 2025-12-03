@@ -61,3 +61,4 @@
 * preload 1440p thumbnail on grid item hover
 * re-establish ws connection if auth failed and it's refreshed automatically afterwards
 * stomme nav bar start te hoog en animeert naar beneden on page load
+* add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
