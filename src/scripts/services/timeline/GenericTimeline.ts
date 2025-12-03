@@ -1,25 +1,25 @@
-import type {
-  ByMonthResponse,
-  MediaItem,
-  TimelineMonth,
-  TimelineResponse,
-} from '@/scripts/types/generated/photos.ts'
 import { computed, type ComputedRef, reactive, ref, shallowRef, triggerRef } from 'vue'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import type {
+  TimelineItem,
+  TimelineItemsResponse,
+  TimelineMonthRatios,
+  TimelineRatiosResponse,
+} from '@/scripts/types/generated/timeline.ts'
 
 export interface TimelineDataProvider {
   getIds(): Promise<string[]>
-  getRatios(): Promise<TimelineResponse>
-  getMediaByMonths(monthIds: string[]): Promise<ByMonthResponse>
+  getRatios(): Promise<TimelineRatiosResponse>
+  getMediaByMonths(monthIds: string[]): Promise<TimelineItemsResponse>
 }
 
 export function createTimelineController(provider: TimelineDataProvider) {
   // --- State ---
   const fetchingTimeline = ref(false)
   const fetchingIds = ref(false)
-  const mediaItems = shallowRef(new Map<string, MediaItem[]>())
+  const mediaItems = shallowRef(new Map<string, TimelineItem[]>())
   const mediaMonthsLoading = ref(new Set<string>())
-  const timeline = shallowRef<TimelineMonth[] | null>(null)
+  const timeline = shallowRef<TimelineMonthRatios[] | null>(null)
   const ids = ref<string[]>([])
 
   // --- External Dependencies ---

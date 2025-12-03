@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
-import type { TimelineMonth } from '@/scripts/types/generated/photos.ts'
 import { MONTHS } from '@/scripts/constants.ts'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
+import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 
 // --- Props ---
 const props = withDefaults(
   defineProps<{
-    months: TimelineMonth[] | undefined | null
+    months: TimelineMonthRatios[] | undefined | null
     sortOrder?: 'asc' | 'desc'
   }>(),
   {

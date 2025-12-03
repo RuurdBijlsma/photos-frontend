@@ -3,13 +3,13 @@ import photoService from '@/scripts/services/photoService.ts'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
-import type { MediaItem } from '@/scripts/types/generated/photos.ts'
+import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 const mediaStore = useMediaStore()
 const router = useRouter()
 
 const props = defineProps<{
-  mediaItem?: MediaItem
+  mediaItem?: TimelineItem
   height: number
   width: number
 }>()

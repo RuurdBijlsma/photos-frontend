@@ -3,7 +3,10 @@ import apiClient from './api.ts'
 import type { RandomPhotoResponse } from '@/scripts/types/api/photos.ts'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
 import type { Theme } from '@/scripts/types/themeColor.ts'
-import { ByMonthResponse, TimelineResponse } from '@/scripts/types/generated/photos.ts'
+import {
+  TimelineItemsResponse,
+  TimelineRatiosResponse,
+} from '@/scripts/types/generated/timeline.ts'
 
 const photoService = {
   getPhotoThumbnail(id: string | null | undefined, size: number): string {
@@ -33,16 +36,16 @@ const photoService = {
     return apiClient.get<string[]>('/timeline/ids', { params: { sort: 'desc' } })
   },
 
-  async getTimelineRatios(): Promise<TimelineResponse> {
+  async getTimelineRatios(): Promise<TimelineRatiosResponse> {
     const response = await apiClient.get('/timeline/ratios', {
       params: { sort: 'desc' },
       responseType: 'arraybuffer',
     })
     const buffer = new Uint8Array(response.data)
-    return TimelineResponse.decode(buffer)
+    return TimelineRatiosResponse.decode(buffer)
   },
 
-  async getMediaByMonths(months: string[]): Promise<ByMonthResponse> {
+  async getMediaByMonths(months: string[]): Promise<TimelineItemsResponse> {
     const response = await apiClient.get('/timeline/by-month', {
       responseType: 'arraybuffer',
       params: {
@@ -51,7 +54,7 @@ const photoService = {
       },
     })
     const buffer = new Uint8Array(response.data)
-    return ByMonthResponse.decode(buffer)
+    return TimelineItemsResponse.decode(buffer)
   },
 }
 

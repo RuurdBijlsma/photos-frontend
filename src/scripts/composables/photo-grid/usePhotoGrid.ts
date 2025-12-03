@@ -1,8 +1,8 @@
 import { type Ref, shallowRef, watch } from 'vue'
 import type { LayoutItem, RowLayout } from '@/vues/components/photo-grid/GridRow.vue'
 import type { SettingsStore } from '@/scripts/stores/settingsStore.ts'
-import type { TimelineMonth } from '@/scripts/types/generated/photos.ts'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
+import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 
 export function usePhotoGrid(
   containerWidthRef: Ref<number>,
@@ -14,13 +14,13 @@ export function usePhotoGrid(
   const MAX_GROW_RATIO = 1.5
 
   function updateGrid(
-    timelineMonths: TimelineMonth[],
+    ratiosByMonth: TimelineMonthRatios[],
     desiredRowHeight: number,
     containerWidth: number,
   ) {
     const newRows: RowLayout[] = []
 
-    for (const { monthId, ratios } of timelineMonths) {
+    for (const { monthId, ratios } of ratiosByMonth) {
       let row: LayoutItem[] = []
       let rowWidth = -PHOTO_GAP
       let firstOfTheMonth = true

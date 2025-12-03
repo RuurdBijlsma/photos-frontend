@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import GridItem from '@/vues/components/photo-grid/GridItem.vue'
-import type { MediaItem } from '@/scripts/types/generated/photos.ts'
+import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 export interface LayoutItem {
   ratio: number
@@ -21,7 +21,7 @@ const emit = defineEmits(['hoverItem'])
 defineProps<{
   row: RowLayout
   photoGap: number
-  mediaItems?: MediaItem[]
+  mediaItems?: TimelineItem[]
 }>()
 </script>
 
