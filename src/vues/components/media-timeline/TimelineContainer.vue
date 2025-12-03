@@ -19,11 +19,12 @@ const props = withDefaults(
 
 <template>
   <div class="timeline-container">
-      <media-timeline
-        :timeline-controller="props.timelineController"
-        :sort-order="props.sortOrder"
-      />
-    <timeline-scroll :sort-order="props.sortOrder" :months="timelineStore.controller.timeline" class="scroll-area" />
+    <media-timeline :timeline-controller="props.timelineController" :sort-order="props.sortOrder" />
+    <timeline-scroll
+      :sort-order="props.sortOrder"
+      :months="timelineStore.controller.timeline"
+      class="scroll-area"
+    />
   </div>
 </template>
 

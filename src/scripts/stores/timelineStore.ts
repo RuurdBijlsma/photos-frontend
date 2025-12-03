@@ -20,4 +20,3 @@ export const useTimelineStore = defineStore('timeline', () => {
 })
 
 export type TimelineStore = ReturnType<typeof useTimelineStore>
-
