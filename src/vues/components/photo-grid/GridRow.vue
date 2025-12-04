@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import GridItem from '@/vues/components/photo-grid/GridItem.vue'
+import GridItem, { type SelectionPayload } from '@/vues/components/photo-grid/GridItem.vue'
 import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 export interface LayoutItem {
@@ -16,7 +16,10 @@ export interface RowLayout {
   key: string
 }
 
-const emit = defineEmits(['hoverItem'])
+const emit = defineEmits<{
+  (e: 'hoverItem', date: Date | null): void
+  (e: 'selectionClick', payload: SelectionPayload): void
+}>()
 
 defineProps<{
   row: RowLayout
@@ -36,12 +39,13 @@ defineProps<{
       height: row.height + photoGap + 'px',
     }"
   >
+    <!-- 3. Pass the payload directly up to the parent -->
     <grid-item
       @mouseenter="
         emit(
           'hoverItem',
           mediaItems?.[ratio.index]?.timestamp === undefined
-            ? null // @ts-expect-error dumb ts
+            ? null // @ts-expect-error date handling
             : new Date(mediaItems?.[ratio.index]?.timestamp),
         )
       "
@@ -51,6 +55,7 @@ defineProps<{
       :media-item="mediaItems?.[ratio.index]"
       :height="row.height"
       :width="row.height * ratio.ratio"
+      @selection-click="(payload) => emit('selectionClick', payload)"
     />
   </div>
 </template>

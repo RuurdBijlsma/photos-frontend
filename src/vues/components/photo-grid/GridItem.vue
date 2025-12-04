@@ -4,14 +4,21 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
 import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
+import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
 
 const mediaStore = useMediaStore()
+const selectionStore = useSelectionStore()
 const router = useRouter()
 
 const props = defineProps<{
   mediaItem?: TimelineItem
   height: number
   width: number
+}>()
+
+export type SelectionPayload = { event: PointerEvent; id: string }
+const emit = defineEmits<{
+  (e: 'selectionClick', payload: SelectionPayload): void
 }>()
 
 const thumbnail = computed(() =>
@@ -23,20 +30,27 @@ async function openImage() {
   if (id) await router.push({ path: `/view/${id}` })
 }
 
-async function preventOpen(e: PointerEvent) {
+const isSelected = computed(() => selectionStore.isSelected(props.mediaItem?.id!))
+
+async function selectItem(e: PointerEvent) {
   if (e.button === 0 && !e.ctrlKey) {
     e.preventDefault()
   }
+  const id = props.mediaItem?.id
+  if (id) emit('selectionClick', { event: e, id })
 }
 </script>
 
 <template>
   <router-link class="router-link" :to="`/view/${props.mediaItem?.id}`">
     <div
-      @click="preventOpen"
+      @click="selectItem"
       @dblclick="openImage"
       @mousedown="mediaStore.fetchItem(props.mediaItem?.id)"
       class="grid-item"
+      :class="{
+        selected: isSelected,
+      }"
       :style="{
         width: width + 'px',
         height: height + 'px',
@@ -58,5 +72,9 @@ async function preventOpen(e: PointerEvent) {
   content-visibility: auto;
   contain: size layout paint;
   transform: translateZ(0);
+}
+
+.selected {
+  box-shadow: inset 0 0 0 10px rgba(var(--v-theme-primary));
 }
 </style>
