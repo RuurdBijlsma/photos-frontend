@@ -2,13 +2,12 @@
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import { useRoute } from 'vue-router'
+import NavDrawer from '@/vues/components/layout/NavDrawer.vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
-const route = useRoute()
 
 // Initialize the stores.
 timelineStore.initialize()
@@ -59,37 +58,7 @@ backgroundStore.initialize()
       </div>
     </v-app-bar>
 
-    <v-navigation-drawer permanent color="transparent" floating>
-      <v-list color="primary-darken-1" class="nav-list">
-        <v-list-item
-          class="mt-3"
-          rounded
-          prepend-icon="mdi-image-outline"
-          title="Photos"
-          to="/"
-          :active="route.path === '/'"
-        />
-        <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
-        <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
-
-        <v-list-subheader class="mt-5">Collections</v-list-subheader>
-
-        <v-list-group value="Users">
-          <template v-slot:activator="{ props }">
-            <v-list-item
-              rounded
-              v-bind="props"
-              prepend-icon="mdi-image-album"
-              title="Albums"
-            ></v-list-item>
-          </template>
-          <v-list-item rounded title="Album1" to="/map1" />
-          <v-list-item rounded title="Album2" to="/map2" />
-          <v-list-item rounded title="Album3" to="/map3" />
-        </v-list-group>
-      </v-list>
-      <a href="web+burger:cheeseburger">cheeseburger</a>
-    </v-navigation-drawer>
+    <nav-drawer/>
 
     <v-main class="layout-body">
       <router-view class="router-view" />
@@ -189,17 +158,5 @@ backgroundStore.initialize()
   display: flex;
   width: 100vw;
   height: 100%;
-}
-
-.nav-list {
-  margin-left: 15px;
-  margin-right: 15px;
-  gap: 5px;
-  display: flex;
-  flex-direction: column;
-}
-
-.nav-list:deep(.v-list-item) {
-  border-radius: 40px;
 }
 </style>
