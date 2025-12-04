@@ -68,3 +68,4 @@
   * deselect all button
   * actions
   * can this integrate with date overlay?
+* ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
