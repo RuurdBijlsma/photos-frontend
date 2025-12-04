@@ -1,4 +1,5 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+</script>
 
 <template>
   <div class="outer-container">
@@ -23,7 +24,14 @@
   max-width: calc(100% - 50px);
   width: 100%;
   height: 100%;
-  backdrop-filter: brightness(0%) saturate(250%) blur(30px) contrast(100%);
+}
+
+.v-theme--light .outer-container{
+  backdrop-filter: brightness(150%) saturate(250%) blur(50px) contrast(100%) !important;
+}
+
+.v-theme--dark .outer-container{
+  backdrop-filter: brightness(50%) saturate(250%) blur(50px) contrast(100%) !important;
 }
 
 .inner-container {

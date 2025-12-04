@@ -2,11 +2,13 @@
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { useRoute } from 'vue-router'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
+const route = useRoute()
 
 // Initialize the stores.
 timelineStore.initialize()
@@ -60,14 +62,31 @@ backgroundStore.initialize()
     <v-navigation-drawer permanent color="transparent" floating>
       <v-list color="primary-darken-1" class="nav-list">
         <v-list-item
+          class="mt-3"
           rounded
           prepend-icon="mdi-image-outline"
           title="Photos"
           to="/"
-          :active="$route.path === '/'"
+          :active="route.path === '/'"
         />
         <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
         <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
+
+        <v-list-subheader class="mt-5">Collections</v-list-subheader>
+
+        <v-list-group value="Users">
+          <template v-slot:activator="{ props }">
+            <v-list-item
+              rounded
+              v-bind="props"
+              prepend-icon="mdi-image-album"
+              title="Albums"
+            ></v-list-item>
+          </template>
+          <v-list-item rounded title="Album1" to="/map1" />
+          <v-list-item rounded title="Album2" to="/map2" />
+          <v-list-item rounded title="Album3" to="/map3" />
+        </v-list-group>
       </v-list>
       <a href="web+burger:cheeseburger">cheeseburger</a>
     </v-navigation-drawer>
@@ -108,7 +127,7 @@ backgroundStore.initialize()
     rgba(var(--v-theme-background), 0.95) 0%,
     rgba(var(--v-theme-background), 0.4) 100%
   );
-  backdrop-filter: saturate(150%) brightness(70%) blur(15px) contrast(100%);
+  backdrop-filter: saturate(150%) brightness(70%) blur(25px) contrast(100%);
   z-index: 1;
 }
 

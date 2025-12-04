@@ -36,6 +36,11 @@ const router = createRouter({
           name: 'map',
           component: () => import('@/vues/views/main/MapView.vue'),
         },
+        {
+          path: '/albums',
+          name: 'albums',
+          component: () => import('@/vues/views/library/AlbumsLibrary.vue'),
+        },
       ],
     },
     {
