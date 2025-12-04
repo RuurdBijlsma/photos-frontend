@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { shallowRef, triggerRef } from 'vue'
 
 export const useSelectionStore = defineStore('selection', () => {
-  const selectedIds = ref<string[]>([])
+  const selectedIds = shallowRef<string[]>([])
 
   function isSelected(id: string): boolean {
     return selectedIds.value.includes(id)
@@ -32,6 +32,10 @@ export const useSelectionStore = defineStore('selection', () => {
     }
   }
 
+  function trigger() {
+    triggerRef(selectedIds)
+  }
+
   return {
     selectedIds,
     select,
@@ -40,5 +44,6 @@ export const useSelectionStore = defineStore('selection', () => {
     deselect,
     isSelected,
     toggleSelected,
+    trigger,
   }
 })
