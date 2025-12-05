@@ -18,6 +18,8 @@ export function usePhotoGrid(
     desiredRowHeight: number,
     containerWidth: number,
   ) {
+    // todo: this is weird
+    containerWidth -= 7
     const newRows: RowLayout[] = []
 
     for (const { monthId, ratios } of ratiosByMonth) {

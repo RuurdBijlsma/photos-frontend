@@ -52,29 +52,55 @@ async function selectItem(e: PointerEvent) {
         selected: isSelected,
       }"
       :style="{
-        width: width + 'px',
-        height: height + 'px',
+        width: (isSelected ? width - 8 : width) + 'px',
+        height: (isSelected ? height - 8 : height) + 'px',
         containIntrinsicWidth: width + 'px',
         containIntrinsicHeight: height + 'px',
         backgroundImage: `url(${thumbnail})`,
       }"
-    ></div>
+    >
+      <v-fade-transition>
+        <div class="check-icon" v-if="isSelected">
+          <v-icon size="15">mdi-check</v-icon>
+        </div>
+      </v-fade-transition>
+    </div>
   </router-link>
 </template>
 
 <style scoped>
 .grid-item {
   background-color: rgba(255, 255, 255, 0.1);
-  background-size: contain;
+  background-size: 100%;
+  background-position: center;
   display: block;
   cursor: default;
 
   content-visibility: auto;
   contain: size layout paint;
   transform: translateZ(0);
+  transition: 0.15s ease-in-out;
 }
 
 .selected {
-  box-shadow: inset 0 0 0 10px rgba(var(--v-theme-primary));
+  box-shadow:
+    inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
+    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
+  border-radius: 20px;
+  margin: 4px;
+}
+
+.check-icon {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: rgba(var(--v-theme-secondary), 1);
+  border-radius: 50%;
+  color: rgb(var(--v-theme-on-secondary));
+  width: 25px;
+  height: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
