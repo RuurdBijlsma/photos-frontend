@@ -70,4 +70,5 @@
   * can this integrate with date overlay?
 * ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
 * when holding shift, show what would be selected with shift
-* 
+* only select multiple photos when holding ctrl
+* only show selection-check when multiple photos are selected?

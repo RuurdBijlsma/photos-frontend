@@ -19,25 +19,37 @@ const props = defineProps<{
 export type SelectionPayload = { event: PointerEvent; id: string }
 const emit = defineEmits<{ (e: 'selectionClick', payload: SelectionPayload): void }>()
 
+// Cache id for all dependent computations
 const id = computed(() => props.mediaItem?.id ?? '')
 
+// Memoized computed values
 const thumbnail = computed(() =>
   id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''
 )
 
-const linkUrl = computed(() => (id.value ? `/view/${id.value}` : '#'))
+const linkUrl = computed(() =>
+  id.value ? `/view/${id.value}` : '#'
+)
 
-const isSelected = computed(() => (id.value ? selectionStore.isSelected(id.value) : false))
+const isSelected = computed(() =>
+  id.value ? selectionStore.isSelected(id.value) : false
+)
 
+// Return static empty object (not new each render)
+const EMPTY_STYLE = Object.freeze({})
+
+// Only compute scale when valid
 const scaleStyle = computed(() => {
-  if (!props.width || !props.height) return {}
+  const { width, height } = props
+  if (!width || !height) return EMPTY_STYLE
+
   return {
-    '--sx': (props.width - 8) / props.width,
-    '--sy': (props.height - 8) / props.height
+    '--sx': (width - 8) / width,
+    '--sy': (height - 8) / height
   }
 })
 
-async function openImage() {
+function openImage() {
   if (id.value) router.push(`/view/${id.value}`)
 }
 
@@ -64,7 +76,7 @@ function handleLinkClick(e: MouseEvent) {
       draggable="false"
       @click="handleLinkClick"
       @dblclick="openImage"
-      @mousedown="id && mediaStore.fetchItem(id)"
+      @pointerdown="id && mediaStore.fetchItem(id)"
     >
       <div
         class="visual-content"
