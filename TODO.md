@@ -62,13 +62,16 @@
 * re-establish ws connection if auth failed and it's refreshed automatically afterwards
 * stomme nav bar start te hoog en animeert naar beneden on page load
 * add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
-* volgende stap: selectie in photo grid laten maken
-* ctrl z voor selecties?
+* ✅ volgende stap: selectie in photo grid laten maken
+* ✅ ctrl z voor selecties?
 * i need a selection overlay thing on photo grid
   * deselect all button
   * actions
   * can this integrate with date overlay?
 * ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
 * when holding shift, show what would be selected with shift
-* only select multiple photos when holding ctrl
-* only show selection-check when multiple photos are selected?
+* ✅ only select multiple photos when holding ctrl
+* ✅ only show selection-check when multiple photos are selected?
+* deselect all with escape
+* select all with ctrl+a
+* clean up selection code (composable & griditem)

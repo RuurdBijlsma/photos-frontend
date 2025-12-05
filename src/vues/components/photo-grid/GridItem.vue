@@ -23,17 +23,11 @@ const emit = defineEmits<{ (e: 'selectionClick', payload: SelectionPayload): voi
 const id = computed(() => props.mediaItem?.id ?? '')
 
 // Memoized computed values
-const thumbnail = computed(() =>
-  id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''
-)
+const thumbnail = computed(() => (id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''))
 
-const linkUrl = computed(() =>
-  id.value ? `/view/${id.value}` : '#'
-)
+const linkUrl = computed(() => (id.value ? `/view/${id.value}` : '#'))
 
-const isSelected = computed(() =>
-  id.value ? selectionStore.isSelected(id.value) : false
-)
+const isSelected = computed(() => (id.value ? selectionStore.isSelected(id.value) : false))
 
 // Return static empty object (not new each render)
 const EMPTY_STYLE = Object.freeze({})
@@ -45,7 +39,7 @@ const scaleStyle = computed(() => {
 
   return {
     '--sx': (width - 8) / width,
-    '--sy': (height - 8) / height
+    '--sy': (height - 8) / height,
   }
 })
 
@@ -54,8 +48,14 @@ function openImage() {
 }
 
 function handleLinkClick(e: MouseEvent) {
-  if (e.button === 1 || e.ctrlKey || e.metaKey) return
+  // Allow Ctrl/Meta/Shift to pass through for selection logic.
+  // We still block middle mouse button (1) if you want to preserve that behavior.
+  if (e.button === 1) return
+
+  // Prevent default browser navigation (opening new tab on Ctrl+Click)
+  // so we can handle the selection logic instead.
   e.preventDefault()
+
   if (id.value) emit('selectionClick', { event: e as PointerEvent, id: id.value })
 }
 </script>
@@ -67,7 +67,7 @@ function handleLinkClick(e: MouseEvent) {
       width: width + 'px',
       height: height + 'px',
       containIntrinsicWidth: width + 'px',
-      containIntrinsicHeight: height + 'px'
+      containIntrinsicHeight: height + 'px',
     }"
   >
     <a
@@ -83,11 +83,11 @@ function handleLinkClick(e: MouseEvent) {
         :class="{ selected: isSelected }"
         :style="{
           ...scaleStyle,
-          backgroundImage: `url(${thumbnail})`
+          backgroundImage: `url(${thumbnail})`,
         }"
       >
         <v-fade-transition>
-          <div class="check-icon" v-if="isSelected">
+          <div class="check-icon" v-if="isSelected && selectionStore.selectedIds.length > 1">
             <v-icon size="15">mdi-check</v-icon>
           </div>
         </v-fade-transition>
@@ -117,14 +117,17 @@ function handleLinkClick(e: MouseEvent) {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transition: transform .15s, border-radius .15s, box-shadow .15s;
+  transition:
+    transform 0.15s,
+    border-radius 0.15s,
+    box-shadow 0.15s;
 }
 
 .selected {
   transform: scale(var(--sx), var(--sy));
   box-shadow:
     inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
-    0 0 0 4px rgba(var(--v-theme-secondary), .4);
+    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
   border-radius: 20px;
 }
 

@@ -4,8 +4,9 @@ import type { useSelectionStore } from '@/scripts/stores/selectionStore'
 
 /**
  * Manages selection logic including:
- * - Simple toggle selection
- * - Shift+Click range selection
+ * - Simple Click: Select single (reset others)
+ * - Ctrl+Click: Toggle selection
+ * - Shift+Click: Range selection
  * - Undo/Redo history stack via Keyboard (Ctrl+Z / Ctrl+Shift+Z)
  */
 export function useTimelineSelection(
@@ -99,11 +100,16 @@ export function useTimelineSelection(
         lastShiftedIds.value = newRangeSet
       }
     }
-    // 3. Normal / Ctrl Selection Logic
-    else {
+    // 3. Ctrl / Meta Selection Logic (Toggle specific item, keep others)
+    else if (e.ctrlKey || e.metaKey) {
       selectionStore.toggleSelected(id)
-
-      // Set new anchor
+      anchorId.value = id
+      lastShiftedIds.value.clear()
+    }
+    // 4. Normal Selection Logic (Reset all, select specific item)
+    else {
+      // Clear existing selection and select only this one
+      selectionStore.selectedIds = [id]
       anchorId.value = id
       lastShiftedIds.value.clear()
     }
