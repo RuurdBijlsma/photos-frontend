@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import photoService from '@/scripts/services/photoService.ts'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import photoService from '@/scripts/services/photoService.ts'
 import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
-import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
+import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 const mediaStore = useMediaStore()
 const selectionStore = useSelectionStore()
@@ -17,26 +17,20 @@ const props = defineProps<{
 }>()
 
 export type SelectionPayload = { event: PointerEvent; id: string }
-const emit = defineEmits<{
-  (e: 'selectionClick', payload: SelectionPayload): void
-}>()
+const emit = defineEmits<{ (e: 'selectionClick', payload: SelectionPayload): void }>()
+
+const id = computed(() => props.mediaItem?.id ?? '')
 
 const thumbnail = computed(() =>
-  props.mediaItem?.id ? photoService.getPhotoThumbnail(props.mediaItem.id, 240) : '',
+  id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''
 )
 
-const linkUrl = computed(() =>
-  props.mediaItem?.id ? `/view/${props.mediaItem.id}` : '#'
-)
+const linkUrl = computed(() => (id.value ? `/view/${id.value}` : '#'))
 
-const isSelected = computed(() =>
-  props.mediaItem?.id ? selectionStore.isSelected(props.mediaItem.id) : false
-)
+const isSelected = computed(() => (id.value ? selectionStore.isSelected(id.value) : false))
 
-// Calculate separate scales for X and Y to ensure exactly 8px reduction on both axes.
-// This fixes the clipping issue on non-square aspect ratios.
 const scaleStyle = computed(() => {
-  if (props.width <= 0 || props.height <= 0) return { '--sx': 1, '--sy': 1 }
+  if (!props.width || !props.height) return {}
   return {
     '--sx': (props.width - 8) / props.width,
     '--sy': (props.height - 8) / props.height
@@ -44,38 +38,17 @@ const scaleStyle = computed(() => {
 })
 
 async function openImage() {
-  const id = props.mediaItem?.id
-  if (id) await router.push({ path: `/view/${id}` })
+  if (id.value) router.push(`/view/${id.value}`)
 }
 
 function handleLinkClick(e: MouseEvent) {
-  // 1. EXTERNAL NAVIGATION:
-  // Allow browser default ONLY for:
-  // - Middle Click (button 1)
-  // - Ctrl + Click (Windows/Linux)
-  // - Cmd/Meta + Click (macOS)
-  if (e.button === 1 || e.ctrlKey || e.metaKey) {
-    return
-  }
-
-  // 2. INTERNAL APP LOGIC (Selection):
-  // Prevent default for:
-  // - Standard Click (Navigation)
-  // - Shift + Click (New Window)
+  if (e.button === 1 || e.ctrlKey || e.metaKey) return
   e.preventDefault()
-
-  const id = props.mediaItem?.id
-  // We pass the event up. The parent component will check e.shiftKey
-  // to handle the multi-selection range.
-  if (id) emit('selectionClick', { event: e as PointerEvent, id })
+  if (id.value) emit('selectionClick', { event: e as PointerEvent, id: id.value })
 }
 </script>
 
 <template>
-  <!--
-    The Outer Div controls the physical space in the grid (Layout).
-    Strict containment here stops the browser from recalculating layout for the whole page.
-  -->
   <div
     class="grid-cell-container"
     :style="{
@@ -85,28 +58,20 @@ function handleLinkClick(e: MouseEvent) {
       containIntrinsicHeight: height + 'px'
     }"
   >
-    <!--
-      The Anchor Tag provides accessibility and native link features.
-      href gives us the status bar URL and 'Open in New Tab'.
-    -->
     <a
       :href="linkUrl"
       class="grid-item-link"
       draggable="false"
       @click="handleLinkClick"
       @dblclick="openImage"
-      @mousedown="props.mediaItem?.id && mediaStore.fetchItem(props.mediaItem.id)"
+      @mousedown="id && mediaStore.fetchItem(id)"
     >
-      <!--
-        The Visual Div handles the background image and selection animation.
-        It transitions via GPU-only properties (Transform/Opacity).
-      -->
       <div
         class="visual-content"
         :class="{ selected: isSelected }"
         :style="{
           ...scaleStyle,
-          backgroundImage: `url(${thumbnail})`,
+          backgroundImage: `url(${thumbnail})`
         }"
       >
         <v-fade-transition>
@@ -121,19 +86,15 @@ function handleLinkClick(e: MouseEvent) {
 
 <style scoped>
 .grid-cell-container {
-  display: block;
-  /* Optimization: Tells browser this box's size is known and independent */
   contain: strict;
   content-visibility: auto;
   transform: translateZ(0);
 }
 
 .grid-item-link {
-  display: block;
   width: 100%;
   height: 100%;
-  text-decoration: none;
-  cursor: default; /* Keep your cursor preference */
+  display: block;
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -141,28 +102,17 @@ function handleLinkClick(e: MouseEvent) {
 .visual-content {
   width: 100%;
   height: 100%;
-  background-color: rgba(255, 255, 255, 0.1);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-
-  will-change: transform;
-  transform-origin: center center;
-
-  /* Transition ONLY these properties to prevent layout reflows */
-  transition:
-    transform 0.15s ease-in-out,
-    border-radius 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
+  transition: transform .15s, border-radius .15s, box-shadow .15s;
 }
 
 .selected {
-  /* Scale X and Y independently to create an even margin border */
   transform: scale(var(--sx), var(--sy));
-
   box-shadow:
     inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
-    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
+    0 0 0 4px rgba(var(--v-theme-secondary), .4);
   border-radius: 20px;
 }
 
@@ -170,18 +120,14 @@ function handleLinkClick(e: MouseEvent) {
   position: absolute;
   top: 10px;
   right: 10px;
-  background-color: rgba(var(--v-theme-secondary), 1);
-  border-radius: 50%;
-  color: rgb(var(--v-theme-on-secondary));
   width: 25px;
   height: 25px;
   display: flex;
   justify-content: center;
   align-items: center;
+  border-radius: 50%;
+  background-color: rgba(var(--v-theme-secondary), 1);
+  color: rgb(var(--v-theme-on-secondary));
   z-index: 2;
-
-  /* Counter-scale the icon so it doesn't look squished?
-     Optional: transform: scale(calc(1 / var(--sx)), calc(1 / var(--sy)));
-     Usually not visible enough to matter on a checkmark. */
 }
 </style>
