@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { storeToRefs } from 'pinia'
 import type { VVirtualScroll } from 'vuetify/components'
 
 // Components
-import DateOverlay from '@/vues/components/media-timeline/DateOverlay.vue'
 import GridRowHeader from '@/vues/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/vues/components/photo-grid/GridRow.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
@@ -21,6 +19,8 @@ import { useRowVisibility } from '@/scripts/composables/photo-grid/useRowVisibil
 import { useDateOverlay } from '@/scripts/composables/photo-grid/useDateOverlay.ts'
 import { useTimelineSelection } from '@/scripts/composables/photo-grid/useTimelineSelection.ts'
 import { useTimelineScrollSync } from '@/scripts/composables/photo-grid/useTimelineScrollSync.ts'
+import DateOverlay from '@/vues/components/media-timeline/DateOverlay.vue'
+import ActionsOverlay from '@/vues/components/media-timeline/ActionsOverlay.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -67,6 +67,7 @@ const { handleScroll } = useTimelineScrollSync(
 <template>
   <main-layout-container>
     <date-overlay :date="dateInViewString" />
+    <actions-overlay @deselect-all="selectionStore."/>
     <div class="photo-grid-container" ref="container">
       <v-virtual-scroll
         ref="virtualScrollRef"

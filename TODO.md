@@ -65,9 +65,9 @@
 * ✅ volgende stap: selectie in photo grid laten maken
 * ✅ ctrl z voor selecties?
 * i need a selection overlay thing on photo grid
-  * deselect all button
-  * actions
-  * can this integrate with date overlay?
+    * deselect all button
+    * actions
+    * can this integrate with date overlay?
 * ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
 * when holding shift, show what would be selected with shift
 * ✅ only select multiple photos when holding ctrl
@@ -75,3 +75,9 @@
 * deselect all with escape
 * select all with ctrl+a
 * clean up selection code (composable & griditem)
+* make way to view photo without losing selection
+* idea to fix desync timeline bug:
+    * bug: timeline ids/ratios/by month might by out of sync because theyre separate requests
+    * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
+    * this would prevent new photos being added in between the ratios and byMonth request
+    * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
