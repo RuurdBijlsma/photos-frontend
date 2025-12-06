@@ -7,6 +7,8 @@ import type { useSelectionStore } from '@/scripts/stores/selectionStore'
  * - Simple Click: Select single (reset others)
  * - Ctrl+Click: Toggle selection
  * - Shift+Click: Range selection
+ * - Ctrl+A: Select All
+ * - Escape: Deselect All
  * - Undo/Redo history stack via Keyboard (Ctrl+Z / Ctrl+Shift+Z)
  */
 export function useTimelineSelection(
@@ -25,8 +27,8 @@ export function useTimelineSelection(
   // --- History Management ---
 
   /**
-   * Saves the current state of the selection store to history.
-   * Should be called BEFORE modifying the selection.
+   * Saves the CURRENT state of the selection store to history.
+   * Should be called AFTER modifying the selection to ensure Redo works correctly.
    */
   function recordHistory() {
     // 1. If we are in the middle of the history stack (due to undos),
@@ -68,13 +70,38 @@ export function useTimelineSelection(
     }
   }
 
-  // --- Selection Logic ---
+  // --- Bulk Selection Logic ---
+
+  function selectAll() {
+    // 1. Select all IDs from the controller
+    selectionStore.selectedIds = [...timelineController.ids]
+
+    // 2. Reset anchors (Shift logic usually resets on full selection)
+    anchorId.value = null
+    lastShiftedIds.value.clear()
+
+    // 3. Trigger and Save
+    selectionStore.trigger()
+    recordHistory()
+  }
+
+  function deselectAll() {
+    // 1. Clear selection
+    selectionStore.selectedIds = []
+
+    // 2. Reset anchors
+    anchorId.value = null
+    lastShiftedIds.value.clear()
+
+    // 3. Trigger and Save
+    selectionStore.trigger()
+    recordHistory()
+  }
+
+  // --- Item Selection Logic ---
 
   function selectItem(e: PointerEvent, id: string) {
-    // 1. Save state BEFORE changing anything
-    recordHistory()
-
-    // 2. Shift Selection Logic
+    // 1. Perform Selection Logic
     if (e.shiftKey && anchorId.value) {
       const currentIndex = timelineController.ids.indexOf(id)
       const anchorIndex = timelineController.ids.indexOf(anchorId.value)
@@ -100,37 +127,50 @@ export function useTimelineSelection(
         lastShiftedIds.value = newRangeSet
       }
     }
-    // 3. Ctrl / Meta Selection Logic (Toggle specific item, keep others)
+    // 2. Ctrl / Meta Selection Logic (Toggle specific item, keep others)
     else if (e.ctrlKey || e.metaKey) {
       selectionStore.toggleSelected(id)
       anchorId.value = id
       lastShiftedIds.value.clear()
     }
-    // 4. Normal Selection Logic (Reset all, select specific item)
+    // 3. Normal Selection Logic (Reset all, select specific item)
     else {
-      // Clear existing selection and select only this one
       selectionStore.selectedIds = [id]
       anchorId.value = id
       lastShiftedIds.value.clear()
     }
 
     selectionStore.trigger()
+
+    // 4. Record History AFTER the change
+    recordHistory()
   }
 
   // --- Keyboard Listeners ---
 
   function handleKeydown(e: KeyboardEvent) {
-    // Check for Ctrl (Windows/Linux) or Command (Mac)
     const isCmdOrCtrl = e.ctrlKey || e.metaKey
 
+    // Undo / Redo
     if (isCmdOrCtrl && e.key.toLowerCase() === 'z') {
-      e.preventDefault() // Prevent browser native undo
-
+      e.preventDefault()
       if (e.shiftKey) {
         redo()
       } else {
         undo()
       }
+    }
+
+    // Select All (Ctrl + A)
+    if (isCmdOrCtrl && e.key.toLowerCase() === 'a') {
+      e.preventDefault() // Prevent browser text selection
+      selectAll()
+    }
+
+    // Deselect All (Escape)
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      deselectAll()
     }
   }
 
@@ -144,6 +184,8 @@ export function useTimelineSelection(
 
   return {
     selectItem,
+    selectAll,
+    deselectAll,
     undo,
     redo
   }

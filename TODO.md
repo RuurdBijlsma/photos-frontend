@@ -72,8 +72,8 @@
 * when holding shift, show what would be selected with shift
 * ✅ only select multiple photos when holding ctrl
 * ✅ only show selection-check when multiple photos are selected?
-* deselect all with escape
-* select all with ctrl+a
+* ✅ deselect all with escape
+* ✅ select all with ctrl+a
 * clean up selection code (composable & griditem)
 * make way to view photo without losing selection
 * idea to fix desync timeline bug:
@@ -81,3 +81,4 @@
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
+* dont deselect all with escape when you're viewing big pic

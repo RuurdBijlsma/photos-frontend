@@ -52,7 +52,7 @@ const { handleIsVisible, rowInViewDate } = useRowVisibility(props.timelineContro
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
 
 // 4. Selection Logic (Click, Shift+Click, Undo/Redo)
-const { selectItem } = useTimelineSelection(selectionStore, props.timelineController)
+const { selectItem, deselectAll } = useTimelineSelection(selectionStore, props.timelineController)
 
 // 5. Scroll Synchronization (Global requests <-> Virtual Scroll Index)
 const { handleScroll } = useTimelineScrollSync(
@@ -60,14 +60,14 @@ const { handleScroll } = useTimelineScrollSync(
   rows,
   rowInViewDate,
   props.sortOrder,
-  activateScrollOverride
+  activateScrollOverride,
 )
 </script>
 
 <template>
   <main-layout-container>
     <date-overlay :date="dateInViewString" />
-    <actions-overlay @deselect-all="selectionStore."/>
+    <actions-overlay @deselect-all="deselectAll" />
     <div class="photo-grid-container" ref="container">
       <v-virtual-scroll
         ref="virtualScrollRef"

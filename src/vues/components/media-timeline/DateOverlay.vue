@@ -5,10 +5,12 @@ defineProps<{
 </script>
 
 <template>
-  <div class="date-view" v-if="date">
-    <span class="date-view-date">{{ date.date }}</span>
-    <span v-if="date.year" class="date-view-year">{{ date.year }}</span>
-  </div>
+  <v-slide-y-transition>
+    <div class="date-view" v-if="date">
+      <span class="date-view-date">{{ date.date }}</span>
+      <span v-if="date.year" class="date-view-year">{{ date.year }}</span>
+    </div>
+  </v-slide-y-transition>
 </template>
 
 <style scoped>

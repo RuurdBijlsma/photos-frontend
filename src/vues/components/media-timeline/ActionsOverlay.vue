@@ -8,33 +8,35 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="actions-overlay">
-    <v-btn
-      icon="mdi-close"
-      variant="plain"
-      density="compact"
-      v-tooltip:top="'Deselect all'"
-      @click="emit('deselectAll')"
-    />
-    <div class="select-text">
+  <v-slide-y-reverse-transition>
+    <div class="actions-overlay" v-if="selectionStore.selectedIds.length > 1">
+      <v-btn
+        icon="mdi-close"
+        variant="plain"
+        density="compact"
+        v-tooltip:top="'Deselect all'"
+        @click="emit('deselectAll')"
+      />
+      <div class="select-text">
       <span class="bold-select">{{ selectionStore.selectedIds.length }}</span
       ><span> selected</span>
+      </div>
+      <v-spacer />
+      <v-btn icon="mdi-plus" variant="plain" density="compact" v-tooltip:top="'Add to album'" />
+      <v-btn
+        icon="mdi-delete-outline"
+        variant="plain"
+        density="compact"
+        v-tooltip:top="'Move to bin'"
+      />
+      <v-btn
+        icon="mdi-dots-horizontal"
+        variant="plain"
+        density="compact"
+        v-tooltip:top="'More options'"
+      />
     </div>
-    <v-spacer />
-    <v-btn icon="mdi-plus" variant="plain" density="compact" v-tooltip:top="'Add to album'" />
-    <v-btn
-      icon="mdi-delete-outline"
-      variant="plain"
-      density="compact"
-      v-tooltip:top="'Move to bin'"
-    />
-    <v-btn
-      icon="mdi-dots-horizontal"
-      variant="plain"
-      density="compact"
-      v-tooltip:top="'More options'"
-    />
-  </div>
+  </v-slide-y-reverse-transition>
 </template>
 
 <style scoped>

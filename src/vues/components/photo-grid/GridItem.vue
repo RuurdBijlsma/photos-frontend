@@ -19,27 +19,31 @@ const props = defineProps<{
 export type SelectionPayload = { event: PointerEvent; id: string }
 const emit = defineEmits<{ (e: 'selectionClick', payload: SelectionPayload): void }>()
 
-// Cache id for all dependent computations
 const id = computed(() => props.mediaItem?.id ?? '')
 
-// Memoized computed values
-const thumbnail = computed(() => (id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''))
-
-const linkUrl = computed(() => (id.value ? `/view/${id.value}` : '#'))
-
+// Performance: access the store state only once per render in the template or computed
+// "isMultiSelect" allows us to avoid granular dependency tracking on the exact array length
+const isMultiSelect = computed(() => selectionStore.selectedIds.length > 1)
 const isSelected = computed(() => (id.value ? selectionStore.isSelected(id.value) : false))
 
-// Return static empty object (not new each render)
+const thumbnail = computed(() => (id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''))
+const linkUrl = computed(() => (id.value ? `/view/${id.value}` : '#'))
+
+// Performance: Static object to prevent garbage collection on every render
 const EMPTY_STYLE = Object.freeze({})
 
-// Only compute scale when valid
 const scaleStyle = computed(() => {
   const { width, height } = props
   if (!width || !height) return EMPTY_STYLE
 
+  // Combine static styles here to return one object
   return {
     '--sx': (width - 8) / width,
     '--sy': (height - 8) / height,
+    width: width + 'px',
+    height: height + 'px',
+    containIntrinsicWidth: width + 'px',
+    containIntrinsicHeight: height + 'px',
   }
 })
 
@@ -48,27 +52,27 @@ function openImage() {
 }
 
 function handleLinkClick(e: MouseEvent) {
-  // Allow Ctrl/Meta/Shift to pass through for selection logic.
-  // We still block middle mouse button (1) if you want to preserve that behavior.
   if (e.button === 1) return
-
-  // Prevent default browser navigation (opening new tab on Ctrl+Click)
-  // so we can handle the selection logic instead.
   e.preventDefault()
-
   if (id.value) emit('selectionClick', { event: e as PointerEvent, id: id.value })
+}
+
+// Extract to method to avoid creating new anonymous function on every render
+function handlePointerDown() {
+  if (id.value) mediaStore.fetchItem(id.value)
 }
 </script>
 
 <template>
+  <!--
+    v-memo: CRITICAL OPTIMIZATION
+    Vue will completely skip diffing this DOM tree unless one of these values changes.
+    This protects the component from updates in parent scope that don't affect this specific item.
+  -->
   <div
     class="grid-cell-container"
-    :style="{
-      width: width + 'px',
-      height: height + 'px',
-      containIntrinsicWidth: width + 'px',
-      containIntrinsicHeight: height + 'px',
-    }"
+    v-memo="[isSelected, isMultiSelect, thumbnail, width, height]"
+    :style="scaleStyle"
   >
     <a
       :href="linkUrl"
@@ -76,21 +80,32 @@ function handleLinkClick(e: MouseEvent) {
       draggable="false"
       @click="handleLinkClick"
       @dblclick="openImage"
-      @pointerdown="id && mediaStore.fetchItem(id)"
+      @pointerdown="handlePointerDown"
     >
       <div
         class="visual-content"
-        :class="{ selected: isSelected }"
-        :style="{
-          ...scaleStyle,
-          backgroundImage: `url(${thumbnail})`,
+        :class="{
+          'selected': isSelected,
+          'has-multi': isMultiSelect
         }"
+        :style="{ backgroundImage: `url(${thumbnail})` }"
       >
-        <v-fade-transition>
-          <div class="check-icon" v-if="isSelected && selectionStore.selectedIds.length > 1">
-            <v-icon size="15">mdi-check</v-icon>
-          </div>
-        </v-fade-transition>
+        <!-- Replaced v-if/v-fade-transition with CSS classes -->
+        <div class="check-icon">
+          <v-icon size="15">mdi-check</v-icon>
+        </div>
+
+        <v-btn
+          icon
+          color="secondary"
+          variant="flat"
+          class="magnify-button"
+          @click.stop
+          :to="linkUrl"
+          tabindex="-1"
+        >
+          <v-icon size="15">mdi-eye-outline</v-icon>
+        </v-btn>
       </div>
     </a>
   </div>
@@ -100,7 +115,8 @@ function handleLinkClick(e: MouseEvent) {
 .grid-cell-container {
   contain: strict;
   content-visibility: auto;
-  transform: translateZ(0);
+  transform: translateZ(0); /* Promotes to composite layer */
+  /* Width/Height moved to inline style for JS calculation */
 }
 
 .grid-item-link {
@@ -118,17 +134,33 @@ function handleLinkClick(e: MouseEvent) {
   background-position: center;
   background-repeat: no-repeat;
   transition:
-    transform 0.15s,
-    border-radius 0.15s,
-    box-shadow 0.15s;
+    transform 0.15s ease-out,
+    border-radius 0.15s ease-out,
+    box-shadow 0.15s ease-out;
+  position: relative;
+  /* Hardware acceleration for the transform transition */
+  will-change: transform, box-shadow;
 }
 
-.selected {
-  transform: scale(var(--sx), var(--sy));
-  box-shadow:
-    inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
-    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
-  border-radius: 20px;
+/* --- OPTIMIZED OVERLAYS --- */
+/* By default, elements are hidden via opacity to avoid DOM thrashing */
+
+.magnify-button {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 25px;
+  height: 25px;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+/* Logic: Show magnify button if (Hovering) AND (Multi-select mode is active) */
+.visual-content.has-multi:hover .magnify-button {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .check-icon {
@@ -144,5 +176,25 @@ function handleLinkClick(e: MouseEvent) {
   background-color: rgba(var(--v-theme-secondary), 1);
   color: rgb(var(--v-theme-on-secondary));
   z-index: 2;
+
+  /* Hidden by default */
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+/* Logic: Show check icon if (Selected) AND (Multi-select mode is active) */
+.visual-content.selected.has-multi .check-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.selected {
+  transform: scale(var(--sx), var(--sy));
+  box-shadow:
+    inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
+    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
+  border-radius: 20px;
 }
 </style>
