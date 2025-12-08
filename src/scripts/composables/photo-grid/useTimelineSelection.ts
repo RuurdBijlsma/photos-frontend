@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref, shallowRef, nextTick } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline'
 import type { useSelectionStore } from '@/scripts/stores/selectionStore'
 
@@ -7,133 +7,101 @@ export function useTimelineSelection(
   timelineController: GenericTimeline,
 ) {
   const anchorId = ref<string | null>(null)
-  const lastShiftedIds = ref<Set<string>>(new Set())
+  const lastShiftedIds = shallowRef(new Set<string>())
 
-  // History stores Arrays of strings (snapshots)
+  // History state
   const history = shallowRef<string[][]>([[...selectionStore.selectedIds]])
   const historyIndex = ref(0)
 
   // --- History Management ---
 
-  // Accepts an optional explicit snapshot to avoid re-reading/converting from store
-  function recordHistory(explicitSnapshot?: string[]) {
-    // If we are undoing/redoing, trim the future history
+  function recordHistory(snapshot: string[] = [...selectionStore.selectedIds]) {
+    // Truncate future history if we are in the middle of the stack
     if (historyIndex.value < history.value.length - 1) {
       history.value = history.value.slice(0, historyIndex.value + 1)
     }
-
-    // Use provided snapshot or generate one from the store
-    const snapshot = explicitSnapshot || [...selectionStore.selectedIds]
-
     history.value.push(snapshot)
     historyIndex.value++
   }
 
-  function applyHistoryState() {
-    const previousState = history.value[historyIndex.value]
-    if (previousState) {
-      selectionStore.replaceAll(previousState)
-    }
-
-    anchorId.value = null
-    lastShiftedIds.value.clear()
-  }
-
-  function undo() {
-    if (historyIndex.value > 0) {
-      historyIndex.value--
-      applyHistoryState()
+  function applyHistory(offset: number) {
+    const newIndex = historyIndex.value + offset
+    if (newIndex >= 0 && newIndex < history.value.length) {
+      historyIndex.value = newIndex
+      selectionStore.replaceAll(history.value[newIndex]!)
+      anchorId.value = null
+      lastShiftedIds.value.clear()
     }
   }
 
-  function redo() {
-    if (historyIndex.value < history.value.length - 1) {
-      historyIndex.value++
-      applyHistoryState()
-    }
-  }
-
-  // --- Bulk Selection Logic ---
+  // --- Actions ---
 
   function selectAll() {
-    // 1. Get the source array ONCE.
-    // Accessing timelineController.ids might be expensive if it's a getter,
-    // so we grab it once and reuse it.
     const allIds = [...timelineController.ids]
-
-    // 2. Update the store immediately so UI updates
-    // We assume replaceAll handles conversion to Set internally
     selectionStore.replaceAll(allIds)
-
     anchorId.value = null
     lastShiftedIds.value.clear()
 
-    // 3. Defer the heavy history operation to the next paint frame.
-    // This allows the browser to render the checkmarks immediately,
-    // eliminating the perceived freeze.
-    requestAnimationFrame(() => {
-      // Pass the array we already have to avoid converting Set -> Array again
-      recordHistory(allIds)
-    })
+    // Defer history recording to keep UI responsive
+    requestAnimationFrame(() => recordHistory(allIds))
   }
 
   function deselectAll() {
     selectionStore.replaceAll([])
-
     anchorId.value = null
     lastShiftedIds.value.clear()
     recordHistory()
   }
 
-  // --- Item Selection Logic ---
-
   function selectItem(e: PointerEvent, id: string) {
+    // 1. Shift + Click (Range Selection)
     if (e.shiftKey && anchorId.value) {
-      const currentIndex = timelineController.ids.indexOf(id)
-      const anchorIndex = timelineController.ids.indexOf(anchorId.value)
+      const allIds = timelineController.ids
+      const idx1 = allIds.indexOf(anchorId.value)
+      const idx2 = allIds.indexOf(id)
 
-      if (currentIndex !== -1 && anchorIndex !== -1) {
-        const start = Math.min(currentIndex, anchorIndex)
-        const end = Math.max(currentIndex, anchorIndex)
+      if (idx1 !== -1 && idx2 !== -1) {
+        const start = Math.min(idx1, idx2)
+        const end = Math.max(idx1, idx2)
+        const rangeIds = allIds.slice(start, end + 1)
+        const rangeSet = new Set(rangeIds)
 
-        const newRange = timelineController.ids.slice(start, end + 1)
-        const newRangeSet = new Set(newRange)
+        // Optimization: Clone current set, remove stale shifted items, add new range
+        const nextSelection = new Set(selectionStore.selectedIds)
+        lastShiftedIds.value.forEach((old) => !rangeSet.has(old) && nextSelection.delete(old))
+        rangeIds.forEach((newId) => nextSelection.add(newId))
 
-        lastShiftedIds.value.forEach((oldId) => {
-          if (!newRangeSet.has(oldId)) {
-            selectionStore.deselect(oldId)
-          }
-        })
-
-        selectionStore.selectMany(newRange)
-        lastShiftedIds.value = newRangeSet
+        selectionStore.replaceAll(nextSelection)
+        lastShiftedIds.value = rangeSet
       }
-    } else {
+    }
+    // 2. Normal Click (Toggle)
+    else {
       selectionStore.toggleSelected(id)
-      if (selectionStore.isSelected(id)) anchorId.value = id
-
+      anchorId.value = selectionStore.isSelected(id) ? id : null
       lastShiftedIds.value.clear()
     }
 
     recordHistory()
   }
 
-  // ... (Keep existing handleKeydown logic)
   function handleKeydown(e: KeyboardEvent) {
-    const isCmdOrCtrl = e.ctrlKey || e.metaKey
+    const isCmd = e.ctrlKey || e.metaKey
+    if (!isCmd && e.key !== 'Escape') return
 
-    if (isCmdOrCtrl && e.key.toLowerCase() === 'z') {
+    const key = e.key.toLowerCase()
+
+    if (key === 'z') {
       e.preventDefault()
-      if (e.shiftKey) redo()
-      else undo()
-    }
-
-    if (isCmdOrCtrl && e.key.toLowerCase() === 'a') {
+      if (e.shiftKey) {
+        applyHistory(1)
+      } else {
+        applyHistory(-1)
+      }
+    } else if (key === 'a') {
       e.preventDefault()
       selectAll()
-    }
-
-    if (e.key === 'Escape') {
+    } else if (e.key === 'Escape') {
       e.preventDefault()
       deselectAll()
     }
@@ -142,5 +110,11 @@ export function useTimelineSelection(
   onMounted(() => window.addEventListener('keydown', handleKeydown))
   onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
-  return { selectItem, selectAll, deselectAll, undo, redo }
+  return {
+    selectItem,
+    selectAll,
+    deselectAll,
+    undo: () => applyHistory(-1),
+    redo: () => applyHistory(1),
+  }
 }
