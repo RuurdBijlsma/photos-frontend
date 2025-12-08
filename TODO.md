@@ -83,3 +83,4 @@
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
+* copy google photos selection, and single click to open photos

@@ -20,7 +20,7 @@ const props = defineProps<{
 }>()
 
 const id = computed(() => props.mediaItem?.id ?? '')
-const isMultiSelect = computed(() => selectionStore.size > 1)
+
 const isSelected = computed(() => selectionStore.isSelected(id.value))
 
 const thumbnail = computed(() => (id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''))
@@ -43,13 +43,21 @@ const scaleStyle = computed(() => {
   }
 })
 
-function openImage() {
-  if (id.value) router.push(`/view/${id.value}`)
+function handleLinkClick(e: MouseEvent) {
+  console.log('linkClick', e.button)
+  if (e.button === 1) return
+
+  e.preventDefault()
+  if (selectionStore.size > 0) {
+    if (id.value) emit('selectionClick', { event: e as PointerEvent, id: id.value })
+  } else {
+    router.push(linkUrl.value)
+  }
 }
 
-function handleLinkClick(e: MouseEvent) {
-  if (e.button === 1) return
+function handleSelectionClick(e: MouseEvent) {
   e.preventDefault()
+  e.stopPropagation()
   if (id.value) emit('selectionClick', { event: e as PointerEvent, id: id.value })
 }
 
@@ -59,14 +67,9 @@ function handlePointerDown() {
 </script>
 
 <template>
-  <!--
-    v-memo:
-    Vue will completely skip diffing this DOM tree unless one of these values changes.
-    This protects the component from updates in parent scope that don't affect this specific item.
-  -->
   <div
     class="grid-cell-container"
-    v-memo="[isSelected, isMultiSelect, thumbnail, width, height]"
+    v-memo="[isSelected, thumbnail, width, height]"
     :style="scaleStyle"
   >
     <a
@@ -74,19 +77,20 @@ function handlePointerDown() {
       class="grid-item-link"
       draggable="false"
       @click="handleLinkClick"
-      @dblclick="openImage"
       @pointerdown="handlePointerDown"
     >
       <div
         class="visual-content"
         :class="{
           selected: isSelected,
-          'has-multi': isMultiSelect,
         }"
         :style="{ backgroundImage: `url(${thumbnail})` }"
       >
-        <div class="check-icon">
-          <v-icon size="15">mdi-check</v-icon>
+        <div class="check-icon" @click="handleSelectionClick">
+          <v-icon
+            color="secondary"
+            :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
+          />
         </div>
 
         <v-btn
@@ -98,7 +102,7 @@ function handlePointerDown() {
           :to="linkUrl"
           tabindex="-1"
         >
-          <v-icon size="15">mdi-eye-outline</v-icon>
+          <v-icon size="15" icon="mdi-eye-outline" />
         </v-btn>
       </div>
     </a>
@@ -146,8 +150,7 @@ function handlePointerDown() {
   pointer-events: none;
 }
 
-/* Logic: Show magnify button if (Hovering) AND (Multi-select mode is active) */
-.visual-content.has-multi:hover .magnify-button {
+.is-selecting .visual-content:hover .magnify-button {
   opacity: 1;
   pointer-events: auto;
 }
@@ -162,21 +165,22 @@ function handlePointerDown() {
   justify-content: center;
   align-items: center;
   border-radius: 50%;
-  background-color: rgba(var(--v-theme-secondary), 1);
-  color: rgb(var(--v-theme-on-secondary));
   z-index: 2;
   opacity: 0;
-  transform: scale(0.8);
+  transform: scale(1);
   transition:
     opacity 0.15s ease,
-    transform 0.15s ease;
+    transform 0.15s ease,
+    color 0.15s ease;
   pointer-events: none;
+  cursor: pointer;
 }
 
-/* Logic: Show check icon if (Selected) AND (Multi-select mode is active) */
-.visual-content.selected.has-multi .check-icon {
+/* Logic: Show check icon if (Selected) OR (Hovering) */
+.visual-content.selected .check-icon,
+.visual-content:hover .check-icon {
   opacity: 1;
-  transform: scale(1);
+  pointer-events: auto;
 }
 
 .selected {

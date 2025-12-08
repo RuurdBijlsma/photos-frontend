@@ -9,7 +9,7 @@ const emit = defineEmits<{
 
 <template>
   <v-slide-y-reverse-transition>
-    <div class="actions-overlay" v-if="selectionStore.size > 1">
+    <div class="actions-overlay" v-if="selectionStore.size > 0">
       <v-btn
         icon="mdi-close"
         variant="plain"

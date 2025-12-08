@@ -15,6 +15,7 @@ export const useSelectionStore = defineStore('selection', () => {
 
   // Replaces the entire selection (Used for History Undo/Redo, Select All)
   function replaceAll(newIds: string[] | Set<string>) {
+    // Directly assign if it is a set, otherwise construct
     if (newIds instanceof Set) {
       ids.value = newIds
     } else {

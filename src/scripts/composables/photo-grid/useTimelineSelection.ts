@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef, nextTick } from 'vue'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline'
 import type { useSelectionStore } from '@/scripts/stores/selectionStore'
 
@@ -10,22 +10,26 @@ export function useTimelineSelection(
   const lastShiftedIds = ref<Set<string>>(new Set())
 
   // History stores Arrays of strings (snapshots)
-  const history = ref<string[][]>([[...selectionStore.selectedIds]])
+  const history = shallowRef<string[][]>([[...selectionStore.selectedIds]])
   const historyIndex = ref(0)
 
   // --- History Management ---
 
-  function recordHistory() {
+  // Accepts an optional explicit snapshot to avoid re-reading/converting from store
+  function recordHistory(explicitSnapshot?: string[]) {
+    // If we are undoing/redoing, trim the future history
     if (historyIndex.value < history.value.length - 1) {
       history.value = history.value.slice(0, historyIndex.value + 1)
     }
-    // Convert current Set to Array for storage
-    history.value.push([...selectionStore.selectedIds])
+
+    // Use provided snapshot or generate one from the store
+    const snapshot = explicitSnapshot || [...selectionStore.selectedIds]
+
+    history.value.push(snapshot)
     historyIndex.value++
   }
 
   function applyHistoryState() {
-    // Restore: Pass Array to store, store converts to Set
     const previousState = history.value[historyIndex.value]
     if (previousState) {
       selectionStore.replaceAll(previousState)
@@ -52,16 +56,29 @@ export function useTimelineSelection(
   // --- Bulk Selection Logic ---
 
   function selectAll() {
-    // Pass Array to replaceAll
-    selectionStore.replaceAll([...timelineController.ids])
+    // 1. Get the source array ONCE.
+    // Accessing timelineController.ids might be expensive if it's a getter,
+    // so we grab it once and reuse it.
+    const allIds = [...timelineController.ids]
+
+    // 2. Update the store immediately so UI updates
+    // We assume replaceAll handles conversion to Set internally
+    selectionStore.replaceAll(allIds)
 
     anchorId.value = null
     lastShiftedIds.value.clear()
-    recordHistory()
+
+    // 3. Defer the heavy history operation to the next paint frame.
+    // This allows the browser to render the checkmarks immediately,
+    // eliminating the perceived freeze.
+    requestAnimationFrame(() => {
+      // Pass the array we already have to avoid converting Set -> Array again
+      recordHistory(allIds)
+    })
   }
 
   function deselectAll() {
-    selectionStore.replaceAll([]) // Empty array clears the set
+    selectionStore.replaceAll([])
 
     anchorId.value = null
     lastShiftedIds.value.clear()
@@ -91,20 +108,17 @@ export function useTimelineSelection(
         selectionStore.selectMany(newRange)
         lastShiftedIds.value = newRangeSet
       }
-    } else if (e.ctrlKey || e.metaKey) {
-      selectionStore.toggleSelected(id)
-      anchorId.value = id
-      lastShiftedIds.value.clear()
     } else {
-      // Simple click: clear others, select one
-      selectionStore.replaceAll([id])
-      anchorId.value = id
+      selectionStore.toggleSelected(id)
+      if (selectionStore.isSelected(id)) anchorId.value = id
+
       lastShiftedIds.value.clear()
     }
 
     recordHistory()
   }
 
+  // ... (Keep existing handleKeydown logic)
   function handleKeydown(e: KeyboardEvent) {
     const isCmdOrCtrl = e.ctrlKey || e.metaKey
 

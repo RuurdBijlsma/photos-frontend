@@ -68,7 +68,12 @@ const { handleScroll } = useTimelineScrollSync(
   <main-layout-container>
     <date-overlay :date="dateInViewString" />
     <actions-overlay @deselect-all="deselectAll" />
-    <div class="photo-grid-container" ref="container">
+    <!-- MOVED: :class binding moved from v-virtual-scroll to here -->
+    <div
+      class="photo-grid-container"
+      ref="container"
+      :class="{ 'is-selecting': selectionStore.size > 0 }"
+    >
       <v-virtual-scroll
         ref="virtualScrollRef"
         @scroll="handleScroll"
@@ -78,6 +83,7 @@ const { handleScroll } = useTimelineScrollSync(
         class="scroll-container"
       >
         <template #default="{ item }">
+          <!-- ... content remains the same ... -->
           <grid-row-header v-if="item.firstOfTheMonth" :row="item" />
           <grid-row
             @selection-click="(payload) => selectItem(payload.event, payload.id)"
