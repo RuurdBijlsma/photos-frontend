@@ -31,12 +31,7 @@ const route = useRoute()
       <v-list-subheader class="mt-5">Collections</v-list-subheader>
 
       <div class="albums-nav">
-        <v-list-item
-          class="albums-nav-item"
-          rounded
-          prepend-icon="mdi-image-album"
-          to="/albums"
-        >
+        <v-list-item class="albums-nav-item" rounded prepend-icon="mdi-image-album" to="/albums">
           <v-list-item-title>Albums</v-list-item-title>
         </v-list-item>
         <v-btn

@@ -1,49 +1,69 @@
 import { defineStore } from 'pinia'
-import { shallowRef, triggerRef } from 'vue'
+import { computed, shallowRef, triggerRef } from 'vue'
 
 export const useSelectionStore = defineStore('selection', () => {
-  const selectedIds = shallowRef<string[]>([])
+  // 1. State: Use shallowRef for maximum performance with large collections
+  const ids = shallowRef(new Set<string>())
 
-  function isSelected(id: string): boolean {
-    return selectedIds.value.includes(id)
-  }
+  // 2. Getters
+  const size = computed(() => ids.value.size)
 
-  function selectMany(ids: string[]) {
-    ids.forEach(select)
-  }
+  // Efficient check for templates
+  const isSelected = (id: string) => ids.value.has(id)
 
-  function deselectMany(ids: string[]) {
-    ids.forEach(deselect)
-  }
+  // 3. Actions
 
-  function select(id: string) {
-    if (!isSelected(id)) selectedIds.value.push(id)
-  }
-
-  function deselect(id: string) {
-    if (isSelected(id)) selectedIds.value.splice(selectedIds.value.indexOf(id), 1)
+  // Replaces the entire selection (Used for History Undo/Redo, Select All)
+  function replaceAll(newIds: string[] | Set<string>) {
+    if (newIds instanceof Set) {
+      ids.value = newIds
+    } else {
+      ids.value = new Set(newIds)
+    }
+    triggerRef(ids)
   }
 
   function toggleSelected(id: string) {
-    if (isSelected(id)) {
-      selectedIds.value.splice(selectedIds.value.indexOf(id), 1)
+    if (ids.value.has(id)) {
+      ids.value.delete(id)
     } else {
-      selectedIds.value.push(id)
+      ids.value.add(id)
+    }
+    triggerRef(ids)
+  }
+
+  function selectMany(items: string[]) {
+    let changed = false
+    const s = ids.value
+    for (const id of items) {
+      if (!s.has(id)) {
+        s.add(id)
+        changed = true
+      }
+    }
+    if (changed) triggerRef(ids)
+  }
+
+  function deselect(id: string) {
+    if (ids.value.has(id)) {
+      ids.value.delete(id)
+      triggerRef(ids)
     }
   }
 
+  // Force a UI update manually (rarely needed)
   function trigger() {
-    triggerRef(selectedIds)
+    triggerRef(ids)
   }
 
   return {
-    selectedIds,
-    select,
-    selectMany,
-    deselectMany,
-    deselect,
+    selectedIds: ids, // Expose the Ref directly
+    size,
     isSelected,
+    replaceAll,
     toggleSelected,
+    selectMany,
+    deselect,
     trigger,
   }
 })

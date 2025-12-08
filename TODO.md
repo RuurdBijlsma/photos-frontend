@@ -37,6 +37,13 @@
 * ✅ vuetify discord vragen of het mogelijk is en nut heeft om alle item heights in een virtual scroll toe te voegen.
 * ✅ make fetch months timelineStore function take ~0 ms on main thread.
 * ✅ When processing image, link the image to a hash of the file + filename, so rebuilding is easy
+* ✅ volgende stap: selectie in photo grid laten maken
+* ✅ ctrl z voor selecties?
+* ✅ only select multiple photos when holding ctrl
+* ✅ only show selection-check when multiple photos are selected?
+* ✅ deselect all with escape
+* ✅ select all with ctrl+a
+* ✅ review useTimelineSelection & selectionStore code & gridItem code.
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -62,18 +69,12 @@
 * re-establish ws connection if auth failed and it's refreshed automatically afterwards
 * stomme nav bar start te hoog en animeert naar beneden on page load
 * add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
-* ✅ volgende stap: selectie in photo grid laten maken
-* ✅ ctrl z voor selecties?
 * i need a selection overlay thing on photo grid
     * deselect all button
     * actions
     * can this integrate with date overlay?
 * ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
 * when holding shift, show what would be selected with shift
-* ✅ only select multiple photos when holding ctrl
-* ✅ only show selection-check when multiple photos are selected?
-* ✅ deselect all with escape
-* ✅ select all with ctrl+a
 * clean up selection code (composable & griditem)
 * make way to view photo without losing selection
 * idea to fix desync timeline bug:

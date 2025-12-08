@@ -79,10 +79,14 @@ watch(nextId, () => mediaStore.fetchItem(nextId.value))
 
 function handleKeyDown(e: KeyboardEvent) {
   if (e.key === 'ArrowLeft' && prevId.value) {
+    e.preventDefault()
     router.replace({ path: `/view/${prevId.value}` })
   } else if (e.key === 'ArrowRight' && nextId.value) {
+    e.preventDefault()
     router.replace({ path: `/view/${nextId.value}` })
   } else if (e.key === 'Escape') {
+    e.preventDefault()
+    e.stopPropagation()
     closeViewer()
   }
 }

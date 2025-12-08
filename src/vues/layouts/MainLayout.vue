@@ -58,7 +58,7 @@ backgroundStore.initialize()
       </div>
     </v-app-bar>
 
-    <nav-drawer/>
+    <nav-drawer />
 
     <v-main class="layout-body">
       <router-view class="router-view" />

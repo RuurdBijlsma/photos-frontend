@@ -38,10 +38,7 @@ const albumService = {
   /**
    * Update an album's details (Name, Description, Visibility).
    */
-  updateAlbum(
-    albumId: string,
-    payload: UpdateAlbumRequest,
-  ): Promise<AxiosResponse<Album>> {
+  updateAlbum(albumId: string, payload: UpdateAlbumRequest): Promise<AxiosResponse<Album>> {
     return apiClient.put<Album>(`/album/${albumId}`, payload)
   },
 
@@ -50,20 +47,14 @@ const albumService = {
   /**
    * Add media items to an album.
    */
-  addMediaToAlbum(
-    albumId: string,
-    payload: AddMediaToAlbumRequest,
-  ): Promise<AxiosResponse<void>> {
+  addMediaToAlbum(albumId: string, payload: AddMediaToAlbumRequest): Promise<AxiosResponse<void>> {
     return apiClient.post<void>(`/album/${albumId}/media`, payload)
   },
 
   /**
    * Remove a specific media item from an album.
    */
-  removeMediaFromAlbum(
-    albumId: string,
-    mediaItemId: string,
-  ): Promise<AxiosResponse<void>> {
+  removeMediaFromAlbum(albumId: string, mediaItemId: string): Promise<AxiosResponse<void>> {
     return apiClient.delete<void>(`/album/${albumId}/media/${mediaItemId}`)
   },
 
@@ -76,23 +67,15 @@ const albumService = {
     albumId: string,
     payload: AddCollaboratorRequest,
   ): Promise<AxiosResponse<AlbumCollaborator>> {
-    return apiClient.post<AlbumCollaborator>(
-      `/album/${albumId}/collaborators`,
-      payload,
-    )
+    return apiClient.post<AlbumCollaborator>(`/album/${albumId}/collaborators`, payload)
   },
 
   /**
    * Remove a collaborator from an album.
    * Note: collaboratorId is the numeric ID of the link record, not the user's ID.
    */
-  removeCollaborator(
-    albumId: string,
-    collaboratorId: number,
-  ): Promise<AxiosResponse<void>> {
-    return apiClient.delete<void>(
-      `/album/${albumId}/collaborators/${collaboratorId}`,
-    )
+  removeCollaborator(albumId: string, collaboratorId: number): Promise<AxiosResponse<void>> {
+    return apiClient.delete<void>(`/album/${albumId}/collaborators/${collaboratorId}`)
   },
 
   // --- Invite / Sharing System ---

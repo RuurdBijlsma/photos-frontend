@@ -10,26 +10,22 @@ const mediaStore = useMediaStore()
 const selectionStore = useSelectionStore()
 const router = useRouter()
 
+export type SelectionPayload = { event: PointerEvent; id: string }
+const emit = defineEmits<{ (e: 'selectionClick', payload: SelectionPayload): void }>()
+
 const props = defineProps<{
   mediaItem?: TimelineItem
   height: number
   width: number
 }>()
 
-export type SelectionPayload = { event: PointerEvent; id: string }
-const emit = defineEmits<{ (e: 'selectionClick', payload: SelectionPayload): void }>()
-
 const id = computed(() => props.mediaItem?.id ?? '')
-
-// Performance: access the store state only once per render in the template or computed
-// "isMultiSelect" allows us to avoid granular dependency tracking on the exact array length
-const isMultiSelect = computed(() => selectionStore.selectedIds.length > 1)
-const isSelected = computed(() => (id.value ? selectionStore.isSelected(id.value) : false))
+const isMultiSelect = computed(() => selectionStore.size > 1)
+const isSelected = computed(() => selectionStore.isSelected(id.value))
 
 const thumbnail = computed(() => (id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''))
 const linkUrl = computed(() => (id.value ? `/view/${id.value}` : '#'))
 
-// Performance: Static object to prevent garbage collection on every render
 const EMPTY_STYLE = Object.freeze({})
 
 const scaleStyle = computed(() => {
@@ -38,8 +34,8 @@ const scaleStyle = computed(() => {
 
   // Combine static styles here to return one object
   return {
-    '--sx': (width - 8) / width,
-    '--sy': (height - 8) / height,
+    '--scale-x': (width - 8) / width,
+    '--scale-y': (height - 8) / height,
     width: width + 'px',
     height: height + 'px',
     containIntrinsicWidth: width + 'px',
@@ -57,7 +53,6 @@ function handleLinkClick(e: MouseEvent) {
   if (id.value) emit('selectionClick', { event: e as PointerEvent, id: id.value })
 }
 
-// Extract to method to avoid creating new anonymous function on every render
 function handlePointerDown() {
   if (id.value) mediaStore.fetchItem(id.value)
 }
@@ -65,7 +60,7 @@ function handlePointerDown() {
 
 <template>
   <!--
-    v-memo: CRITICAL OPTIMIZATION
+    v-memo:
     Vue will completely skip diffing this DOM tree unless one of these values changes.
     This protects the component from updates in parent scope that don't affect this specific item.
   -->
@@ -85,12 +80,11 @@ function handlePointerDown() {
       <div
         class="visual-content"
         :class="{
-          'selected': isSelected,
-          'has-multi': isMultiSelect
+          selected: isSelected,
+          'has-multi': isMultiSelect,
         }"
         :style="{ backgroundImage: `url(${thumbnail})` }"
       >
-        <!-- Replaced v-if/v-fade-transition with CSS classes -->
         <div class="check-icon">
           <v-icon size="15">mdi-check</v-icon>
         </div>
@@ -115,8 +109,7 @@ function handlePointerDown() {
 .grid-cell-container {
   contain: strict;
   content-visibility: auto;
-  transform: translateZ(0); /* Promotes to composite layer */
-  /* Width/Height moved to inline style for JS calculation */
+  transform: translateZ(0);
 }
 
 .grid-item-link {
@@ -138,12 +131,8 @@ function handlePointerDown() {
     border-radius 0.15s ease-out,
     box-shadow 0.15s ease-out;
   position: relative;
-  /* Hardware acceleration for the transform transition */
   will-change: transform, box-shadow;
 }
-
-/* --- OPTIMIZED OVERLAYS --- */
-/* By default, elements are hidden via opacity to avoid DOM thrashing */
 
 .magnify-button {
   position: absolute;
@@ -176,11 +165,11 @@ function handlePointerDown() {
   background-color: rgba(var(--v-theme-secondary), 1);
   color: rgb(var(--v-theme-on-secondary));
   z-index: 2;
-
-  /* Hidden by default */
   opacity: 0;
   transform: scale(0.8);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
   pointer-events: none;
 }
 
@@ -191,7 +180,7 @@ function handlePointerDown() {
 }
 
 .selected {
-  transform: scale(var(--sx), var(--sy));
+  transform: scale(var(--scale-x), var(--scale-y));
   box-shadow:
     inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
     0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
