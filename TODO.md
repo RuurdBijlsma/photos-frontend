@@ -84,3 +84,9 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * copy google photos selection, and single click to open photos
+* make selection icon like in google photos
+    * when nothing is selected; check in a filled circle, transparent
+    * when something is selected, on an item that isnt selected: just a circle, with box shadow inset full color 2px
+      line, and a box shadow outset half transparent 5px outline (both non-blur shadow)
+    * when something is selected, on an item that is selected: check in a filled circle, full color, with box shadow
+      outside half transparent (non-blur shadow)
