@@ -44,6 +44,13 @@
 * ✅ deselect all with escape
 * ✅ select all with ctrl+a
 * ✅ review useTimelineSelection & selectionStore code & gridItem code.
+* ✅ dont deselect all with escape when you're viewing big pic
+* ✅ i need a selection overlay thing on photo grid
+    * ✅ deselect all button
+    * ✅ actions
+    * ✅ can this integrate with date overlay?
+* ✅ clean up selection code (composable & griditem)
+* ✅ make way to view photo without losing selection
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -69,17 +76,10 @@
 * re-establish ws connection if auth failed and it's refreshed automatically afterwards
 * stomme nav bar start te hoog en animeert naar beneden on page load
 * add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
-* i need a selection overlay thing on photo grid
-    * deselect all button
-    * actions
-    * can this integrate with date overlay?
 * ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
 * when holding shift, show what would be selected with shift
-* clean up selection code (composable & griditem)
-* make way to view photo without losing selection
 * idea to fix desync timeline bug:
     * bug: timeline ids/ratios/by month might by out of sync because theyre separate requests
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* dont deselect all with escape when you're viewing big pic
