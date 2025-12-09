@@ -32,7 +32,6 @@ const scaleStyle = computed(() => {
   const { width, height } = props
   if (!width || !height) return EMPTY_STYLE
 
-  // Combine static styles here to return one object
   return {
     '--scale-x': (width - 8) / width,
     '--scale-y': (height - 8) / height,
@@ -44,7 +43,6 @@ const scaleStyle = computed(() => {
 })
 
 function handleLinkClick(e: MouseEvent) {
-  console.log('linkClick', e.button)
   if (e.button === 1) return
 
   e.preventDefault()
@@ -176,8 +174,9 @@ function handlePointerDown() {
   cursor: pointer;
 }
 
-/* Logic: Show check icon if (Selected) OR (Hovering) */
+/* Logic: Show check icon if (Selected) OR (Hovering) OR (In Selection Mode) */
 .visual-content.selected .check-icon,
+.is-selecting .check-icon,
 .visual-content:hover .check-icon {
   opacity: 1;
   pointer-events: auto;
