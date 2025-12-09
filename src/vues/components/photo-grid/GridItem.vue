@@ -22,6 +22,7 @@ const props = defineProps<{
 const id = computed(() => props.mediaItem?.id ?? '')
 
 const isSelected = computed(() => selectionStore.isSelected(id.value))
+const isSelectionMode = computed(() => selectionStore.size > 0)
 
 const thumbnail = computed(() => (id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''))
 const linkUrl = computed(() => (id.value ? `/view/${id.value}` : '#'))
@@ -67,7 +68,7 @@ function handlePointerDown() {
 <template>
   <div
     class="grid-cell-container"
-    v-memo="[isSelected, thumbnail, width, height]"
+    v-memo="[isSelected, isSelectionMode, thumbnail, width, height]"
     :style="scaleStyle"
   >
     <a
@@ -81,6 +82,7 @@ function handlePointerDown() {
         class="visual-content"
         :class="{
           selected: isSelected,
+          'in-selection-mode': isSelectionMode
         }"
         :style="{ backgroundImage: `url(${thumbnail})` }"
       >
@@ -176,7 +178,7 @@ function handlePointerDown() {
 
 /* Logic: Show check icon if (Selected) OR (Hovering) OR (In Selection Mode) */
 .visual-content.selected .check-icon,
-.is-selecting .check-icon,
+.visual-content.in-selection-mode .check-icon,
 .visual-content:hover .check-icon {
   opacity: 1;
   pointer-events: auto;
