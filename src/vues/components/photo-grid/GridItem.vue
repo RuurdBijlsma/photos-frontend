@@ -86,12 +86,13 @@ function handlePointerDown() {
         }"
         :style="{ backgroundImage: `url(${thumbnail})` }"
       >
-        <div class="check-icon" @click="handleSelectionClick">
-          <v-icon
-            color="secondary"
-            :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
-          />
-        </div>
+        <v-icon
+          @click="handleSelectionClick"
+          class="check-icon"
+          color="secondary"
+          :size="28"
+          :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
+        />
 
         <v-btn
           icon
@@ -102,7 +103,7 @@ function handlePointerDown() {
           :to="linkUrl"
           tabindex="-1"
         >
-          <v-icon size="15" icon="mdi-eye-outline" />
+          <v-icon size="15" icon="mdi-fullscreen" />
         </v-btn>
       </div>
     </a>
@@ -158,13 +159,8 @@ function handlePointerDown() {
 .check-icon {
   position: absolute;
   top: 10px;
-  right: 10px;
-  width: 25px;
-  height: 25px;
+  right: 8px;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
   z-index: 2;
   opacity: 0;
   transform: scale(1);
