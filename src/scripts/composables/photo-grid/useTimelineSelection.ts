@@ -31,38 +31,37 @@ export function useTimelineSelection(
     return map
   })
 
+  // --- Helper: Get Start/End Indices ---
+  function getRangeIndices(idA: string, idB: string): [number, number] | null {
+    const map = idToIndex.value
+    const idx1 = map.get(idA)
+    const idx2 = map.get(idB)
+    if (idx1 === undefined || idx2 === undefined) return null
+    return [Math.min(idx1, idx2), Math.max(idx1, idx2)]
+  }
+
   // --- Preview Logic ---
   const previewState = computed(() => {
-    // 1. Fast exit checks
     if (!isShiftDown.value || !anchorId.value || !hoveredId.value) {
       return { add: new Set<string>(), remove: new Set<string>() }
     }
 
-    const map = idToIndex.value
-    const idx1 = map.get(anchorId.value)
-    const idx2 = map.get(hoveredId.value)
+    const range = getRangeIndices(anchorId.value, hoveredId.value)
+    if (!range) return { add: new Set<string>(), remove: new Set<string>() }
 
-    if (idx1 === undefined || idx2 === undefined) {
-      return { add: new Set<string>(), remove: new Set<string>() }
-    }
-
-    // 2. Determine Range Indices
-    const start = Math.min(idx1, idx2)
-    const end = Math.max(idx1, idx2)
+    const [start, end] = range
     const ids = timelineController.ids
-
     const toAdd = new Set<string>()
     const toRemove = new Set<string>()
+    const map = idToIndex.value
 
-    // 3. Calculate "Blue" (Additions)
+    // Calculate Blue (Add)
     for (let i = start; i <= end; i++) {
-      const id = ids[i]!
-      if (!selectionStore.isSelected(id)) {
-        toAdd.add(id)
-      }
+      const id = ids[i]
+      if (!selectionStore.isSelected(id)) toAdd.add(id)
     }
 
-    // 4. Calculate "Red" (Removals)
+    // Calculate Red (Remove)
     for (const oldId of lastShiftedIds.value) {
       const oldIdx = map.get(oldId)
       if (oldIdx !== undefined && (oldIdx < start || oldIdx > end)) {
@@ -72,8 +71,6 @@ export function useTimelineSelection(
 
     return { add: toAdd, remove: toRemove }
   })
-
-  // --- History Management ---
 
   function recordHistory(snapshot: string[] = [...selectionStore.selectedIds]) {
     if (historyIndex.value < history.value.length - 1) {
@@ -93,8 +90,6 @@ export function useTimelineSelection(
     }
   }
 
-  // --- Actions ---
-
   function selectAll() {
     const allIds = [...timelineController.ids]
     selectionStore.replaceAll(allIds)
@@ -111,40 +106,40 @@ export function useTimelineSelection(
   }
 
   function selectItem(e: PointerEvent, id: string) {
-    // 1. Shift + Click (Range Selection)
     if (e.shiftKey && anchorId.value) {
-      const map = idToIndex.value
-      const idx1 = map.get(anchorId.value)
-      const idx2 = map.get(id)
+      const range = getRangeIndices(anchorId.value, id)
 
-      if (idx1 !== undefined && idx2 !== undefined) {
-        const start = Math.min(idx1, idx2)
-        const end = Math.max(idx1, idx2)
+      if (range) {
+        const [start, end] = range
 
-        const allIds = timelineController.ids
-        const rangeIds = allIds.slice(start, end + 1)
+        // Optimization: We know the indices, so slice directly
+        const rangeIds = timelineController.ids.slice(start, end + 1)
         const rangeSet = new Set(rangeIds)
 
+        // Clone current selection
         const nextSelection = new Set(selectionStore.selectedIds)
 
+        // 1. Remove items that were part of the previous shift but are NOT in the new range
+        //    (User shrank the shift selection)
         lastShiftedIds.value.forEach((old) => {
           if (!rangeSet.has(old)) nextSelection.delete(old)
         })
 
+        // 2. Add all items in the new range
         rangeIds.forEach((newId) => nextSelection.add(newId))
 
         selectionStore.replaceAll(nextSelection)
         lastShiftedIds.value = rangeSet
       }
-    }
-    // 2. Normal Click (Toggle)
-    else {
+    } else {
+      // Normal Toggle
       selectionStore.toggleSelected(id)
       anchorId.value = selectionStore.isSelected(id) ? id : null
       lastShiftedIds.value.clear()
     }
 
-    recordHistory()
+    // Defer history to keep UI snappy
+    requestAnimationFrame(() => recordHistory())
   }
 
   function handleKeydown(e: KeyboardEvent) {

@@ -188,7 +188,7 @@ if (props.ids.length === 0 && props.fetchIds) {
         <div class="right-buttons">
           <v-btn
             v-if="selectionStore.size > 0"
-            color="white"
+            :color="isSelected ? 'secondary' : 'white'"
             rounded
             :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
             variant="plain"

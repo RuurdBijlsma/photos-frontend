@@ -23,6 +23,7 @@ const props = defineProps<{
 
 const id = computed(() => props.mediaItem?.id ?? '')
 
+// Access store directly in computed for granular updates
 const isSelected = computed(() => selectionStore.isSelected(id.value))
 const isSelectionMode = computed(() => selectionStore.size > 0)
 
@@ -35,6 +36,7 @@ const scaleStyle = computed(() => {
   const { width, height } = props
   if (!width || !height) return EMPTY_STYLE
 
+  // Combine scaling and dimensions into one style object
   return {
     '--scale-x': (width - 8) / width,
     '--scale-y': (height - 8) / height,
@@ -47,10 +49,10 @@ const scaleStyle = computed(() => {
 
 function handleLinkClick(e: MouseEvent) {
   if (e.button === 1) return
-
   e.preventDefault()
-  if (selectionStore.size > 0) {
-    if (id.value) emit('selectionClick', { event: e as PointerEvent, id: id.value })
+
+  if (selectionStore.size > 0 && id.value) {
+    emit('selectionClick', { event: e as PointerEvent, id: id.value })
   } else {
     router.push(linkUrl.value)
   }
@@ -84,12 +86,11 @@ function handlePointerDown() {
         class="visual-content"
         :class="{
           selected: isSelected,
+          'preview-add': isPreviewAdd,
+          'preview-remove': isPreviewRemove,
         }"
         :style="{ backgroundImage: `url(${thumbnail})` }"
       >
-        <div v-if="isPreviewAdd" class="selection-overlay overlay-add"></div>
-        <div v-if="isPreviewRemove" class="selection-overlay overlay-remove"></div>
-
         <v-icon
           @click="handleSelectionClick"
           class="check-icon"
@@ -152,24 +153,44 @@ function handlePointerDown() {
   overflow: hidden;
 }
 
-.selection-overlay {
+/* Pseudo-element for overlays */
+.visual-content::after {
+  content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
+  inset: 0;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 1;
 }
 
-.overlay-add {
-  background-color: rgba(var(--v-theme-primary), 0.3);
+.visual-content.preview-add::after {
+  background-color: rgba(var(--v-theme-secondary), 0.4);
+  opacity: 1;
 }
 
-.overlay-remove {
+.visual-content.preview-remove::after {
   background-color: rgba(var(--v-theme-error), 0.4);
+  opacity: 1;
 }
 
+/* Handle selected state clipping */
+.visual-content.selected {
+  overflow: visible;
+  transform: scale(var(--scale-x), var(--scale-y));
+  box-shadow:
+    inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
+    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
+  border-radius: 20px;
+}
+
+/* When selected, we want the overlay to respect the border radius of the selected item.
+   Since overflow is visible, we need to apply radius to the pseudo element too. */
+.visual-content.selected::after {
+  border-radius: 20px;
+}
+
+/* ... icon styles ... */
 .magnify-button {
   position: absolute;
   bottom: 10px;
@@ -194,7 +215,6 @@ function handlePointerDown() {
   display: flex;
   z-index: 2;
   opacity: 0;
-  transform: scale(1);
   pointer-events: none;
   cursor: pointer;
 }
@@ -213,13 +233,5 @@ function handlePointerDown() {
 
 .photo-grid-container:not(.is-selecting) .visual-content:not(.selected):hover .check-icon {
   opacity: 0.7;
-}
-
-.selected {
-  transform: scale(var(--scale-x), var(--scale-y));
-  box-shadow:
-    inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
-    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
-  border-radius: 20px;
 }
 </style>
