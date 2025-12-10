@@ -91,3 +91,4 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * [bug] scroll via timeline to some far away date -> scroll up & down a bit -> it janks to a month later? idk
+* make select toggle in /view/ use the undo/redo dings

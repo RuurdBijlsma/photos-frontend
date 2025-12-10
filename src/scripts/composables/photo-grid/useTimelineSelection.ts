@@ -6,21 +6,17 @@ export function useTimelineSelection(
   store: ReturnType<typeof useSelectionStore>,
   timeline: GenericTimeline,
 ) {
-  // --- State ---
+  // --- Local Interaction State ---
   const anchorId = ref<string | null>(null)
   const lastShiftedIds = shallowRef(new Set<string>())
   const isShiftDown = ref(false)
 
-  // Hover / Preview State
+  // --- Hover / Preview State ---
   const hoveredId = ref<string | null>(null)
   let rafId: number | null = null
   let pendingHoverId: string | null = null
 
-  // History State
-  const history = shallowRef<string[][]>([[...store.selectedIds]])
-  const historyIndex = ref(0)
-
-  // --- Helpers & Computed ---
+  // --- Optimization: ID Lookup ---
   const idToIdx = computed(() => {
     const map = new Map<string, number>()
     timeline.ids.forEach((id, i) => map.set(id, i))
@@ -35,7 +31,7 @@ export function useTimelineSelection(
       : [Math.min(idxA, idxB), Math.max(idxA, idxB)]
   }
 
-  // Calculate visual cues for what will happen on click
+  // --- Computed Preview ---
   const previewState = computed(() => {
     const empty = { add: new Set<string>(), remove: new Set<string>() }
     if (!isShiftDown.value || !anchorId.value || !hoveredId.value) return empty
@@ -47,13 +43,13 @@ export function useTimelineSelection(
     const toAdd = new Set<string>()
     const toRemove = new Set<string>()
 
-    // Identify items to add (currently unselected in range)
+    // 1. Items to Add
     for (let i = start; i <= end; i++) {
       const id = timeline.ids[i]!
       if (!store.isSelected(id)) toAdd.add(id)
     }
 
-    // Identify items to remove (shrink previous shift selection)
+    // 2. Items to Remove (shrinkage)
     for (const oldId of lastShiftedIds.value) {
       const idx = idToIdx.value.get(oldId)
       if (idx !== undefined && (idx < start || idx > end)) {
@@ -64,39 +60,19 @@ export function useTimelineSelection(
     return { add: toAdd, remove: toRemove }
   })
 
-  // --- History Management ---
-  function recordHistory(snapshot: string[] = [...store.selectedIds]) {
-    if (historyIndex.value < history.value.length - 1) {
-      history.value = history.value.slice(0, historyIndex.value + 1)
-    }
-    history.value.push(snapshot)
-    historyIndex.value++
-  }
-
-  function navigateHistory(offset: number) {
-    const target = historyIndex.value + offset
-    if (target >= 0 && target < history.value.length) {
-      historyIndex.value = target
-      store.replaceAll(history.value[target]!)
-      anchorId.value = null
-      lastShiftedIds.value.clear()
-    }
-  }
-
   // --- Actions ---
-  function updateSelection(newIds: string[], anchor: string | null = null) {
-    store.replaceAll(newIds)
-    anchorId.value = anchor
-    lastShiftedIds.value.clear()
-    requestAnimationFrame(() => recordHistory(newIds))
-  }
-
   function selectAll() {
-    updateSelection([...timeline.ids])
+    store.replaceAll([...timeline.ids])
+    anchorId.value = null
+    lastShiftedIds.value.clear()
+    store.commit()
   }
 
   function deselectAll() {
-    updateSelection([])
+    store.replaceAll([])
+    anchorId.value = null
+    lastShiftedIds.value.clear()
+    store.commit()
   }
 
   function selectItem(e: PointerEvent, id: string) {
@@ -110,7 +86,7 @@ export function useTimelineSelection(
       const rangeSet = new Set(rangeIds)
       const nextSelection = new Set(store.selectedIds)
 
-      // Remove items from previous shift that are no longer in range (shrink)
+      // Remove items from previous shift that are no longer in range
       lastShiftedIds.value.forEach(old => {
         if (!rangeSet.has(old)) nextSelection.delete(old)
       })
@@ -128,7 +104,8 @@ export function useTimelineSelection(
       lastShiftedIds.value.clear()
     }
 
-    requestAnimationFrame(() => recordHistory())
+    // Defer history commit slightly to keep UI click response snappy
+    requestAnimationFrame(() => store.commit())
   }
 
   // --- Event Handlers ---
@@ -156,9 +133,9 @@ export function useTimelineSelection(
       case 'z':
         e.preventDefault()
         if (e.shiftKey) {
-          navigateHistory(1)
+          store.redo()
         } else {
-          navigateHistory(-1)
+          store.undo()
         }
         break
       case 'a':
@@ -187,8 +164,6 @@ export function useTimelineSelection(
     selectItem,
     selectAll,
     deselectAll,
-    undo: () => navigateHistory(-1),
-    redo: () => navigateHistory(1),
     setHoveredId,
     previewAddIds: computed(() => previewState.value.add),
     previewRemoveIds: computed(() => previewState.value.remove),
