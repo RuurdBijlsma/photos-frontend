@@ -20,18 +20,51 @@
   route seems to
   be wrong somehow. Doesnt match actual address in addressbalk
 * ✅ in settings, add option to have solid color background, with fitting theme. or custom image as wallpaper with
-  fitting
-  theme.
+  fitting theme.
+* ✅ er klopt niks van de sync tussen scroll thumb en de year labels / month dots
+* ✅ change scrollbar behaviour so dots and more scroll info is shown when scrolling
+* ✅ you can't scroll to most recent photo with timeline scroll
+* ✅ date overlay doesnt update if you click scroll to unloaded area in virtual scroller
+* ✅ upper bound op tooltip
+* ✅ fix scroll fps (is this possible?)
+* ✅ volgens mij is fetchMediaByMonths shittylaggy als je hard scrollt
+* ✅ on timeline, once loading of in view months in done, just loop until all months are loaded, starting with the ones
+  near the viewed month
+* ✅ don't push to history when next-ing trough photos in photoview
+* ✅ refactor timeline into reusable photogrid
+* ✅ support other sorting options for reusable timeline component
+* ✅ support backend sort options
+* ✅ vuetify discord vragen of het mogelijk is en nut heeft om alle item heights in een virtual scroll toe te voegen.
+* ✅ make fetch months timelineStore function take ~0 ms on main thread.
+* ✅ When processing image, link the image to a hash of the file + filename, so rebuilding is easy
+* ✅ volgende stap: selectie in photo grid laten maken
+* ✅ ctrl z voor selecties?
+* ✅ only select multiple photos when holding ctrl
+* ✅ only show selection-check when multiple photos are selected?
+* ✅ deselect all with escape
+* ✅ select all with ctrl+a
+* ✅ review useTimelineSelection & selectionStore code & gridItem code.
+* ✅ dont deselect all with escape when you're viewing big pic
+* ✅ i need a selection overlay thing on photo grid
+    * ✅ deselect all button
+    * ✅ actions
+    * ✅ can this integrate with date overlay?
+* ✅ clean up selection code (composable & griditem)
+* ✅ make way to view photo without losing selection
+* ✅ copy google photos selection, and single click to open photos
+* ✅ make selection icon like in google photos
+    * ✅ when nothing is selected; check in a filled circle, transparent
+    * ✅ when something is selected, on an item that isnt selected: just a circle, with box shadow inset full color 2px
+      line, and a box shadow outset half transparent 5px outline (both non-blur shadow)
+    * ✅ when something is selected, on an item that is selected: check in a filled circle, full color, with box shadow
+      outside half transparent (non-blur shadow)
 * on login redirect to where you were
 * standardize font sizes everywhere
-* When processing image, link the image to a hash of the file + filename, so rebuilding is easy
 * improve messaging when you load the website and the server is off
 * make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
   music
-* vuetify discord vragen of het mogelijk is en nut heeft om alle item heights in een virtual scroll toe te voegen.
 * [bug]: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
-  out of sync (ratios & photos). Its better to just not refresh the ratios i think
-* make fetch months timelineStore function take ~0 ms on main thread.
+  out of sync (ratios & photos).
 * make api.ts abstraction for protobuf endpoints.
 * bad performance on firefox
 * make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
@@ -46,13 +79,16 @@
     * alice's frontend automatically opens this and asks to import this album
 * don't allow user to go to /onboarding if onboarding is done already.
 * setting: usebackdropblur doesnt apply everywhere.
-* fix scroll fps (is this possible?)
 * preload 1440p thumbnail on grid item hover
-* er klopt niks van de sync tussen scroll thumb en de year labels / month dots
-* volgens mij is fetchMediaByMonths shittylaggy als je hard scrollt
-* change scrollbar behaviour so dots and more scroll info is shown when scrolling
-* on timeline, once loading of in view months in done, just loop until all months are loaded, starting with the ones
-  near the viewed month
-* refactor timeline into reusable photogrid
-* you can't scroll to most recent photo with timeline scroll
-* date overlay doesnt update if you click scroll to unloaded area in virtual scroller
+* re-establish ws connection if auth failed and it's refreshed automatically afterwards
+* stomme nav bar start te hoog en animeert naar beneden on page load
+* add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
+* ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
+* when holding shift, show what would be selected with shift
+* idea to fix desync timeline bug:
+    * bug: timeline ids/ratios/by month might by out of sync because theyre separate requests
+    * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
+    * this would prevent new photos being added in between the ratios and byMonth request
+    * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
+* [bug] scroll via timeline to some far away date -> scroll up & down a bit -> it janks to a month later? idk
+* make select toggle in /view/ use the undo/redo dings

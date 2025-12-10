@@ -5,10 +5,12 @@ defineProps<{
 </script>
 
 <template>
-  <div class="date-view" v-if="date">
-    <span class="date-view-date">{{ date.date }}</span>
-    <span v-if="date.year" class="date-view-year">{{ date.year }}</span>
-  </div>
+  <v-slide-y-transition>
+    <div class="date-view" v-if="date">
+      <span class="date-view-date">{{ date.date }}</span>
+      <span v-if="date.year" class="date-view-year">{{ date.year }}</span>
+    </div>
+  </v-slide-y-transition>
 </template>
 
 <style scoped>
@@ -21,8 +23,8 @@ defineProps<{
   text-align: left;
   font-weight: 500;
   border-radius: 40px;
-  background-color: rgba(var(--v-theme-surface-variant), 1);
-  color: rgba(var(--v-theme-on-surface-variant), 1);
+  background-color: rgba(var(--v-theme-surface-container-high), 1);
+  color: rgba(var(--v-theme-on-surface-container-high), 1);
   box-shadow:
     0 4px 8px 0 rgba(0, 0, 0, 0.2),
     0 6px 20px 0 rgba(0, 0, 0, 0.19);

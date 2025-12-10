@@ -5,14 +5,24 @@ import photoService from '@/scripts/services/photoService.ts'
 import { useThemeStore } from '@/scripts/stores/themeStore.ts'
 import { useTheme } from 'vuetify/framework'
 import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
-import { useViewStore } from '@/scripts/stores/viewStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
+import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
+
+const props = withDefaults(
+  defineProps<{
+    ids?: string[]
+    fetchIds?: () => Promise<void>
+  }>(),
+  {
+    ids: () => [],
+  },
+)
 
 const mediaStore = useMediaStore()
-const viewStore = useViewStore()
 const themeStore = useThemeStore()
 const settings = useSettingStore()
+const selectionStore = useSelectionStore()
 const vuetifyTheme = useTheme()
 const route = useRoute()
 const router = useRouter()
@@ -25,11 +35,19 @@ const id = computed(() => {
   return ''
 })
 
+const isSelected = computed(() => selectionStore.isSelected(id.value))
+
+function closeViewer() {
+  const parentRoute = route.matched[route.matched.length - 2]
+  if (parentRoute) router.push(parentRoute)
+  else router.push({ path: '/' })
+}
+
 const fullImage = ref<undefined | FullMediaItem>(undefined)
 
 async function initialize() {
   const loadingId = id.value
-  if (loadingId === '') return router.push({ name: 'timeline' })
+  if (loadingId === '') return closeViewer()
   await mediaStore.fetchItem(loadingId)
   if (id.value !== loadingId) return
   console.log('FULL MEDIA ITEM', mediaStore.cache.get(loadingId))
@@ -50,9 +68,14 @@ async function initialize() {
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
 
-const currentIndex = computed(() => viewStore.orderedIds.findIndex((arrId) => id.value === arrId))
-const nextId = computed(() => viewStore.orderedIds[currentIndex.value + 1] ?? null)
-const prevId = computed(() => viewStore.orderedIds[currentIndex.value - 1] ?? null)
+const orderedIds = computed(() => {
+  if (props.ids.length > 0) return props.ids
+  return id.value ? [id.value] : []
+})
+
+const currentIndex = computed(() => orderedIds.value.findIndex((arrId) => id.value === arrId))
+const nextId = computed(() => orderedIds.value[currentIndex.value + 1] ?? null)
+const prevId = computed(() => orderedIds.value[currentIndex.value - 1] ?? null)
 
 // Pre-fetch
 watch(prevId, () => mediaStore.fetchItem(prevId.value))
@@ -60,11 +83,15 @@ watch(nextId, () => mediaStore.fetchItem(nextId.value))
 
 function handleKeyDown(e: KeyboardEvent) {
   if (e.key === 'ArrowLeft' && prevId.value) {
-    router.push({ path: `/view/${prevId.value}` })
+    e.preventDefault()
+    router.replace({ path: `/view/${prevId.value}` })
   } else if (e.key === 'ArrowRight' && nextId.value) {
-    router.push({ path: `/view/${nextId.value}` })
+    e.preventDefault()
+    router.replace({ path: `/view/${nextId.value}` })
   } else if (e.key === 'Escape') {
-    router.push({ path: parentPath.value })
+    e.preventDefault()
+    e.stopPropagation()
+    closeViewer()
   }
 }
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
@@ -105,18 +132,15 @@ const locationString = computed(() => {
   return result ? result + ' · ' : ''
 })
 
-const parentPath = computed(() => {
-  const pathSegments = route.path.split('/')
-  const parentSegments = pathSegments.slice(0, -2)
-  return parentSegments.join('/') || '/'
-})
-
 // Init
 watch(id, () => {
   initialize()
 })
 initialize()
-viewStore.setFromRoute()
+
+if (props.ids.length === 0 && props.fetchIds) {
+  props.fetchIds()
+}
 </script>
 
 <template>
@@ -139,7 +163,7 @@ viewStore.setFromRoute()
       <div class="top-bar">
         <div class="left-buttons">
           <v-btn
-            :to="parentPath"
+            @click="closeViewer"
             color="white"
             rounded
             icon="mdi-close"
@@ -158,10 +182,24 @@ viewStore.setFromRoute()
           <h3>{{ timestampString }}</h3>
           <p>
             {{ locationString }}{{ currentIndex + 1 }} of
-            {{ viewStore.orderedIds.length }}
+            {{ orderedIds.length }}
           </p>
         </div>
         <div class="right-buttons">
+          <v-btn
+            v-if="selectionStore.size > 0"
+            :color="isSelected ? 'secondary' : 'white'"
+            rounded
+            :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
+            variant="plain"
+            @click="selectionStore.toggleSelected(id)"
+            v-tooltip="{
+              text: isSelected ? 'Remove from selection' : 'Add to selection',
+              location: 'bottom',
+              attach: true,
+              width: 140,
+            }"
+          />
           <v-btn
             color="white"
             rounded
@@ -207,7 +245,7 @@ viewStore.setFromRoute()
         </div>
       </div>
       <div
-        @click="router.push({ path: `/view/${prevId}` })"
+        @click="router.replace({ path: `/view/${prevId}` })"
         v-if="prevId !== null"
         class="prev-area"
         @mouseenter="showLeftButton = true"
@@ -222,7 +260,7 @@ viewStore.setFromRoute()
         ></v-btn>
       </div>
       <div
-        @click="router.push({ path: `/view/${nextId}` })"
+        @click="router.replace({ path: `/view/${nextId}` })"
         v-if="nextId !== null"
         class="next-area"
         @mouseenter="showRightButton = true"
@@ -331,7 +369,6 @@ viewStore.setFromRoute()
   align-items: center;
   padding-right: 20px;
   gap: 1px;
-  width: 313px;
 }
 
 .next-area {

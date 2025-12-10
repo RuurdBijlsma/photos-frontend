@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import GridItem from '@/vues/components/photo-grid/GridItem.vue'
-import type { MediaItem } from '@/scripts/types/generated/photos.ts'
+import GridItem, { type SelectionPayload } from '@/vues/components/photo-grid/GridItem.vue'
+import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 export interface LayoutItem {
   ratio: number
@@ -16,12 +16,17 @@ export interface RowLayout {
   key: string
 }
 
-const emit = defineEmits(['hoverItem'])
+const emit = defineEmits<{
+  (e: 'hoverItem', payload: { date: Date | null; id: string | null }): void
+  (e: 'selectionClick', payload: SelectionPayload): void
+}>()
 
 defineProps<{
   row: RowLayout
   photoGap: number
-  mediaItems?: MediaItem[]
+  mediaItems?: TimelineItem[]
+  previewAddIds: Set<string>
+  previewRemoveIds: Set<string>
 }>()
 </script>
 
@@ -38,19 +43,31 @@ defineProps<{
   >
     <grid-item
       @mouseenter="
-        emit(
-          'hoverItem',
-          mediaItems?.[ratio.index]?.timestamp === undefined
-            ? null // @ts-expect-error dumb ts
-            : new Date(mediaItems?.[ratio.index]?.timestamp),
-        )
+        emit('hoverItem', {
+          date:
+            mediaItems?.[layoutItem.index]?.timestamp === undefined
+              ? null
+              : new Date(mediaItems?.[layoutItem.index]?.timestamp!),
+          id: mediaItems?.[layoutItem.index]?.id ?? null,
+        })
       "
-      @mouseleave="emit('hoverItem', null)"
-      v-for="ratio in row.items"
-      :key="ratio.index"
-      :media-item="mediaItems?.[ratio.index]"
+      @mouseleave="emit('hoverItem', { date: null, id: null })"
+      v-for="layoutItem in row.items"
+      :key="layoutItem.index"
+      :media-item="mediaItems?.[layoutItem.index]"
       :height="row.height"
-      :width="row.height * ratio.ratio"
+      :width="row.height * layoutItem.ratio"
+      :is-preview-add="
+        mediaItems?.[layoutItem.index]?.id
+          ? previewAddIds.has(mediaItems[layoutItem.index]!.id)
+          : false
+      "
+      :is-preview-remove="
+        mediaItems?.[layoutItem.index]?.id
+          ? previewRemoveIds.has(mediaItems[layoutItem.index]!.id)
+          : false
+      "
+      @selection-click="(payload) => emit('selectionClick', payload)"
     />
   </div>
 </template>

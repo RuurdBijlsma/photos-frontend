@@ -9,6 +9,7 @@ import { ref, type Ref } from 'vue'
 
 const dateInView = ref<Date | null>(null)
 const scrollToDate = ref<Date | null>(null)
+const isAtTop = ref(true)
 
 export function useTimelineScroll() {
   /**
@@ -32,14 +33,20 @@ export function useTimelineScroll() {
     scrollToDate.value = null
   }
 
+  function setIsAtTop(value: boolean) {
+    isAtTop.value = value
+  }
+
   return {
     // Reactive state
     dateInView: dateInView as Ref<Date | null>,
     scrollToDate: scrollToDate as Ref<Date | null>,
+    isAtTop: isAtTop as Ref<boolean>,
 
     // Actions
     setDateInView,
     requestScrollToDate,
     clearScrollRequest,
+    setIsAtTop,
   }
 }

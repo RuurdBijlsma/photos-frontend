@@ -1,9 +1,11 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
+</script>
 
 <template>
-  <div class="images">
+  <main-layout-container class="explore">
     <h1>Explore!</h1>
-  </div>
+  </main-layout-container>
 </template>
 
 <style scoped></style>
