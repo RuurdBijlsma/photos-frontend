@@ -3,68 +3,60 @@ import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimelin
 import type { useSelectionStore } from '@/scripts/stores/selectionStore'
 
 export function useTimelineSelection(
-  selectionStore: ReturnType<typeof useSelectionStore>,
-  timelineController: GenericTimeline,
+  store: ReturnType<typeof useSelectionStore>,
+  timeline: GenericTimeline,
 ) {
+  // --- State ---
   const anchorId = ref<string | null>(null)
   const lastShiftedIds = shallowRef(new Set<string>())
-
-  // --- New State for Previews ---
   const isShiftDown = ref(false)
-  const hoveredId = ref<string | null>(null)
 
-  // rAF State
+  // Hover / Preview State
+  const hoveredId = ref<string | null>(null)
   let rafId: number | null = null
   let pendingHoverId: string | null = null
 
-  // History state
-  const history = shallowRef<string[][]>([[...selectionStore.selectedIds]])
+  // History State
+  const history = shallowRef<string[][]>([[...store.selectedIds]])
   const historyIndex = ref(0)
 
-  // --- Performance Optimization: ID Lookup Map ---
-  const idToIndex = computed(() => {
+  // --- Helpers & Computed ---
+  const idToIdx = computed(() => {
     const map = new Map<string, number>()
-    const ids = timelineController.ids
-    for (let i = 0; i < ids.length; i++) {
-      map.set(ids[i]!, i)
-    }
+    timeline.ids.forEach((id, i) => map.set(id, i))
     return map
   })
 
-  // --- Helper: Get Start/End Indices ---
-  function getRangeIndices(idA: string, idB: string): [number, number] | null {
-    const map = idToIndex.value
-    const idx1 = map.get(idA)
-    const idx2 = map.get(idB)
-    if (idx1 === undefined || idx2 === undefined) return null
-    return [Math.min(idx1, idx2), Math.max(idx1, idx2)]
+  const getRange = (idA: string, idB: string): [number, number] | null => {
+    const idxA = idToIdx.value.get(idA)
+    const idxB = idToIdx.value.get(idB)
+    return (idxA === undefined || idxB === undefined)
+      ? null
+      : [Math.min(idxA, idxB), Math.max(idxA, idxB)]
   }
 
-  // --- Preview Logic ---
+  // Calculate visual cues for what will happen on click
   const previewState = computed(() => {
-    if (!isShiftDown.value || !anchorId.value || !hoveredId.value) {
-      return { add: new Set<string>(), remove: new Set<string>() }
-    }
+    const empty = { add: new Set<string>(), remove: new Set<string>() }
+    if (!isShiftDown.value || !anchorId.value || !hoveredId.value) return empty
 
-    const range = getRangeIndices(anchorId.value, hoveredId.value)
-    if (!range) return { add: new Set<string>(), remove: new Set<string>() }
+    const range = getRange(anchorId.value, hoveredId.value)
+    if (!range) return empty
 
     const [start, end] = range
-    const ids = timelineController.ids
     const toAdd = new Set<string>()
     const toRemove = new Set<string>()
-    const map = idToIndex.value
 
-    // Calculate Blue (Add)
+    // Identify items to add (currently unselected in range)
     for (let i = start; i <= end; i++) {
-      const id = ids[i]!
-      if (!selectionStore.isSelected(id)) toAdd.add(id)
+      const id = timeline.ids[i]!
+      if (!store.isSelected(id)) toAdd.add(id)
     }
 
-    // Calculate Red (Remove)
+    // Identify items to remove (shrink previous shift selection)
     for (const oldId of lastShiftedIds.value) {
-      const oldIdx = map.get(oldId)
-      if (oldIdx !== undefined && (oldIdx < start || oldIdx > end)) {
+      const idx = idToIdx.value.get(oldId)
+      if (idx !== undefined && (idx < start || idx > end)) {
         toRemove.add(oldId)
       }
     }
@@ -72,7 +64,8 @@ export function useTimelineSelection(
     return { add: toAdd, remove: toRemove }
   })
 
-  function recordHistory(snapshot: string[] = [...selectionStore.selectedIds]) {
+  // --- History Management ---
+  function recordHistory(snapshot: string[] = [...store.selectedIds]) {
     if (historyIndex.value < history.value.length - 1) {
       history.value = history.value.slice(0, historyIndex.value + 1)
     }
@@ -80,66 +73,77 @@ export function useTimelineSelection(
     historyIndex.value++
   }
 
-  function applyHistory(offset: number) {
-    const newIndex = historyIndex.value + offset
-    if (newIndex >= 0 && newIndex < history.value.length) {
-      historyIndex.value = newIndex
-      selectionStore.replaceAll(history.value[newIndex]!)
+  function navigateHistory(offset: number) {
+    const target = historyIndex.value + offset
+    if (target >= 0 && target < history.value.length) {
+      historyIndex.value = target
+      store.replaceAll(history.value[target]!)
       anchorId.value = null
       lastShiftedIds.value.clear()
     }
   }
 
-  function selectAll() {
-    const allIds = [...timelineController.ids]
-    selectionStore.replaceAll(allIds)
-    anchorId.value = null
+  // --- Actions ---
+  function updateSelection(newIds: string[], anchor: string | null = null) {
+    store.replaceAll(newIds)
+    anchorId.value = anchor
     lastShiftedIds.value.clear()
-    requestAnimationFrame(() => recordHistory(allIds))
+    requestAnimationFrame(() => recordHistory(newIds))
+  }
+
+  function selectAll() {
+    updateSelection([...timeline.ids])
   }
 
   function deselectAll() {
-    selectionStore.replaceAll([])
-    anchorId.value = null
-    lastShiftedIds.value.clear()
-    recordHistory()
+    updateSelection([])
   }
 
   function selectItem(e: PointerEvent, id: string) {
+    // 1. Shift Selection
     if (e.shiftKey && anchorId.value) {
-      const range = getRangeIndices(anchorId.value, id)
+      const range = getRange(anchorId.value, id)
+      if (!range) return
 
-      if (range) {
-        const [start, end] = range
+      const [start, end] = range
+      const rangeIds = timeline.ids.slice(start, end + 1)
+      const rangeSet = new Set(rangeIds)
+      const nextSelection = new Set(store.selectedIds)
 
-        // Optimization: We know the indices, so slice directly
-        const rangeIds = timelineController.ids.slice(start, end + 1)
-        const rangeSet = new Set(rangeIds)
+      // Remove items from previous shift that are no longer in range (shrink)
+      lastShiftedIds.value.forEach(old => {
+        if (!rangeSet.has(old)) nextSelection.delete(old)
+      })
 
-        // Clone current selection
-        const nextSelection = new Set(selectionStore.selectedIds)
+      // Add current range items
+      rangeIds.forEach(newId => nextSelection.add(newId))
 
-        // 1. Remove items that were part of the previous shift but are NOT in the new range
-        //    (User shrank the shift selection)
-        lastShiftedIds.value.forEach((old) => {
-          if (!rangeSet.has(old)) nextSelection.delete(old)
-        })
-
-        // 2. Add all items in the new range
-        rangeIds.forEach((newId) => nextSelection.add(newId))
-
-        selectionStore.replaceAll(nextSelection)
-        lastShiftedIds.value = rangeSet
-      }
-    } else {
-      // Normal Toggle
-      selectionStore.toggleSelected(id)
-      anchorId.value = selectionStore.isSelected(id) ? id : null
+      store.replaceAll(nextSelection)
+      lastShiftedIds.value = rangeSet
+    }
+    // 2. Normal Toggle
+    else {
+      store.toggleSelected(id)
+      anchorId.value = store.isSelected(id) ? id : null
       lastShiftedIds.value.clear()
     }
 
-    // Defer history to keep UI snappy
     requestAnimationFrame(() => recordHistory())
+  }
+
+  // --- Event Handlers ---
+  function setHoveredId(id: string | null) {
+    if (!isShiftDown.value || !anchorId.value) {
+      hoveredId.value = null
+      return
+    }
+    pendingHoverId = id
+    if (!rafId) {
+      rafId = requestAnimationFrame(() => {
+        if (hoveredId.value !== pendingHoverId) hoveredId.value = pendingHoverId
+        rafId = null
+      })
+    }
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -148,66 +152,43 @@ export function useTimelineSelection(
     const isCmd = e.ctrlKey || e.metaKey
     if (!isCmd && e.key !== 'Escape') return
 
-    const key = e.key.toLowerCase()
-
-    if (key === 'z') {
-      e.preventDefault()
-      if (e.shiftKey) {
-        applyHistory(1)
-      } else {
-        applyHistory(-1)
-      }
-    } else if (key === 'a') {
-      e.preventDefault()
-      selectAll()
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      deselectAll()
-    }
-  }
-
-  function handleKeyup(e: KeyboardEvent) {
-    if (e.key === 'Shift') isShiftDown.value = false
-  }
-
-  // --- rAF Throttled Hover ---
-  function setHoveredId(id: string | null) {
-    // If not selecting or no anchor, we can skip the rAF entirely to save frames
-    if (!isShiftDown.value || !anchorId.value) {
-      hoveredId.value = null
-      return
-    }
-
-    pendingHoverId = id
-
-    if (rafId === null) {
-      rafId = requestAnimationFrame(() => {
-        // Only trigger reactivity if the ID actually changed
-        if (hoveredId.value !== pendingHoverId) {
-          hoveredId.value = pendingHoverId
+    switch (e.key.toLowerCase()) {
+      case 'z':
+        e.preventDefault()
+        if (e.shiftKey) {
+          navigateHistory(1)
+        } else {
+          navigateHistory(-1)
         }
-        rafId = null
-      })
+        break
+      case 'a':
+        e.preventDefault()
+        selectAll()
+        break
+      case 'escape':
+        e.preventDefault()
+        deselectAll()
+        break
     }
   }
 
+  // --- Lifecycle ---
   onMounted(() => {
     window.addEventListener('keydown', handleKeydown)
-    window.addEventListener('keyup', handleKeyup)
+    window.addEventListener('keyup', (e) => e.key === 'Shift' && (isShiftDown.value = false))
   })
 
   onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown)
-    window.removeEventListener('keyup', handleKeyup)
-    if (rafId !== null) cancelAnimationFrame(rafId)
+    if (rafId) cancelAnimationFrame(rafId)
   })
 
   return {
     selectItem,
     selectAll,
     deselectAll,
-    undo: () => applyHistory(-1),
-    redo: () => applyHistory(1),
+    undo: () => navigateHistory(-1),
+    redo: () => navigateHistory(1),
     setHoveredId,
     previewAddIds: computed(() => previewState.value.add),
     previewRemoveIds: computed(() => previewState.value.remove),
