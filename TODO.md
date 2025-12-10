@@ -51,6 +51,13 @@
     * ✅ can this integrate with date overlay?
 * ✅ clean up selection code (composable & griditem)
 * ✅ make way to view photo without losing selection
+* ✅ copy google photos selection, and single click to open photos
+* ✅ make selection icon like in google photos
+    * ✅ when nothing is selected; check in a filled circle, transparent
+    * ✅ when something is selected, on an item that isnt selected: just a circle, with box shadow inset full color 2px
+      line, and a box shadow outset half transparent 5px outline (both non-blur shadow)
+    * ✅ when something is selected, on an item that is selected: check in a filled circle, full color, with box shadow
+      outside half transparent (non-blur shadow)
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -83,11 +90,4 @@
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* copy google photos selection, and single click to open photos
-* make selection icon like in google photos
-    * when nothing is selected; check in a filled circle, transparent
-    * when something is selected, on an item that isnt selected: just a circle, with box shadow inset full color 2px
-      line, and a box shadow outset half transparent 5px outline (both non-blur shadow)
-    * when something is selected, on an item that is selected: check in a filled circle, full color, with box shadow
-      outside half transparent (non-blur shadow)
 * [bug] scroll via timeline to some far away date -> scroll up & down a bit -> it janks to a month later? idk
