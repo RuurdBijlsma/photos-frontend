@@ -26,7 +26,7 @@ export function useTimelineSelection(
   const getRange = (idA: string, idB: string): [number, number] | null => {
     const idxA = idToIdx.value.get(idA)
     const idxB = idToIdx.value.get(idB)
-    return (idxA === undefined || idxB === undefined)
+    return idxA === undefined || idxB === undefined
       ? null
       : [Math.min(idxA, idxB), Math.max(idxA, idxB)]
   }
@@ -87,12 +87,12 @@ export function useTimelineSelection(
       const nextSelection = new Set(store.selectedIds)
 
       // Remove items from previous shift that are no longer in range
-      lastShiftedIds.value.forEach(old => {
+      lastShiftedIds.value.forEach((old) => {
         if (!rangeSet.has(old)) nextSelection.delete(old)
       })
 
       // Add current range items
-      rangeIds.forEach(newId => nextSelection.add(newId))
+      rangeIds.forEach((newId) => nextSelection.add(newId))
 
       store.replaceAll(nextSelection)
       lastShiftedIds.value = rangeSet

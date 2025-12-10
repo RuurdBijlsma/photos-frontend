@@ -52,13 +52,8 @@ const { handleIsVisible, rowInViewDate } = useRowVisibility(props.timelineContro
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
 
 // 4. Selection Logic
-const {
-  selectItem,
-  deselectAll,
-  setHoveredId,
-  previewAddIds,
-  previewRemoveIds
-} = useTimelineSelection(selectionStore, props.timelineController)
+const { selectItem, deselectAll, setHoveredId, previewAddIds, previewRemoveIds } =
+  useTimelineSelection(selectionStore, props.timelineController)
 
 // 5. Scroll Synchronization
 const { handleScroll } = useTimelineScrollSync(
