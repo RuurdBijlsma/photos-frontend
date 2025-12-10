@@ -17,6 +17,8 @@ const props = defineProps<{
   mediaItem?: TimelineItem
   height: number
   width: number
+  isPreviewAdd?: boolean
+  isPreviewRemove?: boolean
 }>()
 
 const id = computed(() => props.mediaItem?.id ?? '')
@@ -68,7 +70,7 @@ function handlePointerDown() {
 <template>
   <div
     class="grid-cell-container"
-    v-memo="[isSelected, isSelectionMode, thumbnail, width, height]"
+    v-memo="[isSelected, isSelectionMode, thumbnail, width, height, isPreviewAdd, isPreviewRemove]"
     :style="scaleStyle"
   >
     <a
@@ -85,6 +87,9 @@ function handlePointerDown() {
         }"
         :style="{ backgroundImage: `url(${thumbnail})` }"
       >
+        <div v-if="isPreviewAdd" class="selection-overlay overlay-add"></div>
+        <div v-if="isPreviewRemove" class="selection-overlay overlay-remove"></div>
+
         <v-icon
           @click="handleSelectionClick"
           class="check-icon"
@@ -144,6 +149,25 @@ function handlePointerDown() {
     box-shadow 0.15s ease-out;
   position: relative;
   will-change: transform, box-shadow;
+  overflow: hidden;
+}
+
+.selection-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.overlay-add {
+  background-color: rgba(var(--v-theme-primary), 0.3);
+}
+
+.overlay-remove {
+  background-color: rgba(var(--v-theme-error), 0.4);
 }
 
 .magnify-button {

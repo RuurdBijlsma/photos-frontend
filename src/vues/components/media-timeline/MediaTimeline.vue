@@ -45,16 +45,22 @@ const virtualScrollRef = ref<VVirtualScroll | null>(null)
 const { container, width, height } = useContainerResize()
 const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, props.timelineController)
 
-// 2. Visibility Tracking (What date is currently looked at?)
+// 2. Visibility Tracking
 const { handleIsVisible, rowInViewDate } = useRowVisibility(props.timelineController)
 
-// 3. Date Overlay (The floating date badge)
+// 3. Date Overlay
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
 
-// 4. Selection Logic (Click, Shift+Click, Undo/Redo)
-const { selectItem, deselectAll } = useTimelineSelection(selectionStore, props.timelineController)
+// 4. Selection Logic
+const {
+  selectItem,
+  deselectAll,
+  setHoveredId,
+  previewAddIds,
+  previewRemoveIds
+} = useTimelineSelection(selectionStore, props.timelineController)
 
-// 5. Scroll Synchronization (Global requests <-> Virtual Scroll Index)
+// 5. Scroll Synchronization
 const { handleScroll } = useTimelineScrollSync(
   virtualScrollRef,
   rows,
@@ -62,13 +68,18 @@ const { handleScroll } = useTimelineScrollSync(
   props.sortOrder,
   activateScrollOverride,
 )
+
+// Handler to split the hover payload
+function onHoverItem(payload: { date: Date | null; id: string | null }) {
+  hoverDate.value = payload.date
+  setHoveredId(payload.id)
+}
 </script>
 
 <template>
   <main-layout-container>
     <date-overlay :date="dateInViewString" />
     <actions-overlay @deselect-all="deselectAll" />
-    <!-- MOVED: :class binding moved from v-virtual-scroll to here -->
     <div
       class="photo-grid-container"
       ref="container"
@@ -83,14 +94,15 @@ const { handleScroll } = useTimelineScrollSync(
         class="scroll-container"
       >
         <template #default="{ item }">
-          <!-- ... content remains the same ... -->
           <grid-row-header v-if="item.firstOfTheMonth" :row="item" />
           <grid-row
             @selection-click="(payload) => selectItem(payload.event, payload.id)"
-            @hover-item="(date) => (hoverDate = date)"
+            @hover-item="onHoverItem"
             :photo-gap="PHOTO_GAP"
             :media-items="timelineController.mediaItems.get(item.monthId)"
             :row="item"
+            :preview-add-ids="previewAddIds"
+            :preview-remove-ids="previewRemoveIds"
             v-intersect="(e: boolean) => handleIsVisible(e, item)"
           />
         </template>

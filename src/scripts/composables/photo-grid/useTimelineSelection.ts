@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline'
 import type { useSelectionStore } from '@/scripts/stores/selectionStore'
 
@@ -9,14 +9,73 @@ export function useTimelineSelection(
   const anchorId = ref<string | null>(null)
   const lastShiftedIds = shallowRef(new Set<string>())
 
+  // --- New State for Previews ---
+  const isShiftDown = ref(false)
+  const hoveredId = ref<string | null>(null)
+
+  // rAF State
+  let rafId: number | null = null
+  let pendingHoverId: string | null = null
+
   // History state
   const history = shallowRef<string[][]>([[...selectionStore.selectedIds]])
   const historyIndex = ref(0)
 
+  // --- Performance Optimization: ID Lookup Map ---
+  const idToIndex = computed(() => {
+    const map = new Map<string, number>()
+    const ids = timelineController.ids
+    for (let i = 0; i < ids.length; i++) {
+      map.set(ids[i]!, i)
+    }
+    return map
+  })
+
+  // --- Preview Logic ---
+  const previewState = computed(() => {
+    // 1. Fast exit checks
+    if (!isShiftDown.value || !anchorId.value || !hoveredId.value) {
+      return { add: new Set<string>(), remove: new Set<string>() }
+    }
+
+    const map = idToIndex.value
+    const idx1 = map.get(anchorId.value)
+    const idx2 = map.get(hoveredId.value)
+
+    if (idx1 === undefined || idx2 === undefined) {
+      return { add: new Set<string>(), remove: new Set<string>() }
+    }
+
+    // 2. Determine Range Indices
+    const start = Math.min(idx1, idx2)
+    const end = Math.max(idx1, idx2)
+    const ids = timelineController.ids
+
+    const toAdd = new Set<string>()
+    const toRemove = new Set<string>()
+
+    // 3. Calculate "Blue" (Additions)
+    for (let i = start; i <= end; i++) {
+      const id = ids[i]!
+      if (!selectionStore.isSelected(id)) {
+        toAdd.add(id)
+      }
+    }
+
+    // 4. Calculate "Red" (Removals)
+    for (const oldId of lastShiftedIds.value) {
+      const oldIdx = map.get(oldId)
+      if (oldIdx !== undefined && (oldIdx < start || oldIdx > end)) {
+        toRemove.add(oldId)
+      }
+    }
+
+    return { add: toAdd, remove: toRemove }
+  })
+
   // --- History Management ---
 
   function recordHistory(snapshot: string[] = [...selectionStore.selectedIds]) {
-    // Truncate future history if we are in the middle of the stack
     if (historyIndex.value < history.value.length - 1) {
       history.value = history.value.slice(0, historyIndex.value + 1)
     }
@@ -41,8 +100,6 @@ export function useTimelineSelection(
     selectionStore.replaceAll(allIds)
     anchorId.value = null
     lastShiftedIds.value.clear()
-
-    // Defer history recording to keep UI responsive
     requestAnimationFrame(() => recordHistory(allIds))
   }
 
@@ -56,19 +113,24 @@ export function useTimelineSelection(
   function selectItem(e: PointerEvent, id: string) {
     // 1. Shift + Click (Range Selection)
     if (e.shiftKey && anchorId.value) {
-      const allIds = timelineController.ids
-      const idx1 = allIds.indexOf(anchorId.value)
-      const idx2 = allIds.indexOf(id)
+      const map = idToIndex.value
+      const idx1 = map.get(anchorId.value)
+      const idx2 = map.get(id)
 
-      if (idx1 !== -1 && idx2 !== -1) {
+      if (idx1 !== undefined && idx2 !== undefined) {
         const start = Math.min(idx1, idx2)
         const end = Math.max(idx1, idx2)
+
+        const allIds = timelineController.ids
         const rangeIds = allIds.slice(start, end + 1)
         const rangeSet = new Set(rangeIds)
 
-        // Optimization: Clone current set, remove stale shifted items, add new range
         const nextSelection = new Set(selectionStore.selectedIds)
-        lastShiftedIds.value.forEach((old) => !rangeSet.has(old) && nextSelection.delete(old))
+
+        lastShiftedIds.value.forEach((old) => {
+          if (!rangeSet.has(old)) nextSelection.delete(old)
+        })
+
         rangeIds.forEach((newId) => nextSelection.add(newId))
 
         selectionStore.replaceAll(nextSelection)
@@ -86,6 +148,8 @@ export function useTimelineSelection(
   }
 
   function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Shift') isShiftDown.value = true
+
     const isCmd = e.ctrlKey || e.metaKey
     if (!isCmd && e.key !== 'Escape') return
 
@@ -107,8 +171,41 @@ export function useTimelineSelection(
     }
   }
 
-  onMounted(() => window.addEventListener('keydown', handleKeydown))
-  onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
+  function handleKeyup(e: KeyboardEvent) {
+    if (e.key === 'Shift') isShiftDown.value = false
+  }
+
+  // --- rAF Throttled Hover ---
+  function setHoveredId(id: string | null) {
+    // If not selecting or no anchor, we can skip the rAF entirely to save frames
+    if (!isShiftDown.value || !anchorId.value) {
+      hoveredId.value = null
+      return
+    }
+
+    pendingHoverId = id
+
+    if (rafId === null) {
+      rafId = requestAnimationFrame(() => {
+        // Only trigger reactivity if the ID actually changed
+        if (hoveredId.value !== pendingHoverId) {
+          hoveredId.value = pendingHoverId
+        }
+        rafId = null
+      })
+    }
+  }
+
+  onMounted(() => {
+    window.addEventListener('keydown', handleKeydown)
+    window.addEventListener('keyup', handleKeyup)
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown)
+    window.removeEventListener('keyup', handleKeyup)
+    if (rafId !== null) cancelAnimationFrame(rafId)
+  })
 
   return {
     selectItem,
@@ -116,5 +213,8 @@ export function useTimelineSelection(
     deselectAll,
     undo: () => applyHistory(-1),
     redo: () => applyHistory(1),
+    setHoveredId,
+    previewAddIds: computed(() => previewState.value.add),
+    previewRemoveIds: computed(() => previewState.value.remove),
   }
 }

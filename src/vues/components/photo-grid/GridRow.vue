@@ -17,7 +17,7 @@ export interface RowLayout {
 }
 
 const emit = defineEmits<{
-  (e: 'hoverItem', date: Date | null): void
+  (e: 'hoverItem', payload: { date: Date | null; id: string | null }): void
   (e: 'selectionClick', payload: SelectionPayload): void
 }>()
 
@@ -25,6 +25,8 @@ defineProps<{
   row: RowLayout
   photoGap: number
   mediaItems?: TimelineItem[]
+  previewAddIds: Set<string>
+  previewRemoveIds: Set<string>
 }>()
 </script>
 
@@ -39,22 +41,32 @@ defineProps<{
       height: row.height + photoGap + 'px',
     }"
   >
-    <!-- 3. Pass the payload directly up to the parent -->
     <grid-item
       @mouseenter="
-        emit(
-          'hoverItem',
-          mediaItems?.[ratio.index]?.timestamp === undefined
-            ? null // @ts-expect-error date handling
-            : new Date(mediaItems?.[ratio.index]?.timestamp),
-        )
+        emit('hoverItem', {
+          date:
+            mediaItems?.[layoutItem.index]?.timestamp === undefined
+              ? null
+              : new Date(mediaItems?.[layoutItem.index]?.timestamp!),
+          id: mediaItems?.[layoutItem.index]?.id ?? null,
+        })
       "
-      @mouseleave="emit('hoverItem', null)"
-      v-for="ratio in row.items"
-      :key="ratio.index"
-      :media-item="mediaItems?.[ratio.index]"
+      @mouseleave="emit('hoverItem', { date: null, id: null })"
+      v-for="layoutItem in row.items"
+      :key="layoutItem.index"
+      :media-item="mediaItems?.[layoutItem.index]"
       :height="row.height"
-      :width="row.height * ratio.ratio"
+      :width="row.height * layoutItem.ratio"
+      :is-preview-add="
+        mediaItems?.[layoutItem.index]?.id
+          ? previewAddIds.has(mediaItems[layoutItem.index]!.id)
+          : false
+      "
+      :is-preview-remove="
+        mediaItems?.[layoutItem.index]?.id
+          ? previewRemoveIds.has(mediaItems[layoutItem.index]!.id)
+          : false
+      "
       @selection-click="(payload) => emit('selectionClick', payload)"
     />
   </div>
