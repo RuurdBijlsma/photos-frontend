@@ -57,7 +57,7 @@ export function useTimelineSelection(
 
     // Calculate Blue (Add)
     for (let i = start; i <= end; i++) {
-      const id = ids[i]
+      const id = ids[i]!
       if (!selectionStore.isSelected(id)) toAdd.add(id)
     }
 
