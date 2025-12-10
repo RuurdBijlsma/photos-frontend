@@ -6,12 +6,7 @@ import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
 import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
 import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 
-const mediaStore = useMediaStore()
-const selectionStore = useSelectionStore()
-const router = useRouter()
-
 export type SelectionPayload = { event: PointerEvent; id: string }
-const emit = defineEmits<{ (e: 'selectionClick', payload: SelectionPayload): void }>()
 
 const props = defineProps<{
   mediaItem?: TimelineItem
@@ -21,38 +16,51 @@ const props = defineProps<{
   isPreviewRemove?: boolean
 }>()
 
-const id = computed(() => props.mediaItem?.id ?? '')
+const emit = defineEmits<{ (e: 'selectionClick', payload: SelectionPayload): void }>()
 
-// Access store directly in computed for granular updates
-const isSelected = computed(() => selectionStore.isSelected(id.value))
+const router = useRouter()
+const mediaStore = useMediaStore()
+const selectionStore = useSelectionStore()
+
+const itemId = computed(() => props.mediaItem?.id ?? '')
+const isSelected = computed(() => selectionStore.isSelected(itemId.value))
 const isSelectionMode = computed(() => selectionStore.size > 0)
 
-const thumbnail = computed(() => (id.value ? photoService.getPhotoThumbnail(id.value, 240) : ''))
-const linkUrl = computed(() => (id.value ? `/view/${id.value}` : '#'))
+const thumbnail = computed(() =>
+  itemId.value ? photoService.getPhotoThumbnail(itemId.value, 240) : '',
+)
+const linkUrl = computed(() => (itemId.value ? `/view/${itemId.value}` : '#'))
 
-const EMPTY_STYLE = Object.freeze({})
+const checkIcon = computed(() =>
+  isSelected.value || !isSelectionMode.value
+    ? 'mdi-check-circle'
+    : 'mdi-checkbox-blank-circle-outline',
+)
 
-const scaleStyle = computed(() => {
+const containerStyle = computed(() => {
   const { width, height } = props
-  if (!width || !height) return EMPTY_STYLE
+  if (!width || !height) return {}
 
-  // Combine scaling and dimensions into one style object
   return {
     '--scale-x': (width - 8) / width,
     '--scale-y': (height - 8) / height,
-    width: width + 'px',
-    height: height + 'px',
-    containIntrinsicWidth: width + 'px',
-    containIntrinsicHeight: height + 'px',
+    width: `${width}px`,
+    height: `${height}px`,
+    containIntrinsicWidth: `${width}px`,
+    containIntrinsicHeight: `${height}px`,
   }
 })
 
+function emitSelection(e: Event) {
+  if (itemId.value) emit('selectionClick', { event: e as PointerEvent, id: itemId.value })
+}
+
 function handleLinkClick(e: MouseEvent) {
-  if (e.button === 1) return
+  if (e.button === 1) return // Ignore middle click
   e.preventDefault()
 
-  if (selectionStore.size > 0 && id.value) {
-    emit('selectionClick', { event: e as PointerEvent, id: id.value })
+  if (isSelectionMode.value) {
+    emitSelection(e)
   } else {
     router.push(linkUrl.value)
   }
@@ -61,11 +69,11 @@ function handleLinkClick(e: MouseEvent) {
 function handleSelectionClick(e: MouseEvent) {
   e.preventDefault()
   e.stopPropagation()
-  if (id.value) emit('selectionClick', { event: e as PointerEvent, id: id.value })
+  emitSelection(e)
 }
 
 function handlePointerDown() {
-  if (id.value) mediaStore.fetchItem(id.value)
+  if (itemId.value) mediaStore.fetchItem(itemId.value)
 }
 </script>
 
@@ -73,7 +81,7 @@ function handlePointerDown() {
   <div
     class="grid-cell-container"
     v-memo="[isSelected, isSelectionMode, thumbnail, width, height, isPreviewAdd, isPreviewRemove]"
-    :style="scaleStyle"
+    :style="containerStyle"
   >
     <a
       :href="linkUrl"
@@ -92,15 +100,11 @@ function handlePointerDown() {
         :style="{ backgroundImage: `url(${thumbnail})` }"
       >
         <v-icon
-          @click="handleSelectionClick"
           class="check-icon"
           color="secondary"
           :size="28"
-          :icon="
-            isSelected || !isSelectionMode
-              ? 'mdi-check-circle'
-              : 'mdi-checkbox-blank-circle-outline'
-          "
+          :icon="checkIcon"
+          @click="handleSelectionClick"
         />
 
         <v-btn
@@ -108,9 +112,9 @@ function handlePointerDown() {
           color="secondary"
           variant="flat"
           class="magnify-button"
-          @click.stop
-          :to="linkUrl"
           tabindex="-1"
+          :to="linkUrl"
+          @click.stop
         >
           <v-icon
             size="15"
@@ -131,37 +135,37 @@ function handlePointerDown() {
 }
 
 .grid-item-link {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
   user-select: none;
   -webkit-user-drag: none;
 }
 
 .visual-content {
+  position: relative;
   width: 100%;
   height: 100%;
-  background-size: cover;
+  overflow: hidden;
   background-position: center;
   background-repeat: no-repeat;
+  background-size: cover;
   transition:
     transform 0.15s ease-out,
     border-radius 0.15s ease-out,
     box-shadow 0.15s ease-out;
-  position: relative;
   will-change: transform, box-shadow;
-  overflow: hidden;
 }
 
-/* Pseudo-element for overlays */
+/* Overlays (Preview & Selection) */
 .visual-content::after {
-  content: '';
   position: absolute;
+  z-index: 1;
   inset: 0;
   pointer-events: none;
+  content: '';
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
-  z-index: 1;
 }
 
 .visual-content.preview-add::after {
@@ -174,33 +178,30 @@ function handlePointerDown() {
   opacity: 1;
 }
 
-/* Handle selected state clipping */
 .visual-content.selected {
   overflow: visible;
-  transform: scale(var(--scale-x), var(--scale-y));
+  border-radius: 20px;
   box-shadow:
     inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
     0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
-  border-radius: 20px;
+  transform: scale(var(--scale-x), var(--scale-y));
 }
 
-/* When selected, we want the overlay to respect the border radius of the selected item.
-   Since overflow is visible, we need to apply radius to the pseudo element too. */
 .visual-content.selected::after {
   border-radius: 20px;
 }
 
-/* ... icon styles ... */
+/* Icons & Interactivity */
 .magnify-button {
   position: absolute;
-  bottom: 10px;
   right: 10px;
+  bottom: 10px;
+  z-index: 2;
   width: 25px;
   height: 25px;
-  z-index: 2;
   opacity: 0;
-  transition: opacity 0.15s ease;
   pointer-events: none;
+  transition: opacity 0.15s ease;
 }
 
 .is-selecting .visual-content:hover .magnify-button {
@@ -212,18 +213,18 @@ function handlePointerDown() {
   position: absolute;
   top: 10px;
   right: 8px;
-  display: flex;
   z-index: 2;
+  display: flex;
+  cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  cursor: pointer;
 }
 
 .check-icon:hover {
   opacity: 1 !important;
 }
 
-/* Logic: Show check icon if (Selected) OR (Hovering) OR (In Selection Mode) */
+/* Check Icon Visibility Logic */
 .visual-content.selected .check-icon,
 .is-selecting .check-icon,
 .visual-content:hover .check-icon {
