@@ -63,9 +63,6 @@ const emit = defineEmits<{
   gap: 16px;
 }
 
-.select-text {
-}
-
 .bold-select {
   font-weight: 600;
 }

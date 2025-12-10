@@ -82,7 +82,6 @@ function handlePointerDown() {
         class="visual-content"
         :class="{
           selected: isSelected,
-          'in-selection-mode': isSelectionMode
         }"
         :style="{ backgroundImage: `url(${thumbnail})` }"
       >
@@ -91,7 +90,11 @@ function handlePointerDown() {
           class="check-icon"
           color="secondary"
           :size="28"
-          :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
+          :icon="
+            isSelected || !isSelectionMode
+              ? 'mdi-check-circle'
+              : 'mdi-checkbox-blank-circle-outline'
+          "
         />
 
         <v-btn
@@ -103,7 +106,11 @@ function handlePointerDown() {
           :to="linkUrl"
           tabindex="-1"
         >
-          <v-icon size="15" icon="mdi-fullscreen" />
+          <v-icon
+            size="15"
+            icon="mdi-fullscreen"
+            v-tooltip:top="`View ${props.mediaItem?.isVideo ? 'video' : 'photo'}`"
+          />
         </v-btn>
       </div>
     </a>
@@ -164,20 +171,24 @@ function handlePointerDown() {
   z-index: 2;
   opacity: 0;
   transform: scale(1);
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease,
-    color 0.15s ease;
   pointer-events: none;
   cursor: pointer;
 }
 
+.check-icon:hover {
+  opacity: 1 !important;
+}
+
 /* Logic: Show check icon if (Selected) OR (Hovering) OR (In Selection Mode) */
 .visual-content.selected .check-icon,
-.visual-content.in-selection-mode .check-icon,
+.is-selecting .check-icon,
 .visual-content:hover .check-icon {
   opacity: 1;
   pointer-events: auto;
+}
+
+.photo-grid-container:not(.is-selecting) .visual-content:not(.selected):hover .check-icon {
+  opacity: 0.7;
 }
 
 .selected {
