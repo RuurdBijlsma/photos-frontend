@@ -90,3 +90,4 @@
       line, and a box shadow outset half transparent 5px outline (both non-blur shadow)
     * when something is selected, on an item that is selected: check in a filled circle, full color, with box shadow
       outside half transparent (non-blur shadow)
+* [bug] scroll via timeline to some far away date -> scroll up & down a bit -> it janks to a month later? idk

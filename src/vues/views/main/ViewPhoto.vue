@@ -7,6 +7,7 @@ import { useTheme } from 'vuetify/framework'
 import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
+import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
 
 const props = withDefaults(
   defineProps<{
@@ -21,6 +22,7 @@ const props = withDefaults(
 const mediaStore = useMediaStore()
 const themeStore = useThemeStore()
 const settings = useSettingStore()
+const selectionStore = useSelectionStore()
 const vuetifyTheme = useTheme()
 const route = useRoute()
 const router = useRouter()
@@ -32,6 +34,8 @@ const id = computed(() => {
   console.warn('WEIRD ID IN ROUTE DETECTED')
   return ''
 })
+
+const isSelected = computed(() => selectionStore.isSelected(id.value))
 
 function closeViewer() {
   const parentRoute = route.matched[route.matched.length - 2]
@@ -182,6 +186,20 @@ if (props.ids.length === 0 && props.fetchIds) {
           </p>
         </div>
         <div class="right-buttons">
+          <v-btn
+            v-if="selectionStore.size > 0"
+            color="white"
+            rounded
+            :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
+            variant="plain"
+            @click="selectionStore.toggleSelected(id)"
+            v-tooltip="{
+              text: isSelected ? 'Remove from selection' : 'Add to selection',
+              location: 'bottom',
+              attach: true,
+              width: 140,
+            }"
+          />
           <v-btn
             color="white"
             rounded
@@ -351,7 +369,6 @@ if (props.ids.length === 0 && props.fetchIds) {
   align-items: center;
   padding-right: 20px;
   gap: 1px;
-  width: 313px;
 }
 
 .next-area {
