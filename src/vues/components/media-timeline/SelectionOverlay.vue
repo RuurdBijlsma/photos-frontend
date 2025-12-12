@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
+import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import AddToAlbumButton from '@/vues/components/media-timeline/AddToAlbumButton.vue'
 
 const selectionStore = useSelectionStore()
+
 const emit = defineEmits<{
   (e: 'deselectAll'): void
 }>()
@@ -22,7 +25,7 @@ const emit = defineEmits<{
         ><span> selected</span>
       </div>
       <v-spacer />
-      <v-btn icon="mdi-plus" variant="plain" density="compact" v-tooltip:top="'Add to album'" />
+      <add-to-album-button :ids-to-add="[...selectionStore.selectedIds]" />
       <v-btn
         icon="mdi-delete-outline"
         variant="plain"

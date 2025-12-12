@@ -8,10 +8,10 @@ import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 const props = withDefaults(
   defineProps<{
     months: TimelineMonthRatios[] | undefined | null
-    sortOrder?: 'asc' | 'desc'
+    sortDirection?: SortDirection
   }>(),
   {
-    sortOrder: 'desc',
+    sortDirection: 'desc',
   },
 )
 
@@ -300,7 +300,7 @@ function getNormYFromDate(date: Date): number {
 
   const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
   let dayRatio = Math.min(1, date.getDate() / daysInMonth)
-  if (props.sortOrder === 'desc') dayRatio = 1 - dayRatio
+  if (props.sortDirection === 'desc') dayRatio = 1 - dayRatio
   return data.start + data.height * dayRatio
 }
 
@@ -325,7 +325,7 @@ function getDateFromNormY(normY: number): Date | null {
       const end = monthEnd.getTime()
       let time: number
 
-      if (props.sortOrder === 'asc') {
+      if (props.sortDirection === 'asc') {
         time = start + (end - start) * relativeY
       } else {
         time = end - (end - start) * relativeY

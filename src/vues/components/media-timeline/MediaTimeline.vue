@@ -25,10 +25,10 @@ import SelectionOverlay from '@/vues/components/media-timeline/SelectionOverlay.
 const props = withDefaults(
   defineProps<{
     timelineController: GenericTimeline
-    sortOrder?: 'asc' | 'desc'
+    sortDirection?: SortDirection
   }>(),
   {
-    sortOrder: 'desc',
+    sortDirection: 'desc',
   },
 )
 
@@ -60,7 +60,7 @@ const { handleScroll } = useTimelineScrollSync(
   virtualScrollRef,
   rows,
   rowInViewDate,
-  props.sortOrder,
+  props.sortDirection,
   activateScrollOverride,
 )
 

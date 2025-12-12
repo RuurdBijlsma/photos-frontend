@@ -9,19 +9,22 @@ const timelineStore = useTimelineStore()
 const props = withDefaults(
   defineProps<{
     timelineController: GenericTimeline
-    sortOrder?: 'asc' | 'desc'
+    sortDirection?: SortDirection
   }>(),
   {
-    sortOrder: 'desc',
+    sortDirection: 'desc',
   },
 )
 </script>
 
 <template>
   <div class="timeline-container">
-    <media-timeline :timeline-controller="props.timelineController" :sort-order="props.sortOrder" />
+    <media-timeline
+      :timeline-controller="props.timelineController"
+      :sort-direction="props.sortDirection"
+    />
     <timeline-scroll
-      :sort-order="props.sortOrder"
+      :sort-direction="props.sortDirection"
       :months="timelineStore.controller.timeline"
       class="scroll-area"
     />

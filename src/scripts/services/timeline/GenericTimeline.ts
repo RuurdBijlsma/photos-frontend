@@ -100,6 +100,7 @@ export function createTimelineController(provider: TimelineDataProvider) {
       if (nPhotos < 0) break
     }
     await fetchMediaByMonths(toRequest)
+    requestIdleCallback(() => fetchIds())
   }
 
   // Return the "Instance"

@@ -94,3 +94,7 @@
 * [bug] scroll via timeline to some far away date -> scroll up & down a bit -> it janks to a month later? idk
 * next: make add to album via selection work. make the UX nice. (also be able to add to existing album)
 * when holding shift & selecting dont insta lose preview when not hovering a photo
+* fix lag spike when moving from photos -> explore -> [LAG HERE] photos
+* [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
+* remove theme per photo in /view/
+* if an album has media items in it, but no title, then show it as <No Title> or something in the nav bar and the albums page

@@ -13,7 +13,7 @@ export function useTimelineScrollSync(
   virtualScrollRef: Ref<VVirtualScroll | null>,
   rows: Ref<RowLayout[]>,
   rowInViewDate: Ref<Date | null>,
-  sortOrder: 'asc' | 'desc',
+  sortDirection: SortDirection,
   activateScrollOverride: (e: WheelEvent) => void,
 ) {
   const { setDateInView, scrollToDate, clearScrollRequest, setIsAtTop } = useTimelineScroll()
@@ -55,7 +55,7 @@ export function useTimelineScrollSync(
       const ratio = Math.min(1, Math.max(0, (day - 1) / (daysInMonth - 1 || 1)))
 
       let offset: number
-      if (sortOrder === 'asc') {
+      if (sortDirection === 'asc') {
         // Ascending: Day 1 is at top (offset 0)
         offset = Math.round((monthRowCount - 1) * ratio)
       } else {

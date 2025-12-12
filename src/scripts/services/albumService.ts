@@ -7,18 +7,25 @@ import type {
   Album,
   AlbumCollaborator,
   AlbumDetailsResponse,
+  AlbumSortField,
   AlbumSummary,
+  AlbumWithCount,
   CheckInviteRequest,
   CreateAlbumRequest,
+  SortDirection,
   UpdateAlbumRequest,
 } from '@/scripts/types/api/album'
+
 
 const albumService = {
   /**
    * List all albums for the current user.
    */
-  getUserAlbums(): Promise<AxiosResponse<Album[]>> {
-    return apiClient.get<Album[]>('/album')
+  getUserAlbums(
+    sortField: AlbumSortField = 'updatedAt',
+    sortDirection: SortDirection = 'desc',
+  ): Promise<AxiosResponse<AlbumWithCount[]>> {
+    return apiClient.get<AlbumWithCount[]>('/album', { params: { sortField, sortDirection } })
   },
 
   /**
