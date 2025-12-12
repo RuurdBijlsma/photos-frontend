@@ -65,6 +65,11 @@ async function initialize() {
   }
 }
 
+function toggleSelected(){
+  selectionStore.toggleSelected(id.value)
+  selectionStore.commit()
+}
+
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
 
@@ -192,7 +197,7 @@ if (props.ids.length === 0 && props.fetchIds) {
             rounded
             :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
             variant="plain"
-            @click="selectionStore.toggleSelected(id)"
+            @click="toggleSelected"
             v-tooltip="{
               text: isSelected ? 'Remove from selection' : 'Add to selection',
               location: 'bottom',

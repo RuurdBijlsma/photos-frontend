@@ -52,6 +52,7 @@
 * ✅ clean up selection code (composable & griditem)
 * ✅ make way to view photo without losing selection
 * ✅ copy google photos selection, and single click to open photos
+* ✅ make select toggle in /view/ use the undo/redo dings
 * ✅ make selection icon like in google photos
     * ✅ when nothing is selected; check in a filled circle, transparent
     * ✅ when something is selected, on an item that isnt selected: just a circle, with box shadow inset full color 2px
@@ -91,4 +92,5 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * [bug] scroll via timeline to some far away date -> scroll up & down a bit -> it janks to a month later? idk
-* make select toggle in /view/ use the undo/redo dings
+* next: make add to album via selection work. make the UX nice. (also be able to add to existing album)
+* when holding shift & selecting dont insta lose preview when not hovering a photo

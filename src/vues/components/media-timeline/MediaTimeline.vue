@@ -20,7 +20,7 @@ import { useDateOverlay } from '@/scripts/composables/photo-grid/useDateOverlay.
 import { useTimelineSelection } from '@/scripts/composables/photo-grid/useTimelineSelection.ts'
 import { useTimelineScrollSync } from '@/scripts/composables/photo-grid/useTimelineScrollSync.ts'
 import DateOverlay from '@/vues/components/media-timeline/DateOverlay.vue'
-import ActionsOverlay from '@/vues/components/media-timeline/ActionsOverlay.vue'
+import SelectionOverlay from '@/vues/components/media-timeline/SelectionOverlay.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -74,7 +74,7 @@ function onHoverItem(payload: { date: Date | null; id: string | null }) {
 <template>
   <main-layout-container>
     <date-overlay :date="dateInViewString" />
-    <actions-overlay @deselect-all="deselectAll" />
+    <selection-overlay @deselect-all="deselectAll" />
     <div
       class="photo-grid-container"
       ref="container"
