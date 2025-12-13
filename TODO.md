@@ -52,6 +52,7 @@
 * ✅ clean up selection code (composable & griditem)
 * ✅ make way to view photo without losing selection
 * ✅ copy google photos selection, and single click to open photos
+* ✅ make select toggle in /view/ use the undo/redo dings
 * ✅ make selection icon like in google photos
     * ✅ when nothing is selected; check in a filled circle, transparent
     * ✅ when something is selected, on an item that isnt selected: just a circle, with box shadow inset full color 2px
@@ -90,5 +91,24 @@
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* [bug] scroll via timeline to some far away date -> scroll up & down a bit -> it janks to a month later? idk
-* make select toggle in /view/ use the undo/redo dings
+* [bug] scroll via timeline to some far away date → scroll up & down a bit → it janks to a month later? idk
+* next: make add to album via selection work. make the UX nice. (also be able to add to existing album)
+* when holding shift & selecting dont insta lose preview when not hovering a photo
+* fix lag spike when moving from photos → explore → [LAG HERE] photos
+* [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
+* remove theme per photo in /view/
+* if an album has media items in it, but no title, then show it as <No Title> or something in the nav bar and the albums
+  page
+* only request main timeline ratios/ids/by-month if we're visiting the main timeline
+*
+* switching from album to album, ratios is kept or something?
+* make edit album title permanent in new album view
+* on album title edit → update user albums
+* add way to add description
+* make click on photo open /album/d9faud9a/view/aduf0a
+* timeline scrollbar is shitty when we have few media items
+* make way to see time range of album (include in metadata with ratios request)
+* make albums list in nav drawer not scrollable, and cut off at 5 items or so (maybe add view all button at the bottom
+  of the list if theres more items available)
+* remember if albums list in navbar is open with localstorage
+* album page: add sort options (also sort by added on date)

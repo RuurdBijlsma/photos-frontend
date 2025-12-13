@@ -119,7 +119,7 @@ function handlePointerDown() {
           <v-icon
             size="15"
             icon="mdi-fullscreen"
-            v-tooltip:top="`View ${props.mediaItem?.isVideo ? 'video' : 'photo'}`"
+            :title="`View ${props.mediaItem?.isVideo ? 'video' : 'photo'}`"
           />
         </v-btn>
       </div>

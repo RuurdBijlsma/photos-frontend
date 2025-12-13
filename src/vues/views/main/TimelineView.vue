@@ -13,7 +13,7 @@ useTimelineWebSocket(authStore)
   <timeline-container
     class="timeline"
     :timeline-controller="timelineStore.controller"
-    sort-order="desc"
+    sort-direction="desc"
   />
 </template>
 

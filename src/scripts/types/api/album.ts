@@ -2,6 +2,8 @@ import type { TimelineItem } from '@/scripts/types/generated/timeline'
 
 // Enums
 export type AlbumRole = 'Owner' | 'Contributor' | 'Viewer'
+export type SortDirection = 'asc' | 'desc'
+export type AlbumSortField = 'updatedAt' | 'latestPhoto' | 'name'
 
 // Entities
 export interface Album {
@@ -9,9 +11,23 @@ export interface Album {
   ownerId: number
   name: string
   description: string | null
+  thumbnailId: string | null
   isPublic: boolean
   createdAt: string // ISO Date string
   updatedAt: string // ISO Date string
+}
+
+// Entities
+export interface AlbumWithCount {
+  id: string
+  ownerId: number
+  name: string
+  description: string | null
+  thumbnailId: string | null
+  isPublic: boolean
+  createdAt: string // ISO Date string
+  updatedAt: string // ISO Date string
+  mediaCount: number
 }
 
 export interface AlbumCollaborator {
@@ -43,7 +59,8 @@ export interface AlbumSummary {
 export interface AlbumDetailsResponse {
   id: string
   name: string
-  description: string | null
+  description?: string
+  thumbnailId?: string
   isPublic: boolean
   ownerId: number
   createdAt: string // ISO Date string
@@ -54,14 +71,16 @@ export interface AlbumDetailsResponse {
 // Request Payloads
 export interface CreateAlbumRequest {
   name: string
-  description?: string | null
+  description?: string
   isPublic: boolean
+  mediaItemIds: string[]
 }
 
 export interface UpdateAlbumRequest {
-  name?: string | null
-  description?: string | null
-  isPublic?: boolean | null
+  name?: string
+  description?: string
+  isPublic?: boolean
+  thumbnailId?: string
 }
 
 export interface AddMediaToAlbumRequest {
@@ -80,5 +99,5 @@ export interface CheckInviteRequest {
 export interface AcceptInviteRequest {
   token: string
   name: string
-  description?: string | null
+  description?: string
 }

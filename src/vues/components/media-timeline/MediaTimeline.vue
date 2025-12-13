@@ -20,15 +20,16 @@ import { useDateOverlay } from '@/scripts/composables/photo-grid/useDateOverlay.
 import { useTimelineSelection } from '@/scripts/composables/photo-grid/useTimelineSelection.ts'
 import { useTimelineScrollSync } from '@/scripts/composables/photo-grid/useTimelineScrollSync.ts'
 import DateOverlay from '@/vues/components/media-timeline/DateOverlay.vue'
-import ActionsOverlay from '@/vues/components/media-timeline/ActionsOverlay.vue'
+import SelectionOverlay from '@/vues/components/media-timeline/SelectionOverlay.vue'
+import type { SortDirection } from '@/scripts/types/api/album.ts'
 
 const props = withDefaults(
   defineProps<{
     timelineController: GenericTimeline
-    sortOrder?: 'asc' | 'desc'
+    sortDirection?: SortDirection
   }>(),
   {
-    sortOrder: 'desc',
+    sortDirection: 'desc',
   },
 )
 
@@ -60,7 +61,7 @@ const { handleScroll } = useTimelineScrollSync(
   virtualScrollRef,
   rows,
   rowInViewDate,
-  props.sortOrder,
+  props.sortDirection,
   activateScrollOverride,
 )
 
@@ -74,7 +75,7 @@ function onHoverItem(payload: { date: Date | null; id: string | null }) {
 <template>
   <main-layout-container>
     <date-overlay :date="dateInViewString" />
-    <actions-overlay @deselect-all="deselectAll" />
+    <selection-overlay @deselect-all="deselectAll" />
     <div
       class="photo-grid-container"
       ref="container"
@@ -88,7 +89,8 @@ function onHoverItem(payload: { date: Date | null; id: string | null }) {
         item-key="key"
         class="scroll-container"
       >
-        <template #default="{ item }">
+        <template #default="{ item, index }">
+          <slot name="default" v-if="index === 0" />
           <grid-row-header v-if="item.firstOfTheMonth" :row="item" />
           <grid-row
             @selection-click="(payload) => selectItem(payload.event, payload.id)"

@@ -2,6 +2,7 @@ import { type Ref, watch } from 'vue'
 import type { VVirtualScroll } from 'vuetify/components'
 import type { RowLayout } from '@/vues/components/photo-grid/GridRow.vue'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
+import type { SortDirection } from '@/scripts/types/api/album.ts'
 
 /**
  * Handles the bidirectional synchronization between the timeline:
@@ -13,7 +14,7 @@ export function useTimelineScrollSync(
   virtualScrollRef: Ref<VVirtualScroll | null>,
   rows: Ref<RowLayout[]>,
   rowInViewDate: Ref<Date | null>,
-  sortOrder: 'asc' | 'desc',
+  sortDirection: SortDirection,
   activateScrollOverride: (e: WheelEvent) => void,
 ) {
   const { setDateInView, scrollToDate, clearScrollRequest, setIsAtTop } = useTimelineScroll()
@@ -55,7 +56,7 @@ export function useTimelineScrollSync(
       const ratio = Math.min(1, Math.max(0, (day - 1) / (daysInMonth - 1 || 1)))
 
       let offset: number
-      if (sortOrder === 'asc') {
+      if (sortDirection === 'asc') {
         // Ascending: Day 1 is at top (offset 0)
         offset = Math.round((monthRowCount - 1) * ratio)
       } else {

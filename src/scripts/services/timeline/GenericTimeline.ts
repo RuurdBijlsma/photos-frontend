@@ -1,10 +1,11 @@
 import { computed, type ComputedRef, reactive, ref, shallowRef, triggerRef } from 'vue'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import type {
-  TimelineItem,
-  TimelineItemsResponse,
-  TimelineMonthRatios,
-  TimelineRatiosResponse,
+import {
+  AlbumInfo,
+  type TimelineItem,
+  type TimelineItemsResponse,
+  type TimelineMonthRatios,
+  type TimelineRatiosResponse,
 } from '@/scripts/types/generated/timeline.ts'
 
 export interface TimelineDataProvider {
@@ -21,6 +22,8 @@ export function createTimelineController(provider: TimelineDataProvider) {
   const mediaMonthsLoading = ref(new Set<string>())
   const timeline = shallowRef<TimelineMonthRatios[] | null>(null)
   const ids = ref<string[]>([])
+
+  const albumInfo = ref<AlbumInfo | null>(null)
 
   // --- External Dependencies ---
   // Note: This must be called inside a Setup context (component or another store)
@@ -58,7 +61,12 @@ export function createTimelineController(provider: TimelineDataProvider) {
     const t0 = performance.now()
     try {
       const timelineResponse = await provider.getRatios()
+      console.log({ timelineResponse })
       timeline.value = timelineResponse.months
+      if ('album' in timelineResponse) {
+        console.log('SET ALBUM INFO', timelineResponse.album as AlbumInfo)
+        albumInfo.value = timelineResponse.album as AlbumInfo
+      }
     } catch (e) {
       snackbarStore.error('Failed to fetch grid layout.', e)
     } finally {
@@ -100,6 +108,7 @@ export function createTimelineController(provider: TimelineDataProvider) {
       if (nPhotos < 0) break
     }
     await fetchMediaByMonths(toRequest)
+    requestIdleCallback(() => fetchIds())
   }
 
   // Return the "Instance"
@@ -111,6 +120,7 @@ export function createTimelineController(provider: TimelineDataProvider) {
     timelineMonths,
     monthToIndex,
     ids,
+    albumInfo,
 
     // Actions
     fetchRatios,

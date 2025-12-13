@@ -6,19 +6,25 @@ import type {
   AddMediaToAlbumRequest,
   Album,
   AlbumCollaborator,
-  AlbumDetailsResponse,
+  AlbumSortField,
   AlbumSummary,
+  AlbumWithCount,
   CheckInviteRequest,
   CreateAlbumRequest,
+  SortDirection,
   UpdateAlbumRequest,
 } from '@/scripts/types/api/album'
+import { AlbumRatiosResponse, TimelineItemsResponse } from '@/scripts/types/generated/timeline.ts'
 
 const albumService = {
   /**
    * List all albums for the current user.
    */
-  getUserAlbums(): Promise<AxiosResponse<Album[]>> {
-    return apiClient.get<Album[]>('/album')
+  getUserAlbums(
+    sortField: AlbumSortField = 'updatedAt',
+    sortDirection: SortDirection = 'desc',
+  ): Promise<AxiosResponse<AlbumWithCount[]>> {
+    return apiClient.get<AlbumWithCount[]>('/album', { params: { sortField, sortDirection } })
   },
 
   /**
@@ -26,13 +32,6 @@ const albumService = {
    */
   createAlbum(payload: CreateAlbumRequest): Promise<AxiosResponse<Album>> {
     return apiClient.post<Album>('/album', payload)
-  },
-
-  /**
-   * Get details for a specific album.
-   */
-  getAlbumDetails(albumId: string): Promise<AxiosResponse<AlbumDetailsResponse>> {
-    return apiClient.get<AlbumDetailsResponse>(`/album/${albumId}`)
   },
 
   /**
@@ -99,6 +98,31 @@ const albumService = {
    */
   acceptInvite(payload: AcceptInviteRequest): Promise<AxiosResponse<Album>> {
     return apiClient.post<Album>('/album/invite/accept', payload)
+  },
+
+  getTimelineIds(albumId: string): Promise<AxiosResponse<string[]>> {
+    return apiClient.get<string[]>(`/album/${albumId}/ids`, { params: { sort: 'desc' } })
+  },
+
+  async getTimelineRatios(albumId: string): Promise<AlbumRatiosResponse> {
+    const response = await apiClient.get(`/album/${albumId}/ratios`, {
+      params: { sort: 'desc' },
+      responseType: 'arraybuffer',
+    })
+    const buffer = new Uint8Array(response.data)
+    return AlbumRatiosResponse.decode(buffer)
+  },
+
+  async getMediaByMonths(albumId: string, months: string[]): Promise<TimelineItemsResponse> {
+    const response = await apiClient.get(`/album/${albumId}/by-month`, {
+      responseType: 'arraybuffer',
+      params: {
+        sort: 'desc',
+        months: months.join(','),
+      },
+    })
+    const buffer = new Uint8Array(response.data)
+    return TimelineItemsResponse.decode(buffer)
   },
 }
 

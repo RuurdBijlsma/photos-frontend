@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import photoService from '@/scripts/services/photoService.ts'
+import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+
+const albumStore = useAlbumStore()
+requestIdleCallback(() => albumStore.fetchUserAlbums())
 
 const albumsExpanded = ref(false)
-const albums = [
-  { name: 'Hiii', thumbId: 'OZ1tIKHlDE' },
-  { name: 'This is my album anme', thumbId: 'AGpONfDBXC' },
-  { name: 'Vakantie 2020', thumbId: 'EDl3rjCeNA' },
-  { name: 'Selecite vakantie 2002', thumbId: 'T76UO41vAg' },
-]
+const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
 
 const route = useRoute()
 </script>
@@ -39,6 +38,7 @@ const route = useRoute()
           class="albums-nav-btn"
           density="compact"
           icon="mdi-menu-down"
+          v-if="userHasAlbums"
           :class="{
             'point-down': albumsExpanded,
           }"
@@ -46,20 +46,28 @@ const route = useRoute()
         ></v-btn>
       </div>
 
-      <v-expand-transition>
+      <v-expand-transition v-if="userHasAlbums">
         <div v-show="albumsExpanded" class="album-list-container">
           <v-list-item
             rounded
-            :to="`/album?name=${album.name}`"
-            v-for="album in albums"
-            :key="album.name"
+            :to="`/album/${album.id}`"
+            v-for="album in albumStore.userAlbums"
+            :key="album.id"
           >
             <template v-slot:prepend>
-              <v-avatar rounded>
-                <v-img :src="photoService.getPhotoThumbnail(album.thumbId, 144)"></v-img>
+              <v-avatar rounded color="surface-container-high">
+                <v-img :src="photoService.getPhotoThumbnail(album.thumbnailId, 144)"></v-img>
               </v-avatar>
             </template>
-            <v-list-item-title>{{ album.name }}</v-list-item-title>
+            <v-list-item-title v-tooltip:top="album.name" v-if="album.name !== ''">{{
+              album.name
+            }}</v-list-item-title>
+            <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
+            <v-list-item-subtitle
+              >{{ album.mediaCount }} item{{
+                album.mediaCount === 1 ? '' : 's'
+              }}</v-list-item-subtitle
+            >
           </v-list-item>
         </div>
       </v-expand-transition>

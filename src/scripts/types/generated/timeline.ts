@@ -38,6 +38,25 @@ export interface TimelineItem {
   timestamp: string
 }
 
+/** Returns Album Metadata + Ratios */
+export interface AlbumRatiosResponse {
+  album: AlbumInfo | undefined
+  months: TimelineMonthRatios[]
+}
+
+export interface AlbumInfo {
+  id: string
+  name: string
+  description?: string | undefined
+  isPublic: boolean
+  ownerId: number
+  /** RFC3339 string */
+  createdAt: string
+  thumbnailId?: string | undefined
+  /** If the user is a collaborator, this shows their role */
+  userRole?: string | undefined
+}
+
 function createBaseTimelineRatiosResponse(): TimelineRatiosResponse {
   return { months: [] }
 }
@@ -474,6 +493,270 @@ export const TimelineItem: MessageFns<TimelineItem> = {
     message.isPanorama = object.isPanorama ?? false
     message.durationMs = object.durationMs ?? undefined
     message.timestamp = object.timestamp ?? ''
+    return message
+  },
+}
+
+function createBaseAlbumRatiosResponse(): AlbumRatiosResponse {
+  return { album: undefined, months: [] }
+}
+
+export const AlbumRatiosResponse: MessageFns<AlbumRatiosResponse> = {
+  encode(message: AlbumRatiosResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.album !== undefined) {
+      AlbumInfo.encode(message.album, writer.uint32(10).fork()).join()
+    }
+    for (const v of message.months) {
+      TimelineMonthRatios.encode(v!, writer.uint32(18).fork()).join()
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AlbumRatiosResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseAlbumRatiosResponse()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break
+          }
+
+          message.album = AlbumInfo.decode(reader, reader.uint32())
+          continue
+        }
+        case 2: {
+          if (tag !== 18) {
+            break
+          }
+
+          message.months.push(TimelineMonthRatios.decode(reader, reader.uint32()))
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): AlbumRatiosResponse {
+    return {
+      album: isSet(object.album) ? AlbumInfo.fromJSON(object.album) : undefined,
+      months: globalThis.Array.isArray(object?.months)
+        ? object.months.map((e: any) => TimelineMonthRatios.fromJSON(e))
+        : [],
+    }
+  },
+
+  toJSON(message: AlbumRatiosResponse): unknown {
+    const obj: any = {}
+    if (message.album !== undefined) {
+      obj.album = AlbumInfo.toJSON(message.album)
+    }
+    if (message.months?.length) {
+      obj.months = message.months.map((e) => TimelineMonthRatios.toJSON(e))
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<AlbumRatiosResponse>, I>>(base?: I): AlbumRatiosResponse {
+    return AlbumRatiosResponse.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<AlbumRatiosResponse>, I>>(
+    object: I,
+  ): AlbumRatiosResponse {
+    const message = createBaseAlbumRatiosResponse()
+    message.album =
+      object.album !== undefined && object.album !== null
+        ? AlbumInfo.fromPartial(object.album)
+        : undefined
+    message.months = object.months?.map((e) => TimelineMonthRatios.fromPartial(e)) || []
+    return message
+  },
+}
+
+function createBaseAlbumInfo(): AlbumInfo {
+  return {
+    id: '',
+    name: '',
+    description: undefined,
+    isPublic: false,
+    ownerId: 0,
+    createdAt: '',
+    thumbnailId: undefined,
+    userRole: undefined,
+  }
+}
+
+export const AlbumInfo: MessageFns<AlbumInfo> = {
+  encode(message: AlbumInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== '') {
+      writer.uint32(10).string(message.id)
+    }
+    if (message.name !== '') {
+      writer.uint32(18).string(message.name)
+    }
+    if (message.description !== undefined) {
+      writer.uint32(26).string(message.description)
+    }
+    if (message.isPublic !== false) {
+      writer.uint32(32).bool(message.isPublic)
+    }
+    if (message.ownerId !== 0) {
+      writer.uint32(40).int32(message.ownerId)
+    }
+    if (message.createdAt !== '') {
+      writer.uint32(50).string(message.createdAt)
+    }
+    if (message.thumbnailId !== undefined) {
+      writer.uint32(58).string(message.thumbnailId)
+    }
+    if (message.userRole !== undefined) {
+      writer.uint32(66).string(message.userRole)
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AlbumInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseAlbumInfo()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break
+          }
+
+          message.id = reader.string()
+          continue
+        }
+        case 2: {
+          if (tag !== 18) {
+            break
+          }
+
+          message.name = reader.string()
+          continue
+        }
+        case 3: {
+          if (tag !== 26) {
+            break
+          }
+
+          message.description = reader.string()
+          continue
+        }
+        case 4: {
+          if (tag !== 32) {
+            break
+          }
+
+          message.isPublic = reader.bool()
+          continue
+        }
+        case 5: {
+          if (tag !== 40) {
+            break
+          }
+
+          message.ownerId = reader.int32()
+          continue
+        }
+        case 6: {
+          if (tag !== 50) {
+            break
+          }
+
+          message.createdAt = reader.string()
+          continue
+        }
+        case 7: {
+          if (tag !== 58) {
+            break
+          }
+
+          message.thumbnailId = reader.string()
+          continue
+        }
+        case 8: {
+          if (tag !== 66) {
+            break
+          }
+
+          message.userRole = reader.string()
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): AlbumInfo {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : '',
+      name: isSet(object.name) ? globalThis.String(object.name) : '',
+      description: isSet(object.description) ? globalThis.String(object.description) : undefined,
+      isPublic: isSet(object.isPublic) ? globalThis.Boolean(object.isPublic) : false,
+      ownerId: isSet(object.ownerId) ? globalThis.Number(object.ownerId) : 0,
+      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : '',
+      thumbnailId: isSet(object.thumbnailId) ? globalThis.String(object.thumbnailId) : undefined,
+      userRole: isSet(object.userRole) ? globalThis.String(object.userRole) : undefined,
+    }
+  },
+
+  toJSON(message: AlbumInfo): unknown {
+    const obj: any = {}
+    if (message.id !== '') {
+      obj.id = message.id
+    }
+    if (message.name !== '') {
+      obj.name = message.name
+    }
+    if (message.description !== undefined) {
+      obj.description = message.description
+    }
+    if (message.isPublic !== false) {
+      obj.isPublic = message.isPublic
+    }
+    if (message.ownerId !== 0) {
+      obj.ownerId = Math.round(message.ownerId)
+    }
+    if (message.createdAt !== '') {
+      obj.createdAt = message.createdAt
+    }
+    if (message.thumbnailId !== undefined) {
+      obj.thumbnailId = message.thumbnailId
+    }
+    if (message.userRole !== undefined) {
+      obj.userRole = message.userRole
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<AlbumInfo>, I>>(base?: I): AlbumInfo {
+    return AlbumInfo.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<AlbumInfo>, I>>(object: I): AlbumInfo {
+    const message = createBaseAlbumInfo()
+    message.id = object.id ?? ''
+    message.name = object.name ?? ''
+    message.description = object.description ?? undefined
+    message.isPublic = object.isPublic ?? false
+    message.ownerId = object.ownerId ?? 0
+    message.createdAt = object.createdAt ?? ''
+    message.thumbnailId = object.thumbnailId ?? undefined
+    message.userRole = object.userRole ?? undefined
     return message
   },
 }
