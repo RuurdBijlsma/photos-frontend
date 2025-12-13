@@ -89,7 +89,8 @@ function onHoverItem(payload: { date: Date | null; id: string | null }) {
         item-key="key"
         class="scroll-container"
       >
-        <template #default="{ item }">
+        <template #default="{ item, index }">
+          <slot name="default" v-if="index === 0" />
           <grid-row-header v-if="item.firstOfTheMonth" :row="item" />
           <grid-row
             @selection-click="(payload) => selectItem(payload.event, payload.id)"

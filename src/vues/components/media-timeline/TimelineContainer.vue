@@ -20,7 +20,9 @@ const props = withDefaults(
     <media-timeline
       :timeline-controller="props.timelineController"
       :sort-direction="props.sortDirection"
-    />
+    >
+      <slot name="default"></slot>
+    </media-timeline>
     <timeline-scroll
       :sort-direction="props.sortDirection"
       :months="props.timelineController.timeline"
