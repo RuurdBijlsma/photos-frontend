@@ -111,3 +111,4 @@
 * make albums list in nav drawer not scrollable, and cut off at 5 items or so (maybe add view all button at the bottom
   of the list if theres more items available)
 * remember if albums list in navbar is open with localstorage
+* album page: add sort options (also sort by added on date)
