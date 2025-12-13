@@ -42,7 +42,7 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
         -->
         <v-card
           :style="{
-            backgroundColor: `rgba(var(--v-theme-${snack.color || 'primary'}), 0.9) !important`
+            backgroundColor: `rgba(var(--v-theme-${snack.color || 'primary'}), 0.9) !important`,
           }"
           :color="snack.color"
           class="d-flex align-center py-2 pl-4 pr-2 snack-card"

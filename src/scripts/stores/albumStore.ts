@@ -1,10 +1,6 @@
 import { ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
-import type {
-  AlbumDetailsResponse,
-  AlbumWithCount,
-  UpdateAlbumRequest,
-} from '@/scripts/types/api/album.ts'
+import type { AlbumWithCount, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
 import albumService from '@/scripts/services/albumService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import {
@@ -58,7 +54,6 @@ export const useAlbumStore = defineStore('album', () => {
   async function updateAlbumDetails(albumId: string, albumDetails: UpdateAlbumRequest) {
     try {
       await albumService.updateAlbum(albumId, albumDetails)
-      // await fetchAlbumDetails(albumId)
       requestIdleCallback(() => refreshUserAlbums())
     } catch (e) {
       snackbarStore.error(`Failed to update album: ${albumId}.`, e as Error)

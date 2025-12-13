@@ -65,7 +65,7 @@ async function initialize() {
   }
 }
 
-function toggleSelected(){
+function toggleSelected() {
   selectionStore.toggleSelected(id.value)
   selectionStore.commit()
 }

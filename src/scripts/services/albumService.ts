@@ -14,10 +14,7 @@ import type {
   SortDirection,
   UpdateAlbumRequest,
 } from '@/scripts/types/api/album'
-import {
-  AlbumRatiosResponse,
-  TimelineItemsResponse,
-} from '@/scripts/types/generated/timeline.ts'
+import { AlbumRatiosResponse, TimelineItemsResponse } from '@/scripts/types/generated/timeline.ts'
 
 const albumService = {
   /**

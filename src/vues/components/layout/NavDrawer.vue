@@ -59,9 +59,15 @@ const route = useRoute()
                 <v-img :src="photoService.getPhotoThumbnail(album.thumbnailId, 144)"></v-img>
               </v-avatar>
             </template>
-            <v-list-item-title v-tooltip:top="album.name" v-if="album.name !== ''">{{ album.name }}</v-list-item-title>
+            <v-list-item-title v-tooltip:top="album.name" v-if="album.name !== ''">{{
+              album.name
+            }}</v-list-item-title>
             <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
-            <v-list-item-subtitle>{{ album.mediaCount }} item{{ album.mediaCount === 1 ? '' : 's'}}</v-list-item-subtitle>
+            <v-list-item-subtitle
+              >{{ album.mediaCount }} item{{
+                album.mediaCount === 1 ? '' : 's'
+              }}</v-list-item-subtitle
+            >
           </v-list-item>
         </div>
       </v-expand-transition>

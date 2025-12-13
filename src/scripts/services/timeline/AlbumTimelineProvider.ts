@@ -1,6 +1,5 @@
 import type { TimelineDataProvider } from '@/scripts/services/timeline/GenericTimeline.ts'
 import albumService from '@/scripts/services/albumService.ts'
-import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 
 export class AlbumTimelineProvider implements TimelineDataProvider {
   albumId: string

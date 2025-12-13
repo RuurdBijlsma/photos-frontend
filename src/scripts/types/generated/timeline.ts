@@ -5,94 +5,92 @@
 // source: timeline.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire'
 
-export const protobufPackage = "api";
+export const protobufPackage = 'api'
 
 /** Contains ratios and amount of media items per month, grouped by month. */
 export interface TimelineRatiosResponse {
-  months: TimelineMonthRatios[];
+  months: TimelineMonthRatios[]
 }
 
 export interface TimelineMonthRatios {
-  monthId: string;
-  count: number;
-  ratios: number[];
+  monthId: string
+  count: number
+  ratios: number[]
 }
 
 /** Contains information for media items for the requested months, grouped by month. */
 export interface TimelineItemsResponse {
-  months: TimelineMonthItems[];
+  months: TimelineMonthItems[]
 }
 
 export interface TimelineMonthItems {
-  monthId: string;
-  items: TimelineItem[];
+  monthId: string
+  items: TimelineItem[]
 }
 
 export interface TimelineItem {
-  id: string;
-  isVideo: boolean;
-  isPanorama: boolean;
-  durationMs?: number | undefined;
-  timestamp: string;
+  id: string
+  isVideo: boolean
+  isPanorama: boolean
+  durationMs?: number | undefined
+  timestamp: string
 }
 
 /** Returns Album Metadata + Ratios */
 export interface AlbumRatiosResponse {
-  album: AlbumInfo | undefined;
-  months: TimelineMonthRatios[];
+  album: AlbumInfo | undefined
+  months: TimelineMonthRatios[]
 }
 
 export interface AlbumInfo {
-  id: string;
-  name: string;
-  description?: string | undefined;
-  isPublic: boolean;
-  ownerId: number;
+  id: string
+  name: string
+  description?: string | undefined
+  isPublic: boolean
+  ownerId: number
   /** RFC3339 string */
-  createdAt: string;
-  thumbnailId?:
-    | string
-    | undefined;
+  createdAt: string
+  thumbnailId?: string | undefined
   /** If the user is a collaborator, this shows their role */
-  userRole?: string | undefined;
+  userRole?: string | undefined
 }
 
 function createBaseTimelineRatiosResponse(): TimelineRatiosResponse {
-  return { months: [] };
+  return { months: [] }
 }
 
 export const TimelineRatiosResponse: MessageFns<TimelineRatiosResponse> = {
   encode(message: TimelineRatiosResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.months) {
-      TimelineMonthRatios.encode(v!, writer.uint32(10).fork()).join();
+      TimelineMonthRatios.encode(v!, writer.uint32(10).fork()).join()
     }
-    return writer;
+    return writer
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): TimelineRatiosResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTimelineRatiosResponse();
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseTimelineRatiosResponse()
     while (reader.pos < end) {
-      const tag = reader.uint32();
+      const tag = reader.uint32()
       switch (tag >>> 3) {
         case 1: {
           if (tag !== 10) {
-            break;
+            break
           }
 
-          message.months.push(TimelineMonthRatios.decode(reader, reader.uint32()));
-          continue;
+          message.months.push(TimelineMonthRatios.decode(reader, reader.uint32()))
+          continue
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
-        break;
+        break
       }
-      reader.skip(tag & 7);
+      reader.skip(tag & 7)
     }
-    return message;
+    return message
   },
 
   fromJSON(object: any): TimelineRatiosResponse {
@@ -100,165 +98,173 @@ export const TimelineRatiosResponse: MessageFns<TimelineRatiosResponse> = {
       months: globalThis.Array.isArray(object?.months)
         ? object.months.map((e: any) => TimelineMonthRatios.fromJSON(e))
         : [],
-    };
+    }
   },
 
   toJSON(message: TimelineRatiosResponse): unknown {
-    const obj: any = {};
+    const obj: any = {}
     if (message.months?.length) {
-      obj.months = message.months.map((e) => TimelineMonthRatios.toJSON(e));
+      obj.months = message.months.map((e) => TimelineMonthRatios.toJSON(e))
     }
-    return obj;
+    return obj
   },
 
-  create<I extends Exact<DeepPartial<TimelineRatiosResponse>, I>>(base?: I): TimelineRatiosResponse {
-    return TimelineRatiosResponse.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<TimelineRatiosResponse>, I>>(
+    base?: I,
+  ): TimelineRatiosResponse {
+    return TimelineRatiosResponse.fromPartial(base ?? ({} as any))
   },
-  fromPartial<I extends Exact<DeepPartial<TimelineRatiosResponse>, I>>(object: I): TimelineRatiosResponse {
-    const message = createBaseTimelineRatiosResponse();
-    message.months = object.months?.map((e) => TimelineMonthRatios.fromPartial(e)) || [];
-    return message;
+  fromPartial<I extends Exact<DeepPartial<TimelineRatiosResponse>, I>>(
+    object: I,
+  ): TimelineRatiosResponse {
+    const message = createBaseTimelineRatiosResponse()
+    message.months = object.months?.map((e) => TimelineMonthRatios.fromPartial(e)) || []
+    return message
   },
-};
+}
 
 function createBaseTimelineMonthRatios(): TimelineMonthRatios {
-  return { monthId: "", count: 0, ratios: [] };
+  return { monthId: '', count: 0, ratios: [] }
 }
 
 export const TimelineMonthRatios: MessageFns<TimelineMonthRatios> = {
   encode(message: TimelineMonthRatios, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.monthId !== "") {
-      writer.uint32(10).string(message.monthId);
+    if (message.monthId !== '') {
+      writer.uint32(10).string(message.monthId)
     }
     if (message.count !== 0) {
-      writer.uint32(16).int32(message.count);
+      writer.uint32(16).int32(message.count)
     }
-    writer.uint32(26).fork();
+    writer.uint32(26).fork()
     for (const v of message.ratios) {
-      writer.float(v);
+      writer.float(v)
     }
-    writer.join();
-    return writer;
+    writer.join()
+    return writer
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): TimelineMonthRatios {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTimelineMonthRatios();
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseTimelineMonthRatios()
     while (reader.pos < end) {
-      const tag = reader.uint32();
+      const tag = reader.uint32()
       switch (tag >>> 3) {
         case 1: {
           if (tag !== 10) {
-            break;
+            break
           }
 
-          message.monthId = reader.string();
-          continue;
+          message.monthId = reader.string()
+          continue
         }
         case 2: {
           if (tag !== 16) {
-            break;
+            break
           }
 
-          message.count = reader.int32();
-          continue;
+          message.count = reader.int32()
+          continue
         }
         case 3: {
           if (tag === 29) {
-            message.ratios.push(reader.float());
+            message.ratios.push(reader.float())
 
-            continue;
+            continue
           }
 
           if (tag === 26) {
-            const end2 = reader.uint32() + reader.pos;
+            const end2 = reader.uint32() + reader.pos
             while (reader.pos < end2) {
-              message.ratios.push(reader.float());
+              message.ratios.push(reader.float())
             }
 
-            continue;
+            continue
           }
 
-          break;
+          break
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
-        break;
+        break
       }
-      reader.skip(tag & 7);
+      reader.skip(tag & 7)
     }
-    return message;
+    return message
   },
 
   fromJSON(object: any): TimelineMonthRatios {
     return {
-      monthId: isSet(object.monthId) ? globalThis.String(object.monthId) : "",
+      monthId: isSet(object.monthId) ? globalThis.String(object.monthId) : '',
       count: isSet(object.count) ? globalThis.Number(object.count) : 0,
-      ratios: globalThis.Array.isArray(object?.ratios) ? object.ratios.map((e: any) => globalThis.Number(e)) : [],
-    };
+      ratios: globalThis.Array.isArray(object?.ratios)
+        ? object.ratios.map((e: any) => globalThis.Number(e))
+        : [],
+    }
   },
 
   toJSON(message: TimelineMonthRatios): unknown {
-    const obj: any = {};
-    if (message.monthId !== "") {
-      obj.monthId = message.monthId;
+    const obj: any = {}
+    if (message.monthId !== '') {
+      obj.monthId = message.monthId
     }
     if (message.count !== 0) {
-      obj.count = Math.round(message.count);
+      obj.count = Math.round(message.count)
     }
     if (message.ratios?.length) {
-      obj.ratios = message.ratios;
+      obj.ratios = message.ratios
     }
-    return obj;
+    return obj
   },
 
   create<I extends Exact<DeepPartial<TimelineMonthRatios>, I>>(base?: I): TimelineMonthRatios {
-    return TimelineMonthRatios.fromPartial(base ?? ({} as any));
+    return TimelineMonthRatios.fromPartial(base ?? ({} as any))
   },
-  fromPartial<I extends Exact<DeepPartial<TimelineMonthRatios>, I>>(object: I): TimelineMonthRatios {
-    const message = createBaseTimelineMonthRatios();
-    message.monthId = object.monthId ?? "";
-    message.count = object.count ?? 0;
-    message.ratios = object.ratios?.map((e) => e) || [];
-    return message;
+  fromPartial<I extends Exact<DeepPartial<TimelineMonthRatios>, I>>(
+    object: I,
+  ): TimelineMonthRatios {
+    const message = createBaseTimelineMonthRatios()
+    message.monthId = object.monthId ?? ''
+    message.count = object.count ?? 0
+    message.ratios = object.ratios?.map((e) => e) || []
+    return message
   },
-};
+}
 
 function createBaseTimelineItemsResponse(): TimelineItemsResponse {
-  return { months: [] };
+  return { months: [] }
 }
 
 export const TimelineItemsResponse: MessageFns<TimelineItemsResponse> = {
   encode(message: TimelineItemsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.months) {
-      TimelineMonthItems.encode(v!, writer.uint32(10).fork()).join();
+      TimelineMonthItems.encode(v!, writer.uint32(10).fork()).join()
     }
-    return writer;
+    return writer
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): TimelineItemsResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTimelineItemsResponse();
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseTimelineItemsResponse()
     while (reader.pos < end) {
-      const tag = reader.uint32();
+      const tag = reader.uint32()
       switch (tag >>> 3) {
         case 1: {
           if (tag !== 10) {
-            break;
+            break
           }
 
-          message.months.push(TimelineMonthItems.decode(reader, reader.uint32()));
-          continue;
+          message.months.push(TimelineMonthItems.decode(reader, reader.uint32()))
+          continue
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
-        break;
+        break
       }
-      reader.skip(tag & 7);
+      reader.skip(tag & 7)
     }
-    return message;
+    return message
   },
 
   fromJSON(object: any): TimelineItemsResponse {
@@ -266,272 +272,276 @@ export const TimelineItemsResponse: MessageFns<TimelineItemsResponse> = {
       months: globalThis.Array.isArray(object?.months)
         ? object.months.map((e: any) => TimelineMonthItems.fromJSON(e))
         : [],
-    };
+    }
   },
 
   toJSON(message: TimelineItemsResponse): unknown {
-    const obj: any = {};
+    const obj: any = {}
     if (message.months?.length) {
-      obj.months = message.months.map((e) => TimelineMonthItems.toJSON(e));
+      obj.months = message.months.map((e) => TimelineMonthItems.toJSON(e))
     }
-    return obj;
+    return obj
   },
 
   create<I extends Exact<DeepPartial<TimelineItemsResponse>, I>>(base?: I): TimelineItemsResponse {
-    return TimelineItemsResponse.fromPartial(base ?? ({} as any));
+    return TimelineItemsResponse.fromPartial(base ?? ({} as any))
   },
-  fromPartial<I extends Exact<DeepPartial<TimelineItemsResponse>, I>>(object: I): TimelineItemsResponse {
-    const message = createBaseTimelineItemsResponse();
-    message.months = object.months?.map((e) => TimelineMonthItems.fromPartial(e)) || [];
-    return message;
+  fromPartial<I extends Exact<DeepPartial<TimelineItemsResponse>, I>>(
+    object: I,
+  ): TimelineItemsResponse {
+    const message = createBaseTimelineItemsResponse()
+    message.months = object.months?.map((e) => TimelineMonthItems.fromPartial(e)) || []
+    return message
   },
-};
+}
 
 function createBaseTimelineMonthItems(): TimelineMonthItems {
-  return { monthId: "", items: [] };
+  return { monthId: '', items: [] }
 }
 
 export const TimelineMonthItems: MessageFns<TimelineMonthItems> = {
   encode(message: TimelineMonthItems, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.monthId !== "") {
-      writer.uint32(10).string(message.monthId);
+    if (message.monthId !== '') {
+      writer.uint32(10).string(message.monthId)
     }
     for (const v of message.items) {
-      TimelineItem.encode(v!, writer.uint32(18).fork()).join();
+      TimelineItem.encode(v!, writer.uint32(18).fork()).join()
     }
-    return writer;
+    return writer
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): TimelineMonthItems {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTimelineMonthItems();
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseTimelineMonthItems()
     while (reader.pos < end) {
-      const tag = reader.uint32();
+      const tag = reader.uint32()
       switch (tag >>> 3) {
         case 1: {
           if (tag !== 10) {
-            break;
+            break
           }
 
-          message.monthId = reader.string();
-          continue;
+          message.monthId = reader.string()
+          continue
         }
         case 2: {
           if (tag !== 18) {
-            break;
+            break
           }
 
-          message.items.push(TimelineItem.decode(reader, reader.uint32()));
-          continue;
+          message.items.push(TimelineItem.decode(reader, reader.uint32()))
+          continue
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
-        break;
+        break
       }
-      reader.skip(tag & 7);
+      reader.skip(tag & 7)
     }
-    return message;
+    return message
   },
 
   fromJSON(object: any): TimelineMonthItems {
     return {
-      monthId: isSet(object.monthId) ? globalThis.String(object.monthId) : "",
-      items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => TimelineItem.fromJSON(e)) : [],
-    };
+      monthId: isSet(object.monthId) ? globalThis.String(object.monthId) : '',
+      items: globalThis.Array.isArray(object?.items)
+        ? object.items.map((e: any) => TimelineItem.fromJSON(e))
+        : [],
+    }
   },
 
   toJSON(message: TimelineMonthItems): unknown {
-    const obj: any = {};
-    if (message.monthId !== "") {
-      obj.monthId = message.monthId;
+    const obj: any = {}
+    if (message.monthId !== '') {
+      obj.monthId = message.monthId
     }
     if (message.items?.length) {
-      obj.items = message.items.map((e) => TimelineItem.toJSON(e));
+      obj.items = message.items.map((e) => TimelineItem.toJSON(e))
     }
-    return obj;
+    return obj
   },
 
   create<I extends Exact<DeepPartial<TimelineMonthItems>, I>>(base?: I): TimelineMonthItems {
-    return TimelineMonthItems.fromPartial(base ?? ({} as any));
+    return TimelineMonthItems.fromPartial(base ?? ({} as any))
   },
   fromPartial<I extends Exact<DeepPartial<TimelineMonthItems>, I>>(object: I): TimelineMonthItems {
-    const message = createBaseTimelineMonthItems();
-    message.monthId = object.monthId ?? "";
-    message.items = object.items?.map((e) => TimelineItem.fromPartial(e)) || [];
-    return message;
+    const message = createBaseTimelineMonthItems()
+    message.monthId = object.monthId ?? ''
+    message.items = object.items?.map((e) => TimelineItem.fromPartial(e)) || []
+    return message
   },
-};
+}
 
 function createBaseTimelineItem(): TimelineItem {
-  return { id: "", isVideo: false, isPanorama: false, durationMs: undefined, timestamp: "" };
+  return { id: '', isVideo: false, isPanorama: false, durationMs: undefined, timestamp: '' }
 }
 
 export const TimelineItem: MessageFns<TimelineItem> = {
   encode(message: TimelineItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== "") {
-      writer.uint32(10).string(message.id);
+    if (message.id !== '') {
+      writer.uint32(10).string(message.id)
     }
     if (message.isVideo !== false) {
-      writer.uint32(16).bool(message.isVideo);
+      writer.uint32(16).bool(message.isVideo)
     }
     if (message.isPanorama !== false) {
-      writer.uint32(24).bool(message.isPanorama);
+      writer.uint32(24).bool(message.isPanorama)
     }
     if (message.durationMs !== undefined) {
-      writer.uint32(32).int32(message.durationMs);
+      writer.uint32(32).int32(message.durationMs)
     }
-    if (message.timestamp !== "") {
-      writer.uint32(42).string(message.timestamp);
+    if (message.timestamp !== '') {
+      writer.uint32(42).string(message.timestamp)
     }
-    return writer;
+    return writer
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): TimelineItem {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTimelineItem();
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseTimelineItem()
     while (reader.pos < end) {
-      const tag = reader.uint32();
+      const tag = reader.uint32()
       switch (tag >>> 3) {
         case 1: {
           if (tag !== 10) {
-            break;
+            break
           }
 
-          message.id = reader.string();
-          continue;
+          message.id = reader.string()
+          continue
         }
         case 2: {
           if (tag !== 16) {
-            break;
+            break
           }
 
-          message.isVideo = reader.bool();
-          continue;
+          message.isVideo = reader.bool()
+          continue
         }
         case 3: {
           if (tag !== 24) {
-            break;
+            break
           }
 
-          message.isPanorama = reader.bool();
-          continue;
+          message.isPanorama = reader.bool()
+          continue
         }
         case 4: {
           if (tag !== 32) {
-            break;
+            break
           }
 
-          message.durationMs = reader.int32();
-          continue;
+          message.durationMs = reader.int32()
+          continue
         }
         case 5: {
           if (tag !== 42) {
-            break;
+            break
           }
 
-          message.timestamp = reader.string();
-          continue;
+          message.timestamp = reader.string()
+          continue
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
-        break;
+        break
       }
-      reader.skip(tag & 7);
+      reader.skip(tag & 7)
     }
-    return message;
+    return message
   },
 
   fromJSON(object: any): TimelineItem {
     return {
-      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      id: isSet(object.id) ? globalThis.String(object.id) : '',
       isVideo: isSet(object.isVideo) ? globalThis.Boolean(object.isVideo) : false,
       isPanorama: isSet(object.isPanorama) ? globalThis.Boolean(object.isPanorama) : false,
       durationMs: isSet(object.durationMs) ? globalThis.Number(object.durationMs) : undefined,
-      timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : "",
-    };
+      timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : '',
+    }
   },
 
   toJSON(message: TimelineItem): unknown {
-    const obj: any = {};
-    if (message.id !== "") {
-      obj.id = message.id;
+    const obj: any = {}
+    if (message.id !== '') {
+      obj.id = message.id
     }
     if (message.isVideo !== false) {
-      obj.isVideo = message.isVideo;
+      obj.isVideo = message.isVideo
     }
     if (message.isPanorama !== false) {
-      obj.isPanorama = message.isPanorama;
+      obj.isPanorama = message.isPanorama
     }
     if (message.durationMs !== undefined) {
-      obj.durationMs = Math.round(message.durationMs);
+      obj.durationMs = Math.round(message.durationMs)
     }
-    if (message.timestamp !== "") {
-      obj.timestamp = message.timestamp;
+    if (message.timestamp !== '') {
+      obj.timestamp = message.timestamp
     }
-    return obj;
+    return obj
   },
 
   create<I extends Exact<DeepPartial<TimelineItem>, I>>(base?: I): TimelineItem {
-    return TimelineItem.fromPartial(base ?? ({} as any));
+    return TimelineItem.fromPartial(base ?? ({} as any))
   },
   fromPartial<I extends Exact<DeepPartial<TimelineItem>, I>>(object: I): TimelineItem {
-    const message = createBaseTimelineItem();
-    message.id = object.id ?? "";
-    message.isVideo = object.isVideo ?? false;
-    message.isPanorama = object.isPanorama ?? false;
-    message.durationMs = object.durationMs ?? undefined;
-    message.timestamp = object.timestamp ?? "";
-    return message;
+    const message = createBaseTimelineItem()
+    message.id = object.id ?? ''
+    message.isVideo = object.isVideo ?? false
+    message.isPanorama = object.isPanorama ?? false
+    message.durationMs = object.durationMs ?? undefined
+    message.timestamp = object.timestamp ?? ''
+    return message
   },
-};
+}
 
 function createBaseAlbumRatiosResponse(): AlbumRatiosResponse {
-  return { album: undefined, months: [] };
+  return { album: undefined, months: [] }
 }
 
 export const AlbumRatiosResponse: MessageFns<AlbumRatiosResponse> = {
   encode(message: AlbumRatiosResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.album !== undefined) {
-      AlbumInfo.encode(message.album, writer.uint32(10).fork()).join();
+      AlbumInfo.encode(message.album, writer.uint32(10).fork()).join()
     }
     for (const v of message.months) {
-      TimelineMonthRatios.encode(v!, writer.uint32(18).fork()).join();
+      TimelineMonthRatios.encode(v!, writer.uint32(18).fork()).join()
     }
-    return writer;
+    return writer
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): AlbumRatiosResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseAlbumRatiosResponse();
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseAlbumRatiosResponse()
     while (reader.pos < end) {
-      const tag = reader.uint32();
+      const tag = reader.uint32()
       switch (tag >>> 3) {
         case 1: {
           if (tag !== 10) {
-            break;
+            break
           }
 
-          message.album = AlbumInfo.decode(reader, reader.uint32());
-          continue;
+          message.album = AlbumInfo.decode(reader, reader.uint32())
+          continue
         }
         case 2: {
           if (tag !== 18) {
-            break;
+            break
           }
 
-          message.months.push(TimelineMonthRatios.decode(reader, reader.uint32()));
-          continue;
+          message.months.push(TimelineMonthRatios.decode(reader, reader.uint32()))
+          continue
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
-        break;
+        break
       }
-      reader.skip(tag & 7);
+      reader.skip(tag & 7)
     }
-    return message;
+    return message
   },
 
   fromJSON(object: any): AlbumRatiosResponse {
@@ -540,235 +550,243 @@ export const AlbumRatiosResponse: MessageFns<AlbumRatiosResponse> = {
       months: globalThis.Array.isArray(object?.months)
         ? object.months.map((e: any) => TimelineMonthRatios.fromJSON(e))
         : [],
-    };
+    }
   },
 
   toJSON(message: AlbumRatiosResponse): unknown {
-    const obj: any = {};
+    const obj: any = {}
     if (message.album !== undefined) {
-      obj.album = AlbumInfo.toJSON(message.album);
+      obj.album = AlbumInfo.toJSON(message.album)
     }
     if (message.months?.length) {
-      obj.months = message.months.map((e) => TimelineMonthRatios.toJSON(e));
+      obj.months = message.months.map((e) => TimelineMonthRatios.toJSON(e))
     }
-    return obj;
+    return obj
   },
 
   create<I extends Exact<DeepPartial<AlbumRatiosResponse>, I>>(base?: I): AlbumRatiosResponse {
-    return AlbumRatiosResponse.fromPartial(base ?? ({} as any));
+    return AlbumRatiosResponse.fromPartial(base ?? ({} as any))
   },
-  fromPartial<I extends Exact<DeepPartial<AlbumRatiosResponse>, I>>(object: I): AlbumRatiosResponse {
-    const message = createBaseAlbumRatiosResponse();
-    message.album = (object.album !== undefined && object.album !== null)
-      ? AlbumInfo.fromPartial(object.album)
-      : undefined;
-    message.months = object.months?.map((e) => TimelineMonthRatios.fromPartial(e)) || [];
-    return message;
+  fromPartial<I extends Exact<DeepPartial<AlbumRatiosResponse>, I>>(
+    object: I,
+  ): AlbumRatiosResponse {
+    const message = createBaseAlbumRatiosResponse()
+    message.album =
+      object.album !== undefined && object.album !== null
+        ? AlbumInfo.fromPartial(object.album)
+        : undefined
+    message.months = object.months?.map((e) => TimelineMonthRatios.fromPartial(e)) || []
+    return message
   },
-};
+}
 
 function createBaseAlbumInfo(): AlbumInfo {
   return {
-    id: "",
-    name: "",
+    id: '',
+    name: '',
     description: undefined,
     isPublic: false,
     ownerId: 0,
-    createdAt: "",
+    createdAt: '',
     thumbnailId: undefined,
     userRole: undefined,
-  };
+  }
 }
 
 export const AlbumInfo: MessageFns<AlbumInfo> = {
   encode(message: AlbumInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== "") {
-      writer.uint32(10).string(message.id);
+    if (message.id !== '') {
+      writer.uint32(10).string(message.id)
     }
-    if (message.name !== "") {
-      writer.uint32(18).string(message.name);
+    if (message.name !== '') {
+      writer.uint32(18).string(message.name)
     }
     if (message.description !== undefined) {
-      writer.uint32(26).string(message.description);
+      writer.uint32(26).string(message.description)
     }
     if (message.isPublic !== false) {
-      writer.uint32(32).bool(message.isPublic);
+      writer.uint32(32).bool(message.isPublic)
     }
     if (message.ownerId !== 0) {
-      writer.uint32(40).int32(message.ownerId);
+      writer.uint32(40).int32(message.ownerId)
     }
-    if (message.createdAt !== "") {
-      writer.uint32(50).string(message.createdAt);
+    if (message.createdAt !== '') {
+      writer.uint32(50).string(message.createdAt)
     }
     if (message.thumbnailId !== undefined) {
-      writer.uint32(58).string(message.thumbnailId);
+      writer.uint32(58).string(message.thumbnailId)
     }
     if (message.userRole !== undefined) {
-      writer.uint32(66).string(message.userRole);
+      writer.uint32(66).string(message.userRole)
     }
-    return writer;
+    return writer
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): AlbumInfo {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseAlbumInfo();
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseAlbumInfo()
     while (reader.pos < end) {
-      const tag = reader.uint32();
+      const tag = reader.uint32()
       switch (tag >>> 3) {
         case 1: {
           if (tag !== 10) {
-            break;
+            break
           }
 
-          message.id = reader.string();
-          continue;
+          message.id = reader.string()
+          continue
         }
         case 2: {
           if (tag !== 18) {
-            break;
+            break
           }
 
-          message.name = reader.string();
-          continue;
+          message.name = reader.string()
+          continue
         }
         case 3: {
           if (tag !== 26) {
-            break;
+            break
           }
 
-          message.description = reader.string();
-          continue;
+          message.description = reader.string()
+          continue
         }
         case 4: {
           if (tag !== 32) {
-            break;
+            break
           }
 
-          message.isPublic = reader.bool();
-          continue;
+          message.isPublic = reader.bool()
+          continue
         }
         case 5: {
           if (tag !== 40) {
-            break;
+            break
           }
 
-          message.ownerId = reader.int32();
-          continue;
+          message.ownerId = reader.int32()
+          continue
         }
         case 6: {
           if (tag !== 50) {
-            break;
+            break
           }
 
-          message.createdAt = reader.string();
-          continue;
+          message.createdAt = reader.string()
+          continue
         }
         case 7: {
           if (tag !== 58) {
-            break;
+            break
           }
 
-          message.thumbnailId = reader.string();
-          continue;
+          message.thumbnailId = reader.string()
+          continue
         }
         case 8: {
           if (tag !== 66) {
-            break;
+            break
           }
 
-          message.userRole = reader.string();
-          continue;
+          message.userRole = reader.string()
+          continue
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
-        break;
+        break
       }
-      reader.skip(tag & 7);
+      reader.skip(tag & 7)
     }
-    return message;
+    return message
   },
 
   fromJSON(object: any): AlbumInfo {
     return {
-      id: isSet(object.id) ? globalThis.String(object.id) : "",
-      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      id: isSet(object.id) ? globalThis.String(object.id) : '',
+      name: isSet(object.name) ? globalThis.String(object.name) : '',
       description: isSet(object.description) ? globalThis.String(object.description) : undefined,
       isPublic: isSet(object.isPublic) ? globalThis.Boolean(object.isPublic) : false,
       ownerId: isSet(object.ownerId) ? globalThis.Number(object.ownerId) : 0,
-      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : "",
+      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : '',
       thumbnailId: isSet(object.thumbnailId) ? globalThis.String(object.thumbnailId) : undefined,
       userRole: isSet(object.userRole) ? globalThis.String(object.userRole) : undefined,
-    };
+    }
   },
 
   toJSON(message: AlbumInfo): unknown {
-    const obj: any = {};
-    if (message.id !== "") {
-      obj.id = message.id;
+    const obj: any = {}
+    if (message.id !== '') {
+      obj.id = message.id
     }
-    if (message.name !== "") {
-      obj.name = message.name;
+    if (message.name !== '') {
+      obj.name = message.name
     }
     if (message.description !== undefined) {
-      obj.description = message.description;
+      obj.description = message.description
     }
     if (message.isPublic !== false) {
-      obj.isPublic = message.isPublic;
+      obj.isPublic = message.isPublic
     }
     if (message.ownerId !== 0) {
-      obj.ownerId = Math.round(message.ownerId);
+      obj.ownerId = Math.round(message.ownerId)
     }
-    if (message.createdAt !== "") {
-      obj.createdAt = message.createdAt;
+    if (message.createdAt !== '') {
+      obj.createdAt = message.createdAt
     }
     if (message.thumbnailId !== undefined) {
-      obj.thumbnailId = message.thumbnailId;
+      obj.thumbnailId = message.thumbnailId
     }
     if (message.userRole !== undefined) {
-      obj.userRole = message.userRole;
+      obj.userRole = message.userRole
     }
-    return obj;
+    return obj
   },
 
   create<I extends Exact<DeepPartial<AlbumInfo>, I>>(base?: I): AlbumInfo {
-    return AlbumInfo.fromPartial(base ?? ({} as any));
+    return AlbumInfo.fromPartial(base ?? ({} as any))
   },
   fromPartial<I extends Exact<DeepPartial<AlbumInfo>, I>>(object: I): AlbumInfo {
-    const message = createBaseAlbumInfo();
-    message.id = object.id ?? "";
-    message.name = object.name ?? "";
-    message.description = object.description ?? undefined;
-    message.isPublic = object.isPublic ?? false;
-    message.ownerId = object.ownerId ?? 0;
-    message.createdAt = object.createdAt ?? "";
-    message.thumbnailId = object.thumbnailId ?? undefined;
-    message.userRole = object.userRole ?? undefined;
-    return message;
+    const message = createBaseAlbumInfo()
+    message.id = object.id ?? ''
+    message.name = object.name ?? ''
+    message.description = object.description ?? undefined
+    message.isPublic = object.isPublic ?? false
+    message.ownerId = object.ownerId ?? 0
+    message.createdAt = object.createdAt ?? ''
+    message.thumbnailId = object.thumbnailId ?? undefined
+    message.userRole = object.userRole ?? undefined
+    return message
   },
-};
+}
 
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined
 
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
+export type DeepPartial<T> = T extends Builtin
+  ? T
+  : T extends globalThis.Array<infer U>
+    ? globalThis.Array<DeepPartial<U>>
+    : T extends ReadonlyArray<infer U>
+      ? ReadonlyArray<DeepPartial<U>>
+      : T extends {}
+        ? { [K in keyof T]?: DeepPartial<T[K]> }
+        : Partial<T>
 
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+type KeysOfUnion<T> = T extends T ? keyof T : never
+export type Exact<P, I extends P> = P extends Builtin
+  ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never }
 
 function isSet(value: any): boolean {
-  return value !== null && value !== undefined;
+  return value !== null && value !== undefined
 }
 
 export interface MessageFns<T> {
-  encode(message: T, writer?: BinaryWriter): BinaryWriter;
-  decode(input: BinaryReader | Uint8Array, length?: number): T;
-  fromJSON(object: any): T;
-  toJSON(message: T): unknown;
-  create<I extends Exact<DeepPartial<T>, I>>(base?: I): T;
-  fromPartial<I extends Exact<DeepPartial<T>, I>>(object: I): T;
+  encode(message: T, writer?: BinaryWriter): BinaryWriter
+  decode(input: BinaryReader | Uint8Array, length?: number): T
+  fromJSON(object: any): T
+  toJSON(message: T): unknown
+  create<I extends Exact<DeepPartial<T>, I>>(base?: I): T
+  fromPartial<I extends Exact<DeepPartial<T>, I>>(object: I): T
 }

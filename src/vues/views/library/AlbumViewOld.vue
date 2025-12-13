@@ -112,9 +112,7 @@ watch(controller, () => controller.value?.preFetch(), { immediate: true })
       <h1>No album found for id {{ id }}</h1>
     </div>
   </div>
-  <main-layout-container>
-
-  </main-layout-container>
+  <main-layout-container> </main-layout-container>
 </template>
 
 <style scoped>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
-import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import AddToAlbumButton from '@/vues/components/media-timeline/AddToAlbumButton.vue'
 
 const selectionStore = useSelectionStore()
