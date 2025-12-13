@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import TimelineScroll from '@/vues/components/media-timeline/TimelineScroll.vue'
-import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import MediaTimeline from '@/vues/components/media-timeline/MediaTimeline.vue'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
 import type { SortDirection } from '@/scripts/types/api/album.ts'
-
-const timelineStore = useTimelineStore()
 
 const props = withDefaults(
   defineProps<{
@@ -26,7 +23,7 @@ const props = withDefaults(
     />
     <timeline-scroll
       :sort-direction="props.sortDirection"
-      :months="timelineStore.controller.timeline"
+      :months="props.timelineController.timeline"
       class="scroll-area"
     />
   </div>

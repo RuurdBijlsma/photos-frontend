@@ -7,18 +7,31 @@ import type {
 } from '@/scripts/types/api/album.ts'
 import albumService from '@/scripts/services/albumService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import {
+  createTimelineController,
+  type GenericTimeline,
+} from '@/scripts/services/timeline/GenericTimeline.ts'
+import { AlbumTimelineProvider } from '@/scripts/services/timeline/AlbumTimelineProvider.ts'
 
 export const useAlbumStore = defineStore('album', () => {
   const userAlbums = ref<AlbumWithCount[]>([])
-  const cache = shallowRef(new Map<string, AlbumDetailsResponse>())
   const fetchingUserAlbums = ref(false)
-  const fetchingAlbumDetails = ref<Set<string>>(new Set())
+  const controllerCache = shallowRef(new Map<string, GenericTimeline>())
 
   const snackbarStore = useSnackbarsStore()
 
+  async function createController(albumId: string) {
+    if (controllerCache.value.has(albumId)) return controllerCache.value.get(albumId)
+
+    const provider = new AlbumTimelineProvider(albumId)
+    const controller = createTimelineController(provider)
+    controllerCache.value.set(albumId, controller)
+    triggerRef(controllerCache)
+  }
+
   async function fetchUserAlbums() {
-    if (fetchingUserAlbums.value){
-      console.warn("NOT FETCHING USER ALBUMS")
+    if (fetchingUserAlbums.value) {
+      console.warn('NOT FETCHING USER ALBUMS')
       return
     }
     fetchingUserAlbums.value = true
@@ -45,38 +58,18 @@ export const useAlbumStore = defineStore('album', () => {
   async function updateAlbumDetails(albumId: string, albumDetails: UpdateAlbumRequest) {
     try {
       await albumService.updateAlbum(albumId, albumDetails)
-      await fetchAlbumDetails(albumId)
+      // await fetchAlbumDetails(albumId)
       requestIdleCallback(() => refreshUserAlbums())
     } catch (e) {
       snackbarStore.error(`Failed to update album: ${albumId}.`, e as Error)
     }
   }
 
-  async function fetchAlbumDetails(albumId: string) {
-    if (fetchingAlbumDetails.value.has(albumId)){
-      console.warn("Not updating album details!")
-      return
-    }
-    fetchingAlbumDetails.value.add(albumId)
-    const now = performance.now()
-    try {
-      const { data } = await albumService.getAlbumDetails(albumId)
-      cache.value.set(albumId, data)
-      triggerRef(cache)
-    } catch (e) {
-      snackbarStore.error(`Failed to fetch album: ${albumId}.`, e as Error)
-    } finally {
-      fetchingAlbumDetails.value.delete(albumId)
-      console.log('fetchAlbumDetails', performance.now() - now, 'ms')
-    }
-  }
-
   return {
     userAlbums,
-    cache,
     fetchUserAlbums,
-    fetchAlbumDetails,
-    fetchingAlbumDetails,
+    controllerCache,
     updateAlbumDetails,
+    createController,
   }
 })

@@ -98,3 +98,4 @@
 * [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
 * remove theme per photo in /view/
 * if an album has media items in it, but no title, then show it as <No Title> or something in the nav bar and the albums page
+* only request main timeline ratios/ids/by-month if we're visiting the main timeline
