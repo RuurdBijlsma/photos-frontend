@@ -8,8 +8,7 @@ const albumStore = useAlbumStore()
 requestIdleCallback(() => albumStore.fetchUserAlbums())
 
 const albumsExpanded = ref(false)
-const shownAlbums = computed(() => albumStore.userAlbums.filter((a) => a.name !== ''))
-const userHasAlbums = computed(() => shownAlbums.value.length > 0)
+const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
 
 const route = useRoute()
 </script>
@@ -52,16 +51,17 @@ const route = useRoute()
           <v-list-item
             rounded
             :to="`/album/${album.id}`"
-            v-for="album in shownAlbums"
+            v-for="album in albumStore.userAlbums"
             :key="album.id"
           >
             <template v-slot:prepend>
-              <v-avatar rounded>
+              <v-avatar rounded color="surface-container-high">
                 <v-img :src="photoService.getPhotoThumbnail(album.thumbnailId, 144)"></v-img>
               </v-avatar>
             </template>
-            <v-list-item-title>{{ album.name }}</v-list-item-title>
-            <v-list-item-subtitle>{{ album.mediaCount }}</v-list-item-subtitle>
+            <v-list-item-title v-tooltip:top="album.name" v-if="album.name !== ''">{{ album.name }}</v-list-item-title>
+            <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
+            <v-list-item-subtitle>{{ album.mediaCount }} item{{ album.mediaCount === 1 ? '' : 's'}}</v-list-item-subtitle>
           </v-list-item>
         </div>
       </v-expand-transition>

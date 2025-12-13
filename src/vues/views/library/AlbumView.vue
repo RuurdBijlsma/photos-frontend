@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import type { VTextField } from 'vuetify/components'
 import photoService from '@/scripts/services/photoService.ts'
 
 const route = useRoute()
+const router = useRouter()
 const albumStore = useAlbumStore()
 
 const id = computed(() => route.params.id as string)
 
-watch(id, () => albumStore.refreshAlbumDetails(id.value))
+watch(id, () => albumStore.fetchAlbumDetails(id.value))
 
 const album = computed(() => {
   if (!albumStore.cache.has(id.value)) {
@@ -19,16 +20,23 @@ const album = computed(() => {
   }
   return albumStore.cache.get(id.value)!
 })
-albumStore.refreshAlbumDetails(id.value)
+albumStore.fetchAlbumDetails(id.value)
 
 const titleTextField = ref<VTextField | null>(null)
-watch(titleTextField, () => {
-  if (route.query.hasOwnProperty('create')) {
-    console.log('Focus')
-    console.log(titleTextField.value)
-    if (titleTextField.value) titleTextField.value.focus()
-  }
-})
+
+watch(
+  album,
+  async (newVal) => {
+    if (newVal && route.query.hasOwnProperty('create')) {
+      await nextTick()
+      if (titleTextField.value) {
+        titleTextField.value.focus()
+        await router.replace({ query: {} })
+      }
+    }
+  },
+  { immediate: true },
+)
 
 const albumTitleInput = ref('')
 const showTitleEdit = ref(false)
@@ -42,6 +50,7 @@ function startEditingTitle() {
 
 async function setAlbumTitle() {
   showTitleEdit.value = false
+
   titleLoading.value = true
   try {
     await albumStore.updateAlbumDetails(id.value, { name: albumTitleInput.value })
@@ -105,10 +114,10 @@ async function setAlbumTitle() {
           </p>
         </div>
       </div>
-      <div v-else-if="albumStore.fetchingAlbumDetails.has(id)">
-        <h1>Loading album details...</h1>
+      <div v-else-if="albumStore.fetchingAlbumDetails.has(id)" class="loading-page">
+        <h1 class="load-text">Loading album details...</h1>
         <div class="album-load-spinner">
-          <v-progress-circular size="50" />
+          <v-progress-circular indeterminate size="350" width="10" />
         </div>
       </div>
       <div v-else>
@@ -191,14 +200,20 @@ async function setAlbumTitle() {
   opacity: 0.7;
 }
 
-.no-images-caption{
+.no-images-caption {
   max-width: 480px;
 }
 
-.album-load-spinner {
-  width: 100%;
-  height: 500px;
+.loading-page {
   display: flex;
-  place-items: center;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+.load-text {
+  font-weight: 200;
 }
 </style>

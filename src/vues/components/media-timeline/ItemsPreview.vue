@@ -11,7 +11,9 @@ const truncatedIds = computed(() => props.mediaItemIds.slice(0, 5))
 
 <template>
   <div class="album-preview">
-    <div class="image-stack">
+    <div class="image-stack" :style="{
+      marginTop: `${truncatedIds.length === 1 ? 15 : (truncatedIds.length === 2 ? 30 : 35)}px`
+    }">
       <div
         v-for="(id, i) in truncatedIds"
         :key="id"

@@ -21,6 +21,7 @@ import { useTimelineSelection } from '@/scripts/composables/photo-grid/useTimeli
 import { useTimelineScrollSync } from '@/scripts/composables/photo-grid/useTimelineScrollSync.ts'
 import DateOverlay from '@/vues/components/media-timeline/DateOverlay.vue'
 import SelectionOverlay from '@/vues/components/media-timeline/SelectionOverlay.vue'
+import type { SortDirection } from '@/scripts/types/api/album.ts'
 
 const props = withDefaults(
   defineProps<{

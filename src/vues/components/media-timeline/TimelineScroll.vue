@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { MONTHS } from '@/scripts/constants.ts'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
+import type { SortDirection } from '@/scripts/types/api/album.ts'
 
 // --- Props ---
 const props = withDefaults(

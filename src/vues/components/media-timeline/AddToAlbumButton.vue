@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import photoService from '@/scripts/services/photoService.ts'
 import albumService from '@/scripts/services/albumService.ts'
 import { useRouter } from 'vue-router'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import ItemsPreview from '@/vues/components/media-timeline/ItemsPreview.vue'
+import type { Album } from '@/scripts/types/api/album.ts'
+import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
 
 const props = defineProps<{
   idsToAdd: string[]
@@ -13,21 +15,58 @@ const props = defineProps<{
 const albumStore = useAlbumStore()
 const router = useRouter()
 const snackbarStore = useSnackbarsStore()
+const selectionStore = useSelectionStore()
 
-const shownAlbums = computed(() => albumStore.userAlbums.filter((a) => a.name !== ''))
 const show = ref(false)
+const newLoading = ref(false)
+const addLoading = ref(false)
 
 async function createNew() {
   if (props.idsToAdd.length === 0) {
-    return snackbarStore.warn("Can't create album with no items in it.")
+    return snackbarStore.warning("Can't create album with no items in it.")
   }
-  const { data: album } = await albumService.createAlbum({
-    name: '',
-    description: null,
-    isPublic: false,
-    mediaItemIds: props.idsToAdd,
-  })
-  await router.push({ path: '/album/' + album.id, query: { create: '1' } })
+  newLoading.value = true
+  try {
+    const { data: album } = await albumService.createAlbum({
+      name: '',
+      isPublic: false,
+      mediaItemIds: props.idsToAdd,
+    })
+    requestIdleCallback(() => albumStore.fetchUserAlbums().then())
+    await router.push({ path: '/album/' + album.id, query: { create: '1' } })
+    selectionStore.selectedIds = new Set()
+    selectionStore.commit()
+  } catch (e) {
+    snackbarStore.error('Error creating album', e as Error)
+  } finally {
+    newLoading.value = true
+  }
+}
+
+async function addToAlbum(album: Album) {
+  if (props.idsToAdd.length === 0) {
+    return snackbarStore.warning("Can't add 0 items to album.")
+  }
+  addLoading.value = true
+  try {
+    await albumService.addMediaToAlbum(album.id, { mediaItemIds: props.idsToAdd })
+    requestIdleCallback(() => albumStore.fetchUserAlbums().then())
+    selectionStore.selectedIds = new Set()
+    selectionStore.commit()
+    snackbarStore.info(
+      `${props.idsToAdd.length} item${props.idsToAdd.length === 1 ? '' : 's'} added`,
+      {
+        label: album.name,
+        onClick: () => {
+          router.push({ path: '/album/' + album.id })
+        },
+      },
+    )
+  } catch (e) {
+    snackbarStore.error('Error adding to album', e as Error)
+  } finally {
+    addLoading.value = false
+  }
 }
 </script>
 
@@ -47,13 +86,38 @@ async function createNew() {
     <v-card color="surface-container-low" min-width="300" flat class="album-picker rounded-xl pa-3">
       <v-card-title class="text-center mb-2 title-text">Add to album</v-card-title>
       <items-preview :media-item-ids="idsToAdd" />
-      <v-list class="mt-3 albums-list" v-if="shownAlbums.length > 0">
-        <v-list-item v-for="album in shownAlbums" :key="album.id">
-          <v-list-item-media>
-            <v-img :src="photoService.getPhotoThumbnail(album.thumbnailId, 144)"></v-img>
-          </v-list-item-media>
-          <v-list-item-title>{{ album.name }}</v-list-item-title>
-          <v-list-item-subtitle>{{ album.mediaCount }}</v-list-item-subtitle>
+      <v-list class="mt-3 albums-list" v-if="albumStore.userAlbums.length > 0">
+        <v-list-item rounded v-for="album in albumStore.userAlbums" :key="album.id">
+          <template v-slot:prepend>
+            <v-avatar rounded color="surface-container-high">
+              <v-img
+                :src="photoService.getPhotoThumbnail(album.thumbnailId, 144)"
+                v-if="album.thumbnailId"
+              />
+              <v-icon v-else icon="mdi-image-album" color="primary" class="opacity-70" />
+            </v-avatar>
+          </template>
+          <div class="list-content">
+            <div class="list-left">
+              <v-list-item-title v-tooltip:top="album.name" v-if="album.name !== ''">{{
+                album.name
+              }}</v-list-item-title>
+              <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
+              <v-list-item-subtitle>
+                {{ album.mediaCount }} item{{ album.mediaCount === 1 ? '' : 's' }}
+              </v-list-item-subtitle>
+            </div>
+            <v-list-item-action>
+              <v-btn
+                variant="plain"
+                @click="addToAlbum(album)"
+                class="rounded-pill"
+                density="compact"
+                icon="mdi-plus"
+                v-tooltip:top="'Add'"
+              />
+            </v-list-item-action>
+          </div>
         </v-list-item>
       </v-list>
       <v-card-actions class="card-actions">
@@ -68,6 +132,7 @@ async function createNew() {
 <style scoped>
 .album-picker {
   border-radius: 50px;
+  overflow-x: hidden !important;
 }
 
 .title-text {
@@ -80,6 +145,24 @@ async function createNew() {
 }
 
 .albums-list {
-  background-color: transparent;
+  background-color: rgba(var(--v-theme-surface-container));
+  width: calc(100% + 24px);
+  margin-left: -12px;
+  max-height: 200px;
+}
+
+.list-content {
+  display: flex;
+  justify-content: space-between;
+}
+
+.list-left {
+  pointer-events: none;
+  max-width: 170px;
+}
+
+.card-actions {
+  padding: 12px 0 0;
+  margin: 0 !important;
 }
 </style>

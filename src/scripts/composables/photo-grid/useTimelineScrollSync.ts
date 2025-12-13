@@ -2,6 +2,7 @@ import { type Ref, watch } from 'vue'
 import type { VVirtualScroll } from 'vuetify/components'
 import type { RowLayout } from '@/vues/components/photo-grid/GridRow.vue'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
+import type { SortDirection } from '@/scripts/types/api/album.ts'
 
 /**
  * Handles the bidirectional synchronization between the timeline:

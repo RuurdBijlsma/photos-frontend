@@ -3,6 +3,7 @@ import TimelineScroll from '@/vues/components/media-timeline/TimelineScroll.vue'
 import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import MediaTimeline from '@/vues/components/media-timeline/MediaTimeline.vue'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
+import type { SortDirection } from '@/scripts/types/api/album.ts'
 
 const timelineStore = useTimelineStore()
 

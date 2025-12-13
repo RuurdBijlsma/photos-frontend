@@ -17,14 +17,17 @@ export const useAlbumStore = defineStore('album', () => {
   const snackbarStore = useSnackbarsStore()
 
   async function fetchUserAlbums() {
-    if (fetchingUserAlbums.value) return
+    if (fetchingUserAlbums.value){
+      console.warn("NOT FETCHING USER ALBUMS")
+      return
+    }
     fetchingUserAlbums.value = true
     try {
       await refreshUserAlbums()
     } catch (e) {
       snackbarStore.error('Failed to fetch user albums.', e as Error)
     } finally {
-      fetchingUserAlbums.value = true
+      fetchingUserAlbums.value = false
     }
   }
 
@@ -42,7 +45,7 @@ export const useAlbumStore = defineStore('album', () => {
   async function updateAlbumDetails(albumId: string, albumDetails: UpdateAlbumRequest) {
     try {
       await albumService.updateAlbum(albumId, albumDetails)
-      await refreshAlbumDetails(albumId)
+      await fetchAlbumDetails(albumId)
       requestIdleCallback(() => refreshUserAlbums())
     } catch (e) {
       snackbarStore.error(`Failed to update album: ${albumId}.`, e as Error)
@@ -50,25 +53,21 @@ export const useAlbumStore = defineStore('album', () => {
   }
 
   async function fetchAlbumDetails(albumId: string) {
-    if (fetchingAlbumDetails.value.has(albumId)) return
-    fetchingAlbumDetails.value.add(albumId)
-    try {
-      await refreshAlbumDetails(albumId)
-    } catch (e) {
-      snackbarStore.error(`Failed to fetch album: ${albumId}.`, e as Error)
-    } finally {
-      fetchingUserAlbums.value = true
+    if (fetchingAlbumDetails.value.has(albumId)){
+      console.warn("Not updating album details!")
+      return
     }
-  }
-
-  async function refreshAlbumDetails(albumId: string) {
+    fetchingAlbumDetails.value.add(albumId)
     const now = performance.now()
     try {
       const { data } = await albumService.getAlbumDetails(albumId)
       cache.value.set(albumId, data)
       triggerRef(cache)
+    } catch (e) {
+      snackbarStore.error(`Failed to fetch album: ${albumId}.`, e as Error)
     } finally {
-      console.log('refreshAlbumDetails', performance.now() - now, 'ms')
+      fetchingAlbumDetails.value.delete(albumId)
+      console.log('fetchAlbumDetails', performance.now() - now, 'ms')
     }
   }
 
@@ -77,7 +76,6 @@ export const useAlbumStore = defineStore('album', () => {
     cache,
     fetchUserAlbums,
     fetchAlbumDetails,
-    refreshAlbumDetails,
     fetchingAlbumDetails,
     updateAlbumDetails,
   }
