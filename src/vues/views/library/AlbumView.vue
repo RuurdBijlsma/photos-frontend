@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import { computed, ref, watch } from 'vue'
 import { useDebounceFn, useTextareaAutosize } from '@vueuse/core'
@@ -7,6 +7,7 @@ import TimelineContainer from '@/vues/components/media-timeline/TimelineContaine
 import photoService from '@/scripts/services/photoService.ts'
 
 const route = useRoute()
+const router = useRouter()
 const albumStore = useAlbumStore()
 
 const id = computed(() => route.params.albumId as string)
@@ -34,6 +35,16 @@ watch(
   },
   { immediate: true },
 )
+
+watch(textarea, (el) => {
+  if (el && route.query.create === '1') {
+    el.focus()
+    el.select()
+    const newQuery = { ...route.query }
+    delete newQuery.create
+    router.replace({ query: newQuery })
+  }
+})
 
 const saveTitle = async (val: string) => {
   if (!id.value) return

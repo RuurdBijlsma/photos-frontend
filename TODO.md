@@ -103,8 +103,8 @@
 *
 * ✅ switching from album to album, ratios is kept or something?
 * ✅ make click on photo open /album/d9faud9a/view/aduf0a
-* make edit album title permanent in new album view
-* on album title edit → update user albums
+* ✅ make edit album title permanent in new album view
+* ✅ on album title edit → update user albums
 * add way to add description
 * timeline scrollbar is shitty when we have few media items
 * make way to see time range of album (include in metadata with ratios request)
