@@ -20,7 +20,7 @@ const router = createRouter({
           component: TimelineView,
           children: [
             {
-              path: '/view/:id',
+              path: '/view/:mediaId',
               name: 'view-photo',
               component: ViewPhoto,
             },
@@ -42,9 +42,16 @@ const router = createRouter({
           component: () => import('@/vues/views/library/AlbumsLibrary.vue'),
         },
         {
-          path: '/album/:id',
+          path: '/album/:albumId',
           name: 'album',
           component: () => import('@/vues/views/library/AlbumView.vue'),
+          children: [
+            {
+              path: '/album/:albumId/view/:mediaId',
+              name: 'view-album-photo',
+              component: ViewPhoto,
+            },
+          ],
         },
       ],
     },

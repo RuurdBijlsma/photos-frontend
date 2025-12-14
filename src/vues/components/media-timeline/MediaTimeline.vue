@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, toRef } from 'vue'
 import type { VVirtualScroll } from 'vuetify/components'
 
 // Components
@@ -44,7 +44,11 @@ const virtualScrollRef = ref<VVirtualScroll | null>(null)
 
 // 1. Grid & Layout
 const { container, width, height } = useContainerResize()
-const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, props.timelineController)
+const { rows, PHOTO_GAP } = usePhotoGrid(
+  width,
+  settings,
+  toRef(props, 'timelineController'),
+)
 
 // 2. Visibility Tracking
 const { handleIsVisible, rowInViewDate } = useRowVisibility(props.timelineController)

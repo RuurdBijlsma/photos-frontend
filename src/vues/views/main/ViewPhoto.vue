@@ -28,8 +28,7 @@ const route = useRoute()
 const router = useRouter()
 
 const id = computed(() => {
-  const rawId = route.params.id
-  console.log('ID RIGHT NOW: ', rawId)
+  const rawId = route.params.mediaId
   if (rawId && !Array.isArray(rawId)) return rawId
   console.warn('WEIRD ID IN ROUTE DETECTED')
   return ''
@@ -39,6 +38,7 @@ const isSelected = computed(() => selectionStore.isSelected(id.value))
 
 function closeViewer() {
   const parentRoute = route.matched[route.matched.length - 2]
+  console.log(parentRoute)
   if (parentRoute) router.push(parentRoute)
   else router.push({ path: '/' })
 }

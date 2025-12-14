@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import GridItem, { type SelectionPayload } from '@/vues/components/photo-grid/GridItem.vue'
 import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
+import { computed } from 'vue'
 
 export interface LayoutItem {
   ratio: number
@@ -21,13 +22,24 @@ const emit = defineEmits<{
   (e: 'selectionClick', payload: SelectionPayload): void
 }>()
 
-defineProps<{
+const props = defineProps<{
   row: RowLayout
   photoGap: number
   mediaItems?: TimelineItem[]
   previewAddIds: Set<string>
   previewRemoveIds: Set<string>
 }>()
+
+const thumbnailHeight = computed(() => {
+  const height = props.row.height
+  if (height <= 144) return 144
+  if (height <= 240) return 240
+  if (height <= 360) return 360
+  if (height <= 480) return 480
+  if (height <= 720) return 720
+  if (height <= 1080) return 1080
+  return 1440
+})
 </script>
 
 <template>
@@ -53,6 +65,7 @@ defineProps<{
       "
       @mouseleave="emit('hoverItem', { date: null, id: null })"
       v-for="layoutItem in row.items"
+      :thumbnail-height="thumbnailHeight"
       :key="layoutItem.index"
       :media-item="mediaItems?.[layoutItem.index]"
       :height="row.height"

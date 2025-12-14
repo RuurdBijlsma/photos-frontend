@@ -1,19 +1,58 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useDebounceFn, useTextareaAutosize } from '@vueuse/core'
 import TimelineContainer from '@/vues/components/media-timeline/TimelineContainer.vue'
 import photoService from '@/scripts/services/photoService.ts'
 
 const route = useRoute()
 const albumStore = useAlbumStore()
 
-const id = computed(() => route.params.id as string)
+const id = computed(() => route.params.albumId as string)
 const controller = computed(() => albumStore.controllerCache.get(id.value))
 const album = computed(() => controller.value?.albumInfo)
 
+const { textarea, input: localTitle } = useTextareaAutosize()
+const isFocused = ref(false)
+
 watch(id, () => albumStore.createController(id.value), { immediate: true })
-watch(controller, () => controller.value?.preFetch(), { immediate: true })
+watch(
+  controller,
+  () => {
+    controller.value?.preFetch()
+  },
+  { immediate: true },
+)
+
+watch(
+  () => album.value?.name,
+  (newStoreName) => {
+    if (!isFocused.value) {
+      localTitle.value = newStoreName || ''
+    }
+  },
+  { immediate: true },
+)
+
+const saveTitle = async (val: string) => {
+  if (!id.value) return
+  const cleanTitle = val.trim()
+
+  if (cleanTitle !== (album.value?.name || '')) {
+    await albumStore.updateAlbumDetails(id.value, { name: cleanTitle })
+  }
+}
+
+const debouncedUpdate = useDebounceFn(saveTitle, 800)
+
+const onInput = () => {
+  debouncedUpdate(localTitle.value)
+}
+
+const onEnter = (e: KeyboardEvent) => {
+  ;(e.target as HTMLTextAreaElement).blur()
+}
 </script>
 
 <template>
@@ -25,14 +64,26 @@ watch(controller, () => controller.value?.preFetch(), { immediate: true })
   >
     <div class="album-summary" v-if="album">
       <div class="album-thumbnail">
-        <v-img
-          width="300"
+        <img
+          alt="Album thumbnail"
+          width="400"
           v-if="album.thumbnailId"
           :src="photoService.getPhotoThumbnail(album.thumbnailId, 720)"
         />
       </div>
       <div class="album-summary-text">
-        <h1 class="editable-title" contenteditable="plaintext-only">{{ album.name }}</h1>
+        <textarea
+          ref="textarea"
+          class="editable-title"
+          v-model="localTitle"
+          rows="1"
+          placeholder="Unnamed"
+          spellcheck="false"
+          @input="onInput"
+          @focus="isFocused = true"
+          @blur="isFocused = false"
+          @keydown.enter.prevent="onEnter"
+        ></textarea>
         <p v-if="album.description">{{ album.description }}</p>
       </div>
     </div>
@@ -52,7 +103,6 @@ watch(controller, () => controller.value?.preFetch(), { immediate: true })
 }
 
 .album-thumbnail {
-  flex-grow: 1;
   display: flex;
   align-items: center;
 }
@@ -62,15 +112,41 @@ watch(controller, () => controller.value?.preFetch(), { immediate: true })
 }
 
 .album-summary-text {
-  flex-grow: 10;
   padding: 20px;
+  flex-grow: 1;
+  min-width: 0;
 }
 
 .editable-title {
+  background: transparent;
+  border: none;
+  outline: none;
+  margin: 0;
+  resize: none;
+  overflow: hidden;
+  font-family: inherit;
   font-weight: 400;
+  font-size: 40px;
+  line-height: 1.2;
+  color: inherit;
+  width: 100%;
+  display: block;
   padding: 5px 15px;
   border-radius: 20px;
-  font-size: 40px;
-  width: calc(100% - 30px);
+  transition: background-color 0.2s;
+}
+
+.editable-title:hover {
+  background-color: rgba(var(--v-theme-on-background), 0.05);
+}
+
+.editable-title:focus {
+  background-color: rgba(var(--v-theme-on-background), 0.1);
+}
+
+.editable-title::placeholder {
+  font-style: italic;
+  opacity: 0.5;
+  color: inherit;
 }
 </style>

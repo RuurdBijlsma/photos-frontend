@@ -10,7 +10,7 @@ const route = useRoute()
 // const router = useRouter()
 const albumStore = useAlbumStore()
 
-const id = computed(() => route.params.id as string)
+const id = computed(() => route.params.albumId as string)
 const controller = computed(() => albumStore.controllerCache.get(id.value))
 watch(id, () => albumStore.createController(id.value), { immediate: true })
 watch(controller, () => controller.value?.preFetch(), { immediate: true })

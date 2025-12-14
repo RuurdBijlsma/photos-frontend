@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import photoService from '@/scripts/services/photoService.ts'
 import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
 import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
@@ -10,6 +10,7 @@ export type SelectionPayload = { event: PointerEvent; id: string }
 
 const props = defineProps<{
   mediaItem?: TimelineItem
+  thumbnailHeight: number
   height: number
   width: number
   isPreviewAdd?: boolean
@@ -18,6 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ (e: 'selectionClick', payload: SelectionPayload): void }>()
 
+const route = useRoute()
 const router = useRouter()
 const mediaStore = useMediaStore()
 const selectionStore = useSelectionStore()
@@ -26,10 +28,12 @@ const itemId = computed(() => props.mediaItem?.id ?? '')
 const isSelected = computed(() => selectionStore.isSelected(itemId.value))
 const isSelectionMode = computed(() => selectionStore.size > 0)
 
-const thumbnail = computed(() =>
-  itemId.value ? photoService.getPhotoThumbnail(itemId.value, 240) : '',
+const thumbnail = computed(() => {
+  return itemId.value ? photoService.getPhotoThumbnail(itemId.value, props.thumbnailHeight) : ''
+})
+const linkUrl = computed(() =>
+  itemId.value ? `${route.path === '/' ? '' : route.path}/view/${itemId.value}` : '#',
 )
-const linkUrl = computed(() => (itemId.value ? `/view/${itemId.value}` : '#'))
 
 const checkIcon = computed(() =>
   isSelected.value || !isSelectionMode.value

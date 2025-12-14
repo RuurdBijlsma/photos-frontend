@@ -7,11 +7,3 @@ export function prettyBytes(bytes: number, decimals = 2): string {
 
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`
 }
-
-export function debounce<T extends (...args: unknown[]) => void>(func: T, wait: number): T {
-  let timeout: number | undefined
-  return function (...args: Parameters<T>) {
-    if (timeout) clearTimeout(timeout)
-    timeout = window.setTimeout(() => func(...args), wait)
-  } as T
-}

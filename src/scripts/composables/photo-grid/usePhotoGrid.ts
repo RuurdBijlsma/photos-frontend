@@ -1,4 +1,4 @@
-import { type Ref, shallowRef, watch } from 'vue'
+import { type Ref, shallowRef, watch, unref } from 'vue'
 import type { LayoutItem, RowLayout } from '@/vues/components/photo-grid/GridRow.vue'
 import type { SettingsStore } from '@/scripts/stores/settingsStore.ts'
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
@@ -7,7 +7,7 @@ import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 export function usePhotoGrid(
   containerWidthRef: Ref<number>,
   settings: SettingsStore,
-  controller: GenericTimeline,
+  controllerRef: Ref<GenericTimeline>,
 ) {
   const rows = shallowRef<RowLayout[]>([])
   const PHOTO_GAP = 2
@@ -18,6 +18,7 @@ export function usePhotoGrid(
     desiredRowHeight: number,
     containerWidth: number,
   ) {
+    console.warn('Update photo grid')
     // todo: this is weird
     containerWidth -= 7
     const newRows: RowLayout[] = []
@@ -62,37 +63,24 @@ export function usePhotoGrid(
     rows.value = newRows
   }
 
+  // Consolidated Watcher:
+  // This watches the reactive path to the timeline.
+  // If controllerRef changes OR if .timeline inside it changes, this fires.
   watch(
-    () => settings.timelineRowHeight,
-    () => {
-      const timeline = controller.timeline
-      if (timeline) {
-        const now = performance.now()
-        updateGrid(timeline, settings.timelineRowHeight, containerWidthRef.value)
-        console.log('updateGrid', performance.now() - now)
+    [
+      () => settings.timelineRowHeight,
+      containerWidthRef,
+      () => unref(controllerRef).timeline, // Access timeline on the CURRENT controller
+    ],
+    ([rowHeight, width, timeline]) => {
+      // This handles your "prefetch" issue automatically.
+      // 1. Controller swaps -> timeline is null -> does nothing.
+      // 2. PreFetch finishes -> timeline becomes array -> updateGrid runs.
+      if (timeline && width > 0) {
+        updateGrid(timeline, rowHeight, width)
       }
     },
-  )
-
-  watch(containerWidthRef, () => {
-    const timeline = controller.timeline
-    if (timeline) {
-      const now = performance.now()
-      updateGrid(timeline, settings.timelineRowHeight, containerWidthRef.value)
-      console.log('updateGrid', performance.now() - now)
-    }
-  })
-
-  watch(
-    () => controller.timeline,
-    () => {
-      const timeline = controller.timeline
-      if (timeline) {
-        const now = performance.now()
-        updateGrid(timeline, settings.timelineRowHeight, containerWidthRef.value)
-        console.log('updateGrid', performance.now() - now)
-      }
-    },
+    { immediate: true },
   )
 
   return { rows, updateGrid, PHOTO_GAP }
