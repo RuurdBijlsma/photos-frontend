@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import photoService from '@/scripts/services/photoService.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 
 const albumStore = useAlbumStore()
 requestIdleCallback(() => albumStore.fetchUserAlbums())
 
-const albumsExpanded = ref(false)
+const albumsExpanded = ref(
+  localStorage.getItem('navExpandAlbums') === null
+    ? false
+    : localStorage.navExpandAlbums === 'true',
+)
+watch(albumsExpanded, () =>
+  localStorage.setItem('navExpandAlbums', JSON.stringify(albumsExpanded.value)),
+)
 const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
+const maxShownAlbums = ref(5)
+const truncatedAlbums = computed(() => albumStore.userAlbums.slice(0, maxShownAlbums.value))
+const hasMoreAlbums = computed(() => albumStore.userAlbums.length > maxShownAlbums.value)
 
 const route = useRoute()
 </script>
@@ -51,7 +61,7 @@ const route = useRoute()
           <v-list-item
             rounded
             :to="`/album/${album.id}`"
-            v-for="album in albumStore.userAlbums"
+            v-for="album in truncatedAlbums"
             :key="album.id"
           >
             <template v-slot:prepend>
@@ -76,6 +86,17 @@ const route = useRoute()
               }}</v-list-item-subtitle
             >
           </v-list-item>
+          <v-btn
+            density="compact"
+            variant="plain"
+            v-if="hasMoreAlbums"
+            class="mt-1"
+            @click="maxShownAlbums += 5"
+            >Show more</v-btn
+          >
+          <v-btn density="compact" variant="plain" v-else class="mt-1" @click="maxShownAlbums = 5"
+            >Show less</v-btn
+          >
         </div>
       </v-expand-transition>
     </v-list>
@@ -110,8 +131,6 @@ const route = useRoute()
   display: flex;
   flex-direction: column;
   gap: 5px;
-  max-height: 300px;
-  overflow-y: auto;
   padding-right: 2px;
 }
 
