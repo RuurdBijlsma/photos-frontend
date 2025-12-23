@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import GridItem, { type SelectionPayload } from '@/vues/components/photo-grid/GridItem.vue'
 import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 
 export interface LayoutItem {
   ratio: number
@@ -20,6 +20,7 @@ export interface RowLayout {
 const emit = defineEmits<{
   (e: 'hoverItem', payload: { date: Date | null; id: string | null }): void
   (e: 'selectionClick', payload: SelectionPayload): void
+  (e: 'visible'): void
 }>()
 
 const props = defineProps<{
@@ -29,6 +30,10 @@ const props = defineProps<{
   previewAddIds: Set<string>
   previewRemoveIds: Set<string>
 }>()
+
+onMounted(() => {
+  emit('visible')
+})
 
 const thumbnailHeight = computed(() => {
   const height = props.row.height

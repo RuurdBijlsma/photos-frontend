@@ -6,7 +6,7 @@ import type {
   MediaSampleResponse,
   UnsupportedFilesResponse,
 } from '@/scripts/types/api/onboarding.ts'
-import { useDebounce, useDebounceFn } from '@vueuse/core'
+import { useDebounceFn } from '@vueuse/core'
 
 export const usePickFolderStore = defineStore('pickFolder', () => {
   let N_SAMPLES = 8

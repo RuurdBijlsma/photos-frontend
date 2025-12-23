@@ -82,11 +82,7 @@ function handlePointerDown() {
 </script>
 
 <template>
-  <div
-    class="grid-cell-container"
-    v-memo="[isSelected, isSelectionMode, thumbnail, width, height, isPreviewAdd, isPreviewRemove]"
-    :style="containerStyle"
-  >
+  <div class="grid-cell-container" :style="containerStyle">
     <a
       :href="linkUrl"
       class="grid-item-link"
@@ -103,29 +99,34 @@ function handlePointerDown() {
         }"
         :style="{ backgroundImage: `url(${thumbnail})` }"
       >
-        <v-icon
-          class="check-icon"
-          color="secondary"
-          :size="28"
-          :icon="checkIcon"
-          @click="handleSelectionClick"
-        />
+        <div class="check-icon" @click="handleSelectionClick">
+          <svg viewBox="0 0 24 24" class="icon-svg">
+            <path
+              v-if="checkIcon === 'mdi-check-circle'"
+              fill="currentColor"
+              d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
+            />
+            <path
+              v-else
+              fill="currentColor"
+              d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+            />
+          </svg>
+        </div>
 
-        <v-btn
-          icon
-          color="secondary"
-          variant="flat"
+        <button
           class="magnify-button"
           tabindex="-1"
-          :to="linkUrl"
-          @click.stop
+          @click.stop.prevent="router.push(linkUrl)"
+          :title="`View ${props.mediaItem?.isVideo ? 'video' : 'photo'}`"
         >
-          <v-icon
-            size="15"
-            icon="mdi-fullscreen"
-            :title="`View ${props.mediaItem?.isVideo ? 'video' : 'photo'}`"
-          />
-        </v-btn>
+          <svg viewBox="0 0 24 24" class="icon-svg-small">
+            <path
+              fill="currentColor"
+              d="M5,5H10V7H7V10H5V5M14,5H19V10H17V7H14V5M17,14H19V19H14V17H17V14M10,17V19H5V14H7V17H10Z"
+            />
+          </svg>
+        </button>
       </div>
     </a>
   </div>
@@ -133,8 +134,6 @@ function handlePointerDown() {
 
 <style scoped>
 .grid-cell-container {
-  contain: strict;
-  content-visibility: auto;
   transform: translateZ(0);
 }
 
@@ -158,7 +157,6 @@ function handlePointerDown() {
     transform 0.15s ease-out,
     border-radius 0.15s ease-out,
     box-shadow 0.15s ease-out;
-  will-change: transform, box-shadow;
 }
 
 /* Overlays (Preview & Selection) */
@@ -206,6 +204,15 @@ function handlePointerDown() {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
+  background-color: rgb(var(--v-theme-secondary));
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgb(var(--v-theme-on-secondary));
+  padding: 0;
 }
 
 .is-selecting .visual-content:hover .magnify-button {
@@ -222,6 +229,19 @@ function handlePointerDown() {
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
+  color: rgb(var(--v-theme-secondary));
+  width: 28px;
+  height: 28px;
+}
+
+.icon-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.icon-svg-small {
+  width: 15px;
+  height: 15px;
 }
 
 .check-icon:hover {

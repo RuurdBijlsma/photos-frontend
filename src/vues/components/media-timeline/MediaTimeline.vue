@@ -19,6 +19,7 @@ import { useRowVisibility } from '@/scripts/composables/photo-grid/useRowVisibil
 import { useDateOverlay } from '@/scripts/composables/photo-grid/useDateOverlay.ts'
 import { useTimelineSelection } from '@/scripts/composables/photo-grid/useTimelineSelection.ts'
 import { useTimelineScrollSync } from '@/scripts/composables/photo-grid/useTimelineScrollSync.ts'
+import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
 import DateOverlay from '@/vues/components/media-timeline/DateOverlay.vue'
 import SelectionOverlay from '@/vues/components/media-timeline/SelectionOverlay.vue'
 import type { SortDirection } from '@/scripts/types/api/album.ts'
@@ -44,23 +45,23 @@ const virtualScrollRef = ref<VVirtualScroll | null>(null)
 
 // 1. Grid & Layout
 const { container, width, height } = useContainerResize()
-const { rows, PHOTO_GAP } = usePhotoGrid(
-  width,
-  settings,
-  toRef(props, 'timelineController'),
-)
+const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, toRef(props, 'timelineController'))
 
 // 2. Visibility Tracking
 const { handleIsVisible, rowInViewDate } = useRowVisibility(props.timelineController)
 
 // 3. Date Overlay
-const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(rowInViewDate)
+const { isAtTop, setIsAtTop } = useTimelineScroll()
+const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(
+  rowInViewDate,
+  isAtTop,
+)
 
 // 4. Selection Logic
 const { selectItem, deselectAll, setHoveredId, previewAddIds, previewRemoveIds } =
   useTimelineSelection(selectionStore, props.timelineController)
 
-// 5. Scroll Synchronization
+// 5. Scroll Sync
 const { handleScroll } = useTimelineScrollSync(
   virtualScrollRef,
   rows,
@@ -68,6 +69,10 @@ const { handleScroll } = useTimelineScrollSync(
   props.sortDirection,
   activateScrollOverride,
 )
+
+function handleIsAtTop(isIntersecting: boolean) {
+  setIsAtTop(isIntersecting)
+}
 
 // Handler to split the hover payload
 function onHoverItem(payload: { date: Date | null; id: string | null }) {
@@ -87,13 +92,18 @@ function onHoverItem(payload: { date: Date | null; id: string | null }) {
     >
       <v-virtual-scroll
         ref="virtualScrollRef"
-        @scroll="handleScroll"
+        @scroll.passive="handleScroll"
         :items="rows"
         :height="height"
         item-key="key"
         class="scroll-container"
       >
         <template #default="{ item, index }">
+          <div
+            v-if="index === 0"
+            style="height: 1px; width: 100%"
+            v-intersect="handleIsAtTop"
+          ></div>
           <slot name="default" v-if="index === 0" />
           <grid-row-header v-if="item.firstOfTheMonth" :row="item" />
           <grid-row
@@ -104,7 +114,7 @@ function onHoverItem(payload: { date: Date | null; id: string | null }) {
             :row="item"
             :preview-add-ids="previewAddIds"
             :preview-remove-ids="previewRemoveIds"
-            v-intersect="(e: boolean) => handleIsVisible(e, item)"
+            @visible="handleIsVisible(true, item)"
           />
         </template>
       </v-virtual-scroll>

@@ -1,29 +1,21 @@
 import { computed, type Ref, ref } from 'vue'
-import { useDebounceFn, useThrottleFn } from '@vueuse/core'
+import { useDebounceFn } from '@vueuse/core'
 import { CURRENT_YEAR, DAYS, MONTHS } from '@/scripts/constants.ts'
 
-export function useDateOverlay(rowInViewDate: Ref<Date | null>) {
+export function useDateOverlay(rowInViewDate: Ref<Date | null>, isAtTop: Ref<boolean>) {
   const hoverDate = ref<Date | null>(null)
   const scrollOverride = ref(false)
-  const scrollTop = ref(0)
   const restoreOverride = useDebounceFn(() => (scrollOverride.value = false), 500)
-  const hideDateOverlay = computed(() => scrollTop.value < 400)
 
-  const activateScrollOverride = useThrottleFn((e: WheelEvent) => {
-    //@ts-expect-error It does exist on there!
-    scrollTop.value = e.target?.scrollTop
-
+  const activateScrollOverride = () => {
     scrollOverride.value = true
     restoreOverride()
-  }, 25)
+  }
 
   const dateInView = computed(() => {
-    if (hideDateOverlay.value) return null
-    const date =
-      scrollOverride.value || hoverDate.value === null ? rowInViewDate.value : hoverDate.value
-    if (date === null) return null
-
-    return date
+    // todo: make date overlay hide when near the top of the page
+    if (isAtTop.value) return null
+    return scrollOverride.value || hoverDate.value === null ? rowInViewDate.value : hoverDate.value
   })
 
   const dateInViewString = computed(() => {

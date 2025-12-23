@@ -112,3 +112,5 @@
 * timeline scrollbar is shitty when we have few media items
 * make way to see time range of album (include in metadata with ratios request)
 * album page: add sort options (also sort by added on date)
+* make date overlay hide when near the top of the page
+* fix griditem rendering

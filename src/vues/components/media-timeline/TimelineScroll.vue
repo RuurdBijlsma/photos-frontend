@@ -356,24 +356,22 @@ function getDateFromY(y: number): Date | null {
     <div class="timeline-track" :style="trackStyle"></div>
 
     <!-- Month Dots -->
-    <div v-show="hovering || isScrolling || isDragging" class="dots-layer">
+    <div class="dots-layer" :class="{ visible: hovering || isScrolling || isDragging }">
       <div v-for="(dot, i) in monthDots" :key="i" class="month-dot" :style="dot.style"></div>
     </div>
 
     <!-- Years -->
-    <Transition name="fade">
-      <div v-show="hovering || isScrolling || isDragging" class="years-layer">
-        <div
-          v-for="(year, i) in visibleYears"
-          :key="i"
-          class="year-item"
-          :class="{ 'is-hovering': hovering }"
-          :style="year.style"
-        >
-          {{ year.label }}
-        </div>
+    <div class="years-layer" :class="{ visible: hovering || isScrolling || isDragging }">
+      <div
+        v-for="(year, i) in visibleYears"
+        :key="i"
+        class="year-item"
+        :class="{ 'is-hovering': hovering }"
+        :style="year.style"
+      >
+        {{ year.label }}
       </div>
-    </Transition>
+    </div>
 
     <!-- Scroll Thumb -->
     <div
@@ -413,6 +411,13 @@ function getDateFromY(y: number): Date | null {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dots-layer.visible,
+.years-layer.visible {
+  opacity: 1;
 }
 
 .month-dot {
@@ -495,16 +500,6 @@ function getDateFromY(y: number): Date | null {
   background-color: rgba(var(--v-theme-on-surface), 0.08);
   border-radius: 3px;
   pointer-events: none;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 
 .timeline-tooltip {

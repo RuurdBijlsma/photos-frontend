@@ -94,7 +94,12 @@ const route = useRoute()
             @click="maxShownAlbums += 5"
             >Show more</v-btn
           >
-          <v-btn density="compact" variant="plain" v-else-if="maxShownAlbums > 5" class="mt-1" @click="maxShownAlbums = 5"
+          <v-btn
+            density="compact"
+            variant="plain"
+            v-else-if="maxShownAlbums > 5"
+            class="mt-1"
+            @click="maxShownAlbums = 5"
             >Show less</v-btn
           >
         </div>

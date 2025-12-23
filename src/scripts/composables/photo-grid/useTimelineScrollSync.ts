@@ -15,9 +15,9 @@ export function useTimelineScrollSync(
   rows: Ref<RowLayout[]>,
   rowInViewDate: Ref<Date | null>,
   sortDirection: SortDirection,
-  activateScrollOverride: (e: WheelEvent) => void,
+  activateScrollOverride: () => void,
 ) {
-  const { setDateInView, scrollToDate, clearScrollRequest, setIsAtTop } = useTimelineScroll()
+  const { setDateInView, scrollToDate, clearScrollRequest } = useTimelineScroll()
 
   // --- 1. Report Visible Date ---
   watch(rowInViewDate, () => {
@@ -71,15 +71,8 @@ export function useTimelineScrollSync(
   })
 
   // --- 3. Handle User Scroll Events ---
-  function handleScroll(e: WheelEvent) {
-    // Notify overlay to stick the date
-    activateScrollOverride(e)
-
-    // Update 'Is At Top' state for sticky headers/navs
-    const target = e.target as HTMLElement
-    if (target) {
-      setIsAtTop(target.scrollTop < 5)
-    }
+  function handleScroll() {
+    activateScrollOverride()
   }
 
   return { handleScroll }
