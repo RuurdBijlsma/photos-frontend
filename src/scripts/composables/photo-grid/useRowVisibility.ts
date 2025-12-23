@@ -8,9 +8,11 @@ export function useRowVisibility(controller: GenericTimeline) {
 
   const monthInView = ref('')
   const rowInViewDate = ref<Date | null>(null)
+  const rowInViewIndex = ref(-1)
 
-  async function handleIsVisible(isVisible: boolean, row: RowLayout) {
+  async function handleIsVisible(isVisible: boolean, row: RowLayout, rowIndex: number) {
     if (!isVisible) return
+    rowInViewIndex.value = rowIndex
 
     const mediaItemIndex = row.items?.[0]?.index
     if (mediaItemIndex !== undefined) {
@@ -68,5 +70,5 @@ export function useRowVisibility(controller: GenericTimeline) {
     }
   }
 
-  return { handleIsVisible, rowInViewDate }
+  return { handleIsVisible, rowInViewDate, rowInViewIndex }
 }

@@ -2,7 +2,7 @@ import { computed, type Ref, ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { CURRENT_YEAR, DAYS, MONTHS } from '@/scripts/constants.ts'
 
-export function useDateOverlay(rowInViewDate: Ref<Date | null>, isAtTop: Ref<boolean>) {
+export function useDateOverlay(rowInViewDate: Ref<Date | null>, rowInViewIndex: Ref<number>) {
   const hoverDate = ref<Date | null>(null)
   const scrollOverride = ref(false)
   const restoreOverride = useDebounceFn(() => (scrollOverride.value = false), 500)
@@ -13,8 +13,7 @@ export function useDateOverlay(rowInViewDate: Ref<Date | null>, isAtTop: Ref<boo
   }
 
   const dateInView = computed(() => {
-    // todo: make date overlay hide when near the top of the page
-    if (isAtTop.value) return null
+    if (rowInViewIndex.value < 10) return null
     return scrollOverride.value || hoverDate.value === null ? rowInViewDate.value : hoverDate.value
   })
 

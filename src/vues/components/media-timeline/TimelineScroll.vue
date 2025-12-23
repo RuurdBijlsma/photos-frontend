@@ -232,7 +232,8 @@ const trackStyle = computed(() => ({
 }))
 
 // --- Watchers ---
-watch(dateInView, () => {
+watch([dateInView, isAtTop], () => {
+  //todo: dit is wonky, moet met scrolltop eigelijk
   isScrolling.value = true
   if (scrollTimeout) clearTimeout(scrollTimeout)
   scrollTimeout = window.setTimeout(() => {
