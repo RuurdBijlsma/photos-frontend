@@ -13,11 +13,20 @@ const props = withDefaults(
   }>(),
   {
     sortDirection: 'desc',
+    scrollTop: 0,
   },
 )
 
 // --- Timeline Scroll Composable ---
-const { dateInView, requestScrollToDate, isAtTop } = useTimelineScroll()
+const { dateInView, requestScrollToDate, scrollTop } = useTimelineScroll()
+const isAtTop = computed(() => scrollTop.value < 15)
+
+watch(
+  () => scrollTop,
+  () => {
+    console.log('x', scrollTop.value)
+  },
+)
 
 // --- Refs ---
 const containerRef = ref<HTMLElement | null>(null)
@@ -232,8 +241,7 @@ const trackStyle = computed(() => ({
 }))
 
 // --- Watchers ---
-watch([dateInView, isAtTop], () => {
-  //todo: dit is wonky, moet met scrolltop eigelijk
+watch(scrollTop, () => {
   isScrolling.value = true
   if (scrollTimeout) clearTimeout(scrollTimeout)
   scrollTimeout = window.setTimeout(() => {
@@ -286,7 +294,6 @@ function handleMouseDown(e: MouseEvent) {
 
 function handleMouseUp() {
   isDragging.value = false
-
   // Remove document-wide listeners
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)

@@ -1,18 +1,12 @@
 <script setup lang="ts">
 import { ref, toRef, watch } from 'vue'
 import type { VVirtualScroll } from 'vuetify/components'
-
-// Components
 import GridRowHeader from '@/vues/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/vues/components/photo-grid/GridRow.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-
-// Types & Services
 import type { GenericTimeline } from '@/scripts/services/timeline/GenericTimeline.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
-
-// Composables
 import { useContainerResize } from '@/scripts/composables/photo-grid/useContainerResize.ts'
 import { usePhotoGrid } from '@/scripts/composables/photo-grid/usePhotoGrid.ts'
 import { useRowVisibility } from '@/scripts/composables/photo-grid/useRowVisibility.ts'
@@ -23,6 +17,7 @@ import DateOverlay from '@/vues/components/media-timeline/DateOverlay.vue'
 import SelectionOverlay from '@/vues/components/media-timeline/SelectionOverlay.vue'
 import type { SortDirection } from '@/scripts/types/api/album.ts'
 import { useTimelineScroll } from '@/scripts/composables/photo-grid/useTimelineScroll.ts'
+import { useThrottleFn } from '@vueuse/core'
 
 const props = withDefaults(
   defineProps<{
@@ -63,18 +58,16 @@ const { selectItem, deselectAll, setHoveredId, previewAddIds, previewRemoveIds }
   useTimelineSelection(selectionStore, props.timelineController)
 
 // 5. Scroll Sync
-const { handleScroll } = useTimelineScrollSync(
-  virtualScrollRef,
-  rows,
-  rowInViewDate,
-  props.sortDirection,
-  activateScrollOverride,
-)
-const { setIsAtTop, isAtTop } = useTimelineScroll()
-
-watch(isAtTop, () => {
-  console.log({ isAtTop: isAtTop.value })
-})
+useTimelineScrollSync(virtualScrollRef, rows, rowInViewDate, props.sortDirection)
+const { setScrollTop } = useTimelineScroll()
+function handleScrollRaw(e: WheelEvent) {
+  activateScrollOverride()
+  if (e.target) {
+    const target = e.target as HTMLElement
+    setScrollTop(target.scrollTop)
+  }
+}
+const handleScroll = useThrottleFn(handleScrollRaw, 10)
 
 // Handler to split the hover payload
 function onHoverItem(payload: { date: Date | null; id: string | null }) {
@@ -101,16 +94,6 @@ function onHoverItem(payload: { date: Date | null; id: string | null }) {
         class="scroll-container"
       >
         <template #default="{ item, index }">
-          <div
-            v-if="index === 0"
-            :style="{
-              backgroundColor: 'red',
-              height: '1px',
-              width: '100%',
-              transform: 'translateY(100px)',
-            }"
-            v-intersect="(iat: boolean) => setIsAtTop(iat)"
-          />
           <slot name="default" v-if="index === 0" />
           <grid-row-header v-if="item.firstOfTheMonth" :row="item" />
           <grid-row

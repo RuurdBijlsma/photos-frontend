@@ -7,7 +7,6 @@ import type { SortDirection } from '@/scripts/types/api/album.ts'
 /**
  * Handles the bidirectional synchronization between the timeline:
  * 1. Scrolling the VirtualScroll when a global 'scrollToDate' is requested.
- * 2. Reporting 'isAtTop' state based on scroll events.
  * 3. Keeping the global 'dateInView' updated when the visible row changes.
  */
 export function useTimelineScrollSync(
@@ -15,12 +14,12 @@ export function useTimelineScrollSync(
   rows: Ref<RowLayout[]>,
   rowInViewDate: Ref<Date | null>,
   sortDirection: SortDirection,
-  activateScrollOverride: () => void,
 ) {
-  const { setDateInView, scrollToDate, clearScrollRequest } = useTimelineScroll()
+  const { setDateInView, scrollToDate, clearScrollRequest, scrollTop } = useTimelineScroll()
 
   // --- 1. Report Visible Date ---
   watch(rowInViewDate, () => {
+    console.log("Change row in view", rowInViewDate.value)
     setDateInView(rowInViewDate.value)
   })
 
@@ -69,11 +68,4 @@ export function useTimelineScrollSync(
 
     clearScrollRequest()
   })
-
-  // --- 3. Handle User Scroll Events ---
-  function handleScroll() {
-    activateScrollOverride()
-  }
-
-  return { handleScroll }
 }
