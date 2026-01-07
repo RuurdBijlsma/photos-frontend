@@ -120,7 +120,7 @@ export function useTimelineScrollSync(
 
   async function loadAroundMonth(id: string, controller: GenericTimeline) {
     const CHECK_RADIUS = 2
-    const BATCH_SIZE = 500
+    const BATCH_SIZE = 250
 
     const index = controller.monthToIndex.get(id)
     const timeline = controller.timeline

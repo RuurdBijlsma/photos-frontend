@@ -1,4 +1,4 @@
-import { computed, type ComputedRef, reactive, ref, shallowRef, triggerRef } from 'vue'
+import { computed, type ComputedRef, markRaw, reactive, ref, shallowRef, triggerRef } from 'vue'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import {
   AlbumInfo,
@@ -85,10 +85,15 @@ export function createTimelineController(provider: TimelineDataProvider) {
     try {
       const t0 = performance.now()
       const { months } = await provider.getMediaByMonths(targets)
-      for (const monthMedia of months ?? []) {
-        mediaItems.value.set(monthMedia.monthId, monthMedia.items)
+
+      if (months) {
+        for (const monthMedia of months) {
+          mediaItems.value.set(monthMedia.monthId, markRaw(monthMedia.items))
+          triggerRef(mediaItems)
+          await new Promise((resolve) => requestAnimationFrame(resolve))
+        }
       }
-      triggerRef(mediaItems)
+
       console.log(`fetchMediaByMonths [${targets.length} months]:`, performance.now() - t0, 'ms')
     } catch (e) {
       snackbarStore.error('Failed to fetch media.', e as Error)

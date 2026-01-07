@@ -73,7 +73,6 @@ export function usePhotoGrid(
       cumulativeHeight += row.height + PHOTO_GAP
       offsets.push(cumulativeHeight)
     }
-    console.log({offsets})
     rowOffsets.value = offsets
   }
 
