@@ -150,6 +150,7 @@ function handlePointerDown() {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.1);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;

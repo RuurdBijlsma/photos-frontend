@@ -114,3 +114,4 @@
 * album page: add sort options (also sort by added on date)
 * make date overlay hide when near the top of the page
 * fix griditem rendering
+* hij is weer shitty laggy lol waarom doet ie dat :((( bisect maar weer even ofzo
