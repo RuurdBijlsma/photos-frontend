@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, toRef, watch } from 'vue'
+import { ref, toRef } from 'vue'
 import type { VVirtualScroll } from 'vuetify/components'
 import GridRowHeader from '@/vues/components/photo-grid/GridRowHeader.vue'
 import GridRow from '@/vues/components/photo-grid/GridRow.vue'
@@ -9,7 +9,6 @@ import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
 import { useContainerResize } from '@/scripts/composables/photo-grid/useContainerResize.ts'
 import { usePhotoGrid } from '@/scripts/composables/photo-grid/usePhotoGrid.ts'
-import { useRowVisibility } from '@/scripts/composables/photo-grid/useRowVisibility.ts'
 import { useDateOverlay } from '@/scripts/composables/photo-grid/useDateOverlay.ts'
 import { useTimelineSelection } from '@/scripts/composables/photo-grid/useTimelineSelection.ts'
 import { useTimelineScrollSync } from '@/scripts/composables/photo-grid/useTimelineScrollSync.ts'
@@ -40,17 +39,17 @@ const virtualScrollRef = ref<VVirtualScroll | null>(null)
 
 // 1. Grid & Layout
 const { container, width, height } = useContainerResize()
-const { rows, PHOTO_GAP } = usePhotoGrid(width, settings, toRef(props, 'timelineController'))
-
-// 2. Visibility Tracking
-const { handleIsVisible, rowInViewDate, rowInViewIndex } = useRowVisibility(
-  props.timelineController,
+const { rows, rowOffsets, PHOTO_GAP } = usePhotoGrid(
+  width,
+  settings,
+  toRef(props, 'timelineController'),
 )
 
 // 3. Date Overlay
+const { dateInView, scrollTop } = useTimelineScroll()
 const { hoverDate, dateInViewString, activateScrollOverride } = useDateOverlay(
-  rowInViewDate,
-  rowInViewIndex,
+  dateInView,
+  scrollTop,
 )
 
 // 4. Selection Logic
@@ -58,7 +57,13 @@ const { selectItem, deselectAll, setHoveredId, previewAddIds, previewRemoveIds }
   useTimelineSelection(selectionStore, props.timelineController)
 
 // 5. Scroll Sync
-useTimelineScrollSync(virtualScrollRef, rows, rowInViewDate, props.sortDirection)
+useTimelineScrollSync(
+  virtualScrollRef,
+  rows,
+  rowOffsets,
+  props.timelineController,
+  props.sortDirection,
+)
 const { setScrollTop } = useTimelineScroll()
 function handleScrollRaw(e: WheelEvent) {
   activateScrollOverride()
@@ -104,7 +109,6 @@ function onHoverItem(payload: { date: Date | null; id: string | null }) {
             :row="item"
             :preview-add-ids="previewAddIds"
             :preview-remove-ids="previewRemoveIds"
-            @visible="handleIsVisible(true, item, index)"
           />
         </template>
       </v-virtual-scroll>

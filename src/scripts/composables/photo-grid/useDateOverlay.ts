@@ -2,7 +2,7 @@ import { computed, type Ref, ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { CURRENT_YEAR, DAYS, MONTHS } from '@/scripts/constants.ts'
 
-export function useDateOverlay(rowInViewDate: Ref<Date | null>, rowInViewIndex: Ref<number>) {
+export function useDateOverlay(rowInViewDate: Ref<Date | null>, scrollTop: Ref<number>) {
   const hoverDate = ref<Date | null>(null)
   const scrollOverride = ref(false)
   const restoreOverride = useDebounceFn(() => (scrollOverride.value = false), 500)
@@ -13,7 +13,7 @@ export function useDateOverlay(rowInViewDate: Ref<Date | null>, rowInViewIndex: 
   }
 
   const dateInView = computed(() => {
-    if (rowInViewIndex.value < 10) return null
+    if (scrollTop.value < 500) return null
     return scrollOverride.value || hoverDate.value === null ? rowInViewDate.value : hoverDate.value
   })
 

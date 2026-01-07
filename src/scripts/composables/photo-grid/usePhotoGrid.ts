@@ -10,6 +10,7 @@ export function usePhotoGrid(
   controllerRef: Ref<GenericTimeline>,
 ) {
   const rows = shallowRef<RowLayout[]>([])
+  const rowOffsets = shallowRef<number[]>([])
   const PHOTO_GAP = 2
   const MAX_GROW_RATIO = 1.5
 
@@ -61,6 +62,19 @@ export function usePhotoGrid(
     }
 
     rows.value = newRows
+
+    // Calculate row offsets
+    // 78 is the hardcoded height of GridRowHeader
+    let cumulativeHeight = 0
+    const offsets: number[] = []
+
+    for (const row of newRows) {
+      if (row.firstOfTheMonth) cumulativeHeight += 78
+      cumulativeHeight += row.height + PHOTO_GAP
+      offsets.push(cumulativeHeight)
+    }
+    console.log({offsets})
+    rowOffsets.value = offsets
   }
 
   // Consolidated Watcher:
@@ -83,5 +97,5 @@ export function usePhotoGrid(
     { immediate: true },
   )
 
-  return { rows, updateGrid, PHOTO_GAP }
+  return { rows, rowOffsets, updateGrid, PHOTO_GAP }
 }
