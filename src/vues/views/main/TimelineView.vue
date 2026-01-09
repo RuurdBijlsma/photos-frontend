@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
+import TimelineContainer from '@/vues/components/timeline/TimelineContainer.vue'
 </script>
 
 <template>
-  <main-layout-container>
-    <h1>timeline</h1>
-  </main-layout-container>
+  <timeline-container />
 </template>
 
 <style scoped></style>
