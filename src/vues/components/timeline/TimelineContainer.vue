@@ -1,34 +1,29 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
+import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
 
 const timelineStore = useTimelineStore()
 
 const containerSize = ref({ width: 0, height: 0 })
+const currentMonthId = ref<string | null>(null)
 const scrollContainerEl = useTemplateRef('scrollContainer')
-useResizeObserver(scrollContainerEl, (entries) => {
-  if (entries[0]) {
-    containerSize.value = {
-      width: entries[0].contentRect.width,
-      height: entries[0].contentRect.height,
-    }
-  }
-})
+const gridLayout = shallowRef<LayoutRow[]>([])
 
 const IDEAL_ROW_HEIGHT = 240
 const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 5
-const ITEM_GAP_PX = ITEM_GAP + 'px'
+const ROW_HEADER_HEIGHT = 76
 
 interface LayoutRow {
   items: LayoutRowItem[]
   height: number
-  monthId: string
-  firstRowOfTheMonth: boolean
-  lastRowOfTheMonth: boolean
+  date: Date
+  firstOfTheMonth: boolean
+  lastOfTheMonth: boolean
   key: string
   offsetTop: number
 }
@@ -40,18 +35,18 @@ interface LayoutRowItem {
 
 function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: number) {
   if (monthRatios.length === 0 || containerWidth === 0) return []
-  console.log(monthRatios, containerWidth)
   const layoutRows: LayoutRow[] = []
-  let offsetTop = ITEM_GAP
+  let offsetTop = 0
 
   for (const { monthId, ratios } of monthRatios) {
-    let firstRowOfTheMonth = true
+    let firstOfTheMonth = true
     let itemsWidth = 0
     let rowItems: LayoutRowItem[] = []
+    offsetTop += ROW_HEADER_HEIGHT
 
     for (const [i, ratio] of ratios.entries()) {
       rowItems.push({ ratio, index: i })
-      const gapSize = (rowItems.length + 1) * ITEM_GAP
+      const gapSize = (rowItems.length - 1) * ITEM_GAP
       itemsWidth += IDEAL_ROW_HEIGHT * ratio
       if (itemsWidth + gapSize > containerWidth) {
         const sizeMultiplier = Math.min(
@@ -59,19 +54,21 @@ function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: num
           MAX_SIZE_MULTIPLIER,
         )
         const rowHeight = IDEAL_ROW_HEIGHT * sizeMultiplier
+        const lastOfTheMonth = i === ratios.length - 1
         layoutRows.push({
           items: rowItems,
           height: rowHeight,
-          monthId,
-          firstRowOfTheMonth,
-          lastRowOfTheMonth: i === ratios.length - 1,
+          date: new Date(monthId),
+          firstOfTheMonth,
+          lastOfTheMonth,
           key: `${monthId}-${layoutRows.length}`,
           offsetTop,
         })
-        firstRowOfTheMonth = false
+        firstOfTheMonth = false
         rowItems = []
         itemsWidth = 0
-        offsetTop += rowHeight + ITEM_GAP
+        offsetTop += Math.round(rowHeight)
+        if (!lastOfTheMonth) offsetTop += ITEM_GAP
       }
     }
 
@@ -81,22 +78,66 @@ function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: num
       layoutRows.push({
         items: rowItems,
         height: rowHeight,
-        monthId,
-        firstRowOfTheMonth,
-        lastRowOfTheMonth: true,
+        date: new Date(monthId),
+        firstOfTheMonth,
+        lastOfTheMonth: true,
         key: `${monthId}-${layoutRows.length}`,
         offsetTop,
       })
-      offsetTop += rowHeight + ITEM_GAP
+      offsetTop += Math.round(rowHeight)
     }
   }
 
   return layoutRows
 }
 
-const gridLayout = ref<LayoutRow[]>([])
+function onScroll(e: Event) {
+  const target = e.target as HTMLElement
+  const scrollTop = target.scrollTop
+  const rows = gridLayout.value
+
+  if (rows.length === 0) return
+
+  let low = 0
+  let high = rows.length - 1
+  let index = 0
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2)
+    const row = rows[mid]!
+    const effectiveTop = row.firstOfTheMonth ? row.offsetTop - ROW_HEADER_HEIGHT : row.offsetTop
+
+    if (effectiveTop <= scrollTop) {
+      index = mid
+      low = mid + 1
+    } else {
+      high = mid - 1
+    }
+  }
+
+  const foundDate = rows[index]!.date
+  const newMonthId = foundDate.toISOString()
+
+  if (currentMonthId.value !== newMonthId) {
+    currentMonthId.value = newMonthId
+    console.log('Current Top Month:', MONTHS[foundDate.getMonth()], foundDate.getFullYear())
+  }
+}
+
+useResizeObserver(scrollContainerEl, (entries) => {
+  if (entries[0]) {
+    containerSize.value = {
+      width: entries[0].contentRect.width,
+      height: entries[0].contentRect.height,
+    }
+  }
+})
+
 watch([() => timelineStore.monthRatios, containerSize], () => {
-  gridLayout.value = calculateLayout(timelineStore.monthRatios, containerSize.value.width)
+  const now = performance.now()
+  const rows = calculateLayout(timelineStore.monthRatios, containerSize.value.width)
+  console.log('calculateLayout', performance.now() - now, 'ms')
+  gridLayout.value = rows
 })
 </script>
 
@@ -109,20 +150,23 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
           :height="containerSize.height"
           class="virtual-scroll"
           item-key="key"
+          @scroll.passive="onScroll"
         >
           <template v-slot:default="{ item }">
-            <div class="row-date-header" v-if="item.firstRowOfTheMonth">
-              <h2>{{ item.monthId }}</h2>
+            <div class="row-date-header" v-if="item.firstOfTheMonth">
+              <h2>{{ MONTHS[item.date.getMonth()] }}</h2>
+              <h3 v-if="item.date.getFullYear() !== CURRENT_YEAR">{{ item.date.getFullYear() }}</h3>
             </div>
             <div
               :class="{
-                'first-of-the-month-row': item.firstRowOfTheMonth,
-                'last-of-the-month-row': item.lastRowOfTheMonth,
+                'first-of-the-month-row': item.firstOfTheMonth,
+                'last-of-the-month-row': item.lastOfTheMonth,
               }"
+              :offset-top="item.offsetTop"
               class="virtual-scroll-row"
               :style="{
-                height: `${Math.round(item.height)}px`,
-                width: `${containerSize.width - ITEM_GAP * 2}px`,
+                height: `${Math.round(item.height) + (item.lastOfTheMonth ? 0 : ITEM_GAP)}px`,
+                width: `${containerSize.width}px`,
               }"
             >
               <div
@@ -131,7 +175,7 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
                 class="virtual-scroll-item"
                 :style="{
                   width: `${Math.round(mediaItem.ratio * item.height)}px`,
-                  height: `${item.height}px`,
+                  height: `${Math.round(item.height)}px`,
                 }"
               />
             </div>
@@ -148,6 +192,7 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
   width: 100%;
   height: 100%;
   display: flex;
+  --item-gap: calc(v-bind(ITEM_GAP) * 1px);
 }
 
 .scroll-container {
@@ -155,7 +200,6 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
 }
 
 .virtual-scroll {
-  background-color: green;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -166,10 +210,7 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
 
 .virtual-scroll-row {
   display: flex;
-  margin-bottom: v-bind(ITEM_GAP_PX);
-  margin-left: v-bind(ITEM_GAP_PX);
-  margin-right: v-bind(ITEM_GAP_PX);
-  gap: v-bind(ITEM_GAP_PX);
+  gap: var(--item-gap);
   overflow: hidden;
 }
 
@@ -184,15 +225,27 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
 }
 
 .row-date-header {
-  padding: 15px 30px;
+  padding: 20px 30px;
+  display: flex;
+  align-items: flex-end;
 }
+
 .row-date-header h2 {
-  font-size: 30px;
-  font-weight: 500;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.row-date-header h3 {
+  font-size: 18px;
+  font-weight: 400;
+  opacity: 0.7;
+  margin-left: 20px;
+  padding-bottom: 1px;
 }
 
 .virtual-scroll-item {
-  background-color: rgba(255, 255, 255, 0.3);
+  flex: 0 0 auto; /* do not grow, do not shrink */
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .timeline-scroll {
