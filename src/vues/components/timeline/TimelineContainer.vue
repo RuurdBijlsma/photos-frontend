@@ -5,9 +5,9 @@ import { useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
-import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
 import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
-import photoService from '@/scripts/services/photoService.ts'
+import TimelineRow from '@/vues/components/timeline/TimelineRow.vue'
+import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
 
 const timelineStore = useTimelineStore()
 
@@ -81,23 +81,6 @@ interface YearScrollLabel {
 interface MonthScrollLabel {
   monthId: string
   offsetTop: number
-}
-
-interface LayoutRow {
-  items: LayoutRowItem[]
-  height: number
-  date: Date
-  monthId: string
-  firstOfTheMonth: boolean
-  lastOfTheMonth: boolean
-  key: string
-  offsetTop: number
-  thumbnailSize: number
-}
-
-interface LayoutRowItem {
-  ratio: number
-  index: number
 }
 
 function getThumbnailHeight(rowHeight: number) {
@@ -386,39 +369,12 @@ watch(
               transform: `translateY(${virtualRow.start}px)`,
             }"
           >
-            <div style="width: 100%" v-if="gridLayout[virtualRow.index]">
-              <div class="row-date-header" v-if="gridLayout[virtualRow.index].firstOfTheMonth">
-                <h2>{{ MONTHS[gridLayout[virtualRow.index].date.getMonth()] }}</h2>
-                <h3 v-if="gridLayout[virtualRow.index].date.getFullYear() !== CURRENT_YEAR">
-                  {{ gridLayout[virtualRow.index].date.getFullYear() }}
-                </h3>
-              </div>
-              <div
-                :class="{
-                  'first-of-the-month-row': gridLayout[virtualRow.index].firstOfTheMonth,
-                  'last-of-the-month-row': gridLayout[virtualRow.index].lastOfTheMonth,
-                }"
-                class="virtual-scroll-row"
-                :style="{
-                  height: `${Math.round(gridLayout[virtualRow.index].height)}px`,
-                  width: `${containerSize.width}px`,
-                  marginBottom: gridLayout[virtualRow.index].lastOfTheMonth
-                    ? '0px'
-                    : `${ITEM_GAP}px`,
-                }"
-              >
-                <div
-                  v-for="mediaItem in gridLayout[virtualRow.index].items"
-                  :key="mediaItem.index"
-                  class="virtual-scroll-item"
-                  :style="{
-                    backgroundImage: `url(${photoService.getPhotoThumbnail(timelineStore.monthItems.get(gridLayout[virtualRow.index].monthId)?.[mediaItem.index]?.id, gridLayout[virtualRow.index].thumbnailSize)})`,
-                    width: `${Math.round(mediaItem.ratio * gridLayout[virtualRow.index].height)}px`,
-                    height: `${Math.round(gridLayout[virtualRow.index].height)}px`,
-                  }"
-                />
-              </div>
-            </div>
+            <timeline-row
+              v-if="gridLayout[virtualRow.index]"
+              :item="gridLayout[virtualRow.index]!"
+              :container-width="containerSize.width"
+              :item-gap="ITEM_GAP"
+            />
           </div>
         </div>
       </div>
@@ -482,49 +438,6 @@ watch(
 
 .scroll-container::-webkit-scrollbar {
   display: none;
-}
-
-.virtual-scroll-row {
-  display: flex;
-  gap: var(--item-gap);
-  overflow: hidden;
-}
-
-.first-of-the-month-row {
-  border-top-left-radius: 40px;
-  border-top-right-radius: 40px;
-}
-
-.last-of-the-month-row {
-  border-bottom-left-radius: 40px;
-  border-bottom-right-radius: 40px;
-}
-
-.row-date-header {
-  padding: 20px 30px;
-  display: flex;
-  align-items: flex-end;
-}
-
-.row-date-header h2 {
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.row-date-header h3 {
-  font-size: 18px;
-  font-weight: 400;
-  opacity: 0.7;
-  margin-left: 20px;
-  padding-bottom: 1px;
-}
-
-.virtual-scroll-item {
-  flex: 0 0 auto;
-  background-color: rgba(255, 255, 255, 0.05);
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
 }
 
 .timeline-scroll {
