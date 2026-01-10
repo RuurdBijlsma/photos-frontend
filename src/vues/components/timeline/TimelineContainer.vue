@@ -2,6 +2,7 @@
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useResizeObserver, useThrottleFn } from '@vueuse/core'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
@@ -22,11 +23,31 @@ const containerSize = shallowRef({ width: 0, height: 0 })
 const scrollTrackSize = shallowRef({ width: 0, height: 0 })
 const currentScrollTop = ref(0)
 const dateInView = ref<Date | null>(null)
+
 const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
-const virtualScrollEl = useTemplateRef('virtualScroll')
+
 const gridLayout = shallowRef<LayoutRow[]>([])
 const scrollHeight = ref(0)
+
+const virtualizerOptions = computed(() => ({
+  count: gridLayout.value.length,
+  getScrollElement: () => scrollContainerEl.value,
+  estimateSize: (index: number) => {
+    const row = gridLayout.value[index]
+    if (!row) return 0
+
+    let size = row.height
+    if (row.firstOfTheMonth) size += ROW_HEADER_HEIGHT
+    if (!row.lastOfTheMonth) size += ITEM_GAP
+
+    return size
+  },
+  overscan: 5,
+}))
+
+const rowVirtualizer = useVirtualizer(virtualizerOptions)
+
 const scrollThumbHeight = computed(() =>
   Math.max(
     (scrollTrackSize.value.height * containerSize.value.height) / scrollHeight.value,
@@ -324,8 +345,7 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
     totalHeight,
   }
   gridLayout.value = rows
-  if (rows.length > 0)
-    scrollHeight.value = rows[rows.length - 1]!.offsetTop + rows[rows.length - 1]!.height
+  scrollHeight.value = totalHeight
 
   if (dateInView.value === null && gridLayout.value.length > 0) {
     dateInView.value = dateFromScrollTop(gridLayout.value, 0)
@@ -347,47 +367,63 @@ watch(
 <template>
   <div class="timeline-container">
     <main-layout-container>
-      <div class="scroll-container" ref="scrollContainer">
-        <v-virtual-scroll
-          :items="gridLayout"
-          :height="containerSize.height"
-          class="virtual-scroll"
-          item-key="key"
-          ref="virtualScroll"
-          @scroll.passive="onScroll"
+      <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
+        <div
+          :style="{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }"
         >
-          <template v-slot:default="{ item }">
-            <div class="row-date-header" v-if="item.firstOfTheMonth">
-              <h2>{{ MONTHS[item.date.getMonth()] }}</h2>
-              <h3 v-if="item.date.getFullYear() !== CURRENT_YEAR">{{ item.date.getFullYear() }}</h3>
-            </div>
-            <div
-              :class="{
-                'first-of-the-month-row': item.firstOfTheMonth,
-                'last-of-the-month-row': item.lastOfTheMonth,
-              }"
-              :offset-top="item.offsetTop"
-              class="virtual-scroll-row"
-              :style="{
-                height: `${Math.round(item.height) + (item.lastOfTheMonth ? 0 : ITEM_GAP)}px`,
-                width: `${containerSize.width}px`,
-              }"
-            >
+          <div
+            v-for="virtualRow in rowVirtualizer.getVirtualItems()"
+            :key="String(virtualRow.key)"
+            :style="{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualRow.start}px)`,
+            }"
+          >
+            <div style="width: 100%" v-if="gridLayout[virtualRow.index]">
+              <div class="row-date-header" v-if="gridLayout[virtualRow.index].firstOfTheMonth">
+                <h2>{{ MONTHS[gridLayout[virtualRow.index].date.getMonth()] }}</h2>
+                <h3 v-if="gridLayout[virtualRow.index].date.getFullYear() !== CURRENT_YEAR">
+                  {{ gridLayout[virtualRow.index].date.getFullYear() }}
+                </h3>
+              </div>
               <div
-                v-for="mediaItem in item.items"
-                :key="mediaItem.index"
-                class="virtual-scroll-item"
-                :style="{
-                  backgroundImage: `url(${photoService.getPhotoThumbnail(timelineStore.monthItems.get(item.monthId)?.[mediaItem.index]?.id, item.thumbnailSize)})`,
-                  width: `${Math.round(mediaItem.ratio * item.height)}px`,
-                  height: `${Math.round(item.height)}px`,
+                :class="{
+                  'first-of-the-month-row': gridLayout[virtualRow.index].firstOfTheMonth,
+                  'last-of-the-month-row': gridLayout[virtualRow.index].lastOfTheMonth,
                 }"
-              />
+                class="virtual-scroll-row"
+                :style="{
+                  height: `${Math.round(gridLayout[virtualRow.index].height)}px`,
+                  width: `${containerSize.width}px`,
+                  marginBottom: gridLayout[virtualRow.index].lastOfTheMonth
+                    ? '0px'
+                    : `${ITEM_GAP}px`,
+                }"
+              >
+                <div
+                  v-for="mediaItem in gridLayout[virtualRow.index].items"
+                  :key="mediaItem.index"
+                  class="virtual-scroll-item"
+                  :style="{
+                    backgroundImage: `url(${photoService.getPhotoThumbnail(timelineStore.monthItems.get(gridLayout[virtualRow.index].monthId)?.[mediaItem.index]?.id, gridLayout[virtualRow.index].thumbnailSize)})`,
+                    width: `${Math.round(mediaItem.ratio * gridLayout[virtualRow.index].height)}px`,
+                    height: `${Math.round(gridLayout[virtualRow.index].height)}px`,
+                  }"
+                />
+              </div>
             </div>
-          </template>
-        </v-virtual-scroll>
+          </div>
+        </div>
       </div>
     </main-layout-container>
+
     <div class="timeline-scroll" ref="scrollTrack">
       <div class="scroll-track"></div>
       <div
@@ -410,7 +446,7 @@ watch(
             v-for="yearLabel in scrollLabels.years"
             :key="yearLabel.year"
             :style="{
-              transform: `translateY(${Math.max(0,((scrollTrackSize.height - 5) * yearLabel.endOfYearOffsetTop) / scrollLabels.totalHeight - 13)}px)`,
+              transform: `translateY(${Math.max(0, ((scrollTrackSize.height - 5) * yearLabel.endOfYearOffsetTop) / scrollLabels.totalHeight - 13)}px)`,
             }"
           >
             {{ yearLabel.year }}
@@ -438,15 +474,13 @@ watch(
 
 .scroll-container {
   height: 100%;
-}
-
-.virtual-scroll {
-  -ms-overflow-style: none;
+  overflow-y: auto;
+  width: 100%;
   scrollbar-width: none;
-  padding-bottom: 10px;
+  -ms-overflow-style: none;
 }
 
-.virtual-scroll::-webkit-scrollbar {
+.scroll-container::-webkit-scrollbar {
   display: none;
 }
 
@@ -486,7 +520,7 @@ watch(
 }
 
 .virtual-scroll-item {
-  flex: 0 0 auto; /* do not grow, do not shrink */
+  flex: 0 0 auto;
   background-color: rgba(255, 255, 255, 0.05);
   background-position: center;
   background-repeat: no-repeat;
@@ -528,11 +562,19 @@ watch(
   border-top-right-radius: 2px;
 }
 
+.scroll-thumb,
+.scroll-protrusion {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
 .scroll-labels {
   position: absolute;
   top: 0;
   right: 10px;
   color: rgba(var(--v-theme-on-surface), 0.8);
+  pointer-events: none;
 }
 
 .year-labels {
