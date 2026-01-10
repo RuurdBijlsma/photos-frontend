@@ -8,7 +8,9 @@ export function prettyBytes(bytes: number, decimals = 2): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`
 }
 
-export function requestIdleCallbackAsync(cb: (deadline: IdleDeadline) => Promise<void>): Promise<void> {
+export function requestIdleCallbackAsync(
+  cb: (deadline: IdleDeadline) => Promise<void>,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     requestIdleCallback(async (deadline) => {
       try {

@@ -47,7 +47,6 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
   }
 
-
   async function initialize() {
     await fetchMonthRatios()
     const firstMonth = monthRatios.value[0]?.monthId

@@ -332,7 +332,7 @@ watch(dateInView, () => {
   background-color: rgba(255, 255, 255, 0.05);
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain
+  background-size: contain;
 }
 
 .timeline-scroll {
