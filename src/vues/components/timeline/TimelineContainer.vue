@@ -15,8 +15,8 @@ const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 2
 const ROW_HEADER_HEIGHT = 76
 const THUMBNAIL_SIZES = [144, 240, 360, 480, 720, 1080, 1440]
-const MIN_SCROLL_THUMB_HEIGHT = 40
-const SCROLL_PROTRUSION_HEIGHT = 3
+const MIN_SCROLL_THUMB_HEIGHT = 20
+const SCROLL_PROTRUSION_HEIGHT = 4
 
 const containerSize = ref({ width: 0, height: 0 })
 const scrollTrackSize = ref({ width: 0, height: 0 })
@@ -312,11 +312,12 @@ watch(
       </div>
     </main-layout-container>
     <div class="timeline-scroll" ref="scrollTrack">
+      <div class="scroll-track"></div>
       <div
         class="scroll-thumb"
         :style="{
           height: `${scrollThumbHeight}px`,
-          transform: `translateY(${Math.min(scrollTrackSize.height - scrollThumbHeight, Math.max(0, scrollPercentage * (scrollTrackSize.height - SCROLL_PROTRUSION_HEIGHT) - scrollThumbHeight / 2))}px)`,
+          transform: `translateY(${Math.min(scrollTrackSize.height - scrollThumbHeight, Math.max(0, scrollPercentage * (scrollTrackSize.height - SCROLL_PROTRUSION_HEIGHT) + SCROLL_PROTRUSION_HEIGHT / 2 - scrollThumbHeight / 2))}px)`,
         }"
       ></div>
       <div
@@ -397,23 +398,35 @@ watch(
 .timeline-scroll {
   width: 50px;
   height: 100%;
-  background-color: red;
   position: relative;
 }
 
+.scroll-track {
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
+  width: 15%;
+  height: 100%;
+  position: absolute;
+  right: 3px;
+  top: 0;
+}
+
 .scroll-thumb {
-  background-color: blue;
+  background-color: rgb(var(--v-theme-primary));
   position: absolute;
   top: 0;
-  right: 0;
+  right: 3px;
   width: 15%;
+  border-radius: 5px;
 }
 
 .scroll-protrusion {
+  background-color: rgb(var(--v-theme-primary));
   height: calc(v-bind(SCROLL_PROTRUSION_HEIGHT) * 1px);
-  width: 100%;
-  background-color: cyan;
+  width: calc(100% - 3px - 5px);
   position: absolute;
   top: 0;
+  left: 5px;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
 }
 </style>
