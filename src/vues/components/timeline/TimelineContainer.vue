@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
@@ -10,17 +10,36 @@ import photoService from '@/scripts/services/photoService.ts'
 
 const timelineStore = useTimelineStore()
 
-const containerSize = ref({ width: 0, height: 0 })
-const dateInView = ref<Date | null>(null)
-const scrollContainerEl = useTemplateRef('scrollContainer')
-const gridLayout = shallowRef<LayoutRow[]>([])
-
-let monthPreloadAbortSignal = { aborted: false }
-let allMonthsPreloaded = false
 const IDEAL_ROW_HEIGHT = 240
 const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 2
 const ROW_HEADER_HEIGHT = 76
+const THUMBNAIL_SIZES = [144, 240, 360, 480, 720, 1080, 1440]
+const MIN_SCROLL_THUMB_HEIGHT = 40
+const SCROLL_PROTRUSION_HEIGHT = 3
+
+const containerSize = ref({ width: 0, height: 0 })
+const scrollTrackSize = ref({ width: 0, height: 0 })
+const currentScrollTop = ref(0)
+const dateInView = ref<Date | null>(null)
+const scrollContainerEl = useTemplateRef('scrollContainer')
+const scrollTrackEl = useTemplateRef('scrollTrack')
+const gridLayout = shallowRef<LayoutRow[]>([])
+const scrollHeight = ref(0)
+const scrollThumbHeight = computed(() =>
+  Math.max(
+    (scrollTrackSize.value.height * containerSize.value.height) / scrollHeight.value,
+    MIN_SCROLL_THUMB_HEIGHT,
+  ),
+)
+const scrollPercentage = computed(() => {
+  if (scrollHeight.value <= containerSize.value.height) return 0
+  const maxScrollTop = scrollHeight.value - containerSize.value.height
+  return Math.min(Math.max(currentScrollTop.value / maxScrollTop, 0), 1)
+})
+
+let monthPreloadAbortSignal = { aborted: false }
+let allMonthsPreloaded = false
 
 interface LayoutRow {
   items: LayoutRowItem[]
@@ -31,11 +50,19 @@ interface LayoutRow {
   lastOfTheMonth: boolean
   key: string
   offsetTop: number
+  thumbnailSize: number
 }
 
 interface LayoutRowItem {
   ratio: number
   index: number
+}
+
+function getThumbnailHeight(rowHeight: number) {
+  for (const size of THUMBNAIL_SIZES) {
+    if (size > rowHeight) return size
+  }
+  return THUMBNAIL_SIZES[THUMBNAIL_SIZES.length - 1]!
 }
 
 function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: number) {
@@ -70,6 +97,7 @@ function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: num
           lastOfTheMonth,
           key: `${monthId}-${layoutRows.length}`,
           offsetTop,
+          thumbnailSize: getThumbnailHeight(rowHeight),
         })
         firstOfTheMonth = false
         rowItems = []
@@ -91,6 +119,7 @@ function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: num
         lastOfTheMonth: true,
         key: `${monthId}-${layoutRows.length}`,
         offsetTop,
+        thumbnailSize: getThumbnailHeight(rowHeight),
       })
       offsetTop += Math.round(rowHeight)
     }
@@ -124,7 +153,9 @@ function dateFromScrollTop(rows: LayoutRow[], scrollTop: number) {
 
 function onScroll(e: Event) {
   const target = e.target as HTMLElement
-  const date = dateFromScrollTop(gridLayout.value, target.scrollTop)
+  scrollHeight.value = target.scrollHeight
+  currentScrollTop.value = target.scrollTop
+  const date = dateFromScrollTop(gridLayout.value, currentScrollTop.value)
   if (date === null) {
     dateInView.value = null
     return
@@ -202,26 +233,39 @@ useResizeObserver(scrollContainerEl, (entries) => {
   }
 })
 
+useResizeObserver(scrollTrackEl, (entries) => {
+  if (entries[0]) {
+    scrollTrackSize.value = {
+      width: entries[0].contentRect.width,
+      height: entries[0].contentRect.height,
+    }
+  }
+})
+
 watch([() => timelineStore.monthRatios, containerSize], () => {
   const now = performance.now()
   const rows = calculateLayout(timelineStore.monthRatios, containerSize.value.width)
   console.log('calculateLayout', performance.now() - now, 'ms')
   gridLayout.value = rows
+  if (rows.length > 0)
+    scrollHeight.value = rows[rows.length - 1]!.offsetTop + rows[rows.length - 1]!.height
+
   if (dateInView.value === null && gridLayout.value.length > 0) {
     dateInView.value = dateFromScrollTop(gridLayout.value, 0)
-    if (dateInView.value) {
-      preLoadAllMonths(timelineStore.monthRatios, dateInView.value, abortMonthPreload())
-    }
   }
 })
 
-watch(dateInView, () => {
-  const date = dateInView.value
-  if (!date) return
-  console.log('dateInView', date.toISOString().substring(0, 7))
+watch(
+  dateInView,
+  () => {
+    const date = dateInView.value
+    if (!date) return
+    console.log('dateInView', date.toISOString().substring(0, 7))
 
-  if (!allMonthsPreloaded) preLoadAllMonths(timelineStore.monthRatios, date, abortMonthPreload())
-})
+    if (!allMonthsPreloaded) preLoadAllMonths(timelineStore.monthRatios, date, abortMonthPreload())
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -233,7 +277,7 @@ watch(dateInView, () => {
           :height="containerSize.height"
           class="virtual-scroll"
           item-key="key"
-          @scroll.passive="onScroll"
+          v-scroll.self="onScroll"
         >
           <template v-slot:default="{ item }">
             <div class="row-date-header" v-if="item.firstOfTheMonth">
@@ -257,7 +301,7 @@ watch(dateInView, () => {
                 :key="mediaItem.index"
                 class="virtual-scroll-item"
                 :style="{
-                  backgroundImage: `url(${photoService.getPhotoThumbnail(timelineStore.monthItems.get(item.monthId)?.[mediaItem.index]?.id, 144)})`,
+                  backgroundImage: `url(${photoService.getPhotoThumbnail(timelineStore.monthItems.get(item.monthId)?.[mediaItem.index]?.id, item.thumbnailSize)})`,
                   width: `${Math.round(mediaItem.ratio * item.height)}px`,
                   height: `${Math.round(item.height)}px`,
                 }"
@@ -267,7 +311,21 @@ watch(dateInView, () => {
         </v-virtual-scroll>
       </div>
     </main-layout-container>
-    <div class="timeline-scroll"></div>
+    <div class="timeline-scroll" ref="scrollTrack">
+      <div
+        class="scroll-thumb"
+        :style="{
+          height: `${scrollThumbHeight}px`,
+          transform: `translateY(${Math.min(scrollTrackSize.height - scrollThumbHeight, Math.max(0, scrollPercentage * (scrollTrackSize.height - SCROLL_PROTRUSION_HEIGHT) - scrollThumbHeight / 2))}px)`,
+        }"
+      ></div>
+      <div
+        class="scroll-protrusion"
+        :style="{
+          transform: `translateY(${scrollPercentage * (scrollTrackSize.height - SCROLL_PROTRUSION_HEIGHT)}px)`,
+        }"
+      ></div>
+    </div>
   </div>
 </template>
 
@@ -286,6 +344,7 @@ watch(dateInView, () => {
 .virtual-scroll {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  padding-bottom: 10px;
 }
 
 .virtual-scroll::-webkit-scrollbar {
@@ -332,12 +391,29 @@ watch(dateInView, () => {
   background-color: rgba(255, 255, 255, 0.05);
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: cover;
 }
 
 .timeline-scroll {
   width: 50px;
   height: 100%;
   background-color: red;
+  position: relative;
+}
+
+.scroll-thumb {
+  background-color: blue;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 15%;
+}
+
+.scroll-protrusion {
+  height: calc(v-bind(SCROLL_PROTRUSION_HEIGHT) * 1px);
+  width: 100%;
+  background-color: cyan;
+  position: absolute;
+  top: 0;
 }
 </style>
