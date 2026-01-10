@@ -5,23 +5,28 @@ import { useResizeObserver } from '@vueuse/core'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
+import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
+import photoService from '@/scripts/services/photoService.ts'
 
 const timelineStore = useTimelineStore()
 
 const containerSize = ref({ width: 0, height: 0 })
-const currentMonthId = ref<string | null>(null)
+const dateInView = ref<Date | null>(null)
 const scrollContainerEl = useTemplateRef('scrollContainer')
 const gridLayout = shallowRef<LayoutRow[]>([])
 
+let monthPreloadAbortSignal = { aborted: false }
+let allMonthsPreloaded = false
 const IDEAL_ROW_HEIGHT = 240
 const MAX_SIZE_MULTIPLIER = 1.5
-const ITEM_GAP = 5
+const ITEM_GAP = 2
 const ROW_HEADER_HEIGHT = 76
 
 interface LayoutRow {
   items: LayoutRowItem[]
   height: number
   date: Date
+  monthId: string
   firstOfTheMonth: boolean
   lastOfTheMonth: boolean
   key: string
@@ -35,6 +40,7 @@ interface LayoutRowItem {
 
 function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: number) {
   if (monthRatios.length === 0 || containerWidth === 0) return []
+  console.log(monthRatios)
   const layoutRows: LayoutRow[] = []
   let offsetTop = 0
 
@@ -59,6 +65,7 @@ function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: num
           items: rowItems,
           height: rowHeight,
           date: new Date(monthId),
+          monthId,
           firstOfTheMonth,
           lastOfTheMonth,
           key: `${monthId}-${layoutRows.length}`,
@@ -79,6 +86,7 @@ function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: num
         items: rowItems,
         height: rowHeight,
         date: new Date(monthId),
+        monthId,
         firstOfTheMonth,
         lastOfTheMonth: true,
         key: `${monthId}-${layoutRows.length}`,
@@ -91,12 +99,8 @@ function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: num
   return layoutRows
 }
 
-function onScroll(e: Event) {
-  const target = e.target as HTMLElement
-  const scrollTop = target.scrollTop
-  const rows = gridLayout.value
-
-  if (rows.length === 0) return
+function dateFromScrollTop(rows: LayoutRow[], scrollTop: number) {
+  if (rows.length === 0) return null
 
   let low = 0
   let high = rows.length - 1
@@ -115,13 +119,78 @@ function onScroll(e: Event) {
     }
   }
 
-  const foundDate = rows[index]!.date
-  const newMonthId = foundDate.toISOString()
+  return rows[index]?.date ?? null
+}
 
-  if (currentMonthId.value !== newMonthId) {
-    currentMonthId.value = newMonthId
-    console.log('Current Top Month:', MONTHS[foundDate.getMonth()], foundDate.getFullYear())
+function onScroll(e: Event) {
+  const target = e.target as HTMLElement
+  const date = dateFromScrollTop(gridLayout.value, target.scrollTop)
+  if (date === null) {
+    dateInView.value = null
+    return
   }
+  const current = dateInView.value
+  if (
+    current === null ||
+    current.getFullYear() !== date.getFullYear() ||
+    current.getMonth() !== date.getMonth() ||
+    current.getDate() !== date.getDate()
+  ) {
+    dateInView.value = date
+  }
+}
+
+async function preLoadAllMonths(
+  monthRatios: TimelineMonthRatios[],
+  date: Date,
+  abortSignal: { aborted: boolean },
+) {
+  const currentMonthIndex = monthRatios.findIndex(
+    ({ monthId }) => monthId === date.toISOString().substring(0, 10),
+  )
+  let i = 0
+  let monthIdsToFetch: string[] = []
+  let countToFetch = 0
+  const BATCH_SIZE = 500
+  while (true) {
+    i++
+    const beforeIndex = currentMonthIndex - i
+    const afterIndex = currentMonthIndex + i
+    const fetchMonthRatios: TimelineMonthRatios[] = []
+
+    if (beforeIndex >= 0) fetchMonthRatios.push(monthRatios[beforeIndex]!)
+    if (afterIndex < monthRatios.length) fetchMonthRatios.push(monthRatios[afterIndex]!)
+
+    for (const { monthId, count } of fetchMonthRatios) {
+      monthIdsToFetch.push(monthId)
+      countToFetch += count
+    }
+
+    if (
+      countToFetch > BATCH_SIZE ||
+      (fetchMonthRatios.length === 0 && monthIdsToFetch.length > 0)
+    ) {
+      await requestIdleCallbackAsync(() => timelineStore.fetchMediaByMonth(monthIdsToFetch))
+      countToFetch = 0
+      monthIdsToFetch = []
+    }
+
+    if (fetchMonthRatios.length === 0 || abortSignal.aborted) {
+      if (abortSignal.aborted) {
+        console.warn('ABORTED')
+      } else {
+        console.log('Fetched all media by month')
+        allMonthsPreloaded = true
+      }
+      break
+    }
+  }
+}
+
+function abortMonthPreload() {
+  monthPreloadAbortSignal.aborted = true
+  monthPreloadAbortSignal = { aborted: false }
+  return monthPreloadAbortSignal
 }
 
 useResizeObserver(scrollContainerEl, (entries) => {
@@ -138,6 +207,20 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
   const rows = calculateLayout(timelineStore.monthRatios, containerSize.value.width)
   console.log('calculateLayout', performance.now() - now, 'ms')
   gridLayout.value = rows
+  if (dateInView.value === null && gridLayout.value.length > 0) {
+    dateInView.value = dateFromScrollTop(gridLayout.value, 0)
+    if (dateInView.value) {
+      preLoadAllMonths(timelineStore.monthRatios, dateInView.value, abortMonthPreload())
+    }
+  }
+})
+
+watch(dateInView, () => {
+  const date = dateInView.value
+  if (!date) return
+  console.log('dateInView', date.toISOString().substring(0, 7))
+
+  if (!allMonthsPreloaded) preLoadAllMonths(timelineStore.monthRatios, date, abortMonthPreload())
 })
 </script>
 
@@ -174,6 +257,7 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
                 :key="mediaItem.index"
                 class="virtual-scroll-item"
                 :style="{
+                  backgroundImage: `url(${photoService.getPhotoThumbnail(timelineStore.monthItems.get(item.monthId)?.[mediaItem.index]?.id, 144)})`,
                   width: `${Math.round(mediaItem.ratio * item.height)}px`,
                   height: `${Math.round(item.height)}px`,
                 }"
@@ -246,6 +330,9 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
 .virtual-scroll-item {
   flex: 0 0 auto; /* do not grow, do not shrink */
   background-color: rgba(255, 255, 255, 0.05);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain
 }
 
 .timeline-scroll {
