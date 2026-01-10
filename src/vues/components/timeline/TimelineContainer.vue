@@ -23,13 +23,10 @@ const containerSize = shallowRef({ width: 0, height: 0 })
 const scrollTrackSize = shallowRef({ width: 0, height: 0 })
 const currentScrollTop = ref(0)
 const dateInView = ref<Date | null>(null)
-
 const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
-
 const gridLayout = shallowRef<LayoutRow[]>([])
 const scrollHeight = ref(0)
-
 const virtualizerOptions = computed(() => ({
   count: gridLayout.value.length,
   getScrollElement: () => scrollContainerEl.value,
@@ -45,9 +42,7 @@ const virtualizerOptions = computed(() => ({
   },
   overscan: 5,
 }))
-
 const rowVirtualizer = useVirtualizer(virtualizerOptions)
-
 const scrollThumbHeight = computed(() =>
   Math.max(
     (scrollTrackSize.value.height * containerSize.value.height) / scrollHeight.value,
@@ -67,6 +62,39 @@ const scrollLabels = shallowRef<{
   years: [],
   months: [],
   totalHeight: 0,
+})
+const visibleYearLabels = computed(() => {
+  const years = scrollLabels.value.years
+  const YEAR_LABEL_HEIGHT = 20
+  const yearYs: [number, number][] = []
+  for (const year of years) {
+    const yearY = Math.min(
+      scrollTrackSize.value.height - YEAR_LABEL_HEIGHT,
+      Math.max(
+        0,
+        ((scrollTrackSize.value.height - 5) * year.endOfYearOffsetTop) /
+          scrollLabels.value.totalHeight -
+          YEAR_LABEL_HEIGHT + SCROLL_PROTRUSION_HEIGHT,
+      ),
+    )
+    yearYs.push([year.year, yearY])
+  }
+
+  if (yearYs.length === 0) return []
+
+  const result: [number, number][] = []
+  result.push(yearYs[0]!)
+
+  let prevY = yearYs.length > 0 ? yearYs[0]![1] : 0
+  for (const [year, y] of yearYs.slice(1, yearYs.length - 1)) {
+    const distToPrevLabel = y - prevY
+    if (distToPrevLabel > YEAR_LABEL_HEIGHT) {
+      result.push([year, y])
+      prevY = y
+    }
+  }
+  if (yearYs.length > 1) result.push(yearYs[yearYs.length - 1]!)
+  return result
 })
 
 let monthPreloadAbortSignal = { aborted: false }
@@ -221,7 +249,7 @@ function dateFromScrollTop(rows: LayoutRow[], scrollTop: number) {
   return rows[index]?.date ?? null
 }
 
-const onScroll = useThrottleFn(rawOnScroll, 50)
+const onScroll = useThrottleFn(rawOnScroll, 33)
 
 function rawOnScroll(e: Event) {
   const target = e.target as HTMLElement
@@ -399,13 +427,13 @@ watch(
         <div class="year-labels">
           <div
             class="year-label"
-            v-for="yearLabel in scrollLabels.years"
-            :key="yearLabel.year"
+            v-for="[year, y] in visibleYearLabels"
+            :key="year"
             :style="{
-              transform: `translateY(${Math.max(0, ((scrollTrackSize.height - 5) * yearLabel.endOfYearOffsetTop) / scrollLabels.totalHeight - 13)}px)`,
+              transform: `translateY(${y}px)`,
             }"
           >
-            {{ yearLabel.year }}
+            {{ year }}
           </div>
         </div>
         <div class="month-dots">
@@ -413,6 +441,9 @@ watch(
             class="month-dot"
             v-for="monthLabel in scrollLabels.months"
             :key="monthLabel.monthId"
+            :style="{
+              transform: `translateY(${Math.max(0, ((scrollTrackSize.height - 4) * monthLabel.offsetTop) / scrollLabels.totalHeight)}px)`,
+            }"
           ></div>
         </div>
       </div>
@@ -448,7 +479,7 @@ watch(
 
 .scroll-track {
   background-color: rgba(var(--v-theme-on-surface), 0.08);
-  width: 15%;
+  width: 7px;
   height: 100%;
   position: absolute;
   right: 3px;
@@ -460,7 +491,7 @@ watch(
   position: absolute;
   top: 0;
   right: 3px;
-  width: 15%;
+  width: 7px;
   border-radius: 5px;
 }
 
@@ -485,19 +516,19 @@ watch(
 .scroll-labels {
   position: absolute;
   top: 0;
-  right: 10px;
-  color: rgba(var(--v-theme-on-surface), 0.8);
+  right: 0;
   pointer-events: none;
 }
 
 .year-labels {
   position: relative;
   top: 0;
-  right: 0;
+  right: 10px;
 }
 
 .year-label {
   background-color: rgba(var(--v-theme-on-surface), 0.08);
+  color: rgba(var(--v-theme-on-surface), 0.8);
   position: absolute;
   top: 0;
   right: 0;
@@ -505,5 +536,21 @@ watch(
   padding: 0 5px;
   border-top-left-radius: 10px;
   border-bottom-left-radius: 10px;
+}
+
+.month-dots {
+  position: absolute;
+  top: 0;
+  right: 4px;
+}
+
+.month-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: rgba(var(--v-theme-secondary), 0.2);
 }
 </style>
