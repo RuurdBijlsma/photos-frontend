@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
-import { useResizeObserver } from '@vueuse/core'
+import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { useResizeObserver, useThrottleFn } from '@vueuse/core'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
@@ -18,12 +18,13 @@ const THUMBNAIL_SIZES = [144, 240, 360, 480, 720, 1080, 1440]
 const MIN_SCROLL_THUMB_HEIGHT = 20
 const SCROLL_PROTRUSION_HEIGHT = 4
 
-const containerSize = ref({ width: 0, height: 0 })
-const scrollTrackSize = ref({ width: 0, height: 0 })
+const containerSize = shallowRef({ width: 0, height: 0 })
+const scrollTrackSize = shallowRef({ width: 0, height: 0 })
 const currentScrollTop = ref(0)
 const dateInView = ref<Date | null>(null)
 const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
+const virtualScrollEl = useTemplateRef('virtualScroll')
 const gridLayout = shallowRef<LayoutRow[]>([])
 const scrollHeight = ref(0)
 const scrollThumbHeight = computed(() =>
@@ -37,9 +38,29 @@ const scrollPercentage = computed(() => {
   const maxScrollTop = scrollHeight.value - containerSize.value.height
   return Math.min(Math.max(currentScrollTop.value / maxScrollTop, 0), 1)
 })
+const scrollLabels = shallowRef<{
+  years: YearScrollLabel[]
+  months: MonthScrollLabel[]
+  totalHeight: number
+}>({
+  years: [],
+  months: [],
+  totalHeight: 0,
+})
 
 let monthPreloadAbortSignal = { aborted: false }
 let allMonthsPreloaded = false
+
+interface YearScrollLabel {
+  year: number
+  startOfYearOffsetTop: number
+  endOfYearOffsetTop: number
+}
+
+interface MonthScrollLabel {
+  monthId: string
+  offsetTop: number
+}
 
 interface LayoutRow {
   items: LayoutRowItem[]
@@ -65,13 +86,37 @@ function getThumbnailHeight(rowHeight: number) {
   return THUMBNAIL_SIZES[THUMBNAIL_SIZES.length - 1]!
 }
 
-function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: number) {
-  if (monthRatios.length === 0 || containerWidth === 0) return []
+function calculateLayout(
+  monthRatios: TimelineMonthRatios[],
+  containerWidth: number,
+  sort: 'desc' | 'asc',
+) {
+  if (monthRatios.length === 0 || containerWidth === 0)
+    return { rows: [], scrollMonths: [], scrollYears: [], totalHeight: 0 }
   console.log(monthRatios)
   const layoutRows: LayoutRow[] = []
+  const monthScrollLabels: MonthScrollLabel[] = []
+  const yearScrollLabels: YearScrollLabel[] = []
+  let activeYear: YearScrollLabel | null = null
   let offsetTop = 0
 
   for (const { monthId, ratios } of monthRatios) {
+    const year = +monthId.substring(0, 4)
+    if (
+      activeYear === null ||
+      (sort === 'desc' && year < activeYear.year) ||
+      (sort === 'asc' && year > activeYear.year)
+    ) {
+      if (activeYear) {
+        activeYear.endOfYearOffsetTop = offsetTop
+        yearScrollLabels.push(activeYear)
+      }
+      activeYear = {
+        year,
+        startOfYearOffsetTop: offsetTop,
+        endOfYearOffsetTop: -1,
+      }
+    }
     let firstOfTheMonth = true
     let itemsWidth = 0
     let rowItems: LayoutRowItem[] = []
@@ -99,6 +144,12 @@ function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: num
           offsetTop,
           thumbnailSize: getThumbnailHeight(rowHeight),
         })
+        if (firstOfTheMonth) {
+          monthScrollLabels.push({
+            monthId,
+            offsetTop,
+          })
+        }
         firstOfTheMonth = false
         rowItems = []
         itemsWidth = 0
@@ -121,11 +172,26 @@ function calculateLayout(monthRatios: TimelineMonthRatios[], containerWidth: num
         offsetTop,
         thumbnailSize: getThumbnailHeight(rowHeight),
       })
+      if (firstOfTheMonth) {
+        monthScrollLabels.push({
+          monthId,
+          offsetTop,
+        })
+      }
       offsetTop += Math.round(rowHeight)
     }
   }
 
-  return layoutRows
+  if (activeYear) {
+    activeYear.endOfYearOffsetTop = offsetTop
+    yearScrollLabels.push(activeYear)
+  }
+  return {
+    rows: layoutRows,
+    scrollMonths: monthScrollLabels,
+    scrollYears: yearScrollLabels,
+    totalHeight: offsetTop,
+  }
 }
 
 function dateFromScrollTop(rows: LayoutRow[], scrollTop: number) {
@@ -151,7 +217,9 @@ function dateFromScrollTop(rows: LayoutRow[], scrollTop: number) {
   return rows[index]?.date ?? null
 }
 
-function onScroll(e: Event) {
+const onScroll = useThrottleFn(rawOnScroll, 50)
+
+function rawOnScroll(e: Event) {
   const target = e.target as HTMLElement
   scrollHeight.value = target.scrollHeight
   currentScrollTop.value = target.scrollTop
@@ -244,8 +312,17 @@ useResizeObserver(scrollTrackEl, (entries) => {
 
 watch([() => timelineStore.monthRatios, containerSize], () => {
   const now = performance.now()
-  const rows = calculateLayout(timelineStore.monthRatios, containerSize.value.width)
+  const { rows, scrollYears, scrollMonths, totalHeight } = calculateLayout(
+    timelineStore.monthRatios,
+    containerSize.value.width,
+    'desc',
+  )
   console.log('calculateLayout', performance.now() - now, 'ms')
+  scrollLabels.value = {
+    months: scrollMonths,
+    years: scrollYears,
+    totalHeight,
+  }
   gridLayout.value = rows
   if (rows.length > 0)
     scrollHeight.value = rows[rows.length - 1]!.offsetTop + rows[rows.length - 1]!.height
@@ -261,7 +338,6 @@ watch(
     const date = dateInView.value
     if (!date) return
     console.log('dateInView', date.toISOString().substring(0, 7))
-
     if (!allMonthsPreloaded) preLoadAllMonths(timelineStore.monthRatios, date, abortMonthPreload())
   },
   { immediate: true },
@@ -277,7 +353,8 @@ watch(
           :height="containerSize.height"
           class="virtual-scroll"
           item-key="key"
-          v-scroll.self="onScroll"
+          ref="virtualScroll"
+          @scroll.passive="onScroll"
         >
           <template v-slot:default="{ item }">
             <div class="row-date-header" v-if="item.firstOfTheMonth">
@@ -326,6 +403,27 @@ watch(
           transform: `translateY(${scrollPercentage * (scrollTrackSize.height - SCROLL_PROTRUSION_HEIGHT)}px)`,
         }"
       ></div>
+      <div class="scroll-labels">
+        <div class="year-labels">
+          <div
+            class="year-label"
+            v-for="yearLabel in scrollLabels.years"
+            :key="yearLabel.year"
+            :style="{
+              transform: `translateY(${Math.max(0,((scrollTrackSize.height - 5) * yearLabel.endOfYearOffsetTop) / scrollLabels.totalHeight - 13)}px)`,
+            }"
+          >
+            {{ yearLabel.year }}
+          </div>
+        </div>
+        <div class="month-dots">
+          <div
+            class="month-dot"
+            v-for="monthLabel in scrollLabels.months"
+            :key="monthLabel.monthId"
+          ></div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -428,5 +526,29 @@ watch(
   left: 5px;
   border-top-left-radius: 2px;
   border-top-right-radius: 2px;
+}
+
+.scroll-labels {
+  position: absolute;
+  top: 0;
+  right: 10px;
+  color: rgba(var(--v-theme-on-surface), 0.8);
+}
+
+.year-labels {
+  position: relative;
+  top: 0;
+  right: 0;
+}
+
+.year-label {
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 12px;
+  padding: 0 5px;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
 }
 </style>
