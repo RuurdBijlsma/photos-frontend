@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { shallowRef, triggerRef } from 'vue'
+import { computed, shallowRef, triggerRef } from 'vue'
 import {
   type TimelineItem,
   TimelineMonthRatios,
@@ -13,6 +13,16 @@ export const useTimelineStore = defineStore('timeline', () => {
 
   const monthRatios = shallowRef<TimelineMonthRatios[]>([])
   const monthItems = shallowRef(new Map<string, TimelineItem[]>())
+  const mediaItems = computed(() => {
+    const result: TimelineItem[] = []
+    const monthIds = [...monthItems.value.keys()].sort((a, b) => (a < b ? 1 : -1))
+    for (const monthId of monthIds) {
+      const group = monthItems.value.get(monthId)!
+      const len = group.length
+      for (let i = 0; i < len; i++) result.push(group[i]!)
+    }
+    return result
+  })
 
   const monthItemsLoading = new Set<string>()
   let ratiosPromise: Promise<TimelineRatiosResponse> | null = null
@@ -62,6 +72,7 @@ export const useTimelineStore = defineStore('timeline', () => {
   return {
     monthRatios,
     monthItems,
+    mediaItems,
 
     fetchMonthRatios,
     fetchMediaByMonth,

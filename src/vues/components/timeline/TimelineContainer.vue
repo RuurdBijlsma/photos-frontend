@@ -6,11 +6,15 @@ import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
-import TimelineRow from '@/vues/components/timeline/TimelineRow.vue'
+import VirtualRow from '@/vues/components/timeline/VirtualRow.vue'
 import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
 import { MONTHS } from '@/scripts/constants.ts'
+import VirtualSimpleRow from '@/vues/components/timeline/VirtualSimpleRow.vue'
+import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import VirtualSelectingRow from '@/vues/components/timeline/VirtualSelectingRow.vue'
 
 const timelineStore = useTimelineStore()
+const selectionStore = useSelectionStore()
 
 const IDEAL_ROW_HEIGHT = 240
 const MAX_SIZE_MULTIPLIER = 1.5
@@ -21,7 +25,7 @@ const MIN_SCROLL_THUMB_HEIGHT = 20
 const SCROLL_PROTRUSION_HEIGHT = 4
 
 const containerSize = shallowRef({ width: 0, height: 0 })
-const scrollTrackSize = shallowRef({ width: 0, height: 0 })
+const scrollTrackHeight = shallowRef(0)
 const currentScrollTop = ref(0)
 const rowInView = computed(() => layoutRowFromScrollTop(gridLayout.value, currentScrollTop.value))
 const dateInView = computed(() => rowInView.value?.date ?? null)
@@ -47,7 +51,7 @@ const virtualizerOptions = computed(() => ({
 const rowVirtualizer = useVirtualizer(virtualizerOptions)
 const scrollThumbHeight = computed(() =>
   Math.max(
-    (scrollTrackSize.value.height * containerSize.value.height) / scrollHeight.value,
+    (scrollTrackHeight.value * containerSize.value.height) / scrollHeight.value,
     MIN_SCROLL_THUMB_HEIGHT,
   ),
 )
@@ -74,17 +78,17 @@ const formattedTooltipLabel = computed(() => {
   return `${monthName} ${d.getFullYear()}`
 })
 const showScrollDetails = ref(false)
+const isScrollingFast = ref(false)
 const visibleYearLabels = computed(() => {
   const years = scrollLabels.value.years
   const YEAR_LABEL_HEIGHT = 20
   const yearYs: [number, number][] = []
   for (const year of years) {
     const yearY = Math.min(
-      scrollTrackSize.value.height - YEAR_LABEL_HEIGHT,
+      scrollTrackHeight.value - YEAR_LABEL_HEIGHT,
       Math.max(
         0,
-        ((scrollTrackSize.value.height - 5) * year.endOfYearOffsetTop) /
-          scrollLabels.value.totalHeight -
+        ((scrollTrackHeight.value - 5) * year.endOfYearOffsetTop) / scrollLabels.value.totalHeight -
           YEAR_LABEL_HEIGHT +
           SCROLL_PROTRUSION_HEIGHT,
       ),
@@ -314,10 +318,11 @@ async function preLoadAllMonths(
 
     if (fetchMonthRatios.length === 0 || abortSignal.aborted) {
       if (abortSignal.aborted) {
-        console.warn('ABORTED')
+        console.warn('ABORTED prefetch')
       } else {
         console.log('Fetched all media by month')
         allMonthsPreloaded = true
+        selectionStore.allIds = timelineStore.mediaItems.map((o) => o.id)
       }
       break
     }
@@ -368,35 +373,44 @@ function handleMouseDown(e: MouseEvent) {
 
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
+    const contentRect = entries[0].contentRect
     containerSize.value = {
-      width: entries[0].contentRect.width,
-      height: entries[0].contentRect.height,
+      width: contentRect.width,
+      height: contentRect.height,
     }
   }
 })
 
 useResizeObserver(scrollTrackEl, (entries) => {
-  if (entries[0]) {
-    scrollTrackSize.value = {
-      width: entries[0].contentRect.width,
-      height: entries[0].contentRect.height,
-    }
-  }
+  if (entries[0]) scrollTrackHeight.value = entries[0].contentRect.height
 })
 
-useEventListener(window, 'mousemove', (e) => {
+useEventListener(document, 'mousemove', (e) => {
   if (!isScrollDragging) return
   updateScrollPosition(e.clientY)
 })
 
-useEventListener(window, 'mouseup', (e) => {
+useEventListener(document, 'mouseup', (e) => {
   isScrollDragging = false
   updateScrollPosition(e.clientY)
+})
+
+useEventListener(document, 'keydown', (e) => {
+  if (e.key === 'a' && e.ctrlKey) {
+    selectionStore.selectAll()
+  }
+  if (e.key === 'Escape') {
+    selectionStore.deselectAll()
+  }
 })
 
 const hideScrollDetails = useDebounceFn(() => {
   showScrollDetails.value = false
 }, 5000)
+
+const stopScrollingFast = useDebounceFn(() => {
+  isScrollingFast.value = false
+}, 100)
 
 watch([() => timelineStore.monthRatios, containerSize], () => {
   const now = performance.now()
@@ -431,9 +445,14 @@ watch(
   { immediate: true },
 )
 
-watch(currentScrollTop, () => {
+watch(currentScrollTop, (newVal, oldVal) => {
   showScrollDetails.value = true
   hideScrollDetails()
+  const scrollSpeed = Math.abs(newVal - oldVal)
+  if (scrollSpeed > 500) {
+    isScrollingFast.value = true
+    stopScrollingFast()
+  }
 })
 </script>
 
@@ -459,12 +478,26 @@ watch(currentScrollTop, () => {
               transform: `translateY(${virtualRow.start}px)`,
             }"
           >
-            <timeline-row
-              v-if="gridLayout[virtualRow.index]"
-              :item="gridLayout[virtualRow.index]!"
-              :container-width="containerSize.width"
-              :item-gap="ITEM_GAP"
-            />
+            <template v-if="gridLayout[virtualRow.index]">
+              <virtual-simple-row
+                v-if="isScrollingFast"
+                :item="gridLayout[virtualRow.index]!"
+                :container-width="containerSize.width"
+                :item-gap="ITEM_GAP"
+              />
+              <virtual-selecting-row
+                v-else-if="selectionStore.isSelecting"
+                :item="gridLayout[virtualRow.index]!"
+                :container-width="containerSize.width"
+                :item-gap="ITEM_GAP"
+              />
+              <virtual-row
+                v-else
+                :item="gridLayout[virtualRow.index]!"
+                :container-width="containerSize.width"
+                :item-gap="ITEM_GAP"
+              />
+            </template>
           </div>
         </div>
       </div>
@@ -481,16 +514,22 @@ watch(currentScrollTop, () => {
       <div
         class="scroll-thumb"
         :style="{
-          height: `${scrollThumbHeight}px`,
-          transform: `translateY(${Math.min(scrollTrackSize.height - scrollThumbHeight, Math.max(0, scrollPercentage * (scrollTrackSize.height - SCROLL_PROTRUSION_HEIGHT) + SCROLL_PROTRUSION_HEIGHT / 2 - scrollThumbHeight / 2))}px)`,
+          transform: `translateY(${Math.min(scrollTrackHeight - scrollThumbHeight, Math.max(0, scrollPercentage * (scrollTrackHeight - SCROLL_PROTRUSION_HEIGHT) + SCROLL_PROTRUSION_HEIGHT / 2 - scrollThumbHeight / 2))}px)`,
         }"
       ></div>
       <div
-        class="scroll-protrusion"
+        class="scroll-protrusion-parent"
         :style="{
-          transform: `translateY(${scrollPercentage * (scrollTrackSize.height - SCROLL_PROTRUSION_HEIGHT)}px)`,
+          transform: `scaleX(${showScrollDetails || tooltipDate ? 1 : 0})`,
         }"
-      ></div>
+      >
+        <div
+          class="scroll-protrusion"
+          :style="{
+            transform: `translateY(${scrollPercentage * (scrollTrackHeight - SCROLL_PROTRUSION_HEIGHT)}px)`,
+          }"
+        ></div>
+      </div>
 
       <div
         class="scroll-tooltip"
@@ -505,7 +544,12 @@ watch(currentScrollTop, () => {
         </div>
       </div>
 
-      <div class="scroll-labels">
+      <div
+        class="scroll-labels"
+        :style="{
+          opacity: showScrollDetails || tooltipDate ? 1 : 0,
+        }"
+      >
         <div class="year-labels">
           <div
             class="year-label"
@@ -524,7 +568,7 @@ watch(currentScrollTop, () => {
             v-for="monthLabel in scrollLabels.months"
             :key="monthLabel.monthId"
             :style="{
-              transform: `translateY(${Math.max(0, ((scrollTrackSize.height - 4) * monthLabel.offsetTop) / scrollLabels.totalHeight)}px)`,
+              transform: `translateY(${Math.max(0, ((scrollTrackHeight - 4) * monthLabel.offsetTop) / scrollLabels.totalHeight)}px)`,
             }"
           ></div>
         </div>
@@ -557,6 +601,7 @@ watch(currentScrollTop, () => {
   width: 50px;
   height: 100%;
   position: relative;
+  cursor: none;
 }
 
 .scroll-track {
@@ -576,17 +621,24 @@ watch(currentScrollTop, () => {
   right: 3px;
   width: 7px;
   border-radius: 5px;
+  height: calc(v-bind(scrollThumbHeight) * 1px);
+}
+
+.scroll-protrusion-parent {
+  transform-origin: right;
+  transition: transform 0.1s ease-in-out;
+  position: absolute;
+  top: 0;
+  right: 3px;
+  width: calc(100% - 3px - 5px);
 }
 
 .scroll-protrusion {
   background-color: rgb(var(--v-theme-primary));
   height: calc(v-bind(SCROLL_PROTRUSION_HEIGHT) * 1px);
-  width: calc(100% - 3px - 5px);
-  position: absolute;
-  top: 0;
-  left: 5px;
   border-top-left-radius: 2px;
   border-top-right-radius: 2px;
+  width: 100%;
 }
 
 .scroll-thumb,
@@ -646,6 +698,7 @@ watch(currentScrollTop, () => {
   top: 0;
   right: 0;
   pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
 }
 
 .year-labels {

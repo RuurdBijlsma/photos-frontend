@@ -3,13 +3,16 @@ import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
 import photoService from '@/scripts/services/photoService.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import type { LayoutRow } from '@/scripts/types/timeline/layout.ts'
+import { computed } from 'vue'
 
 const timelineStore = useTimelineStore()
-defineProps<{
+const props = defineProps<{
   item: LayoutRow
   containerWidth: number
   itemGap: number
 }>()
+
+const monthItems = computed(() => timelineStore.monthItems.get(props.item.monthId) ?? [])
 </script>
 
 <template>
@@ -37,11 +40,11 @@ defineProps<{
         :key="mediaItem.index"
         class="virtual-scroll-item"
         :style="{
-          backgroundImage: `url(${photoService.getPhotoThumbnail(timelineStore.monthItems.get(item.monthId)?.[mediaItem.index]?.id, item.thumbnailSize)})`,
+          backgroundImage: `url(${photoService.getPhotoThumbnail(monthItems[mediaItem.index]?.id, item.thumbnailSize)})`,
           width: `${Math.round(mediaItem.ratio * item.height)}px`,
           height: `${Math.round(item.height)}px`,
         }"
-      />
+      ></div>
     </div>
   </div>
 </template>
@@ -54,13 +57,13 @@ defineProps<{
 }
 
 .first-of-the-month-row {
-  border-top-left-radius: 40px;
-  border-top-right-radius: 40px;
+  border-top-left-radius: 25px;
+  border-top-right-radius: 25px;
 }
 
 .last-of-the-month-row {
-  border-bottom-left-radius: 40px;
-  border-bottom-right-radius: 40px;
+  border-bottom-left-radius: 25px;
+  border-bottom-right-radius: 25px;
 }
 
 .row-date-header {
