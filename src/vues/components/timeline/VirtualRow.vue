@@ -58,7 +58,7 @@ function selectItem(e: PointerEvent) {
         }"
       >
         <div class="checkbox" @click.prevent="selectItem">
-          <v-icon color="primary" class="check-item" size="15" icon="mdi-check-bold"></v-icon>
+          <v-icon color="secondary" class="check-item" size="15" icon="mdi-check-bold"></v-icon>
         </div>
       </router-link>
     </div>
@@ -118,7 +118,7 @@ function selectItem(e: PointerEvent) {
   height: 25px;
   border-radius: 50%;
   display: none;
-  box-shadow: inset 0 0 0 2px rgb(var(--v-theme-primary));
+  box-shadow: inset 0 0 0 2px rgb(var(--v-theme-secondary));
   justify-content: center;
   align-items: center;
 }

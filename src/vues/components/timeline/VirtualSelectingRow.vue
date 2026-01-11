@@ -68,7 +68,7 @@ function selectItem(e: PointerEvent) {
         }"
       >
         <div class="checkbox">
-          <v-icon color="primary" class="check-item" size="15" icon="mdi-check-bold"></v-icon>
+          <v-icon color="secondary" class="check-item" size="15" icon="mdi-check-bold"></v-icon>
         </div>
       </div>
     </div>
