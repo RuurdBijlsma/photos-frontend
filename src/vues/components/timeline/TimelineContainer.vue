@@ -23,7 +23,7 @@ const SCROLL_PROTRUSION_HEIGHT = 4
 const containerSize = shallowRef({ width: 0, height: 0 })
 const scrollTrackSize = shallowRef({ width: 0, height: 0 })
 const currentScrollTop = ref(0)
-const rowInView = ref<LayoutRow | null>(null)
+const rowInView = computed(() => layoutRowFromScrollTop(gridLayout.value, currentScrollTop.value))
 const dateInView = computed(() => rowInView.value?.date ?? null)
 const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
@@ -275,7 +275,6 @@ function rawOnScroll(e: Event) {
   const target = e.target as HTMLElement
   scrollHeight.value = target.scrollHeight
   currentScrollTop.value = target.scrollTop
-  rowInView.value = layoutRowFromScrollTop(gridLayout.value, currentScrollTop.value)
 }
 
 async function preLoadAllMonths(
@@ -338,7 +337,11 @@ function updateScrollPosition(clientY: number) {
   const relativeY = Math.max(0, Math.min(clientY - trackRect.top, trackHeight))
   const percentage = relativeY / trackHeight
   const maxScrollTop = scrollHeight.value - containerSize.value.height
-  if (maxScrollTop > 0) scrollContainerEl.value.scrollTop = percentage * maxScrollTop
+  if (maxScrollTop > 0) {
+    const newScrollTop = percentage * maxScrollTop
+    scrollContainerEl.value.scrollTop = newScrollTop
+    currentScrollTop.value = newScrollTop
+  }
 }
 
 function updateTooltipPosition(clientY: number) {
@@ -386,8 +389,9 @@ useEventListener(window, 'mousemove', (e) => {
   updateScrollPosition(e.clientY)
 })
 
-useEventListener(window, 'mouseup', () => {
+useEventListener(window, 'mouseup', (e) => {
   isScrollDragging = false
+  updateScrollPosition(e.clientY)
 })
 
 const hideScrollDetails = useDebounceFn(() => {
@@ -409,10 +413,6 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
   }
   gridLayout.value = rows
   scrollHeight.value = totalHeight
-
-  if (rowInView.value === null && gridLayout.value.length > 0) {
-    rowInView.value = layoutRowFromScrollTop(gridLayout.value, 0)
-  }
 })
 
 watch(
