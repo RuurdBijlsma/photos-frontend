@@ -16,6 +16,13 @@ const photoService = {
     return new URL(path, baseUrl).href
   },
 
+  getVideo(id: string | null | undefined, size: number): string {
+    if (id === null || id === undefined) return ''
+    const baseUrl = apiClient.defaults.baseURL
+    const path = `/thumbnails/${id}/${size}p.webm`
+    return new URL(path, baseUrl).href
+  },
+
   getRandomPhoto(): Promise<AxiosResponse<RandomPhotoResponse>> {
     return apiClient.get<RandomPhotoResponse>('/photos/random')
   },

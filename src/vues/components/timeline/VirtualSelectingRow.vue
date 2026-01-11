@@ -5,6 +5,7 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import type { LayoutRow } from '@/scripts/types/timeline/layout.ts'
 import { computed } from 'vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import { toHms } from '@/scripts/utils.ts'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
@@ -28,6 +29,17 @@ function selectItem(e: PointerEvent) {
     selectionStore.toggleSelection(id)
   }
 }
+
+function videoMouseEnter(e: MouseEvent) {
+  const target = e.target as HTMLVideoElement
+  target.play()
+}
+
+function videoMouseLeave(e: MouseEvent) {
+  const target = e.target as HTMLVideoElement
+  target.pause()
+}
+
 </script>
 
 <template>
@@ -67,8 +79,30 @@ function selectItem(e: PointerEvent) {
           '--scale-y': (item.height - 8) / item.height,
         }"
       >
+        <video
+          muted
+          @mouseenter="videoMouseEnter"
+          @mouseleave="videoMouseLeave"
+          :width="Math.round(mediaItem.ratio * item.height)"
+          :height="Math.round(item.height)"
+          v-if="monthItems[mediaItem.index]?.isVideo"
+          :src="photoService.getVideo(monthItems[mediaItem.index]?.id, 480)"
+        />
         <div class="checkbox">
           <v-icon color="secondary" class="check-item" size="15" icon="mdi-check-bold"></v-icon>
+        </div>
+        <router-link
+          class="fullscreen"
+          :to="`/view/${monthItems[mediaItem.index]?.id}`"
+          title="View in fullscreen"
+        >
+          <v-icon color="white" class="fullscreen-icon" size="20" icon="mdi-fullscreen" />
+        </router-link>
+        <div class="video-info" v-if="monthItems[mediaItem.index]?.isVideo">
+          <span>{{ toHms(monthItems[mediaItem.index]?.durationMs! / 1000) }}</span>
+          <div class="is-video">
+            <v-icon color="white" class="is-video-icon" size="15" icon="mdi-play" />
+          </div>
         </div>
       </div>
     </div>
@@ -123,12 +157,20 @@ function selectItem(e: PointerEvent) {
 }
 
 .virtual-scroll-item.selected {
-  overflow: visible;
+  overflow: hidden;
   border-radius: 20px;
-  box-shadow:
-    inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
-    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
+  box-shadow: inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
+  0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
   transform: scale(var(--scale-x), var(--scale-y));
+}
+
+.virtual-scroll-item.selected video {
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  border-radius: 20px;
+  position: absolute;
+  top: 1px;
+  left: 1px;
 }
 
 .checkbox {
@@ -138,15 +180,10 @@ function selectItem(e: PointerEvent) {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  display: none;
-  box-shadow: inset 0 0 0 2px rgb(var(--v-theme-secondary));
+  display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.virtual-scroll-item.selected .checkbox,
-.virtual-scroll-item:hover .checkbox {
-  display: flex;
+  box-shadow: inset 0 0 0 2px rgb(var(--v-theme-secondary));
 }
 
 .virtual-scroll-item.selected .checkbox {
@@ -161,5 +198,61 @@ function selectItem(e: PointerEvent) {
 .virtual-scroll-item.selected .check-item,
 .checkbox:hover .check-item {
   display: block;
+}
+
+.fullscreen {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  transition: scale 0.2s ease-in-out;
+  text-decoration: none;
+  background-color: rgb(var(--v-theme-surface));
+}
+
+.fullscreen:hover {
+  transform: scale(1.2);
+}
+
+.fullscreen:active {
+  transform: scale(1.5);
+}
+
+.virtual-scroll-item:hover .fullscreen {
+  display: flex;
+}
+
+.fullscreen-icon {
+  color: rgb(var(--v-theme-on-secondary));
+}
+
+.video-info {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.video-info span {
+  font-weight: 500;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.is-video {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
+  justify-content: center;
+  align-items: center;
 }
 </style>

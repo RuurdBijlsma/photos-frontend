@@ -5,6 +5,7 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import type { LayoutRow } from '@/scripts/types/timeline/layout.ts'
 import { computed } from 'vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import { toHms } from '@/scripts/utils.ts'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
@@ -23,6 +24,17 @@ function selectItem(e: PointerEvent) {
   const id = itemElement.dataset['id'] as string
   selectionStore.toggleSelection(id)
 }
+
+function videoMouseEnter(e: MouseEvent) {
+  const target = e.target as HTMLVideoElement
+  target.play()
+}
+
+function videoMouseLeave(e: MouseEvent) {
+  const target = e.target as HTMLVideoElement
+  target.pause()
+}
+
 </script>
 
 <template>
@@ -57,8 +69,23 @@ function selectItem(e: PointerEvent) {
           height: `${Math.round(item.height)}px`,
         }"
       >
+        <video
+          muted
+          @mouseenter="videoMouseEnter"
+          @mouseleave="videoMouseLeave"
+          :width="Math.round(mediaItem.ratio * item.height)"
+          :height="Math.round(item.height)"
+          v-if="monthItems[mediaItem.index]?.isVideo"
+          :src="photoService.getVideo(monthItems[mediaItem.index]?.id, 480)"
+        />
         <div class="checkbox" @click.prevent="selectItem">
-          <v-icon color="secondary" class="check-item" size="15" icon="mdi-check-bold"></v-icon>
+          <v-icon color="secondary" class="check-item" size="15" icon="mdi-check-bold" />
+        </div>
+        <div class="video-info" v-if="monthItems[mediaItem.index]?.isVideo">
+          <span>{{ toHms(monthItems[mediaItem.index]?.durationMs! / 1000) }}</span>
+          <div class="is-video">
+            <v-icon color="white" class="is-video-icon" size="15" icon="mdi-play" />
+          </div>
         </div>
       </router-link>
     </div>
@@ -134,5 +161,30 @@ function selectItem(e: PointerEvent) {
 
 .checkbox:hover .check-item {
   display: block;
+}
+
+.video-info {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.video-info span {
+  font-weight: 500;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.is-video {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
+  justify-content: center;
+  align-items: center;
 }
 </style>
