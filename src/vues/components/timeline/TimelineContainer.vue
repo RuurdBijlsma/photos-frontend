@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
-import { useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
+import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
@@ -23,7 +23,8 @@ const SCROLL_PROTRUSION_HEIGHT = 4
 const containerSize = shallowRef({ width: 0, height: 0 })
 const scrollTrackSize = shallowRef({ width: 0, height: 0 })
 const currentScrollTop = ref(0)
-const dateInView = ref<Date | null>(null)
+const rowInView = ref<LayoutRow | null>(null)
+const dateInView = computed(() => rowInView.value?.date ?? null)
 const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
 const gridLayout = shallowRef<LayoutRow[]>([])
@@ -64,7 +65,6 @@ const scrollLabels = shallowRef<{
   months: [],
   totalHeight: 0,
 })
-
 const tooltipDate = ref<Date | null>(null)
 const tooltipY = ref(0)
 const formattedTooltipLabel = computed(() => {
@@ -73,7 +73,7 @@ const formattedTooltipLabel = computed(() => {
   const monthName = MONTHS[d.getMonth()]?.substring(0, 3) ?? ''
   return `${monthName} ${d.getFullYear()}`
 })
-
+const showScrollDetails = ref(false)
 const visibleYearLabels = computed(() => {
   const years = scrollLabels.value.years
   const YEAR_LABEL_HEIGHT = 20
@@ -246,7 +246,7 @@ function calculateLayout(
   }
 }
 
-function dateFromScrollTop(rows: LayoutRow[], scrollTop: number) {
+function layoutRowFromScrollTop(rows: LayoutRow[], scrollTop: number) {
   if (rows.length === 0) return null
 
   let low = 0
@@ -266,7 +266,7 @@ function dateFromScrollTop(rows: LayoutRow[], scrollTop: number) {
     }
   }
 
-  return rows[index]?.date ?? null
+  return rows[index] ?? null
 }
 
 const onScroll = useThrottleFn(rawOnScroll, 33)
@@ -275,20 +275,7 @@ function rawOnScroll(e: Event) {
   const target = e.target as HTMLElement
   scrollHeight.value = target.scrollHeight
   currentScrollTop.value = target.scrollTop
-  const date = dateFromScrollTop(gridLayout.value, currentScrollTop.value)
-  if (date === null) {
-    dateInView.value = null
-    return
-  }
-  const current = dateInView.value
-  if (
-    current === null ||
-    current.getFullYear() !== date.getFullYear() ||
-    current.getMonth() !== date.getMonth() ||
-    current.getDate() !== date.getDate()
-  ) {
-    dateInView.value = date
-  }
+  rowInView.value = layoutRowFromScrollTop(gridLayout.value, currentScrollTop.value)
 }
 
 async function preLoadAllMonths(
@@ -361,7 +348,8 @@ function updateTooltipPosition(clientY: number) {
   const relativeY = Math.max(0, Math.min(clientY - trackRect.top, trackHeight))
   const percentage = relativeY / trackHeight
   const scrollTop = percentage * (scrollHeight.value - containerSize.value.height)
-  tooltipDate.value = dateFromScrollTop(gridLayout.value, scrollTop)
+  const rowInView = layoutRowFromScrollTop(gridLayout.value, scrollTop)
+  tooltipDate.value = rowInView?.date ?? null
   tooltipY.value = relativeY
 }
 
@@ -402,6 +390,10 @@ useEventListener(window, 'mouseup', () => {
   isScrollDragging = false
 })
 
+const hideScrollDetails = useDebounceFn(() => {
+  showScrollDetails.value = false
+}, 5000)
+
 watch([() => timelineStore.monthRatios, containerSize], () => {
   const now = performance.now()
   const { rows, scrollYears, scrollMonths, totalHeight } = calculateLayout(
@@ -418,14 +410,19 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
   gridLayout.value = rows
   scrollHeight.value = totalHeight
 
-  if (dateInView.value === null && gridLayout.value.length > 0) {
-    dateInView.value = dateFromScrollTop(gridLayout.value, 0)
+  if (rowInView.value === null && gridLayout.value.length > 0) {
+    rowInView.value = layoutRowFromScrollTop(gridLayout.value, 0)
   }
 })
 
 watch(
   dateInView,
-  () => {
+  (newVal, oldVal) => {
+    if (oldVal && newVal) {
+      const newIso = newVal.toISOString().substring(0, 10)
+      const oldIso = oldVal.toISOString().substring(0, 10)
+      if (newIso === oldIso) return
+    }
     const date = dateInView.value
     if (!date) return
     console.log('dateInView', date.toISOString().substring(0, 7))
@@ -433,6 +430,11 @@ watch(
   },
   { immediate: true },
 )
+
+watch(currentScrollTop, () => {
+  showScrollDetails.value = true
+  hideScrollDetails()
+})
 </script>
 
 <template>
