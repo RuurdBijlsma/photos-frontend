@@ -8,6 +8,7 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
 import TimelineRow from '@/vues/components/timeline/TimelineRow.vue'
 import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
+import { MONTHS } from '@/scripts/constants.ts'
 
 const timelineStore = useTimelineStore()
 
@@ -63,8 +64,16 @@ const scrollLabels = shallowRef<{
   months: [],
   totalHeight: 0,
 })
+
 const tooltipDate = ref<Date | null>(null)
 const tooltipY = ref(0)
+const formattedTooltipLabel = computed(() => {
+  if (!tooltipDate.value) return ''
+  const d = tooltipDate.value
+  const monthName = MONTHS[d.getMonth()]?.substring(0, 3) ?? ''
+  return `${monthName} ${d.getFullYear()}`
+})
+
 const visibleYearLabels = computed(() => {
   const years = scrollLabels.value.years
   const YEAR_LABEL_HEIGHT = 20
@@ -341,7 +350,6 @@ function updateScrollPosition(clientY: number) {
   const trackHeight = trackRect.height
   const relativeY = Math.max(0, Math.min(clientY - trackRect.top, trackHeight))
   const percentage = relativeY / trackHeight
-  console.log('scroll', percentage)
   const maxScrollTop = scrollHeight.value - containerSize.value.height
   if (maxScrollTop > 0) scrollContainerEl.value.scrollTop = percentage * maxScrollTop
 }
@@ -481,6 +489,7 @@ watch(
           transform: `translateY(${scrollPercentage * (scrollTrackSize.height - SCROLL_PROTRUSION_HEIGHT)}px)`,
         }"
       ></div>
+
       <div
         class="scroll-tooltip"
         v-if="tooltipDate"
@@ -488,8 +497,12 @@ watch(
           transform: `translateY(${tooltipY}px)`,
         }"
       >
-        {{ tooltipDate }}
+        <div class="tooltip-content">
+          <span class="tooltip-text">{{ formattedTooltipLabel }}</span>
+          <div class="tooltip-line"></div>
+        </div>
       </div>
+
       <div class="scroll-labels">
         <div class="year-labels">
           <div
@@ -585,8 +598,45 @@ watch(
 
 .scroll-tooltip {
   position: absolute;
-  top:0;
-  right:0;
+  right: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  z-index: 10;
+  top: 0;
+}
+
+.tooltip-content {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.tooltip-text {
+  position: absolute;
+  right: 3px;
+  bottom: 5px;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-primary));
+  background-color: rgb(var(--v-theme-primary));
+  padding: 4px 8px;
+  border-radius: 8px 0 0 8px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tooltip-line {
+  position: absolute;
+  right: 3px;
+  top: 0;
+  width: 40px;
+  height: 2px;
+  background-color: rgb(var(--v-theme-primary));
+  border-radius: 2px 0 0 2px;
+  opacity: 0.8;
+  transform: translateY(-50%);
 }
 
 .scroll-labels {
