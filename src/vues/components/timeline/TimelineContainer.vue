@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
-import { useResizeObserver, useThrottleFn } from '@vueuse/core'
+import { useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
@@ -63,6 +63,8 @@ const scrollLabels = shallowRef<{
   months: [],
   totalHeight: 0,
 })
+const tooltipDate = ref<Date | null>(null)
+const tooltipY = ref(0)
 const visibleYearLabels = computed(() => {
   const years = scrollLabels.value.years
   const YEAR_LABEL_HEIGHT = 20
@@ -74,7 +76,8 @@ const visibleYearLabels = computed(() => {
         0,
         ((scrollTrackSize.value.height - 5) * year.endOfYearOffsetTop) /
           scrollLabels.value.totalHeight -
-          YEAR_LABEL_HEIGHT + SCROLL_PROTRUSION_HEIGHT,
+          YEAR_LABEL_HEIGHT +
+          SCROLL_PROTRUSION_HEIGHT,
       ),
     )
     yearYs.push([year.year, yearY])
@@ -86,8 +89,15 @@ const visibleYearLabels = computed(() => {
   result.push(yearYs[0]!)
 
   let prevY = yearYs.length > 0 ? yearYs[0]![1] : 0
-  for (const [year, y] of yearYs.slice(1, yearYs.length - 1)) {
+  for (let i = 1; i < yearYs.length - 1; i++) {
+    const [year, y] = yearYs[i]!
     const distToPrevLabel = y - prevY
+    if (i === yearYs.length - 2) {
+      // Second to last label, might conflict with last label that's always present
+      const lastY = yearYs[yearYs.length - 1]![1]
+      const distToNextLabel = lastY - y
+      if (distToNextLabel < YEAR_LABEL_HEIGHT) continue
+    }
     if (distToPrevLabel > YEAR_LABEL_HEIGHT) {
       result.push([year, y])
       prevY = y
@@ -99,6 +109,7 @@ const visibleYearLabels = computed(() => {
 
 let monthPreloadAbortSignal = { aborted: false }
 let allMonthsPreloaded = false
+let isScrollDragging = false
 
 interface YearScrollLabel {
   year: number
@@ -324,6 +335,38 @@ function abortMonthPreload() {
   return monthPreloadAbortSignal
 }
 
+function updateScrollPosition(clientY: number) {
+  if (!scrollTrackEl.value || !scrollContainerEl.value || !isScrollDragging) return
+  const trackRect = scrollTrackEl.value.getBoundingClientRect()
+  const trackHeight = trackRect.height
+  const relativeY = Math.max(0, Math.min(clientY - trackRect.top, trackHeight))
+  const percentage = relativeY / trackHeight
+  console.log('scroll', percentage)
+  const maxScrollTop = scrollHeight.value - containerSize.value.height
+  if (maxScrollTop > 0) scrollContainerEl.value.scrollTop = percentage * maxScrollTop
+}
+
+function updateTooltipPosition(clientY: number) {
+  if (!scrollTrackEl.value || !scrollContainerEl.value) return
+  const trackRect = scrollTrackEl.value.getBoundingClientRect()
+  const trackHeight = trackRect.height
+  const relativeY = Math.max(0, Math.min(clientY - trackRect.top, trackHeight))
+  const percentage = relativeY / trackHeight
+  const scrollTop = percentage * (scrollHeight.value - containerSize.value.height)
+  tooltipDate.value = dateFromScrollTop(gridLayout.value, scrollTop)
+  tooltipY.value = relativeY
+}
+
+function handleTooltipMove(e: MouseEvent) {
+  updateTooltipPosition(e.clientY)
+}
+
+function handleMouseDown(e: MouseEvent) {
+  e.preventDefault()
+  isScrollDragging = true
+  updateScrollPosition(e.clientY)
+}
+
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
     containerSize.value = {
@@ -340,6 +383,15 @@ useResizeObserver(scrollTrackEl, (entries) => {
       height: entries[0].contentRect.height,
     }
   }
+})
+
+useEventListener(window, 'mousemove', (e) => {
+  if (!isScrollDragging) return
+  updateScrollPosition(e.clientY)
+})
+
+useEventListener(window, 'mouseup', () => {
+  isScrollDragging = false
 })
 
 watch([() => timelineStore.monthRatios, containerSize], () => {
@@ -408,7 +460,13 @@ watch(
       </div>
     </main-layout-container>
 
-    <div class="timeline-scroll" ref="scrollTrack">
+    <div
+      class="timeline-scroll"
+      ref="scrollTrack"
+      @mousedown="handleMouseDown"
+      @mousemove="handleTooltipMove"
+      @mouseleave="tooltipDate = null"
+    >
       <div class="scroll-track"></div>
       <div
         class="scroll-thumb"
@@ -423,6 +481,15 @@ watch(
           transform: `translateY(${scrollPercentage * (scrollTrackSize.height - SCROLL_PROTRUSION_HEIGHT)}px)`,
         }"
       ></div>
+      <div
+        class="scroll-tooltip"
+        v-if="tooltipDate"
+        :style="{
+          transform: `translateY(${tooltipY}px)`,
+        }"
+      >
+        {{ tooltipDate }}
+      </div>
       <div class="scroll-labels">
         <div class="year-labels">
           <div
@@ -484,6 +551,7 @@ watch(
   position: absolute;
   right: 3px;
   top: 0;
+  pointer-events: none;
 }
 
 .scroll-thumb {
@@ -507,10 +575,18 @@ watch(
 }
 
 .scroll-thumb,
-.scroll-protrusion {
+.scroll-protrusion,
+.scroll-tooltip {
   will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
+  pointer-events: none;
+}
+
+.scroll-tooltip {
+  position: absolute;
+  top:0;
+  right:0;
 }
 
 .scroll-labels {

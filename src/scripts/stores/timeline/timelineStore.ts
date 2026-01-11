@@ -49,8 +49,14 @@ export const useTimelineStore = defineStore('timeline', () => {
 
   async function initialize() {
     await fetchMonthRatios()
-    const firstMonth = monthRatios.value[0]?.monthId
-    if (firstMonth) await fetchMediaByMonth([firstMonth])
+
+    const MONTHS_PREFETCH_COUNT = 2
+    const monthsToFetch = monthRatios.value
+      .slice(0, MONTHS_PREFETCH_COUNT)
+      .map((m) => m?.monthId)
+      .filter(Boolean)
+
+    if (monthsToFetch.length > 0) await fetchMediaByMonth(monthsToFetch)
   }
 
   return {
