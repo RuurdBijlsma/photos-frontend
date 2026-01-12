@@ -34,7 +34,6 @@ function videoMouseLeave(e: MouseEvent) {
   const target = e.target as HTMLVideoElement
   target.pause()
 }
-
 </script>
 
 <template>

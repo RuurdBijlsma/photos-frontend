@@ -6,12 +6,10 @@ import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
-import VirtualRow from '@/vues/components/timeline/VirtualRow.vue'
 import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
 import { MONTHS } from '@/scripts/constants.ts'
 import VirtualSimpleRow from '@/vues/components/timeline/VirtualSimpleRow.vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
-import VirtualSelectingRow from '@/vues/components/timeline/VirtualSelectingRow.vue'
 import VirtualRowTwo from '@/vues/components/timeline/VirtualRowTwo.vue'
 
 const timelineStore = useTimelineStore()

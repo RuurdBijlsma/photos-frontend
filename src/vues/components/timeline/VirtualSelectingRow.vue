@@ -39,7 +39,6 @@ function videoMouseLeave(e: MouseEvent) {
   const target = e.target as HTMLVideoElement
   target.pause()
 }
-
 </script>
 
 <template>
@@ -159,8 +158,9 @@ function videoMouseLeave(e: MouseEvent) {
 .virtual-scroll-item.selected {
   overflow: hidden;
   border-radius: 20px;
-  box-shadow: inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
-  0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
+    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
   transform: scale(var(--scale-x), var(--scale-y));
 }
 
