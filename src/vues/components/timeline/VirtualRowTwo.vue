@@ -11,6 +11,7 @@ const props = defineProps<{
   item: LayoutRow
   containerWidth: number
   itemGap: number
+  isScrollingFast: boolean
 }>()
 
 const monthItems = computed(() => timelineStore.monthItems.get(props.item.monthId) ?? [])
@@ -43,6 +44,7 @@ const monthItems = computed(() => timelineStore.monthItems.get(props.item.monthI
         :height="Math.round(item.height)"
         :thumbnail-size="item.thumbnailSize"
         :media-item="monthItems[mediaItem.index]"
+        :is-scrolling-fast="isScrollingFast"
       />
     </div>
   </div>

@@ -8,7 +8,6 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
 import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
 import { MONTHS } from '@/scripts/constants.ts'
-import VirtualSimpleRow from '@/vues/components/timeline/VirtualSimpleRow.vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import VirtualRowTwo from '@/vues/components/timeline/VirtualRowTwo.vue'
 
@@ -45,14 +44,14 @@ const virtualizerOptions = computed(() => ({
 
     return size
   },
-  overscan: 5,
+  overscan: 5
 }))
 const rowVirtualizer = useVirtualizer(virtualizerOptions)
 const scrollThumbHeight = computed(() =>
   Math.max(
     (scrollTrackHeight.value * containerSize.value.height) / scrollHeight.value,
-    MIN_SCROLL_THUMB_HEIGHT,
-  ),
+    MIN_SCROLL_THUMB_HEIGHT
+  )
 )
 const scrollPercentage = computed(() => {
   if (scrollHeight.value <= containerSize.value.height) return 0
@@ -66,7 +65,7 @@ const scrollLabels = shallowRef<{
 }>({
   years: [],
   months: [],
-  totalHeight: 0,
+  totalHeight: 0
 })
 const tooltipDate = ref<Date | null>(null)
 const tooltipY = ref(0)
@@ -88,9 +87,9 @@ const visibleYearLabels = computed(() => {
       Math.max(
         0,
         ((scrollTrackHeight.value - 5) * year.endOfYearOffsetTop) / scrollLabels.value.totalHeight -
-          YEAR_LABEL_HEIGHT +
-          SCROLL_PROTRUSION_HEIGHT,
-      ),
+        YEAR_LABEL_HEIGHT +
+        SCROLL_PROTRUSION_HEIGHT
+      )
     )
     yearYs.push([year.year, yearY])
   }
@@ -144,7 +143,7 @@ function getThumbnailHeight(rowHeight: number) {
 function calculateLayout(
   monthRatios: TimelineMonthRatios[],
   containerWidth: number,
-  sort: 'desc' | 'asc',
+  sort: 'desc' | 'asc'
 ) {
   if (monthRatios.length === 0 || containerWidth === 0)
     return { rows: [], scrollMonths: [], scrollYears: [], totalHeight: 0 }
@@ -169,7 +168,7 @@ function calculateLayout(
       activeYear = {
         year,
         startOfYearOffsetTop: offsetTop,
-        endOfYearOffsetTop: -1,
+        endOfYearOffsetTop: -1
       }
     }
     let firstOfTheMonth = true
@@ -184,7 +183,7 @@ function calculateLayout(
       if (itemsWidth + gapSize > containerWidth) {
         const sizeMultiplier = Math.min(
           (containerWidth - gapSize) / itemsWidth,
-          MAX_SIZE_MULTIPLIER,
+          MAX_SIZE_MULTIPLIER
         )
         const rowHeight = IDEAL_ROW_HEIGHT * sizeMultiplier
         const lastOfTheMonth = i === ratios.length - 1
@@ -197,12 +196,12 @@ function calculateLayout(
           lastOfTheMonth,
           key: `${monthId}-${layoutRows.length}`,
           offsetTop,
-          thumbnailSize: getThumbnailHeight(rowHeight),
+          thumbnailSize: getThumbnailHeight(rowHeight)
         })
         if (firstOfTheMonth) {
           monthScrollLabels.push({
             monthId,
-            offsetTop,
+            offsetTop
           })
         }
         firstOfTheMonth = false
@@ -225,12 +224,12 @@ function calculateLayout(
         lastOfTheMonth: true,
         key: `${monthId}-${layoutRows.length}`,
         offsetTop,
-        thumbnailSize: getThumbnailHeight(rowHeight),
+        thumbnailSize: getThumbnailHeight(rowHeight)
       })
       if (firstOfTheMonth) {
         monthScrollLabels.push({
           monthId,
-          offsetTop,
+          offsetTop
         })
       }
       offsetTop += Math.round(rowHeight)
@@ -245,7 +244,7 @@ function calculateLayout(
     rows: layoutRows,
     scrollMonths: monthScrollLabels,
     scrollYears: yearScrollLabels,
-    totalHeight: offsetTop,
+    totalHeight: offsetTop
   }
 }
 
@@ -283,10 +282,10 @@ function rawOnScroll(e: Event) {
 async function preLoadAllMonths(
   monthRatios: TimelineMonthRatios[],
   date: Date,
-  abortSignal: { aborted: boolean },
+  abortSignal: { aborted: boolean }
 ) {
   const currentMonthIndex = monthRatios.findIndex(
-    ({ monthId }) => monthId === date.toISOString().substring(0, 10),
+    ({ monthId }) => monthId === date.toISOString().substring(0, 10)
   )
   let i = 0
   let monthIdsToFetch: string[] = []
@@ -375,7 +374,7 @@ useResizeObserver(scrollContainerEl, (entries) => {
     const contentRect = entries[0].contentRect
     containerSize.value = {
       width: contentRect.width,
-      height: contentRect.height,
+      height: contentRect.height
     }
   }
 })
@@ -416,13 +415,13 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
   const { rows, scrollYears, scrollMonths, totalHeight } = calculateLayout(
     timelineStore.monthRatios,
     containerSize.value.width,
-    'desc',
+    'desc'
   )
   console.log('calculateLayout', performance.now() - now, 'ms')
   scrollLabels.value = {
     months: scrollMonths,
     years: scrollYears,
-    totalHeight,
+    totalHeight
   }
   gridLayout.value = rows
   scrollHeight.value = totalHeight
@@ -441,13 +440,14 @@ watch(
     console.log('dateInView', date.toISOString().substring(0, 7))
     if (!allMonthsPreloaded) preLoadAllMonths(timelineStore.monthRatios, date, abortMonthPreload())
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 watch(currentScrollTop, (newVal, oldVal) => {
   showScrollDetails.value = true
   hideScrollDetails()
   const scrollSpeed = Math.abs(newVal - oldVal)
+  // todo: make scrollFast enable at like 500 and disable at like 300 so it's not so jittery
   if (scrollSpeed > 500) {
     isScrollingFast.value = true
     stopScrollingFast()
@@ -477,20 +477,13 @@ watch(currentScrollTop, (newVal, oldVal) => {
               transform: `translateY(${virtualRow.start}px)`,
             }"
           >
-            <template v-if="gridLayout[virtualRow.index]">
-              <virtual-simple-row
-                v-if="isScrollingFast"
-                :item="gridLayout[virtualRow.index]!"
-                :container-width="containerSize.width"
-                :item-gap="ITEM_GAP"
-              />
-              <virtual-row-two
-                v-else
-                :item="gridLayout[virtualRow.index]!"
-                :container-width="containerSize.width"
-                :item-gap="ITEM_GAP"
-              />
-            </template>
+            <virtual-row-two
+              v-if="gridLayout[virtualRow.index]"
+              :item="gridLayout[virtualRow.index]!"
+              :container-width="containerSize.width"
+              :item-gap="ITEM_GAP"
+              :is-scrolling-fast="isScrollingFast"
+            />
           </div>
         </div>
       </div>
