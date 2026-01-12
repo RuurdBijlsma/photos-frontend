@@ -42,7 +42,7 @@ function selectItem(e: PointerEvent) {
       width: `${width}px`,
       height: `${height}px`,
       backgroundImage: `url(${photoService.getPhotoThumbnail(id, thumbnailSize)})`,
-      '--scale-x': (width - 8) / (width),
+      '--scale-x': (width - 8) / width,
       '--scale-y': (height - 8) / height,
     }"
   >
@@ -59,11 +59,7 @@ function selectItem(e: PointerEvent) {
         :src="photoService.getVideo(id, 480)"
       />
 
-      <div
-        v-if="selectionStore.isSelecting"
-        class="selecting-overlay"
-        @click="selectItem"
-      >
+      <div v-if="selectionStore.isSelecting" class="selecting-overlay" @click="selectItem">
         <div class="checkbox-selecting">
           <v-icon
             color="secondary"
