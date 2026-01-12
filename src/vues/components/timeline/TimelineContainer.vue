@@ -12,6 +12,7 @@ import { MONTHS } from '@/scripts/constants.ts'
 import VirtualSimpleRow from '@/vues/components/timeline/VirtualSimpleRow.vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import VirtualSelectingRow from '@/vues/components/timeline/VirtualSelectingRow.vue'
+import VirtualRowTwo from '@/vues/components/timeline/VirtualRowTwo.vue'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
@@ -485,13 +486,7 @@ watch(currentScrollTop, (newVal, oldVal) => {
                 :container-width="containerSize.width"
                 :item-gap="ITEM_GAP"
               />
-              <virtual-selecting-row
-                v-else-if="selectionStore.isSelecting"
-                :item="gridLayout[virtualRow.index]!"
-                :container-width="containerSize.width"
-                :item-gap="ITEM_GAP"
-              />
-              <virtual-row
+              <virtual-row-two
                 v-else
                 :item="gridLayout[virtualRow.index]!"
                 :container-width="containerSize.width"
