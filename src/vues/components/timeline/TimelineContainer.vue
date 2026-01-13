@@ -10,6 +10,7 @@ import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.t
 import { MONTHS } from '@/scripts/constants.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import VirtualRowTwo from '@/vues/components/timeline/VirtualRowTwo.vue'
+import SelectionOverlay from '@/vues/components/timeline/SelectionOverlay.vue'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
@@ -408,7 +409,7 @@ const hideScrollDetails = useDebounceFn(() => {
 
 const stopScrollingFast = useDebounceFn(() => {
   isScrollingFast.value = false
-}, 100)
+}, 150)
 
 watch([() => timelineStore.monthRatios, containerSize], () => {
   const now = performance.now()
@@ -446,17 +447,22 @@ watch(
 watch(currentScrollTop, (newVal, oldVal) => {
   showScrollDetails.value = true
   hideScrollDetails()
-  const scrollSpeed = Math.abs(newVal - oldVal)
-  // todo: make scrollFast enable at like 500 and disable at like 300 so it's not so jittery
-  if (scrollSpeed > 500) {
-    isScrollingFast.value = true
+
+  const scrollDelta = Math.abs(newVal - oldVal)
+  if (scrollDelta > 750) {
+    if (!isScrollingFast.value) {
+      isScrollingFast.value = true
+    }
     stopScrollingFast()
   }
+  else if (isScrollingFast.value && scrollDelta > 300)
+    stopScrollingFast()
 })
 </script>
 
 <template>
   <div class="timeline-container">
+    <selection-overlay/>
     <main-layout-container>
       <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
         <div

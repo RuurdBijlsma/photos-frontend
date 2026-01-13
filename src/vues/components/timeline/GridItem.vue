@@ -3,7 +3,7 @@ import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { toHms } from '@/scripts/utils.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import photoService from '@/scripts/services/photoService.ts'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 const props = defineProps<{
   mediaItem: TimelineItem | undefined
@@ -18,7 +18,31 @@ const selectionStore = useSelectionStore()
 const id = computed(() => props.mediaItem?.id ?? null)
 const isVideo = computed(() => props.mediaItem?.isVideo ?? false)
 const durationMs = computed(() => props.mediaItem?.durationMs ?? 0)
-const videoHover = ref(false)
+const videoMount = ref(false)
+const temporaryVideoMount = ref(false)
+
+function videoMouseEnter(e: MouseEvent) {
+  temporaryVideoMount.value = true
+  nextTick(() => {
+    const target = e.target as HTMLElement
+    const item = target.closest('.virtual-scroll-item') as HTMLElement
+    const video = item.querySelector('video') as HTMLVideoElement
+    if (video?.paused)
+      video?.play()
+  })
+}
+
+function videoMouseLeave(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  const item = target.closest('.virtual-scroll-item') as HTMLElement
+  const video = item.querySelector('video') as HTMLVideoElement
+  if (!video?.paused)
+    video?.pause()
+  temporaryVideoMount.value = false
+  if ((video?.currentTime ?? 0) > 1) {
+    videoMount.value = true
+  }
+}
 
 function selectItem(e: PointerEvent) {
   const itemId = id.value
@@ -48,7 +72,7 @@ function selectItem(e: PointerEvent) {
   >
     <template v-if="!isScrollingFast">
       <video
-        v-if="isVideo && videoHover"
+        v-if="isVideo && (videoMount || temporaryVideoMount)"
         class="video-content"
         autoplay
         muted
@@ -73,8 +97,8 @@ function selectItem(e: PointerEvent) {
         </router-link>
         <div
           class="video-events"
-          @mouseenter="videoHover = true"
-          @mouseleave="videoHover = false"
+          @mouseenter="videoMouseEnter"
+          @mouseleave="videoMouseLeave"
           v-if="isVideo"
         />
       </div>
@@ -83,8 +107,8 @@ function selectItem(e: PointerEvent) {
         <router-link class="view-link" :to="`/view/${id}`">
           <div
             class="video-events"
-            @mouseenter="videoHover = true"
-            @mouseleave="videoHover = false"
+            @mouseenter="videoMouseEnter"
+            @mouseleave="videoMouseLeave"
             v-if="isVideo"
           />
         </router-link>
@@ -116,9 +140,8 @@ function selectItem(e: PointerEvent) {
 .virtual-scroll-item.selected {
   overflow: hidden;
   border-radius: 20px;
-  box-shadow:
-    inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
-    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
+  box-shadow: inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
+  0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
   transform: scale(var(--scale-x), var(--scale-y));
 }
 
