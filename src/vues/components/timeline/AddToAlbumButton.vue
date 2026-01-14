@@ -99,8 +99,8 @@ async function addToAlbum(album: Album) {
           <div class="list-content">
             <div class="list-left">
               <v-list-item-title v-tooltip:top="album.name" v-if="album.name !== ''">{{
-                  album.name
-                }}</v-list-item-title>
+                album.name
+              }}</v-list-item-title>
               <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
               <v-list-item-subtitle>
                 {{ album.mediaCount }} item{{ album.mediaCount === 1 ? '' : 's' }}
@@ -121,7 +121,7 @@ async function addToAlbum(album: Album) {
       </v-list>
       <v-card-actions class="card-actions">
         <v-btn @click="createNew" rounded class="px-5"
-        ><v-icon icon="mdi-plus" class="mr-2"></v-icon> Create new album</v-btn
+          ><v-icon icon="mdi-plus" class="mr-2"></v-icon> Create new album</v-btn
         >
       </v-card-actions>
     </v-card>

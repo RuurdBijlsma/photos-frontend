@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import AddToAlbumButton from '@/vues/components/timeline/AddToAlbumButton.vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 
@@ -53,8 +52,9 @@ const selectionStore = useSelectionStore()
   border-radius: 40px;
   background-color: rgba(var(--v-theme-surface-container-high), 1);
   color: rgba(var(--v-theme-on-surface-container-high), 1);
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2),
-  0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  box-shadow:
+    0 4px 8px 0 rgba(0, 0, 0, 0.2),
+    0 6px 20px 0 rgba(0, 0, 0, 0.19);
   display: flex;
   align-items: center;
   justify-content: space-between;

@@ -67,7 +67,7 @@ const truncatedIds = computed(() => props.mediaItemIds.slice(0, 5))
   /* Stack offset per image */
   z-index: calc(100 - var(--i));
   transform: translateY(calc((1 - var(--percentage)) * -50px))
-  scale(calc(1 + var(--percentage) / 3));
+    scale(calc(1 + var(--percentage) / 3));
   opacity: calc(pow(var(--percentage), 2));
 }
 </style>

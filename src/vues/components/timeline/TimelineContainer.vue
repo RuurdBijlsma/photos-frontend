@@ -11,6 +11,7 @@ import { MONTHS } from '@/scripts/constants.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import VirtualRowTwo from '@/vues/components/timeline/VirtualRowTwo.vue'
 import SelectionOverlay from '@/vues/components/timeline/SelectionOverlay.vue'
+import DateOverlay from '@/vues/components/timeline/DateOverlay.vue'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
@@ -27,7 +28,16 @@ const containerSize = shallowRef({ width: 0, height: 0 })
 const scrollTrackHeight = shallowRef(0)
 const currentScrollTop = ref(0)
 const rowInView = computed(() => layoutRowFromScrollTop(gridLayout.value, currentScrollTop.value))
-const dateInView = computed(() => rowInView.value?.date ?? null)
+const monthInView = computed(() => rowInView.value?.date ?? null)
+const mediaItemInView = computed(
+  () =>
+    timelineStore.monthItems.get(rowInView.value?.monthId ?? '')?.[
+      rowInView.value?.items[0]?.index ?? -1
+    ] ?? null,
+)
+const mediaItemInViewDate = computed(() =>
+  mediaItemInView.value?.timestamp ? new Date(mediaItemInView.value.timestamp) : null,
+)
 const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
 const gridLayout = shallowRef<LayoutRow[]>([])
@@ -429,16 +439,16 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
 })
 
 watch(
-  dateInView,
+  monthInView,
   (newVal, oldVal) => {
     if (oldVal && newVal) {
       const newIso = newVal.toISOString().substring(0, 10)
       const oldIso = oldVal.toISOString().substring(0, 10)
       if (newIso === oldIso) return
     }
-    const date = dateInView.value
+    const date = monthInView.value
     if (!date) return
-    console.log('dateInView', date.toISOString().substring(0, 7))
+    console.log('monthInView', date.toISOString().substring(0, 7))
     if (!allMonthsPreloaded) preLoadAllMonths(timelineStore.monthRatios, date, abortMonthPreload())
   },
   { immediate: true },
@@ -454,16 +464,21 @@ watch(currentScrollTop, (newVal, oldVal) => {
       isScrollingFast.value = true
     }
     stopScrollingFast()
-  }
-  else if (isScrollingFast.value && scrollDelta > 300)
-    stopScrollingFast()
+  } else if (isScrollingFast.value && scrollDelta > 300) stopScrollingFast()
+})
+
+const overlayDate = computed(() => {
+  if (currentScrollTop.value < 600) return null
+  if (selectionStore.hoverDate === null || isScrollingFast.value) return mediaItemInViewDate.value
+  return new Date(selectionStore.hoverDate)
 })
 </script>
 
 <template>
   <div class="timeline-container">
-    <selection-overlay/>
     <main-layout-container>
+      <selection-overlay />
+      <date-overlay :date="overlayDate" />
       <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
         <div
           :style="{

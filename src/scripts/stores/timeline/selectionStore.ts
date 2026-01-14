@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
-import { computed, shallowRef, triggerRef } from 'vue'
+import { computed, ref, shallowRef, triggerRef } from 'vue'
 
 export const useSelectionStore = defineStore('selection', () => {
   const allIds = shallowRef<string[]>([])
   const selection = shallowRef(new Set<string>())
   const isSelecting = computed(() => selection.value.size > 0)
+  const hoverDate = ref<string | null>(null)
+
   let anchorId: string | null = null
 
   function toggleSelection(id: string) {
@@ -58,6 +60,7 @@ export const useSelectionStore = defineStore('selection', () => {
     allIds,
     selection,
     isSelecting,
+    hoverDate,
 
     toggleSelection,
     selectAll,

@@ -3,7 +3,7 @@ import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { toHms } from '@/scripts/utils.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import photoService from '@/scripts/services/photoService.ts'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 
 const props = defineProps<{
   mediaItem: TimelineItem | undefined
@@ -19,26 +19,28 @@ const id = computed(() => props.mediaItem?.id ?? null)
 const isVideo = computed(() => props.mediaItem?.isVideo ?? false)
 const durationMs = computed(() => props.mediaItem?.durationMs ?? 0)
 const videoMount = ref(false)
-const temporaryVideoMount = ref(false)
+const hovering = ref(false)
 
-function videoMouseEnter(e: MouseEvent) {
-  temporaryVideoMount.value = true
+function mouseEnter(e: MouseEvent) {
+  selectionStore.hoverDate = props.mediaItem?.timestamp ?? null
+  hovering.value = true
+  if (!isVideo.value) return
   nextTick(() => {
     const target = e.target as HTMLElement
     const item = target.closest('.virtual-scroll-item') as HTMLElement
     const video = item.querySelector('video') as HTMLVideoElement
-    if (video?.paused)
-      video?.play()
+    if (video?.paused) video?.play()
   })
 }
 
-function videoMouseLeave(e: MouseEvent) {
+function mouseLeave(e: MouseEvent) {
+  selectionStore.hoverDate = null
+  hovering.value = false
+  if (!isVideo.value) return
   const target = e.target as HTMLElement
   const item = target.closest('.virtual-scroll-item') as HTMLElement
   const video = item.querySelector('video') as HTMLVideoElement
-  if (!video?.paused)
-    video?.pause()
-  temporaryVideoMount.value = false
+  if (!video?.paused) video?.pause()
   if ((video?.currentTime ?? 0) > 1) {
     videoMount.value = true
   }
@@ -72,7 +74,7 @@ function selectItem(e: PointerEvent) {
   >
     <template v-if="!isScrollingFast">
       <video
-        v-if="isVideo && (videoMount || temporaryVideoMount)"
+        v-if="isVideo && (videoMount || hovering)"
         class="video-content"
         autoplay
         muted
@@ -95,22 +97,12 @@ function selectItem(e: PointerEvent) {
         <router-link class="fullscreen" :to="`/view/${id}`" title="View in fullscreen" @click.stop>
           <v-icon color="white" class="fullscreen-icon" size="20" icon="mdi-fullscreen" />
         </router-link>
-        <div
-          class="video-events"
-          @mouseenter="videoMouseEnter"
-          @mouseleave="videoMouseLeave"
-          v-if="isVideo"
-        />
+        <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
       </div>
 
       <template v-else>
         <router-link class="view-link" :to="`/view/${id}`">
-          <div
-            class="video-events"
-            @mouseenter="videoMouseEnter"
-            @mouseleave="videoMouseLeave"
-            v-if="isVideo"
-          />
+          <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
         </router-link>
         <div class="checkbox" @click.prevent="selectItem">
           <v-icon color="secondary" class="check-item" size="15" icon="mdi-check-bold" />
@@ -140,8 +132,9 @@ function selectItem(e: PointerEvent) {
 .virtual-scroll-item.selected {
   overflow: hidden;
   border-radius: 20px;
-  box-shadow: inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
-  0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(var(--v-theme-secondary), 1),
+    0 0 0 4px rgba(var(--v-theme-secondary), 0.4);
   transform: scale(var(--scale-x), var(--scale-y));
 }
 
