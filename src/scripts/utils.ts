@@ -1,3 +1,5 @@
+import { THUMBNAIL_SIZES } from '@/scripts/constants.ts'
+
 export function prettyBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return '0 B'
 
@@ -31,4 +33,11 @@ export function toHms(totalSeconds: number) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+export function getThumbnailHeight(rowHeight: number) {
+  for (const size of THUMBNAIL_SIZES) {
+    if (size > rowHeight) return size
+  }
+  return THUMBNAIL_SIZES[THUMBNAIL_SIZES.length - 1]!
 }

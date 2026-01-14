@@ -2,8 +2,8 @@
 import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { toHms } from '@/scripts/utils.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
-import photoService from '@/scripts/services/photoService.ts'
 import { computed, nextTick, ref } from 'vue'
+import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 const props = defineProps<{
   mediaItem: TimelineItem | undefined
@@ -67,7 +67,7 @@ function selectItem(e: PointerEvent) {
     :style="{
       width: `${width}px`,
       height: `${height}px`,
-      backgroundImage: `url(${photoService.getPhotoThumbnail(id, thumbnailSize)})`,
+      backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, thumbnailSize)})`,
       '--scale-x': (width - 8) / width,
       '--scale-y': (height - 8) / height,
     }"
@@ -82,7 +82,7 @@ function selectItem(e: PointerEvent) {
         playsinline
         :width="width"
         :height="height"
-        :src="photoService.getVideo(id, 480)"
+        :src="mediaItemService.getVideo(id, 480)"
       />
 
       <div v-if="selectionStore.isSelecting" class="selecting-overlay" @click="selectItem">

@@ -5,7 +5,7 @@ import {
   TimelineMonthRatios,
   type TimelineRatiosResponse,
 } from '@/scripts/types/generated/timeline.ts'
-import photoService from '@/scripts/services/photoService.ts'
+import timelineService from '@/scripts/services/timelineService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 
 export const useTimelineStore = defineStore('timeline', () => {
@@ -23,13 +23,15 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
     return result
   })
+  const mediaItemIds = computed(() => mediaItems.value.map((m) => m.id))
+  const totalMediaCount = computed(() => monthRatios.value.reduce((a, b) => a + b.count, 0))
 
   const monthItemsLoading = new Set<string>()
   let ratiosPromise: Promise<TimelineRatiosResponse> | null = null
 
   async function fetchMonthRatios() {
     try {
-      if (!ratiosPromise) ratiosPromise = photoService.getTimelineRatios()
+      if (!ratiosPromise) ratiosPromise = timelineService.getTimelineRatios()
       const response = await ratiosPromise
       monthRatios.value = response.months
     } catch (e) {
@@ -45,7 +47,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     monthIds.forEach((m) => monthItemsLoading.add(m))
 
     try {
-      const response = await photoService.getMediaByMonths(monthIds)
+      const response = await timelineService.getMediaByMonths(monthIds)
       for (const { monthId, items } of response.months) {
         monthItems.value.set(monthId, items)
       }
@@ -73,6 +75,8 @@ export const useTimelineStore = defineStore('timeline', () => {
     monthRatios,
     monthItems,
     mediaItems,
+    mediaItemIds,
+    totalMediaCount,
 
     fetchMonthRatios,
     fetchMediaByMonth,

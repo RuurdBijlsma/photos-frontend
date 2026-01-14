@@ -5,22 +5,26 @@ import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } fro
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
-import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
+import { getThumbnailHeight, requestIdleCallbackAsync } from '@/scripts/utils.ts'
 import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
 import { MONTHS } from '@/scripts/constants.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import VirtualRowTwo from '@/vues/components/timeline/VirtualRowTwo.vue'
 import SelectionOverlay from '@/vues/components/timeline/SelectionOverlay.vue'
 import DateOverlay from '@/vues/components/timeline/DateOverlay.vue'
+import { useRoute } from 'vue-router'
+import timelineService from '@/scripts/services/timelineService.ts'
+import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
+const viewPhotoStore = useViewPhotoStore()
+const route = useRoute()
 
 const IDEAL_ROW_HEIGHT = 240
 const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 2
 const ROW_HEADER_HEIGHT = 76
-const THUMBNAIL_SIZES = [144, 240, 360, 480, 720, 1080, 1440]
 const MIN_SCROLL_THUMB_HEIGHT = 20
 const SCROLL_PROTRUSION_HEIGHT = 4
 
@@ -128,6 +132,11 @@ const visibleYearLabels = computed(() => {
   if (yearYs.length > 1) result.push(yearYs[yearYs.length - 1]!)
   return result
 })
+const overlayDate = computed(() => {
+  if (currentScrollTop.value < 600) return null
+  if (selectionStore.hoverDate === null || isScrollingFast.value) return mediaItemInViewDate.value
+  return new Date(selectionStore.hoverDate)
+})
 
 let monthPreloadAbortSignal = { aborted: false }
 let allMonthsPreloaded = false
@@ -142,13 +151,6 @@ interface YearScrollLabel {
 interface MonthScrollLabel {
   monthId: string
   offsetTop: number
-}
-
-function getThumbnailHeight(rowHeight: number) {
-  for (const size of THUMBNAIL_SIZES) {
-    if (size > rowHeight) return size
-  }
-  return THUMBNAIL_SIZES[THUMBNAIL_SIZES.length - 1]!
 }
 
 function calculateLayout(
@@ -331,7 +333,7 @@ async function preLoadAllMonths(
       } else {
         console.log('Fetched all media by month')
         allMonthsPreloaded = true
-        selectionStore.allIds = timelineStore.mediaItems.map((o) => o.id)
+        selectionStore.allIds = timelineStore.mediaItemIds
       }
       break
     }
@@ -380,6 +382,23 @@ function handleMouseDown(e: MouseEvent) {
   updateScrollPosition(e.clientY)
 }
 
+async function fetchViewPhotoIds() {
+  const response = await timelineService.getTimelineIds()
+  viewPhotoStore.ids = response.data
+}
+
+async function initializeViewPhoto() {
+  console.log('ROUTE NAME', route.name)
+
+  if (route.name === 'view-photo') {
+    await fetchViewPhotoIds()
+  } else {
+    await requestIdleCallbackAsync(fetchViewPhotoIds)
+  }
+}
+
+initializeViewPhoto()
+
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
     const contentRect = entries[0].contentRect
@@ -406,9 +425,11 @@ useEventListener(document, 'mouseup', (e) => {
 
 useEventListener(document, 'keydown', (e) => {
   if (e.key === 'a' && e.ctrlKey) {
+    e.preventDefault()
     selectionStore.selectAll()
   }
-  if (e.key === 'Escape') {
+  if (e.key === 'Escape' && route.name === 'timeline') {
+    e.preventDefault()
     selectionStore.deselectAll()
   }
 })
@@ -466,12 +487,6 @@ watch(currentScrollTop, (newVal, oldVal) => {
     stopScrollingFast()
   } else if (isScrollingFast.value && scrollDelta > 300) stopScrollingFast()
 })
-
-const overlayDate = computed(() => {
-  if (currentScrollTop.value < 600) return null
-  if (selectionStore.hoverDate === null || isScrollingFast.value) return mediaItemInViewDate.value
-  return new Date(selectionStore.hoverDate)
-})
 </script>
 
 <template>
@@ -479,6 +494,9 @@ const overlayDate = computed(() => {
     <main-layout-container>
       <selection-overlay />
       <date-overlay :date="overlayDate" />
+      <teleport to="body">
+        <router-view />
+      </teleport>
       <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
         <div
           :style="{

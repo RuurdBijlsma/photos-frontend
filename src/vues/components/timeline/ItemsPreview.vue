@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import photoService from '@/scripts/services/photoService.ts'
 import { computed } from 'vue'
+import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 const props = defineProps<{
   mediaItemIds: string[]
@@ -24,7 +24,7 @@ const truncatedIds = computed(() => props.mediaItemIds.slice(0, 5))
         :style="{
           '--percentage': (truncatedIds.length - i) * (1 / truncatedIds.length),
           '--i': i,
-          backgroundImage: `url(${photoService.getPhotoThumbnail(id, 144)})`,
+          backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, 144)})`,
         }"
       />
     </div>

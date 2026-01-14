@@ -3,6 +3,7 @@ import MainLayout from '@/vues/layouts/MainLayout.vue'
 import TimelineView from '@/vues/views/main/TimelineView.vue'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import ViewPhoto from '@/vues/views/main/ViewPhoto.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +18,13 @@ const router = createRouter({
           path: '/',
           name: 'timeline',
           component: TimelineView,
+          children: [
+            {
+              path: '/view/:mediaId',
+              name: 'view-photo',
+              component: ViewPhoto,
+            },
+          ],
         },
         {
           path: '/explore',

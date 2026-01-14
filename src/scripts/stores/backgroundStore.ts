@@ -1,13 +1,11 @@
-// src/stores/backgroundStore.ts
-
 import { ref, shallowRef, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { useThemeStore } from '@/scripts/stores/themeStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import type { Theme } from '@/scripts/types/themeColor.ts'
-import photoService from '@/scripts/services/photoService.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 // The single key we will use for localStorage
 const BG_CACHE_KEY = 'cachedBackgroundData'
@@ -34,14 +32,14 @@ export const useBackgroundStore = defineStore('background', () => {
     hasFetchedForThisSession.value = true
 
     try {
-      const response = await photoService.getRandomPhoto()
+      const response = await mediaItemService.getRandomPhoto()
       const photo = response.data
       if (photo === null) {
         console.warn('getRandomPhoto returned null, probably no photos in DB with a theme.')
         return
       }
 
-      const newBgUrl = photoService.getPhotoThumbnail(photo.mediaId, 1080)
+      const newBgUrl = mediaItemService.getPhotoThumbnail(photo.mediaId, 1080)
       const newTheme = photo.themes?.[0]
 
       if (newTheme) {
@@ -78,7 +76,7 @@ export const useBackgroundStore = defineStore('background', () => {
 
     // Get from API
     try {
-      const { data } = await photoService.getTheme(color)
+      const { data } = await mediaItemService.getTheme(color)
       localStorage.setItem(COLOR_CACHE_KEY, JSON.stringify({ color, theme: data }))
       colorTheme.value = data
       return data
