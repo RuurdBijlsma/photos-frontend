@@ -20,7 +20,7 @@ const route = useRoute()
 const viewPhotoStore = useViewPhotoStore()
 const selectionStore = useSelectionStore()
 
-const IDEAL_ROW_HEIGHT = 240
+const IDEAL_ROW_HEIGHT = 330
 const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 2
 const MIN_THUMB_HEIGHT = 20
@@ -29,6 +29,8 @@ const SNAP_MARGIN = 20
 const gridLayout = shallowRef<SimpleLayoutRow[]>([])
 const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
+const customSlotEl = useTemplateRef('customSlot')
+const customSlotHeight = ref(0)
 const containerHeight = ref(0)
 const containerWidth = ref(0)
 const contentHeight = ref(0)
@@ -93,7 +95,7 @@ function calculateLayout(timelineItems: AlbumTimelineItem[], containerWidth: num
       })
       rowItems = []
       rowWidth = 0
-      offsetTop += Math.round(rowHeight)
+      offsetTop += Math.round(rowHeight) + ITEM_GAP
     }
   }
 
@@ -109,7 +111,7 @@ function calculateLayout(timelineItems: AlbumTimelineItem[], containerWidth: num
       firstRow: layoutRows.length === 0,
       lastRow: true,
     })
-    offsetTop += Math.round(rowHeight)
+    offsetTop += Math.round(rowHeight) + ITEM_GAP
   }
 
   return {
@@ -127,7 +129,9 @@ function applyScrollFromMouseY(clientY: number) {
   newThumbY = Math.max(0, Math.min(newThumbY, maxThumbTravel))
   const scrollRatio = newThumbY / maxThumbTravel
   const maxScroll = contentHeight.value - containerHeight.value
-  scrollContainerEl.value.scrollTop = scrollRatio * maxScroll
+  const targetScrollTop = scrollRatio * maxScroll
+  scrollContainerEl.value.scrollTop = targetScrollTop
+  scrollTop.value = targetScrollTop
 }
 
 function handleMouseDown(e: MouseEvent) {
@@ -156,20 +160,22 @@ function handleMouseDown(e: MouseEvent) {
 function handleFastScroll(currentY: number) {
   const scrollDelta = Math.abs(currentY - lastScrollTop)
   lastScrollTop = currentY
-  console.log(scrollDelta)
-  if (scrollDelta > 750) {
+  if (scrollDelta > 500) {
     if (!isScrollingFast.value) {
       isScrollingFast.value = true
     }
     stopScrollingFast()
-  } else if (isScrollingFast.value && scrollDelta > 300) stopScrollingFast()
+  } else if (isScrollingFast.value && scrollDelta > 200) stopScrollingFast()
 }
 
 const onScroll = useThrottleFn((e: Event) => {
   const target = e.target as HTMLElement
+  contentHeight.value = target.scrollHeight
   scrollTop.value = target.scrollTop
   handleFastScroll(target.scrollTop)
 }, 16)
+
+watch(isScrollingFast, () => console.log('isScrollingFast', isScrollingFast.value))
 
 const stopScrollingFast = useDebounceFn(() => {
   isScrollingFast.value = false
@@ -187,11 +193,17 @@ useResizeObserver(scrollTrackEl, (entries) => {
     trackHeight.value = entries[0].contentRect.height
   }
 })
+useResizeObserver(customSlotEl, (entries) => {
+  if (entries[0]) {
+    customSlotHeight.value = entries[0].contentRect.height
+  }
+})
 
 watch([() => props.timelineItems, containerWidth], () => {
   const { rows, totalHeight } = calculateLayout(props.timelineItems, containerWidth.value)
   gridLayout.value = rows
-  contentHeight.value = totalHeight
+  console.log('customSlotHeight', customSlotHeight.value)
+  contentHeight.value = totalHeight + customSlotHeight.value
 })
 
 watch(
@@ -233,7 +245,9 @@ useEventListener(document, 'keydown', (e) => {
       </teleport>
 
       <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
-        <slot></slot>
+        <div ref="customSlot">
+          <slot></slot>
+        </div>
         <div
           class="grid"
           :style="{
