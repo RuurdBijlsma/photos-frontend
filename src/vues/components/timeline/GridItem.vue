@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { TimelineItem } from '@/scripts/types/generated/timeline.ts'
+import type { AlbumTimelineItem, TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { toHms } from '@/scripts/utils.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import { computed, nextTick, ref } from 'vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 const props = defineProps<{
-  mediaItem: TimelineItem | undefined
+  mediaItem: TimelineItem | AlbumTimelineItem | undefined
   width: number
   height: number
   thumbnailSize: number
@@ -22,7 +22,9 @@ const videoMount = ref(false)
 const hovering = ref(false)
 
 function mouseEnter(e: MouseEvent) {
-  selectionStore.hoverDate = props.mediaItem?.timestamp ?? null
+  if (props.mediaItem && 'timestamp' in props.mediaItem) {
+    selectionStore.hoverDate = props.mediaItem.timestamp ?? null
+  }
   hovering.value = true
   if (!isVideo.value) return
   nextTick(() => {

@@ -41,6 +41,18 @@ const router = createRouter({
           name: 'albums',
           component: () => import('@/vues/views/library/AlbumsLibrary.vue'),
         },
+        {
+          path: '/album/:albumId',
+          name: 'albums',
+          component: () => import('@/vues/views/library/AlbumView.vue'),
+          children: [
+            {
+              path: '/view/:mediaId',
+              name: 'view-photo',
+              component: ViewPhoto,
+            },
+          ],
+        },
       ],
     },
     {

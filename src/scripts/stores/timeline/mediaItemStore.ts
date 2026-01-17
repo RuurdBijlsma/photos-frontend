@@ -22,8 +22,6 @@ export const useMediaItemStore = defineStore('mediaItem', () => {
 
     mediaItems.value.set(id, result.data)
     triggerRef(mediaItems)
-
-    return result.data
   }
 
   return {

@@ -23,7 +23,7 @@ const id = computed(() => {
   const rawId = route.params.mediaId
   if (rawId && !Array.isArray(rawId)) return rawId
   console.warn('WEIRD ID IN ROUTE DETECTED')
-  return ''
+  return null
 })
 
 const isSelected = computed(() => selectionStore.selection.has(id.value))

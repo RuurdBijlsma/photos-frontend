@@ -9,7 +9,7 @@ import { getThumbnailHeight, requestIdleCallbackAsync } from '@/scripts/utils.ts
 import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
 import { MONTHS } from '@/scripts/constants.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
-import VirtualRowTwo from '@/vues/components/timeline/VirtualRowTwo.vue'
+import VirtualRow from '@/vues/components/timeline/VirtualRow.vue'
 import SelectionOverlay from '@/vues/components/timeline/SelectionOverlay.vue'
 import DateOverlay from '@/vues/components/timeline/DateOverlay.vue'
 import { useRoute } from 'vue-router'
@@ -54,6 +54,7 @@ const virtualizerOptions = computed(() => ({
     if (!row) return 0
 
     let size = row.height
+    // todo: is this gap logic correct? doesnt every row have a ITEM_GAP? or is that accounted for or something? idk
     if (row.firstOfTheMonth) size += ROW_HEADER_HEIGHT
     if (!row.lastOfTheMonth) size += ITEM_GAP
 
@@ -284,13 +285,12 @@ function layoutRowFromScrollTop(rows: LayoutRow[], scrollTop: number) {
   return rows[index] ?? null
 }
 
-const onScroll = useThrottleFn(rawOnScroll, 33)
-
 function rawOnScroll(e: Event) {
   const target = e.target as HTMLElement
   scrollHeight.value = target.scrollHeight
   currentScrollTop.value = target.scrollTop
 }
+const onScroll = useThrottleFn(rawOnScroll, 33)
 
 async function preLoadAllMonths(
   monthRatios: TimelineMonthRatios[],
@@ -516,7 +516,7 @@ watch(currentScrollTop, (newVal, oldVal) => {
               transform: `translateY(${virtualRow.start}px)`,
             }"
           >
-            <virtual-row-two
+            <virtual-row
               v-if="gridLayout[virtualRow.index]"
               :item="gridLayout[virtualRow.index]!"
               :container-width="containerSize.width"

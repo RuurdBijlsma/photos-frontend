@@ -18,7 +18,7 @@ const monthItems = computed(() => timelineStore.monthItems.get(props.item.monthI
 </script>
 
 <template>
-  <div style="width: 100%">
+  <div>
     <div class="row-date-header" v-if="item.firstOfTheMonth">
       <h2>{{ MONTHS[item.date.getMonth()] }}</h2>
       <h3 v-if="item.date.getFullYear() !== CURRENT_YEAR">
