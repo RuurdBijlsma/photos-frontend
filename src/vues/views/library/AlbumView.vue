@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { computed, ref, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
@@ -84,38 +83,30 @@ watch(
 </script>
 
 <template>
-  <main-layout-container>
-    <div class="album-view">
-      <simple-timeline :timeline-items="items">
-        <div class="album-header">
-          <div class="album-header-left">
-            <glow-image
-              border-radius="44px"
-              :height="222"
-              :src="mediaItemService.getPhotoThumbnail(thumbnailId, 720)"
-            ></glow-image>
-          </div>
-          <div class="album-header-right">
-            <editable-title
-              v-if="albumTitle !== null"
-              name="album title"
-              :autofocus="route.query?.create === '1'"
-              v-model="albumTitle"
-            />
+  <simple-timeline :timeline-items="items">
+    <div class="album-header">
+      <div class="album-header-left">
+        <glow-image
+          border-radius="44px"
+          :height="222"
+          :src="mediaItemService.getPhotoThumbnail(thumbnailId, 720)"
+        ></glow-image>
+      </div>
+      <div class="album-header-right">
+        <editable-title
+          v-if="albumTitle !== null"
+          name="album title"
+          :autofocus="route.query?.create === '1'"
+          v-model="albumTitle"
+        />
 
-            <p v-if="description">{{ description }}</p>
-          </div>
-        </div>
-      </simple-timeline>
+        <p v-if="description">{{ description }}</p>
+      </div>
     </div>
-  </main-layout-container>
+  </simple-timeline>
 </template>
 
 <style scoped>
-.album-view {
-  height: 100%;
-}
-
 .album-header {
   display: flex;
   width: 100%;

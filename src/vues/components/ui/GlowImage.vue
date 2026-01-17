@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { PathInfoResponse } from '@/scripts/types/api/onboarding.ts'
 
 withDefaults(defineProps<{
   src: string,

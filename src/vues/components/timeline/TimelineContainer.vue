@@ -54,7 +54,6 @@ const virtualizerOptions = computed(() => ({
     if (!row) return 0
 
     let size = row.height
-    // todo: is this gap logic correct? doesnt every row have a ITEM_GAP? or is that accounted for or something? idk
     if (row.firstOfTheMonth) size += ROW_HEADER_HEIGHT
     if (!row.lastOfTheMonth) size += ITEM_GAP
 

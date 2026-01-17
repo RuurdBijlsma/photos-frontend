@@ -2,6 +2,15 @@
 import AddToAlbumButton from '@/vues/components/timeline/AddToAlbumButton.vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 
+withDefaults(
+  defineProps<{
+    excludeAlbumIds?: string[]
+  }>(),
+  {
+    excludeAlbumIds: () => [],
+  },
+)
+
 const selectionStore = useSelectionStore()
 </script>
 
@@ -20,7 +29,10 @@ const selectionStore = useSelectionStore()
         ><span> selected</span>
       </div>
       <v-spacer />
-      <add-to-album-button :ids-to-add="[...selectionStore.selection]" />
+      <add-to-album-button
+        :exclude-album-ids="excludeAlbumIds"
+        :ids-to-add="[...selectionStore.selection]"
+      />
       <v-btn
         icon="mdi-delete-outline"
         variant="plain"

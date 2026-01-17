@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import albumService from '@/scripts/services/albumService.ts'
 import { useRouter } from 'vue-router'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
@@ -9,9 +9,15 @@ import ItemsPreview from '@/vues/components/timeline/ItemsPreview.vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
-const props = defineProps<{
-  idsToAdd: string[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    excludeAlbumIds?: string[]
+    idsToAdd: string[]
+  }>(),
+  {
+    excludeAlbumIds: () => [],
+  },
+)
 
 const router = useRouter()
 const snackbarStore = useSnackbarsStore()
@@ -21,6 +27,9 @@ const albumStore = useAlbumStore()
 const show = ref(false)
 const newLoading = ref(false)
 const addLoading = ref(false)
+const filteredUserAlbums = computed(() =>
+  albumStore.userAlbums.filter((a) => !props.excludeAlbumIds.includes(a.id)),
+)
 
 async function createNew() {
   if (props.idsToAdd.length === 0) {
@@ -85,8 +94,8 @@ async function addToAlbum(album: Album) {
     <v-card color="surface-container-low" min-width="300" flat class="album-picker rounded-xl pa-3">
       <v-card-title class="text-center mb-2 title-text">Add to album</v-card-title>
       <items-preview :media-item-ids="idsToAdd" />
-      <v-list class="mt-3 albums-list" v-if="albumStore.userAlbums.length > 0">
-        <v-list-item rounded v-for="album in albumStore.userAlbums" :key="album.id">
+      <v-list class="mt-3 albums-list" v-if="filteredUserAlbums.length > 0">
+        <v-list-item rounded v-for="album in filteredUserAlbums" :key="album.id">
           <template v-slot:prepend>
             <v-avatar rounded color="surface-container-high">
               <v-img
