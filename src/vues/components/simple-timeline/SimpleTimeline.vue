@@ -23,28 +23,34 @@ const selectionStore = useSelectionStore()
 const IDEAL_ROW_HEIGHT = 240
 const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 2
-const MIN_SCROLL_THUMB_HEIGHT = 20
+const MIN_THUMB_HEIGHT = 20
+const SNAP_MARGIN = 20
 
 const gridLayout = shallowRef<SimpleLayoutRow[]>([])
-const containerSize = shallowRef({ width: 0, height: 0 })
-const scrollTrackHeight = shallowRef(0)
-const scrollHeight = ref(0)
 const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
-const scrollThumbEl = useTemplateRef('scrollThumb')
-const currentScrollTop = ref(0)
+const containerHeight = ref(0)
+const containerWidth = ref(0)
+const contentHeight = ref(0)
+const trackHeight = ref(0)
+const scrollTop = ref(0)
 const isScrollingFast = ref(false)
-const scrollThumbHeight = computed(() => {
-  if (scrollHeight.value === 0) return 20
-  return Math.max(
-    (scrollTrackHeight.value * containerSize.value.height) / scrollHeight.value,
-    MIN_SCROLL_THUMB_HEIGHT,
-  )
+const thumbHeight = computed(() => {
+  if (contentHeight.value <= containerHeight.value || containerHeight.value === 0) return 0
+  const ratio = containerHeight.value / contentHeight.value
+  const calculatedHeight = trackHeight.value * ratio
+  return Math.max(calculatedHeight, MIN_THUMB_HEIGHT)
 })
-const scrollPercentage = computed(() => {
-  if (scrollHeight.value <= containerSize.value.height) return 0
-  const maxScrollTop = scrollHeight.value - containerSize.value.height
-  return Math.min(1, Math.max(0, currentScrollTop.value / maxScrollTop))
+const thumbTranslateY = computed(() => {
+  const maxScroll = contentHeight.value - containerHeight.value
+  const maxThumbTravel = trackHeight.value - thumbHeight.value
+  if (maxScroll <= 0 || maxThumbTravel <= 0) return 0
+  const scrollRatio = scrollTop.value / maxScroll
+  const clampedRatio = Math.min(1, Math.max(0, scrollRatio))
+  return clampedRatio * maxThumbTravel
+})
+const showScrollbar = computed(() => {
+  return contentHeight.value > containerHeight.value && containerHeight.value > 0
 })
 const virtualizerOptions = computed(() => ({
   count: gridLayout.value.length,
@@ -57,16 +63,10 @@ const virtualizerOptions = computed(() => ({
   overscan: 5,
 }))
 const rowVirtualizer = useVirtualizer(virtualizerOptions)
-const thumbTranslateY = computed(() => {
 
-  return Math.min(
-    scrollTrackHeight.value - scrollThumbHeight.value,
-    Math.max(0, scrollPercentage.value * scrollTrackHeight.value),
-  )
-})
-
-let isScrollDragging = false
-let scrollThumbDownPoint = 0
+let isDragging = false
+let lastScrollTop = 0
+let dragStartOffsetY = 0
 
 function calculateLayout(timelineItems: AlbumTimelineItem[], containerWidth: number) {
   if (timelineItems.length === 0 || containerWidth === 0) return { rows: [], totalHeight: 0 }
@@ -118,53 +118,58 @@ function calculateLayout(timelineItems: AlbumTimelineItem[], containerWidth: num
   }
 }
 
-function updateScrollPosition(clientY: number) {
-  if (!scrollTrackEl.value || !scrollContainerEl.value || !isScrollDragging) return
+function applyScrollFromMouseY(clientY: number) {
+  if (!scrollTrackEl.value || !scrollContainerEl.value) return
   const trackRect = scrollTrackEl.value.getBoundingClientRect()
-  const trackHeight = trackRect.height
-  const relativeY = Math.max(
-    0,
-    Math.min(trackHeight, clientY - scrollThumbDownPoint - trackRect.top),
-  )
-  const percentage = relativeY / trackHeight
-  const maxScrollTop = scrollHeight.value - containerSize.value.height
-  if (maxScrollTop > 0) {
-    const newScrollTop = percentage * maxScrollTop
-    scrollContainerEl.value.scrollTop = newScrollTop
-    currentScrollTop.value = newScrollTop
-  }
+  const trackTop = trackRect.top
+  let newThumbY = clientY - dragStartOffsetY - trackTop
+  const maxThumbTravel = trackHeight.value - thumbHeight.value
+  newThumbY = Math.max(0, Math.min(newThumbY, maxThumbTravel))
+  const scrollRatio = newThumbY / maxThumbTravel
+  const maxScroll = contentHeight.value - containerHeight.value
+  scrollContainerEl.value.scrollTop = scrollRatio * maxScroll
 }
-
-function rawOnScroll(e: Event) {
-  const target = e.target as HTMLElement
-  scrollHeight.value = target.scrollHeight
-  currentScrollTop.value = target.scrollTop
-}
-
-const onScroll = useThrottleFn(rawOnScroll, 33)
 
 function handleMouseDown(e: MouseEvent) {
+  if (!scrollTrackEl.value || !showScrollbar.value) return
   e.preventDefault()
-  isScrollDragging = true
-  const ste = scrollThumbEl.value
-  if (ste !== null) {
-    const thumbRect = ste.getBoundingClientRect()
-    let thumbDownPoint = e.clientY - thumbRect.top
-    const missMargin = 20
-    if (thumbDownPoint < 0 && thumbDownPoint > -missMargin) {
-      thumbDownPoint = 0
-    } else if (
-      thumbDownPoint > thumbRect.height &&
-      thumbDownPoint < thumbRect.height + missMargin
-    ) {
-      thumbDownPoint = thumbRect.height
-    } else if (thumbDownPoint > thumbRect.height || thumbDownPoint < 0) {
-      thumbDownPoint = thumbRect.height / 2
-    }
-    scrollThumbDownPoint = thumbDownPoint
+  const trackRect = scrollTrackEl.value.getBoundingClientRect()
+  const clickYRelative = e.clientY - trackRect.top
+  const currentThumbY = thumbTranslateY.value
+  const currentThumbH = thumbHeight.value
+  const distToTop = clickYRelative - currentThumbY
+  const distToBottom = clickYRelative - (currentThumbY + currentThumbH)
+  if (clickYRelative >= currentThumbY && clickYRelative <= currentThumbY + currentThumbH) {
+    dragStartOffsetY = clickYRelative - currentThumbY
+  } else if (distToTop >= -SNAP_MARGIN && distToTop < 0) {
+    dragStartOffsetY = 0
+  } else if (distToBottom > 0 && distToBottom <= SNAP_MARGIN) {
+    dragStartOffsetY = currentThumbH
+  } else {
+    dragStartOffsetY = currentThumbH / 2
+    applyScrollFromMouseY(e.clientY)
   }
-  updateScrollPosition(e.clientY)
+
+  isDragging = true
 }
+
+function handleFastScroll(currentY: number) {
+  const scrollDelta = Math.abs(currentY - lastScrollTop)
+  lastScrollTop = currentY
+  console.log(scrollDelta)
+  if (scrollDelta > 750) {
+    if (!isScrollingFast.value) {
+      isScrollingFast.value = true
+    }
+    stopScrollingFast()
+  } else if (isScrollingFast.value && scrollDelta > 300) stopScrollingFast()
+}
+
+const onScroll = useThrottleFn((e: Event) => {
+  const target = e.target as HTMLElement
+  scrollTop.value = target.scrollTop
+  handleFastScroll(target.scrollTop)
+}, 16)
 
 const stopScrollingFast = useDebounceFn(() => {
   isScrollingFast.value = false
@@ -172,43 +177,21 @@ const stopScrollingFast = useDebounceFn(() => {
 
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
-    const contentRect = entries[0].contentRect
-    containerSize.value = {
-      width: contentRect.width,
-      height: contentRect.height,
-    }
+    const rect = entries[0].contentRect
+    containerWidth.value = rect.width
+    containerHeight.value = rect.height
   }
 })
-
 useResizeObserver(scrollTrackEl, (entries) => {
-  if (entries[0]) scrollTrackHeight.value = entries[0].contentRect.height
-})
-
-useEventListener(document, 'mousemove', (e) => {
-  if (!isScrollDragging) return
-  updateScrollPosition(e.clientY)
-})
-
-useEventListener(document, 'mouseup', (e) => {
-  isScrollDragging = false
-  updateScrollPosition(e.clientY)
-})
-
-useEventListener(document, 'keydown', (e) => {
-  if (e.key === 'a' && e.ctrlKey) {
-    e.preventDefault()
-    selectionStore.selectAll()
-  }
-  if (e.key === 'Escape' && route.name !== 'view-photo') {
-    e.preventDefault()
-    selectionStore.deselectAll()
+  if (entries[0]) {
+    trackHeight.value = entries[0].contentRect.height
   }
 })
 
-watch([() => props.timelineItems, containerSize], () => {
-  const { rows, totalHeight } = calculateLayout(props.timelineItems, containerSize.value.width)
+watch([() => props.timelineItems, containerWidth], () => {
+  const { rows, totalHeight } = calculateLayout(props.timelineItems, containerWidth.value)
   gridLayout.value = rows
-  scrollHeight.value = totalHeight
+  contentHeight.value = totalHeight
 })
 
 watch(
@@ -221,14 +204,23 @@ watch(
   { immediate: true },
 )
 
-watch(currentScrollTop, (newVal, oldVal) => {
-  const scrollDelta = Math.abs(newVal - oldVal)
-  if (scrollDelta > 750) {
-    if (!isScrollingFast.value) {
-      isScrollingFast.value = true
-    }
-    stopScrollingFast()
-  } else if (isScrollingFast.value && scrollDelta > 300) stopScrollingFast()
+useEventListener(window, 'mousemove', (e: MouseEvent) => {
+  if (!isDragging) return
+  e.preventDefault()
+  applyScrollFromMouseY(e.clientY)
+})
+useEventListener(window, 'mouseup', () => {
+  isDragging = false
+})
+useEventListener(document, 'keydown', (e) => {
+  if (e.key === 'a' && e.ctrlKey) {
+    e.preventDefault()
+    selectionStore.selectAll()
+  }
+  if (e.key === 'Escape' && route.name !== 'view-photo') {
+    e.preventDefault()
+    selectionStore.deselectAll()
+  }
 })
 </script>
 
@@ -239,6 +231,7 @@ watch(currentScrollTop, (newVal, oldVal) => {
       <teleport to="body">
         <router-view />
       </teleport>
+
       <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
         <slot></slot>
         <div
@@ -263,7 +256,7 @@ watch(currentScrollTop, (newVal, oldVal) => {
             <virtual-simple-row
               v-if="gridLayout[virtualRow.index]"
               :item="gridLayout[virtualRow.index]!"
-              :container-width="containerSize.width"
+              :container-width="containerWidth"
               :item-gap="ITEM_GAP"
               :is-scrolling-fast="isScrollingFast"
             />
@@ -271,12 +264,19 @@ watch(currentScrollTop, (newVal, oldVal) => {
         </div>
       </div>
     </main-layout-container>
-    <div class="timeline-scroll" ref="scrollTrack" @mousedown="handleMouseDown">
+
+    <!-- Scrollbar Track -->
+    <div
+      class="timeline-scroll"
+      ref="scrollTrack"
+      @mousedown="handleMouseDown"
+      v-show="showScrollbar"
+    >
       <div class="scroll-track"></div>
       <div
         class="scroll-thumb"
-        ref="scrollThumb"
         :style="{
+          height: `${thumbHeight}px`,
           transform: `translateY(${thumbTranslateY}px)`,
         }"
       ></div>
@@ -314,6 +314,8 @@ watch(currentScrollTop, (newVal, oldVal) => {
   height: 100%;
   position: relative;
   cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
 }
 
 .scroll-track {
@@ -323,7 +325,7 @@ watch(currentScrollTop, (newVal, oldVal) => {
   position: absolute;
   right: 3px;
   top: 0;
-  pointer-events: none;
+  border-radius: 5px;
 }
 
 .scroll-thumb {
@@ -333,13 +335,8 @@ watch(currentScrollTop, (newVal, oldVal) => {
   right: 3px;
   width: 10px;
   border-radius: 5px;
-  height: calc(v-bind(scrollThumbHeight) * 1px);
-}
-
-.scroll-thumb {
   will-change: transform;
   transform: translateZ(0);
-  backface-visibility: hidden;
   pointer-events: none;
 }
 </style>
