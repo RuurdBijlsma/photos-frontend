@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { shallowRef, triggerRef } from 'vue'
+import { shallowRef, triggerRef, watch } from 'vue'
 import type { AlbumWithCount, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
 import albumService from '@/scripts/services/albumService.ts'
 import type { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'
@@ -8,21 +8,27 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 export const useAlbumStore = defineStore('album', () => {
   const snackbarStore = useSnackbarsStore()
 
-  const userAlbums = shallowRef<AlbumWithCount[]>([])
+  const userAlbums = shallowRef<AlbumWithCount[]>(
+    localStorage.getItem('userAlbums') === null ? [] : JSON.parse(localStorage.userAlbums),
+  )
   const albumMedia = shallowRef(new Map<string, FullAlbumMediaResponse>())
   const albumMediaPromises = new Map<string, Promise<FullAlbumMediaResponse>>()
+
+  watch(userAlbums, () => {
+    localStorage.setItem('userAlbums', JSON.stringify(userAlbums.value))
+  })
 
   async function fetchUserAlbums() {
     const { data } = await albumService.getUserAlbums()
     userAlbums.value = data
   }
 
-  async function fetchAlbumMedia(albumId: string) {
+  async function fetchAlbumMedia(albumId: string, useCache = true) {
     if (albumMediaPromises.has(albumId)) {
       await albumMediaPromises.get(albumId)!
       return
     }
-    if (albumMedia.value.has(albumId)) return
+    if (useCache && albumMedia.value.has(albumId)) return
 
     const promise = albumService.getAlbumMedia(albumId)
     albumMediaPromises.set(albumId, promise)

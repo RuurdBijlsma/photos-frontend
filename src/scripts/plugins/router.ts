@@ -4,6 +4,7 @@ import TimelineView from '@/vues/views/main/TimelineView.vue'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import ViewPhoto from '@/vues/views/main/ViewPhoto.vue'
+import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -116,6 +117,12 @@ export function registerNavigationGuard() {
     // If onboarding is needed, and we are already going to the onboarding page, allow it.
     if (needsOnboarding && to.name === 'onboarding') {
       return next()
+    }
+
+    // Slightly faster load time for timeline
+    if (to.name === 'timeline') {
+      const timelineStore = useTimelineStore()
+      timelineStore.initialize().then()
     }
 
     // --- Admin Route Logic ---
