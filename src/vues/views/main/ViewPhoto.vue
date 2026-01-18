@@ -1,44 +1,38 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import photoService from '@/scripts/services/photoService.ts'
 import { useThemeStore } from '@/scripts/stores/themeStore.ts'
 import { useTheme } from 'vuetify/framework'
-import { useMediaStore } from '@/scripts/stores/mediaStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
-import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
+import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
+import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import mediaItemService from '@/scripts/services/mediaItemService.ts'
+import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 
-const props = withDefaults(
-  defineProps<{
-    ids?: string[]
-    fetchIds?: () => Promise<void>
-  }>(),
-  {
-    ids: () => [],
-  },
-)
-
-const mediaStore = useMediaStore()
+const mediaItemStore = useMediaItemStore()
 const themeStore = useThemeStore()
 const settings = useSettingStore()
 const selectionStore = useSelectionStore()
+const viewPhotoStore = useViewPhotoStore()
 const vuetifyTheme = useTheme()
 const route = useRoute()
 const router = useRouter()
 
 const id = computed(() => {
-  const rawId = route.params.id
-  console.log('ID RIGHT NOW: ', rawId)
+  const rawId = route.params.mediaId
   if (rawId && !Array.isArray(rawId)) return rawId
   console.warn('WEIRD ID IN ROUTE DETECTED')
-  return ''
+  return null
 })
 
-const isSelected = computed(() => selectionStore.isSelected(id.value))
+const isSelected = computed(() =>
+  id.value === null ? false : selectionStore.selection.has(id.value),
+)
 
 function closeViewer() {
   const parentRoute = route.matched[route.matched.length - 2]
+  console.log(parentRoute)
   if (parentRoute) router.push(parentRoute)
   else router.push({ path: '/' })
 }
@@ -47,11 +41,11 @@ const fullImage = ref<undefined | FullMediaItem>(undefined)
 
 async function initialize() {
   const loadingId = id.value
-  if (loadingId === '') return closeViewer()
-  await mediaStore.fetchItem(loadingId)
+  if (loadingId === null) return closeViewer()
+  await mediaItemStore.fetchMediaItem(loadingId)
   if (id.value !== loadingId) return
-  console.log('FULL MEDIA ITEM', mediaStore.cache.get(loadingId))
-  fullImage.value = mediaStore.cache.get(loadingId)
+  console.log('FULL MEDIA ITEM', mediaItemStore.mediaItems.get(loadingId))
+  fullImage.value = mediaItemStore.mediaItems.get(loadingId)
   const imageTheme = fullImage.value?.visual_analyses[0]?.colors?.themes?.[0]
   if (!imageTheme) return
   const vTheme = themeStore.themeFromJson(imageTheme)
@@ -59,22 +53,18 @@ async function initialize() {
     //@ts-expect-error Error
     vuetifyTheme.themes.value.darkView.colors = vTheme?.dark.colors
   }
-  if (vuetifyTheme.themes.value.lightView && vTheme?.light.colors) {
-    //@ts-expect-error Error
-    vuetifyTheme.themes.value.lightView.colors = vTheme?.light.colors
-  }
 }
 
 function toggleSelected() {
-  selectionStore.toggleSelected(id.value)
-  selectionStore.commit()
+  if (!id.value) return
+  selectionStore.toggleSelection(id.value)
 }
 
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
 
 const orderedIds = computed(() => {
-  if (props.ids.length > 0) return props.ids
+  if (viewPhotoStore.ids.length > 0) return viewPhotoStore.ids
   return id.value ? [id.value] : []
 })
 
@@ -83,26 +73,27 @@ const nextId = computed(() => orderedIds.value[currentIndex.value + 1] ?? null)
 const prevId = computed(() => orderedIds.value[currentIndex.value - 1] ?? null)
 
 // Pre-fetch
-watch(prevId, () => mediaStore.fetchItem(prevId.value))
-watch(nextId, () => mediaStore.fetchItem(nextId.value))
+watch(prevId, () => prevId.value && mediaItemStore.fetchMediaItem(prevId.value))
+watch(nextId, () => nextId.value && mediaItemStore.fetchMediaItem(nextId.value))
 
 function handleKeyDown(e: KeyboardEvent) {
   if (e.key === 'ArrowLeft' && prevId.value) {
     e.preventDefault()
-    router.replace({ path: `/view/${prevId.value}` })
+    router.replace({ path: `${viewPhotoStore.viewLink}${prevId.value}` })
   } else if (e.key === 'ArrowRight' && nextId.value) {
     e.preventDefault()
-    router.replace({ path: `/view/${nextId.value}` })
+    router.replace({ path: `${viewPhotoStore.viewLink}${nextId.value}` })
   } else if (e.key === 'Escape') {
     e.preventDefault()
     e.stopPropagation()
     closeViewer()
   }
 }
+
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeyDown))
 
-const imageUrl = computed(() => photoService.getPhotoThumbnail(id.value, 1440))
+const imageUrl = computed(() => mediaItemService.getPhotoThumbnail(id.value, 1440))
 
 const timestampString = computed(() => {
   const dateStr = fullImage.value?.taken_at_local
@@ -137,15 +128,13 @@ const locationString = computed(() => {
   return result ? result + ' · ' : ''
 })
 
-// Init
-watch(id, () => {
-  initialize()
-})
-initialize()
-
-if (props.ids.length === 0 && props.fetchIds) {
-  props.fetchIds()
-}
+watch(
+  id,
+  () => {
+    initialize()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -187,12 +176,14 @@ if (props.ids.length === 0 && props.fetchIds) {
           <h3>{{ timestampString }}</h3>
           <p>
             {{ locationString }}{{ currentIndex + 1 }} of
-            {{ orderedIds.length }}
+            {{
+              viewPhotoStore.ids.length === 0 ? '...' : viewPhotoStore.ids.length.toLocaleString()
+            }}
           </p>
         </div>
         <div class="right-buttons">
           <v-btn
-            v-if="selectionStore.size > 0"
+            v-if="selectionStore.selection.size > 0"
             :color="isSelected ? 'secondary' : 'white'"
             rounded
             :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
@@ -250,7 +241,7 @@ if (props.ids.length === 0 && props.fetchIds) {
         </div>
       </div>
       <div
-        @click="router.replace({ path: `/view/${prevId}` })"
+        @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}` })"
         v-if="prevId !== null"
         class="prev-area"
         @mouseenter="showLeftButton = true"
@@ -265,7 +256,7 @@ if (props.ids.length === 0 && props.fetchIds) {
         ></v-btn>
       </div>
       <div
-        @click="router.replace({ path: `/view/${nextId}` })"
+        @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}` })"
         v-if="nextId !== null"
         class="next-area"
         @mouseenter="showRightButton = true"

@@ -1,25 +1,35 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
-import photoService from '@/scripts/services/photoService.ts'
+import { computed, ref } from 'vue'
 import albumService from '@/scripts/services/albumService.ts'
 import { useRouter } from 'vue-router'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import ItemsPreview from '@/vues/components/media-timeline/ItemsPreview.vue'
 import type { Album } from '@/scripts/types/api/album.ts'
-import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
+import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import ItemsPreview from '@/vues/components/timeline/ItemsPreview.vue'
+import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
-const props = defineProps<{
-  idsToAdd: string[]
-}>()
-const albumStore = useAlbumStore()
+const props = withDefaults(
+  defineProps<{
+    excludeAlbumIds?: string[]
+    idsToAdd: string[]
+  }>(),
+  {
+    excludeAlbumIds: () => [],
+  },
+)
+
 const router = useRouter()
 const snackbarStore = useSnackbarsStore()
 const selectionStore = useSelectionStore()
+const albumStore = useAlbumStore()
 
 const show = ref(false)
 const newLoading = ref(false)
 const addLoading = ref(false)
+const filteredUserAlbums = computed(() =>
+  albumStore.userAlbums.filter((a) => !props.excludeAlbumIds.includes(a.id)),
+)
 
 async function createNew() {
   if (props.idsToAdd.length === 0) {
@@ -34,8 +44,7 @@ async function createNew() {
     })
     requestIdleCallback(() => albumStore.fetchUserAlbums().then())
     await router.push({ path: '/album/' + album.id, query: { create: '1' } })
-    selectionStore.selectedIds = new Set()
-    selectionStore.commit()
+    selectionStore.selection = new Set()
   } catch (e) {
     snackbarStore.error('Error creating album', e as Error)
   } finally {
@@ -51,8 +60,7 @@ async function addToAlbum(album: Album) {
   try {
     await albumService.addMediaToAlbum(album.id, { mediaItemIds: props.idsToAdd })
     requestIdleCallback(() => albumStore.fetchUserAlbums().then())
-    selectionStore.selectedIds = new Set()
-    selectionStore.commit()
+    selectionStore.selection = new Set()
     snackbarStore.info(
       `${props.idsToAdd.length} item${props.idsToAdd.length === 1 ? '' : 's'} added`,
       {
@@ -86,12 +94,12 @@ async function addToAlbum(album: Album) {
     <v-card color="surface-container-low" min-width="300" flat class="album-picker rounded-xl pa-3">
       <v-card-title class="text-center mb-2 title-text">Add to album</v-card-title>
       <items-preview :media-item-ids="idsToAdd" />
-      <v-list class="mt-3 albums-list" v-if="albumStore.userAlbums.length > 0">
-        <v-list-item rounded v-for="album in albumStore.userAlbums" :key="album.id">
+      <v-list class="mt-3 albums-list" v-if="filteredUserAlbums.length > 0">
+        <v-list-item rounded v-for="album in filteredUserAlbums" :key="album.id">
           <template v-slot:prepend>
             <v-avatar rounded color="surface-container-high">
               <v-img
-                :src="photoService.getPhotoThumbnail(album.thumbnailId, 144)"
+                :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 144)"
                 v-if="album.thumbnailId"
               />
               <v-icon v-else icon="mdi-image-album" color="primary" class="opacity-70" />

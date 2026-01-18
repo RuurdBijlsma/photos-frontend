@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
-import { useTimelineStore } from '@/scripts/stores/timelineStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import NavDrawer from '@/vues/components/layout/NavDrawer.vue'
+import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()

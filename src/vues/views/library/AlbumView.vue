@@ -1,76 +1,123 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { computed, ref, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
-import { computed, watch } from 'vue'
-import TimelineContainer from '@/vues/components/media-timeline/TimelineContainer.vue'
-import photoService from '@/scripts/services/photoService.ts'
+import mediaItemService from '@/scripts/services/mediaItemService.ts'
+import GlowImage from '@/vues/components/ui/GlowImage.vue'
+import { useDebounceFn } from '@vueuse/core'
+import EditableTitle from '@/vues/components/ui/EditableTitle.vue'
+import SimpleTimeline from '@/vues/components/simple-timeline/SimpleTimeline.vue'
 
 const route = useRoute()
+const router = useRouter()
 const albumStore = useAlbumStore()
 
-const id = computed(() => route.params.id as string)
-const controller = computed(() => albumStore.controllerCache.get(id.value))
-const album = computed(() => controller.value?.albumInfo)
+const id = computed(() => {
+  const rawId = route.params.albumId
+  if (rawId && !Array.isArray(rawId)) return rawId
+  console.warn('WEIRD ALBUM ID IN ROUTE DETECTED')
+  return null
+})
+const albumResponse = computed(() => {
+  if (!id.value) return null
+  return albumStore.albumMedia.get(id.value) ?? null
+})
+const minimalAlbumInfo = computed(() => albumStore.userAlbums.find((a) => a.id === id.value))
+const album = computed(() => albumResponse.value?.album ?? null)
+const items = computed(() => albumResponse.value?.items ?? [])
+const updateAlbumTitleDb = useDebounceFn(updateAlbumTitle, 500)
+const albumTitle = ref<string | null>(null)
+const description = computed(() => {
+  if (album.value !== null) return album.value?.description ?? null
+  return minimalAlbumInfo.value?.description ?? null
+})
+const thumbnailId = computed(() => {
+  if (album.value !== null) return album.value?.thumbnailId ?? null
+  return minimalAlbumInfo.value?.thumbnailId ?? null
+})
 
-watch(id, () => albumStore.createController(id.value), { immediate: true })
-watch(controller, () => controller.value?.preFetch(), { immediate: true })
+function updateAlbumTitle(name: string) {
+  if (album.value === null || id.value === null) return
+  if (album.value.name === name) return
+  const create = route.query?.create
+  if (create === '1') {
+    const newQuery = { ...route.query }
+    delete newQuery.create
+    router.replace({ query: newQuery })
+  }
+  album.value.name = name
+  albumStore.updateAlbumDetails(id.value, { name })
+}
+
+watch(
+  id,
+  async () => {
+    albumTitle.value = null
+    console.log('ID CHANGE', id.value)
+    if (!id.value) return
+    await albumStore.fetchAlbumMedia(id.value)
+    albumTitle.value = album.value?.name ?? ''
+  },
+  { immediate: true },
+)
+
+watch(minimalAlbumInfo, () => {
+  if (!id.value) return
+  if (!minimalAlbumInfo.value) return
+  if (albumTitle.value !== null) return
+  albumTitle.value = minimalAlbumInfo.value.name
+})
+
+watch(albumTitle, (newVal, oldVal) => {
+  if (newVal && newVal !== oldVal) updateAlbumTitleDb(newVal)
+})
+
+watch(
+  () => album.value?.name,
+  () => {
+    const name = album.value?.name ?? null
+    if (name === null) return
+    albumTitle.value = name
+  },
+)
 </script>
 
 <template>
-  <timeline-container
-    v-if="controller"
-    class="album-timeline"
-    :timeline-controller="controller"
-    sort-direction="desc"
-  >
-    <div class="album-summary" v-if="album">
-      <div class="album-thumbnail">
-        <v-img
-          width="300"
-          v-if="album.thumbnailId"
-          :src="photoService.getPhotoThumbnail(album.thumbnailId, 720)"
-        />
+  <simple-timeline :timeline-items="items" :view-link="`/album/${id}/view/`">
+    <div class="album-header">
+      <div class="album-header-left">
+        <glow-image
+          border-radius="44px"
+          :height="222"
+          :src="mediaItemService.getPhotoThumbnail(thumbnailId, 720)"
+        ></glow-image>
       </div>
-      <div class="album-summary-text">
-        <h1 class="editable-title" contenteditable="plaintext-only">{{ album.name }}</h1>
-        <p v-if="album.description">{{ album.description }}</p>
+      <div class="album-header-right">
+        <editable-title
+          v-if="albumTitle !== null"
+          name="album title"
+          :autofocus="route.query?.create === '1'"
+          v-model="albumTitle"
+        />
+
+        <p v-if="description">{{ description }}</p>
       </div>
     </div>
-  </timeline-container>
+  </simple-timeline>
 </template>
 
 <style scoped>
-.album-timeline {
+.album-header {
+  display: flex;
   width: 100%;
-  height: 100%;
 }
 
-.album-summary {
-  display: flex;
-  padding-top: 7px;
-  min-height: 216px;
+.album-header-left {
+  padding: 10px;
 }
 
-.album-thumbnail {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-}
-
-.album-thumbnail > * {
-  border-radius: 30px;
-}
-
-.album-summary-text {
-  flex-grow: 10;
+.album-header-right {
   padding: 20px;
-}
-
-.editable-title {
-  font-weight: 400;
-  padding: 5px 15px;
-  border-radius: 20px;
-  font-size: 40px;
-  width: calc(100% - 30px);
+  flex-grow: 1;
 }
 </style>

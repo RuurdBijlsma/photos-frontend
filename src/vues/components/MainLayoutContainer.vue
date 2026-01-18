@@ -37,7 +37,7 @@
   height: calc(100% - 10px);
   width: calc(100% - 20px);
   margin: 10px 10px 0;
-  border-radius: 55px 55px 0 0;
+  border-radius: 50px 50px 0 0;
   overflow: hidden;
   overflow-y: auto;
 

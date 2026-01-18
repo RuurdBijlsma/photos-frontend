@@ -1,60 +1,42 @@
-import { ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
+import { shallowRef, triggerRef } from 'vue'
 import type { AlbumWithCount, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
 import albumService from '@/scripts/services/albumService.ts'
+import type { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import {
-  createTimelineController,
-  type GenericTimeline,
-} from '@/scripts/services/timeline/GenericTimeline.ts'
-import { AlbumTimelineProvider } from '@/scripts/services/timeline/AlbumTimelineProvider.ts'
 
 export const useAlbumStore = defineStore('album', () => {
-  const userAlbums = ref<AlbumWithCount[]>([])
-  const fetchingUserAlbums = ref(false)
-  const controllerCache = shallowRef(new Map<string, GenericTimeline>())
-
   const snackbarStore = useSnackbarsStore()
 
-  async function createController(albumId: string) {
-    if (controllerCache.value.has(albumId)) return controllerCache.value.get(albumId)
-
-    const provider = new AlbumTimelineProvider(albumId)
-    const controller = createTimelineController(provider)
-    controllerCache.value.set(albumId, controller)
-    triggerRef(controllerCache)
-  }
+  const userAlbums = shallowRef<AlbumWithCount[]>([])
+  const albumMedia = shallowRef(new Map<string, FullAlbumMediaResponse>())
+  const albumMediaPromises = new Map<string, Promise<FullAlbumMediaResponse>>()
 
   async function fetchUserAlbums() {
-    if (fetchingUserAlbums.value) {
-      console.warn('NOT FETCHING USER ALBUMS')
-      return
-    }
-    fetchingUserAlbums.value = true
-    try {
-      await refreshUserAlbums()
-    } catch (e) {
-      snackbarStore.error('Failed to fetch user albums.', e as Error)
-    } finally {
-      fetchingUserAlbums.value = false
-    }
+    const { data } = await albumService.getUserAlbums()
+    userAlbums.value = data
   }
 
-  async function refreshUserAlbums() {
-    const now = performance.now()
-    try {
-      const { data } = await albumService.getUserAlbums()
-      userAlbums.value = data
-    } finally {
-      console.log('refreshUserAlbums', performance.now() - now, 'ms')
-      fetchingUserAlbums.value = true
+  async function fetchAlbumMedia(albumId: string) {
+    if (albumMediaPromises.has(albumId)) {
+      await albumMediaPromises.get(albumId)!
+      return
     }
+    if (albumMedia.value.has(albumId)) return
+
+    const promise = albumService.getAlbumMedia(albumId)
+    albumMediaPromises.set(albumId, promise)
+    const response = await promise
+    albumMediaPromises.delete(albumId)
+
+    albumMedia.value.set(albumId, response)
+    triggerRef(albumMedia)
   }
 
   async function updateAlbumDetails(albumId: string, albumDetails: UpdateAlbumRequest) {
     try {
       await albumService.updateAlbum(albumId, albumDetails)
-      requestIdleCallback(() => refreshUserAlbums())
+      requestIdleCallback(() => fetchUserAlbums())
     } catch (e) {
       snackbarStore.error(`Failed to update album: ${albumId}.`, e as Error)
     }
@@ -62,9 +44,10 @@ export const useAlbumStore = defineStore('album', () => {
 
   return {
     userAlbums,
+    albumMedia,
+
     fetchUserAlbums,
-    controllerCache,
+    fetchAlbumMedia,
     updateAlbumDetails,
-    createController,
   }
 })

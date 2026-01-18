@@ -1,14 +1,28 @@
 <script setup lang="ts">
-defineProps<{
-  date: { date: string; year: string | null } | null
+import { computed } from 'vue'
+import { CURRENT_YEAR, DAYS, MONTHS } from '@/scripts/constants.ts'
+
+const props = defineProps<{
+  date: Date | null
 }>()
+
+const renderedDate = computed(() => {
+  const date = props.date
+  if (date === null) return { date: null, year: null }
+
+  const day = DAYS[date.getDay()]!
+  const month = MONTHS[date.getMonth()]!
+  const year = date.getFullYear() === CURRENT_YEAR ? null : ' ' + date.getFullYear()
+
+  return { date: `${day.substring(0, 3)}, ${date.getDate()} ${month.substring(0, 3)}`, year }
+})
 </script>
 
 <template>
   <v-slide-y-transition>
     <div class="date-view" v-if="date">
-      <span class="date-view-date">{{ date.date }}</span>
-      <span v-if="date.year" class="date-view-year">{{ date.year }}</span>
+      <span class="date-view-date">{{ renderedDate.date }}</span>
+      <span v-if="renderedDate.year" class="date-view-year">{{ renderedDate.year }}</span>
     </div>
   </v-slide-y-transition>
 </template>

@@ -1,0 +1,12 @@
+import { defineStore } from 'pinia'
+import { ref, shallowRef } from 'vue'
+
+export const useViewPhotoStore = defineStore('viewPhoto', () => {
+  const viewLink = ref<string>('')
+  const ids = shallowRef<string[]>([])
+
+  return {
+    viewLink,
+    ids,
+  }
+})

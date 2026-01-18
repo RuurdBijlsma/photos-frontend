@@ -59,6 +59,13 @@
       line, and a box shadow outset half transparent 5px outline (both non-blur shadow)
     * ✅ when something is selected, on an item that is selected: check in a filled circle, full color, with box shadow
       outside half transparent (non-blur shadow)
+* ✅ switching from album to album, ratios is kept or something?
+* ✅ make click on photo open /album/d9faud9a/view/aduf0a
+* ✅ make edit album title permanent in new album view
+* ✅ on album title edit → update user albums
+* ✅ make albums list in nav drawer not scrollable, and cut off at 5 items or so (maybe add view all button at the bottom
+  of the list if theres more items available)
+* ✅ remember if albums list in navbar is open with localstorage
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -101,14 +108,10 @@
   page
 * only request main timeline ratios/ids/by-month if we're visiting the main timeline
 *
-* switching from album to album, ratios is kept or something?
-* make edit album title permanent in new album view
-* on album title edit → update user albums
 * add way to add description
-* make click on photo open /album/d9faud9a/view/aduf0a
 * timeline scrollbar is shitty when we have few media items
 * make way to see time range of album (include in metadata with ratios request)
-* make albums list in nav drawer not scrollable, and cut off at 5 items or so (maybe add view all button at the bottom
-  of the list if theres more items available)
-* remember if albums list in navbar is open with localstorage
 * album page: add sort options (also sort by added on date)
+* make date overlay hide when near the top of the page
+* fix griditem rendering
+* hij is weer shitty laggy lol waarom doet ie dat :((( bisect maar weer even ofzo

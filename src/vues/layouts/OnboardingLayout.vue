@@ -1,13 +1,15 @@
 <script setup lang="ts">
-interface Props {
-  text: string
-  captionText?: boolean
-  hideLogo?: boolean
-}
-withDefaults(defineProps<Props>(), {
-  captionText: false,
-  hideLogo: false,
-})
+withDefaults(
+  defineProps<{
+    text: string
+    captionText?: boolean
+    hideLogo?: boolean
+  }>(),
+  {
+    captionText: false,
+    hideLogo: false,
+  },
+)
 </script>
 
 <template>

@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { computed, ref } from 'vue'
-import photoService from '@/scripts/services/photoService.ts'
+import { computed, ref, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 const albumStore = useAlbumStore()
 requestIdleCallback(() => albumStore.fetchUserAlbums())
 
-const albumsExpanded = ref(false)
+const albumsExpanded = ref(
+  localStorage.getItem('navExpandAlbums') === null
+    ? false
+    : localStorage.navExpandAlbums === 'true',
+)
+watch(albumsExpanded, () =>
+  localStorage.setItem('navExpandAlbums', JSON.stringify(albumsExpanded.value)),
+)
 const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
+const maxShownAlbums = ref(5)
+const truncatedAlbums = computed(() => albumStore.userAlbums.slice(0, maxShownAlbums.value))
+const hasMoreAlbums = computed(() => albumStore.userAlbums.length > maxShownAlbums.value)
 
 const route = useRoute()
 </script>
@@ -51,17 +61,24 @@ const route = useRoute()
           <v-list-item
             rounded
             :to="`/album/${album.id}`"
-            v-for="album in albumStore.userAlbums"
+            v-for="album in truncatedAlbums"
             :key="album.id"
           >
             <template v-slot:prepend>
               <v-avatar rounded color="surface-container-high">
-                <v-img :src="photoService.getPhotoThumbnail(album.thumbnailId, 144)"></v-img>
+                <v-img :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 144)"></v-img>
               </v-avatar>
             </template>
-            <v-list-item-title v-tooltip:top="album.name" v-if="album.name !== ''">{{
-              album.name
-            }}</v-list-item-title>
+            <v-list-item-title
+              v-tooltip="{
+                location: 'top',
+                text: album.name,
+                disabled: album.name.length <= 15,
+              }"
+              v-if="album.name"
+            >
+              {{ album.name }}
+            </v-list-item-title>
             <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
             <v-list-item-subtitle
               >{{ album.mediaCount }} item{{
@@ -69,6 +86,22 @@ const route = useRoute()
               }}</v-list-item-subtitle
             >
           </v-list-item>
+          <v-btn
+            density="compact"
+            variant="plain"
+            v-if="hasMoreAlbums"
+            class="mt-1"
+            @click="maxShownAlbums += 5"
+            >Show more</v-btn
+          >
+          <v-btn
+            density="compact"
+            variant="plain"
+            v-else-if="maxShownAlbums > 5"
+            class="mt-1"
+            @click="maxShownAlbums = 5"
+            >Show less</v-btn
+          >
         </div>
       </v-expand-transition>
     </v-list>
@@ -103,8 +136,6 @@ const route = useRoute()
   display: flex;
   flex-direction: column;
   gap: 5px;
-  max-height: 300px;
-  overflow-y: auto;
   padding-right: 2px;
 }
 

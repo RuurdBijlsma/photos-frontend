@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
 import onboardingService from '@/scripts/services/onboardingService.ts'
-import { debounce } from '@/scripts/utils.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type {
   MediaSampleResponse,
   UnsupportedFilesResponse,
 } from '@/scripts/types/api/onboarding.ts'
+import { useDebounceFn } from '@vueuse/core'
 
 export const usePickFolderStore = defineStore('pickFolder', () => {
   let N_SAMPLES = 8
@@ -24,7 +24,7 @@ export const usePickFolderStore = defineStore('pickFolder', () => {
   )
   const snackbarStore = useSnackbarsStore()
 
-  const dbRefreshMediaSample = debounce(refreshMediaSample, 500)
+  const dbRefreshMediaSample = useDebounceFn(refreshMediaSample, 500)
 
   async function openFolder(folder: string) {
     viewedFolder.value.push(folder)

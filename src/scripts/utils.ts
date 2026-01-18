@@ -1,3 +1,5 @@
+import { THUMBNAIL_SIZES } from '@/scripts/constants.ts'
+
 export function prettyBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return '0 B'
 
@@ -8,10 +10,34 @@ export function prettyBytes(bytes: number, decimals = 2): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`
 }
 
-export function debounce<T extends (...args: unknown[]) => void>(func: T, wait: number): T {
-  let timeout: number | undefined
-  return function (...args: Parameters<T>) {
-    if (timeout) clearTimeout(timeout)
-    timeout = window.setTimeout(() => func(...args), wait)
-  } as T
+export function requestIdleCallbackAsync(
+  cb: (deadline: IdleDeadline) => Promise<void>,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    requestIdleCallback(async (deadline) => {
+      try {
+        await cb(deadline)
+        resolve()
+      } catch (err) {
+        reject(err)
+      }
+    })
+  })
+}
+
+export function toHms(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = Math.round(totalSeconds % 60)
+  if (hours > 0)
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+export function getThumbnailHeight(rowHeight: number) {
+  for (const size of THUMBNAIL_SIZES) {
+    if (size > rowHeight) return size
+  }
+  return THUMBNAIL_SIZES[THUMBNAIL_SIZES.length - 1]!
 }

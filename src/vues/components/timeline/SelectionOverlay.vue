@@ -1,30 +1,38 @@
 <script setup lang="ts">
-import { useSelectionStore } from '@/scripts/stores/selectionStore.ts'
-import AddToAlbumButton from '@/vues/components/media-timeline/AddToAlbumButton.vue'
+import AddToAlbumButton from '@/vues/components/timeline/AddToAlbumButton.vue'
+import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+
+withDefaults(
+  defineProps<{
+    excludeAlbumIds?: string[]
+  }>(),
+  {
+    excludeAlbumIds: () => [],
+  },
+)
 
 const selectionStore = useSelectionStore()
-
-const emit = defineEmits<{
-  (e: 'deselectAll'): void
-}>()
 </script>
 
 <template>
   <v-slide-y-reverse-transition>
-    <div class="actions-overlay" v-if="selectionStore.size > 0">
+    <div class="actions-overlay" v-if="selectionStore.selection.size > 0">
       <v-btn
         icon="mdi-close"
         variant="plain"
         density="compact"
         v-tooltip:top="'Deselect all'"
-        @click="emit('deselectAll')"
+        @click="selectionStore.deselectAll"
       />
       <div class="select-text">
-        <span class="bold-select">{{ selectionStore.size }}</span
+        <span class="bold-select">{{ selectionStore.selection.size }}</span
         ><span> selected</span>
       </div>
       <v-spacer />
-      <add-to-album-button :ids-to-add="[...selectionStore.selectedIds]" />
+      <add-to-album-button
+        :exclude-album-ids="excludeAlbumIds"
+        :ids-to-add="[...selectionStore.selection]"
+      />
       <v-btn
         icon="mdi-delete-outline"
         variant="plain"

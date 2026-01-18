@@ -14,7 +14,11 @@ import type {
   SortDirection,
   UpdateAlbumRequest,
 } from '@/scripts/types/api/album'
-import { AlbumRatiosResponse, TimelineItemsResponse } from '@/scripts/types/generated/timeline.ts'
+import {
+  AlbumRatiosResponse,
+  FullAlbumMediaResponse,
+  TimelineItemsResponse,
+} from '@/scripts/types/generated/timeline.ts'
 
 const albumService = {
   /**
@@ -123,6 +127,17 @@ const albumService = {
     })
     const buffer = new Uint8Array(response.data)
     return TimelineItemsResponse.decode(buffer)
+  },
+
+  async getAlbumMedia(albumId: string): Promise<FullAlbumMediaResponse> {
+    const response = await apiClient.get(`/album/${albumId}/media`, {
+      responseType: 'arraybuffer',
+      params: {
+        sort: 'desc',
+      },
+    })
+    const buffer = new Uint8Array(response.data)
+    return FullAlbumMediaResponse.decode(buffer)
   },
 }
 
