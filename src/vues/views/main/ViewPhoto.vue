@@ -26,7 +26,9 @@ const id = computed(() => {
   return null
 })
 
-const isSelected = computed(() => selectionStore.selection.has(id.value))
+const isSelected = computed(() =>
+  id.value === null ? false : selectionStore.selection.has(id.value),
+)
 
 function closeViewer() {
   const parentRoute = route.matched[route.matched.length - 2]
@@ -39,7 +41,7 @@ const fullImage = ref<undefined | FullMediaItem>(undefined)
 
 async function initialize() {
   const loadingId = id.value
-  if (loadingId === '') return closeViewer()
+  if (loadingId === null) return closeViewer()
   await mediaItemStore.fetchMediaItem(loadingId)
   if (id.value !== loadingId) return
   console.log('FULL MEDIA ITEM', mediaItemStore.mediaItems.get(loadingId))
@@ -54,6 +56,7 @@ async function initialize() {
 }
 
 function toggleSelected() {
+  if (!id.value) return
   selectionStore.toggleSelection(id.value)
 }
 

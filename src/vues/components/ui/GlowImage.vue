@@ -1,13 +1,15 @@
 <script setup lang="ts">
-
-withDefaults(defineProps<{
-  src: string,
-  height?: number
-  width?: number
-  borderRadius?: string
-}>(), {
-  borderRadius: '0'
-})
+withDefaults(
+  defineProps<{
+    src: string
+    height?: number
+    width?: number
+    borderRadius?: string
+  }>(),
+  {
+    borderRadius: '0',
+  },
+)
 </script>
 
 <template>
@@ -18,13 +20,9 @@ withDefaults(defineProps<{
       aria-hidden="true"
       alt="Album thumbnail"
       class="image-bg"
-      :src="src" />
-    <img
-      :height="height"
-      :width="width"
-      alt="Album thumbnail"
-      class="image-first"
-      :src="src" />
+      :src="src"
+    />
+    <img :height="height" :width="width" alt="Album thumbnail" class="image-first" :src="src" />
   </div>
 </template>
 

@@ -17,7 +17,7 @@ import type {
 import {
   AlbumRatiosResponse,
   FullAlbumMediaResponse,
-  TimelineItemsResponse
+  TimelineItemsResponse,
 } from '@/scripts/types/generated/timeline.ts'
 
 const albumService = {

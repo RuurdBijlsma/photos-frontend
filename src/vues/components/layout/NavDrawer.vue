@@ -81,7 +81,7 @@ const route = useRoute()
             </v-list-item-title>
             <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
             <v-list-item-subtitle
-            >{{ album.mediaCount }} item{{
+              >{{ album.mediaCount }} item{{
                 album.mediaCount === 1 ? '' : 's'
               }}</v-list-item-subtitle
             >
@@ -92,7 +92,7 @@ const route = useRoute()
             v-if="hasMoreAlbums"
             class="mt-1"
             @click="maxShownAlbums += 5"
-          >Show more</v-btn
+            >Show more</v-btn
           >
           <v-btn
             density="compact"
@@ -100,7 +100,7 @@ const route = useRoute()
             v-else-if="maxShownAlbums > 5"
             class="mt-1"
             @click="maxShownAlbums = 5"
-          >Show less</v-btn
+            >Show less</v-btn
           >
         </div>
       </v-expand-transition>
