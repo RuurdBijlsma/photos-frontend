@@ -14,6 +14,7 @@ import { useRoute } from 'vue-router'
 
 const props = defineProps<{
   timelineItems: AlbumTimelineItem[]
+  viewLink: string
 }>()
 
 const route = useRoute()
@@ -211,7 +212,9 @@ watch(
   () => {
     const ids = props.timelineItems.map((item) => item.id)
     viewPhotoStore.ids = ids
+    viewPhotoStore.viewLink = props.viewLink
     selectionStore.allIds = ids
+    console.warn('SET IDS!', ids.length)
   },
   { immediate: true },
 )
@@ -229,7 +232,7 @@ useEventListener(document, 'keydown', (e) => {
     e.preventDefault()
     selectionStore.selectAll()
   }
-  if (e.key === 'Escape' && route.name !== 'view-photo') {
+  if (e.key === 'Escape' && !route.name!.toString().startsWith('view-photo')) {
     e.preventDefault()
     selectionStore.deselectAll()
   }
@@ -273,6 +276,7 @@ useEventListener(document, 'keydown', (e) => {
               :container-width="containerWidth"
               :item-gap="ITEM_GAP"
               :is-scrolling-fast="isScrollingFast"
+              :view-link="viewLink"
             />
           </div>
         </div>

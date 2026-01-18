@@ -15,40 +15,40 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         {
-          path: '/',
+          path: '',
           name: 'timeline',
           component: TimelineView,
           children: [
             {
-              path: '/view/:mediaId',
-              name: 'view-photo',
+              path: 'view/:mediaId',
+              name: 'view-photo-timeline',
               component: ViewPhoto,
             },
           ],
         },
         {
-          path: '/explore',
+          path: 'explore',
           name: 'explore',
           component: () => import('@/vues/views/main/ExploreView.vue'),
         },
         {
-          path: '/map',
+          path: 'map',
           name: 'map',
           component: () => import('@/vues/views/main/MapView.vue'),
         },
         {
-          path: '/albums',
+          path: 'albums',
           name: 'albums',
           component: () => import('@/vues/views/library/AlbumsLibrary.vue'),
         },
         {
-          path: '/album/:albumId',
-          name: 'albums',
+          path: 'album/:albumId',
+          name: 'album-view',
           component: () => import('@/vues/views/library/AlbumView.vue'),
           children: [
             {
-              path: '/view/:mediaId',
-              name: 'view-photo',
+              path: 'view/:mediaId',
+              name: 'view-photo-album',
               component: ViewPhoto,
             },
           ],

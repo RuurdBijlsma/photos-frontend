@@ -83,7 +83,7 @@ watch(
 </script>
 
 <template>
-  <simple-timeline :timeline-items="items">
+  <simple-timeline :timeline-items="items" :view-link="`/album/${id}/view/`">
     <div class="album-header">
       <div class="album-header-left">
         <glow-image

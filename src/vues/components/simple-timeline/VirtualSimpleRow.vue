@@ -7,6 +7,7 @@ defineProps<{
   containerWidth: number
   itemGap: number
   isScrollingFast: boolean
+  viewLink: string
 }>()
 </script>
 
@@ -28,6 +29,7 @@ defineProps<{
         :thumbnail-size="item.thumbnailSize"
         :media-item="mediaItem"
         :is-scrolling-fast="isScrollingFast"
+        :view-link="viewLink"
       />
     </div>
   </div>

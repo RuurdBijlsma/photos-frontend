@@ -5,13 +5,19 @@ import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import { computed, nextTick, ref } from 'vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
-const props = defineProps<{
-  mediaItem: TimelineItem | AlbumTimelineItem | undefined
-  width: number
-  height: number
-  thumbnailSize: number
-  isScrollingFast: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    mediaItem: TimelineItem | AlbumTimelineItem | undefined
+    width: number
+    height: number
+    thumbnailSize: number
+    isScrollingFast: boolean
+    viewLink?: string
+  }>(),
+  {
+    viewLink: '',
+  },
+)
 
 const selectionStore = useSelectionStore()
 
@@ -96,14 +102,19 @@ function selectItem(e: PointerEvent) {
             icon="mdi-check-bold"
           ></v-icon>
         </div>
-        <router-link class="fullscreen" :to="`view/${id}`" title="View in fullscreen" @click.stop>
+        <router-link
+          class="fullscreen"
+          :to="`${viewLink}${id}`"
+          title="View in fullscreen"
+          @click.stop
+        >
           <v-icon color="white" class="fullscreen-icon" size="20" icon="mdi-fullscreen" />
         </router-link>
         <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
       </div>
 
       <template v-else>
-        <router-link class="view-link" :to="`view/${id}`">
+        <router-link class="view-link" :to="`${viewLink}${id}`">
           <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
         </router-link>
         <div class="checkbox" @click.prevent="selectItem">

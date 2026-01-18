@@ -45,6 +45,7 @@ const monthItems = computed(() => timelineStore.monthItems.get(props.item.monthI
         :thumbnail-size="item.thumbnailSize"
         :media-item="monthItems[mediaItem.index]"
         :is-scrolling-fast="isScrollingFast"
+        view-link=""
       />
     </div>
   </div>

@@ -387,9 +387,9 @@ async function fetchViewPhotoIds() {
 }
 
 async function initializeViewPhoto() {
-  console.log('ROUTE NAME', route.name)
+  viewPhotoStore.viewLink = ''
 
-  if (route.name === 'view-photo') {
+  if (route.name!.toString().startsWith('view-photo')) {
     await fetchViewPhotoIds()
   } else {
     await requestIdleCallbackAsync(fetchViewPhotoIds)

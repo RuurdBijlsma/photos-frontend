@@ -76,10 +76,10 @@ watch(nextId, () => nextId.value && mediaItemStore.fetchMediaItem(nextId.value))
 function handleKeyDown(e: KeyboardEvent) {
   if (e.key === 'ArrowLeft' && prevId.value) {
     e.preventDefault()
-    router.replace({ path: `/view/${prevId.value}` })
+    router.replace({ path: `${viewPhotoStore.viewLink}${prevId.value}` })
   } else if (e.key === 'ArrowRight' && nextId.value) {
     e.preventDefault()
-    router.replace({ path: `/view/${nextId.value}` })
+    router.replace({ path: `${viewPhotoStore.viewLink}${nextId.value}` })
   } else if (e.key === 'Escape') {
     e.preventDefault()
     e.stopPropagation()
@@ -238,7 +238,7 @@ watch(
         </div>
       </div>
       <div
-        @click="router.replace({ path: `/view/${prevId}` })"
+        @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}` })"
         v-if="prevId !== null"
         class="prev-area"
         @mouseenter="showLeftButton = true"
@@ -253,7 +253,7 @@ watch(
         ></v-btn>
       </div>
       <div
-        @click="router.replace({ path: `/view/${nextId}` })"
+        @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}` })"
         v-if="nextId !== null"
         class="next-area"
         @mouseenter="showRightButton = true"
