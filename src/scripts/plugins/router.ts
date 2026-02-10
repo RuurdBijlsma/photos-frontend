@@ -54,6 +54,18 @@ const router = createRouter({
             },
           ],
         },
+        {
+          path: 'search',
+          name: 'search',
+          component: () => import('@/vues/views/main/SearchView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-search',
+              component: ViewPhoto,
+            },
+          ],
+        },
       ],
     },
     {

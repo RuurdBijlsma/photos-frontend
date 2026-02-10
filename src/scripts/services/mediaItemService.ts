@@ -3,6 +3,7 @@ import apiClient from './api.ts'
 import type { RandomPhotoResponse } from '@/scripts/types/api/photos.ts'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
 import type { Theme } from '@/scripts/types/themeColor.ts'
+import type { SearchResultItem } from '@/scripts/types/api/search.ts'
 
 const mediaItemService = {
   getPhotoThumbnail(id: string | null | undefined, size: number): string {
@@ -32,6 +33,16 @@ const mediaItemService = {
   getMediaItem(id: string): Promise<AxiosResponse<FullMediaItem>> {
     return apiClient.get<FullMediaItem>('/photos/item', {
       params: { id },
+    })
+  },
+
+  search(
+    query: string,
+    threshold?: number,
+    limit?: number,
+  ): Promise<AxiosResponse<SearchResultItem[]>> {
+    return apiClient.get<SearchResultItem[]>('/search', {
+      params: { query, threshold, limit },
     })
   },
 }
