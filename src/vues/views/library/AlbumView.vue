@@ -106,16 +106,20 @@ watch(
   { immediate: true },
 )
 
-watch(minimalAlbumInfo, () => {
-  // Do on nextTick, otherwise albumTitle may still be set from previous album page
-  // it's unset in the `id` watcher
-  nextTick(() => {
-    if (!id.value) return
-    if (!minimalAlbumInfo.value) return
-    if (albumTitle.value !== null) return
-    albumTitle.value = minimalAlbumInfo.value.name
-  })
-}, {immediate: true })
+watch(
+  minimalAlbumInfo,
+  () => {
+    // Do on nextTick, otherwise albumTitle may still be set from previous album page
+    // it's unset in the `id` watcher
+    nextTick(() => {
+      if (!id.value) return
+      if (!minimalAlbumInfo.value) return
+      if (albumTitle.value !== null) return
+      albumTitle.value = minimalAlbumInfo.value.name
+    })
+  },
+  { immediate: true },
+)
 
 watch(albumTitle, (newVal, oldVal) => {
   if (newVal && newVal !== oldVal) updateAlbumTitleDb(newVal)

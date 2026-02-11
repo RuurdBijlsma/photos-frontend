@@ -9,7 +9,8 @@ const mediaItemService = {
   getPhotoThumbnail(id: string | null | undefined, size: number): string {
     if (id === null || id === undefined) return ''
     const baseUrl = apiClient.defaults.baseURL
-    const path = `/thumbnails/${id}/${size}p.avif`
+    // const path = `/thumbnails/${id}/${size}p.avif`
+    const path = `/photos/thumbnail/${id}?size=${size}`
     return new URL(path, baseUrl).href
   },
 
