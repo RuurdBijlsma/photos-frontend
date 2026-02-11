@@ -14,11 +14,7 @@ import type {
   SortDirection,
   UpdateAlbumRequest,
 } from '@/scripts/types/api/album'
-import {
-  AlbumRatiosResponse,
-  FullAlbumMediaResponse,
-  TimelineItemsResponse,
-} from '@/scripts/types/generated/timeline.ts'
+import { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'
 
 const albumService = {
   /**
@@ -104,33 +100,8 @@ const albumService = {
     return apiClient.post<Album>('/album/invite/accept', payload)
   },
 
-  getTimelineIds(albumId: string): Promise<AxiosResponse<string[]>> {
-    return apiClient.get<string[]>(`/album/${albumId}/ids`, { params: { sort: 'desc' } })
-  },
-
-  async getTimelineRatios(albumId: string): Promise<AlbumRatiosResponse> {
-    const response = await apiClient.get(`/album/${albumId}/ratios`, {
-      params: { sort: 'desc' },
-      responseType: 'arraybuffer',
-    })
-    const buffer = new Uint8Array(response.data)
-    return AlbumRatiosResponse.decode(buffer)
-  },
-
-  async getMediaByMonths(albumId: string, months: string[]): Promise<TimelineItemsResponse> {
-    const response = await apiClient.get(`/album/${albumId}/by-month`, {
-      responseType: 'arraybuffer',
-      params: {
-        sort: 'desc',
-        months: months.join(','),
-      },
-    })
-    const buffer = new Uint8Array(response.data)
-    return TimelineItemsResponse.decode(buffer)
-  },
-
   async getAlbumMedia(albumId: string): Promise<FullAlbumMediaResponse> {
-    const response = await apiClient.get(`/album/${albumId}/media`, {
+    const response = await apiClient.get(`/album/${albumId}`, {
       responseType: 'arraybuffer',
       params: {
         sort: 'desc',

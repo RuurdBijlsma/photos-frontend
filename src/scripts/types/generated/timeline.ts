@@ -9,7 +9,7 @@ import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire'
 
 export const protobufPackage = 'api'
 
-/** Contains ratios and amount of media items per month, grouped by month. */
+/** --- Main Timeline (Main library view) --- */
 export interface TimelineRatiosResponse {
   months: TimelineMonthRatios[]
 }
@@ -20,7 +20,6 @@ export interface TimelineMonthRatios {
   ratios: number[]
 }
 
-/** Contains information for media items for the requested months, grouped by month. */
 export interface TimelineItemsResponse {
   months: TimelineMonthItems[]
 }
@@ -38,30 +37,7 @@ export interface TimelineItem {
   timestamp: string
 }
 
-/** Returns Album Metadata + Ratios grouped by Rank */
-export interface AlbumRatiosResponse {
-  album: AlbumInfo | undefined
-  /** Groups of items, e.g. 100 items per group. */
-  groups: AlbumRatioGroup[]
-}
-
-export interface AlbumRatioGroup {
-  /** The rank ID that starts this group (acts as the cursor/ID) */
-  groupId: string
-  /** The ratios of the items in this group */
-  ratios: number[]
-}
-
-/** Response for specific chunks of the album */
-export interface AlbumMediaResponse {
-  groups: AlbumMediaGroup[]
-}
-
-export interface AlbumMediaGroup {
-  groupId: string
-  items: TimelineItem[]
-}
-
+/** --- Album Specific --- */
 export interface FullAlbumMediaResponse {
   album: AlbumInfo | undefined
   items: AlbumTimelineItem[]
@@ -75,17 +51,24 @@ export interface AlbumTimelineItem {
   ratio: number
 }
 
+export interface CollaboratorSummary {
+  id: number
+  userId: number
+  name: string
+  role: string
+}
+
 export interface AlbumInfo {
   id: string
   name: string
   description?: string | undefined
   isPublic: boolean
   ownerId: number
-  /** RFC3339 string */
   createdAt: string
   thumbnailId?: string | undefined
-  /** If the user is a collaborator, this shows their role */
-  userRole?: string | undefined
+  firstDate?: string | undefined
+  lastDate?: string | undefined
+  collaborators: CollaboratorSummary[]
 }
 
 function createBaseTimelineRatiosResponse(): TimelineRatiosResponse {
@@ -528,319 +511,6 @@ export const TimelineItem: MessageFns<TimelineItem> = {
   },
 }
 
-function createBaseAlbumRatiosResponse(): AlbumRatiosResponse {
-  return { album: undefined, groups: [] }
-}
-
-export const AlbumRatiosResponse: MessageFns<AlbumRatiosResponse> = {
-  encode(message: AlbumRatiosResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.album !== undefined) {
-      AlbumInfo.encode(message.album, writer.uint32(10).fork()).join()
-    }
-    for (const v of message.groups) {
-      AlbumRatioGroup.encode(v!, writer.uint32(18).fork()).join()
-    }
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): AlbumRatiosResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseAlbumRatiosResponse()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.album = AlbumInfo.decode(reader, reader.uint32())
-          continue
-        }
-        case 2: {
-          if (tag !== 18) {
-            break
-          }
-
-          message.groups.push(AlbumRatioGroup.decode(reader, reader.uint32()))
-          continue
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): AlbumRatiosResponse {
-    return {
-      album: isSet(object.album) ? AlbumInfo.fromJSON(object.album) : undefined,
-      groups: globalThis.Array.isArray(object?.groups)
-        ? object.groups.map((e: any) => AlbumRatioGroup.fromJSON(e))
-        : [],
-    }
-  },
-
-  toJSON(message: AlbumRatiosResponse): unknown {
-    const obj: any = {}
-    if (message.album !== undefined) {
-      obj.album = AlbumInfo.toJSON(message.album)
-    }
-    if (message.groups?.length) {
-      obj.groups = message.groups.map((e) => AlbumRatioGroup.toJSON(e))
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<AlbumRatiosResponse>, I>>(base?: I): AlbumRatiosResponse {
-    return AlbumRatiosResponse.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<AlbumRatiosResponse>, I>>(
-    object: I,
-  ): AlbumRatiosResponse {
-    const message = createBaseAlbumRatiosResponse()
-    message.album =
-      object.album !== undefined && object.album !== null
-        ? AlbumInfo.fromPartial(object.album)
-        : undefined
-    message.groups = object.groups?.map((e) => AlbumRatioGroup.fromPartial(e)) || []
-    return message
-  },
-}
-
-function createBaseAlbumRatioGroup(): AlbumRatioGroup {
-  return { groupId: '', ratios: [] }
-}
-
-export const AlbumRatioGroup: MessageFns<AlbumRatioGroup> = {
-  encode(message: AlbumRatioGroup, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.groupId !== '') {
-      writer.uint32(10).string(message.groupId)
-    }
-    writer.uint32(18).fork()
-    for (const v of message.ratios) {
-      writer.float(v)
-    }
-    writer.join()
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): AlbumRatioGroup {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseAlbumRatioGroup()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.groupId = reader.string()
-          continue
-        }
-        case 2: {
-          if (tag === 21) {
-            message.ratios.push(reader.float())
-
-            continue
-          }
-
-          if (tag === 18) {
-            const end2 = reader.uint32() + reader.pos
-            while (reader.pos < end2) {
-              message.ratios.push(reader.float())
-            }
-
-            continue
-          }
-
-          break
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): AlbumRatioGroup {
-    return {
-      groupId: isSet(object.groupId) ? globalThis.String(object.groupId) : '',
-      ratios: globalThis.Array.isArray(object?.ratios)
-        ? object.ratios.map((e: any) => globalThis.Number(e))
-        : [],
-    }
-  },
-
-  toJSON(message: AlbumRatioGroup): unknown {
-    const obj: any = {}
-    if (message.groupId !== '') {
-      obj.groupId = message.groupId
-    }
-    if (message.ratios?.length) {
-      obj.ratios = message.ratios
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<AlbumRatioGroup>, I>>(base?: I): AlbumRatioGroup {
-    return AlbumRatioGroup.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<AlbumRatioGroup>, I>>(object: I): AlbumRatioGroup {
-    const message = createBaseAlbumRatioGroup()
-    message.groupId = object.groupId ?? ''
-    message.ratios = object.ratios?.map((e) => e) || []
-    return message
-  },
-}
-
-function createBaseAlbumMediaResponse(): AlbumMediaResponse {
-  return { groups: [] }
-}
-
-export const AlbumMediaResponse: MessageFns<AlbumMediaResponse> = {
-  encode(message: AlbumMediaResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.groups) {
-      AlbumMediaGroup.encode(v!, writer.uint32(10).fork()).join()
-    }
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): AlbumMediaResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseAlbumMediaResponse()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.groups.push(AlbumMediaGroup.decode(reader, reader.uint32()))
-          continue
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): AlbumMediaResponse {
-    return {
-      groups: globalThis.Array.isArray(object?.groups)
-        ? object.groups.map((e: any) => AlbumMediaGroup.fromJSON(e))
-        : [],
-    }
-  },
-
-  toJSON(message: AlbumMediaResponse): unknown {
-    const obj: any = {}
-    if (message.groups?.length) {
-      obj.groups = message.groups.map((e) => AlbumMediaGroup.toJSON(e))
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<AlbumMediaResponse>, I>>(base?: I): AlbumMediaResponse {
-    return AlbumMediaResponse.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<AlbumMediaResponse>, I>>(object: I): AlbumMediaResponse {
-    const message = createBaseAlbumMediaResponse()
-    message.groups = object.groups?.map((e) => AlbumMediaGroup.fromPartial(e)) || []
-    return message
-  },
-}
-
-function createBaseAlbumMediaGroup(): AlbumMediaGroup {
-  return { groupId: '', items: [] }
-}
-
-export const AlbumMediaGroup: MessageFns<AlbumMediaGroup> = {
-  encode(message: AlbumMediaGroup, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.groupId !== '') {
-      writer.uint32(10).string(message.groupId)
-    }
-    for (const v of message.items) {
-      TimelineItem.encode(v!, writer.uint32(18).fork()).join()
-    }
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): AlbumMediaGroup {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseAlbumMediaGroup()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.groupId = reader.string()
-          continue
-        }
-        case 2: {
-          if (tag !== 18) {
-            break
-          }
-
-          message.items.push(TimelineItem.decode(reader, reader.uint32()))
-          continue
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): AlbumMediaGroup {
-    return {
-      groupId: isSet(object.groupId) ? globalThis.String(object.groupId) : '',
-      items: globalThis.Array.isArray(object?.items)
-        ? object.items.map((e: any) => TimelineItem.fromJSON(e))
-        : [],
-    }
-  },
-
-  toJSON(message: AlbumMediaGroup): unknown {
-    const obj: any = {}
-    if (message.groupId !== '') {
-      obj.groupId = message.groupId
-    }
-    if (message.items?.length) {
-      obj.items = message.items.map((e) => TimelineItem.toJSON(e))
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<AlbumMediaGroup>, I>>(base?: I): AlbumMediaGroup {
-    return AlbumMediaGroup.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<AlbumMediaGroup>, I>>(object: I): AlbumMediaGroup {
-    const message = createBaseAlbumMediaGroup()
-    message.groupId = object.groupId ?? ''
-    message.items = object.items?.map((e) => TimelineItem.fromPartial(e)) || []
-    return message
-  },
-}
-
 function createBaseFullAlbumMediaResponse(): FullAlbumMediaResponse {
   return { album: undefined, items: [] }
 }
@@ -1050,6 +720,116 @@ export const AlbumTimelineItem: MessageFns<AlbumTimelineItem> = {
   },
 }
 
+function createBaseCollaboratorSummary(): CollaboratorSummary {
+  return { id: 0, userId: 0, name: '', role: '' }
+}
+
+export const CollaboratorSummary: MessageFns<CollaboratorSummary> = {
+  encode(message: CollaboratorSummary, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== 0) {
+      writer.uint32(8).int64(message.id)
+    }
+    if (message.userId !== 0) {
+      writer.uint32(16).int32(message.userId)
+    }
+    if (message.name !== '') {
+      writer.uint32(26).string(message.name)
+    }
+    if (message.role !== '') {
+      writer.uint32(34).string(message.role)
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CollaboratorSummary {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseCollaboratorSummary()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break
+          }
+
+          message.id = longToNumber(reader.int64())
+          continue
+        }
+        case 2: {
+          if (tag !== 16) {
+            break
+          }
+
+          message.userId = reader.int32()
+          continue
+        }
+        case 3: {
+          if (tag !== 26) {
+            break
+          }
+
+          message.name = reader.string()
+          continue
+        }
+        case 4: {
+          if (tag !== 34) {
+            break
+          }
+
+          message.role = reader.string()
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): CollaboratorSummary {
+    return {
+      id: isSet(object.id) ? globalThis.Number(object.id) : 0,
+      userId: isSet(object.userId) ? globalThis.Number(object.userId) : 0,
+      name: isSet(object.name) ? globalThis.String(object.name) : '',
+      role: isSet(object.role) ? globalThis.String(object.role) : '',
+    }
+  },
+
+  toJSON(message: CollaboratorSummary): unknown {
+    const obj: any = {}
+    if (message.id !== 0) {
+      obj.id = Math.round(message.id)
+    }
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId)
+    }
+    if (message.name !== '') {
+      obj.name = message.name
+    }
+    if (message.role !== '') {
+      obj.role = message.role
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<CollaboratorSummary>, I>>(base?: I): CollaboratorSummary {
+    return CollaboratorSummary.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<CollaboratorSummary>, I>>(
+    object: I,
+  ): CollaboratorSummary {
+    const message = createBaseCollaboratorSummary()
+    message.id = object.id ?? 0
+    message.userId = object.userId ?? 0
+    message.name = object.name ?? ''
+    message.role = object.role ?? ''
+    return message
+  },
+}
+
 function createBaseAlbumInfo(): AlbumInfo {
   return {
     id: '',
@@ -1059,7 +839,9 @@ function createBaseAlbumInfo(): AlbumInfo {
     ownerId: 0,
     createdAt: '',
     thumbnailId: undefined,
-    userRole: undefined,
+    firstDate: undefined,
+    lastDate: undefined,
+    collaborators: [],
   }
 }
 
@@ -1086,8 +868,14 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
     if (message.thumbnailId !== undefined) {
       writer.uint32(58).string(message.thumbnailId)
     }
-    if (message.userRole !== undefined) {
-      writer.uint32(66).string(message.userRole)
+    if (message.firstDate !== undefined) {
+      writer.uint32(74).string(message.firstDate)
+    }
+    if (message.lastDate !== undefined) {
+      writer.uint32(82).string(message.lastDate)
+    }
+    for (const v of message.collaborators) {
+      CollaboratorSummary.encode(v!, writer.uint32(90).fork()).join()
     }
     return writer
   },
@@ -1155,12 +943,28 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
           message.thumbnailId = reader.string()
           continue
         }
-        case 8: {
-          if (tag !== 66) {
+        case 9: {
+          if (tag !== 74) {
             break
           }
 
-          message.userRole = reader.string()
+          message.firstDate = reader.string()
+          continue
+        }
+        case 10: {
+          if (tag !== 82) {
+            break
+          }
+
+          message.lastDate = reader.string()
+          continue
+        }
+        case 11: {
+          if (tag !== 90) {
+            break
+          }
+
+          message.collaborators.push(CollaboratorSummary.decode(reader, reader.uint32()))
           continue
         }
       }
@@ -1181,7 +985,11 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
       ownerId: isSet(object.ownerId) ? globalThis.Number(object.ownerId) : 0,
       createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : '',
       thumbnailId: isSet(object.thumbnailId) ? globalThis.String(object.thumbnailId) : undefined,
-      userRole: isSet(object.userRole) ? globalThis.String(object.userRole) : undefined,
+      firstDate: isSet(object.firstDate) ? globalThis.String(object.firstDate) : undefined,
+      lastDate: isSet(object.lastDate) ? globalThis.String(object.lastDate) : undefined,
+      collaborators: globalThis.Array.isArray(object?.collaborators)
+        ? object.collaborators.map((e: any) => CollaboratorSummary.fromJSON(e))
+        : [],
     }
   },
 
@@ -1208,8 +1016,14 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
     if (message.thumbnailId !== undefined) {
       obj.thumbnailId = message.thumbnailId
     }
-    if (message.userRole !== undefined) {
-      obj.userRole = message.userRole
+    if (message.firstDate !== undefined) {
+      obj.firstDate = message.firstDate
+    }
+    if (message.lastDate !== undefined) {
+      obj.lastDate = message.lastDate
+    }
+    if (message.collaborators?.length) {
+      obj.collaborators = message.collaborators.map((e) => CollaboratorSummary.toJSON(e))
     }
     return obj
   },
@@ -1226,7 +1040,10 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
     message.ownerId = object.ownerId ?? 0
     message.createdAt = object.createdAt ?? ''
     message.thumbnailId = object.thumbnailId ?? undefined
-    message.userRole = object.userRole ?? undefined
+    message.firstDate = object.firstDate ?? undefined
+    message.lastDate = object.lastDate ?? undefined
+    message.collaborators =
+      object.collaborators?.map((e) => CollaboratorSummary.fromPartial(e)) || []
     return message
   },
 }
@@ -1247,6 +1064,17 @@ type KeysOfUnion<T> = T extends T ? keyof T : never
 export type Exact<P, I extends P> = P extends Builtin
   ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never }
+
+function longToNumber(int64: { toString(): string }): number {
+  const num = globalThis.Number(int64.toString())
+  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
+    throw new globalThis.Error('Value is larger than Number.MAX_SAFE_INTEGER')
+  }
+  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
+    throw new globalThis.Error('Value is smaller than Number.MIN_SAFE_INTEGER')
+  }
+  return num
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined

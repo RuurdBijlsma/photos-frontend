@@ -151,8 +151,6 @@ export const useThemeStore = defineStore('theme', () => {
   function setThemesFromJson(themeData: Theme) {
     const theme = themeFromJson(themeData)
     currentTheme.value = theme
-
-    console.warn('Apply theme')
     if (vuetifyTheme.themes.value.dark && theme?.dark.colors) {
       //@ts-expect-error Error
       vuetifyTheme.themes.value.dark.colors = theme.dark.colors

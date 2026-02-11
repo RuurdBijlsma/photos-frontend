@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AlbumTimelineItem } from '@/scripts/types/generated/timeline.ts'
-import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import type { SimpleLayoutRow } from '@/scripts/types/timeline/layout.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
@@ -203,8 +203,8 @@ useResizeObserver(customSlotEl, (entries) => {
 watch([() => props.timelineItems, containerWidth], () => {
   const { rows, totalHeight } = calculateLayout(props.timelineItems, containerWidth.value)
   gridLayout.value = rows
-  console.log('customSlotHeight', customSlotHeight.value)
   contentHeight.value = totalHeight + customSlotHeight.value
+  nextTick(() => rowVirtualizer.value.measure())
 })
 
 watch(
@@ -214,7 +214,6 @@ watch(
     viewPhotoStore.ids = ids
     viewPhotoStore.viewLink = props.viewLink
     selectionStore.allIds = ids
-    console.warn('SET IDS!', ids.length)
   },
   { immediate: true },
 )

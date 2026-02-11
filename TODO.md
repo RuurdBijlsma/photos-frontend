@@ -66,6 +66,14 @@
 * ✅ make albums list in nav drawer not scrollable, and cut off at 5 items or so (maybe add view all button at the bottom
   of the list if theres more items available)
 * ✅ remember if albums list in navbar is open with localstorage
+* ✅ if an album has media items in it, but no title, then show it as <No Title> or something in the nav bar and the albums
+    page
+* ✅ timeline scrollbar is shitty when we have few media items
+* ✅ make way to see time range of album (include in metadata with ratios request)
+* ✅ only request main timeline ratios/ids/by-month if we're visiting the main timeline
+* ✅ make date overlay hide when near the top of the page
+* ✅ fix griditem rendering
+* ✅ hij is weer shitty laggy lol waarom doet ie dat :((( bisect maar weer even ofzo
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -98,20 +106,11 @@
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* [bug] scroll via timeline to some far away date → scroll up & down a bit → it janks to a month later? idk
-* next: make add to album via selection work. make the UX nice. (also be able to add to existing album)
-* when holding shift & selecting dont insta lose preview when not hovering a photo
-* fix lag spike when moving from photos → explore → [LAG HERE] photos
-* [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
-* remove theme per photo in /view/
-* if an album has media items in it, but no title, then show it as <No Title> or something in the nav bar and the albums
-  page
-* only request main timeline ratios/ids/by-month if we're visiting the main timeline
-*
+* ✅ [bug] scroll via timeline to some far away date → scroll up & down a bit → it janks to a month later? idk
+* ✅ next: make add to album via selection work. make the UX nice. (also be able to add to existing album)
+* ✅ when holding shift & selecting dont insta lose preview when not hovering a photo
+* ✅ fix lag spike when moving from photos → explore → [LAG HERE] photos
+* ✅ [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
+* 🫸 remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
 * add way to add description
-* timeline scrollbar is shitty when we have few media items
-* make way to see time range of album (include in metadata with ratios request)
 * album page: add sort options (also sort by added on date)
-* make date overlay hide when near the top of the page
-* fix griditem rendering
-* hij is weer shitty laggy lol waarom doet ie dat :((( bisect maar weer even ofzo
