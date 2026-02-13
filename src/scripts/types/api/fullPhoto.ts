@@ -190,6 +190,7 @@ export interface FullMediaItem {
   taken_at_local: string
   taken_at_utc: string | null
   use_panorama_viewer: boolean
+  has_thumbnails: boolean
   visual_analyses: VisualAnalysis[]
   gps: Gps | null
   time_details: TimeDetails | null

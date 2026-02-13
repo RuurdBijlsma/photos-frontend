@@ -6,11 +6,16 @@ import type { Theme } from '@/scripts/types/themeColor.ts'
 import type { SearchResultItem } from '@/scripts/types/api/search.ts'
 
 const mediaItemService = {
-  getPhotoThumbnail(id: string | null | undefined, size: number): string {
+  getPhotoThumbnail(
+    id: string | null | undefined,
+    size: number,
+    onDemand: boolean | undefined,
+  ): string {
     if (id === null || id === undefined) return ''
     const baseUrl = apiClient.defaults.baseURL
-    // const path = `/thumbnails/${id}/${size}p.avif`
-    const path = `/photos/thumbnail/${id}?size=${size}`
+    const path = onDemand
+      ? `/photos/thumbnail/${id}?size=${size}`
+      : `/thumbnails/${id}/${size}p.avif`
     return new URL(path, baseUrl).href
   },
 

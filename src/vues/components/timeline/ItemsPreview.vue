@@ -24,7 +24,7 @@ const truncatedIds = computed(() => props.mediaItemIds.slice(0, 5))
         :style="{
           '--percentage': (truncatedIds.length - i) * (1 / truncatedIds.length),
           '--i': i,
-          backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, 144)})`,
+          backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, 144, false)})`,
         }"
       />
     </div>

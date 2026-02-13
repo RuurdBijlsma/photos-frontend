@@ -142,7 +142,7 @@ watch(
         <glow-image
           border-radius="44px"
           :height="222"
-          :src="mediaItemService.getPhotoThumbnail(thumbnailId, 720)"
+          :src="mediaItemService.getPhotoThumbnail(thumbnailId, 720, false)"
         ></glow-image>
       </div>
       <div class="album-header-right">

@@ -75,7 +75,7 @@ function selectItem(e: PointerEvent) {
     :style="{
       width: `${width}px`,
       height: `${height}px`,
-      backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, thumbnailSize)})`,
+      backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, thumbnailSize, !mediaItem?.hasThumbnails)})`,
       '--scale-x': (width - 8) / width,
       '--scale-y': (height - 8) / height,
     }"

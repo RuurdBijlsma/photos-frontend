@@ -99,7 +99,7 @@ async function addToAlbum(album: Album) {
           <template v-slot:prepend>
             <v-avatar rounded color="surface-container-high">
               <v-img
-                :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 144)"
+                :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 144, false)"
                 v-if="album.thumbnailId"
               />
               <v-icon v-else icon="mdi-image-album" color="primary" class="opacity-70" />

@@ -34,7 +34,7 @@ async function setQuery() {
 }
 
 async function openImg(id: string) {
-  window.open(mediaItemService.getPhotoThumbnail(id, 1440))
+  window.open(mediaItemService.getPhotoThumbnail(id, 1440, false))
 }
 
 async function showDetails(id: string) {
@@ -96,7 +96,7 @@ onMounted(async () => {
         <div
           class="photo"
           :style="{
-            backgroundImage: `url(${mediaItemService.getPhotoThumbnail(res.id, 1440)})`,
+            backgroundImage: `url(${mediaItemService.getPhotoThumbnail(res.id, 720, false)})`,
           }"
         ></div>
         <div class="info">

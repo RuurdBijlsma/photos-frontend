@@ -93,7 +93,10 @@ function handleKeyDown(e: KeyboardEvent) {
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeyDown))
 
-const imageUrl = computed(() => mediaItemService.getPhotoThumbnail(id.value, 1440))
+const generatedThumbsAvailable = computed(() => fullImage.value?.has_thumbnails ?? false)
+const imageUrl = computed(() =>
+  mediaItemService.getPhotoThumbnail(id.value, 1440, !generatedThumbsAvailable.value),
+)
 
 const timestampString = computed(() => {
   const dateStr = fullImage.value?.taken_at_local
