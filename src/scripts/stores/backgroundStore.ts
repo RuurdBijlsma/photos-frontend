@@ -10,7 +10,7 @@ import mediaItemService from '@/scripts/services/mediaItemService.ts'
 // The single key we will use for localStorage
 const BG_CACHE_KEY = 'cachedBackgroundData'
 const COLOR_CACHE_KEY = 'cacheColorData'
-const DEFAULT_IMAGE_URL = 'img/etna.jpg'
+const DEFAULT_IMAGE_URL = '/img/etna.jpg'
 
 export const useBackgroundStore = defineStore('background', () => {
   // --- STATE ---

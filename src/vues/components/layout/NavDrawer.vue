@@ -19,6 +19,7 @@ const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
 const maxShownAlbums = ref(5)
 const truncatedAlbums = computed(() => albumStore.userAlbums.slice(0, maxShownAlbums.value))
 const hasMoreAlbums = computed(() => albumStore.userAlbums.length > maxShownAlbums.value)
+const useOnDemandThumb = ref(new Map<string | null, boolean>())
 
 const route = useRoute()
 </script>
@@ -66,7 +67,16 @@ const route = useRoute()
           >
             <template v-slot:prepend>
               <v-avatar rounded color="surface-container-high">
-                <v-img :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 144, false)" />
+                <v-img
+                  :src="
+                    mediaItemService.getPhotoThumbnail(
+                      album.thumbnailId,
+                      144,
+                      useOnDemandThumb.get(album.thumbnailId),
+                    )
+                  "
+                  @error="useOnDemandThumb.set(album.thumbnailId, true)"
+                />
               </v-avatar>
             </template>
             <v-list-item-title

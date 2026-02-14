@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 const props = defineProps<{
@@ -7,6 +7,17 @@ const props = defineProps<{
 }>()
 
 const truncatedIds = computed(() => props.mediaItemIds.slice(0, 5))
+
+const thumbCache = ref(new Map<string, boolean>())
+function tryThumb(thumbId: string | null) {
+  if (thumbId == null) return null
+  const img = new Image()
+  img.src = mediaItemService.getPhotoThumbnail(thumbId, 144, false)
+  img.onload = () => thumbCache.value.set(thumbId, false)
+  img.onerror = () => thumbCache.value.set(thumbId, true)
+}
+
+watch(truncatedIds, () => truncatedIds.value.forEach((id) => tryThumb(id)), { immediate: true })
 </script>
 
 <template>
@@ -24,7 +35,7 @@ const truncatedIds = computed(() => props.mediaItemIds.slice(0, 5))
         :style="{
           '--percentage': (truncatedIds.length - i) * (1 / truncatedIds.length),
           '--i': i,
-          backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, 144, false)})`,
+          backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, 144, thumbCache.get(id) ?? false)})`,
         }"
       />
     </div>

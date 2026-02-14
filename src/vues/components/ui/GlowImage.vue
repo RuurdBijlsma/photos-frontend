@@ -10,6 +10,7 @@ withDefaults(
     borderRadius: '0',
   },
 )
+const emit = defineEmits(['error'])
 </script>
 
 <template>
@@ -17,6 +18,7 @@ withDefaults(
     <img
       :height="height"
       :width="width"
+      @error="(e) => emit('error', e)"
       aria-hidden="true"
       alt="Album thumbnail"
       class="image-bg"

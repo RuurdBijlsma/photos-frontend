@@ -422,17 +422,6 @@ useEventListener(document, 'mouseup', (e) => {
   updateScrollPosition(e.clientY)
 })
 
-useEventListener(document, 'keydown', (e) => {
-  if (e.key === 'a' && e.ctrlKey) {
-    e.preventDefault()
-    selectionStore.selectAll()
-  }
-  if (e.key === 'Escape' && route.name === 'timeline') {
-    e.preventDefault()
-    selectionStore.deselectAll()
-  }
-})
-
 const hideScrollDetails = useDebounceFn(() => {
   showScrollDetails.value = false
 }, 5000)

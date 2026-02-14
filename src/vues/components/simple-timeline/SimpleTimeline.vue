@@ -226,16 +226,6 @@ useEventListener(window, 'mousemove', (e: MouseEvent) => {
 useEventListener(window, 'mouseup', () => {
   isDragging = false
 })
-useEventListener(document, 'keydown', (e) => {
-  if (e.key === 'a' && e.ctrlKey) {
-    e.preventDefault()
-    selectionStore.selectAll()
-  }
-  if (e.key === 'Escape' && !route.name!.toString().startsWith('view-photo')) {
-    e.preventDefault()
-    selectionStore.deselectAll()
-  }
-})
 </script>
 
 <template>

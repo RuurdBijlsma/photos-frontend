@@ -41,6 +41,13 @@ const albumService = {
     return apiClient.put<Album>(`/album/${albumId}`, payload)
   },
 
+  /**
+   * Remove album description.
+   */
+  removeAlbumDescription(albumId: string): Promise<AxiosResponse> {
+    return apiClient.delete(`/album/${albumId}/description`)
+  },
+
   // --- Media Management ---
 
   /**

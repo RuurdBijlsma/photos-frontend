@@ -24,6 +24,13 @@ const selectionStore = useSelectionStore()
         v-tooltip:top="'Deselect all'"
         @click="selectionStore.deselectAll"
       />
+      <v-btn
+        icon="mdi-all-inclusive"
+        variant="plain"
+        density="compact"
+        @click="selectionStore.selectAll"
+        v-tooltip:top="'Select all'"
+      />
       <div class="select-text">
         <span class="bold-select">{{ selectionStore.selection.size }}</span
         ><span> selected</span>
