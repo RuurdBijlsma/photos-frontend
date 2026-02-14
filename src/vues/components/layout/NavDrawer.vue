@@ -66,7 +66,7 @@ const route = useRoute()
           >
             <template v-slot:prepend>
               <v-avatar rounded color="surface-container-high">
-                <v-img :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 144, false)"/>
+                <v-img :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 144, false)" />
               </v-avatar>
             </template>
             <v-list-item-title

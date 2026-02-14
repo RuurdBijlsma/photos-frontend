@@ -90,7 +90,7 @@ function selectItem(e: PointerEvent) {
         playsinline
         :width="width"
         :height="height"
-        :src="mediaItemService.getVideo(id, 480)"
+        :src="mediaItemService.getVideo(id, 480, !mediaItem?.hasThumbnails)"
       />
 
       <div v-if="selectionStore.isSelecting" class="selecting-overlay" @click="selectItem">

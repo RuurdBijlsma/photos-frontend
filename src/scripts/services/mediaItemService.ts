@@ -19,10 +19,10 @@ const mediaItemService = {
     return new URL(path, baseUrl).href
   },
 
-  getVideo(id: string | null | undefined, size: number): string {
+  getVideo(id: string | null | undefined, size: number, onDemand: boolean | undefined): string {
     if (id === null || id === undefined) return ''
     const baseUrl = apiClient.defaults.baseURL
-    const path = `/thumbnails/${id}/${size}p.webm`
+    const path = onDemand ? `/photos/video/${id}` : `/thumbnails/${id}/${size}p.webm`
     return new URL(path, baseUrl).href
   },
 
