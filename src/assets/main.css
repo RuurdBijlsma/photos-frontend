@@ -17,6 +17,10 @@ body {
   background-color: #101010 !important;
 }
 
+.v-navigation-drawer, .v-main {
+  transition: 0s !important;
+}
+
 ::-moz-selection {
   color: rgb(var(--v-theme-on-tertiary));
   background: rgb(var(--v-theme-tertiary));

@@ -276,6 +276,7 @@ watch(
           type="avatar,avatar"
           :style="{ transform: `translateX(-60px) scale(0.88)` }"
         />
+        <v-btn @click="albumService.sortAlbumByDate(id)">Sort chronologically</v-btn>
       </div>
     </div>
   </simple-timeline>

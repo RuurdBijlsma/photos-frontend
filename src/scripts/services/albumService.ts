@@ -48,6 +48,13 @@ const albumService = {
     return apiClient.delete(`/album/${albumId}/description`)
   },
 
+  /**
+   * Reset album ranks to sort it in chronological order.
+   */
+  sortAlbumByDate(albumId: string): Promise<AxiosResponse> {
+    return apiClient.post(`/album/${albumId}/sort-by-date`)
+  },
+
   // --- Media Management ---
 
   /**

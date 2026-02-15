@@ -9,17 +9,35 @@ export interface SnackAction {
   onClick: () => unknown
 }
 
+export interface AlertAction {
+  name: string
+  action: () => unknown
+  color?: string
+}
+
+export interface CreateAlert {
+  title: string
+  description: string
+  icon?: string
+  actions?: AlertAction[]
+}
+
+export interface Alert {
+  id: string
+  title: string
+  description: string
+  icon?: string
+  actions?: AlertAction[]
+}
+
 export interface Snack {
   id: string // Changed to string for UUID
   message: string
   color: 'success' | 'info' | 'warning' | 'error' | 'surface-variant' | string
   timeout: number
-  /** Optional action button configuration */
   action?: SnackAction
-  /** Error details for debugging */
   error?: Error
   errorData?: { error: string }
-  /** Internal timer ID for pausing/resuming */
   timerId?: ReturnType<typeof setTimeout>
 }
 
@@ -35,16 +53,17 @@ export type SnackOptions = {
 // --- Store ---
 
 export const useSnackbarsStore = defineStore('snackbars', () => {
-  const queue = ref<Snack[]>([])
+  const snackQueue = ref<Snack[]>([])
+  const alertQueue = ref<Alert[]>([])
 
   /**
    * Removes a snackbar by ID.
    */
   function remove(id: string) {
-    const index = queue.value.findIndex((s) => s.id === id)
+    const index = snackQueue.value.findIndex((s) => s.id === id)
     if (index > -1) {
-      clearTimeout(queue.value[index]!.timerId)
-      queue.value.splice(index, 1)
+      clearTimeout(snackQueue.value[index]!.timerId)
+      snackQueue.value.splice(index, 1)
     }
   }
 
@@ -80,7 +99,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
       if (!options.color) snack.color = 'error'
     }
 
-    queue.value.push(snack)
+    snackQueue.value.push(snack)
 
     // Start timer
     startTimer(snack)
@@ -98,7 +117,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
    * Pauses the auto-close timer (e.g., on hover).
    */
   function pauseTimeout(id: string) {
-    const snack = queue.value.find((s) => s.id === id)
+    const snack = snackQueue.value.find((s) => s.id === id)
     if (snack && snack.timerId) {
       clearTimeout(snack.timerId)
       snack.timerId = undefined
@@ -109,7 +128,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
    * Resumes the auto-close timer (e.g., on mouse leave).
    */
   function resumeTimeout(id: string) {
-    const snack = queue.value.find((s) => s.id === id)
+    const snack = snackQueue.value.find((s) => s.id === id)
     if (snack && !snack.timerId) {
       // Give it a bit more time if the user was reading it
       const remaining = Math.max(snack.timeout / 2, 2000)
@@ -137,8 +156,25 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
     enqueue({ message, error, color: 'error', timeout: 10000, action })
   }
 
+  function alert(alert: CreateAlert) {
+    const id = crypto.randomUUID()
+    alertQueue.value.push({
+      id,
+      ...alert,
+    })
+    return id
+  }
+
+  function removeAlert(id: string) {
+    const index = alertQueue.value.findIndex((a) => a.id === id)
+    if (index > -1) {
+      alertQueue.value.splice(index, 1)
+    }
+  }
+
   return {
-    queue,
+    snackQueue,
+    alertQueue,
     remove,
     enqueue,
     info,
@@ -147,5 +183,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
     error,
     pauseTimeout,
     resumeTimeout,
+    alert,
+    removeAlert,
   }
 })

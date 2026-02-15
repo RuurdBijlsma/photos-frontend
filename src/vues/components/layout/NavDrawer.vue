@@ -99,16 +99,20 @@ const route = useRoute()
           <v-btn
             density="compact"
             variant="plain"
+            rounded
+            color="secondary"
             v-if="hasMoreAlbums"
-            class="mt-1"
+            class="mt-1 show-more-less-button"
             @click="maxShownAlbums += 5"
             >Show more</v-btn
           >
           <v-btn
             density="compact"
             variant="plain"
+            rounded
+            color="secondary"
             v-else-if="maxShownAlbums > 5"
-            class="mt-1"
+            class="mt-1 show-more-less-button"
             @click="maxShownAlbums = 5"
             >Show less</v-btn
           >
@@ -155,5 +159,9 @@ const route = useRoute()
 
 .point-down {
   transform: rotate(180deg);
+}
+
+.show-more-less-button {
+  font-size: 10px;
 }
 </style>

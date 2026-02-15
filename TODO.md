@@ -114,3 +114,4 @@
 * 🫸 remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
 * add way to add description
 * album page: add sort options (also sort by added on date)
+* als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.

@@ -25,7 +25,7 @@ const selectionStore = useSelectionStore()
         @click="selectionStore.deselectAll"
       />
       <v-btn
-        icon="mdi-all-inclusive"
+        icon="mdi-checkbox-multiple-marked-circle-outline"
         variant="plain"
         density="compact"
         @click="selectionStore.selectAll"
