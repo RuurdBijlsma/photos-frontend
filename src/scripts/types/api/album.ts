@@ -15,19 +15,8 @@ export interface Album {
   isPublic: boolean
   createdAt: string // ISO Date string
   updatedAt: string // ISO Date string
-}
-
-// Entities
-export interface AlbumWithCount {
-  id: string
-  ownerId: number
-  name: string
-  description: string | null
-  thumbnailId: string | null
-  isPublic: boolean
-  createdAt: string // ISO Date string
-  updatedAt: string // ISO Date string
   mediaCount: number
+  latestMediaItemTimestamp: string | null // ISO Date string
 }
 
 export interface AlbumCollaborator {

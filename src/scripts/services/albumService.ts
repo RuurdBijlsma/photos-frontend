@@ -8,7 +8,6 @@ import type {
   AlbumCollaborator,
   AlbumSortField,
   AlbumSummary,
-  AlbumWithCount,
   CheckInviteRequest,
   CreateAlbumRequest,
   SortDirection,
@@ -23,8 +22,8 @@ const albumService = {
   getUserAlbums(
     sortField: AlbumSortField = 'updatedAt',
     sortDirection: SortDirection = 'desc',
-  ): Promise<AxiosResponse<AlbumWithCount[]>> {
-    return apiClient.get<AlbumWithCount[]>('/album', { params: { sortField, sortDirection } })
+  ): Promise<AxiosResponse<Album[]>> {
+    return apiClient.get<Album[]>('/album', { params: { sortField, sortDirection } })
   },
 
   /**

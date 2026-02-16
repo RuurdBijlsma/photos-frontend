@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { shallowRef, triggerRef, watch } from 'vue'
-import type { AlbumWithCount, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
+import type { Album, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
 import albumService from '@/scripts/services/albumService.ts'
 import type { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
@@ -8,7 +8,7 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 export const useAlbumStore = defineStore('album', () => {
   const snackbarStore = useSnackbarsStore()
 
-  const userAlbums = shallowRef<AlbumWithCount[]>(
+  const userAlbums = shallowRef<Album[]>(
     localStorage.getItem('userAlbums') === null ? [] : JSON.parse(localStorage.userAlbums),
   )
   const albumMedia = shallowRef(new Map<string, FullAlbumMediaResponse>())

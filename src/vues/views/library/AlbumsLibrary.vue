@@ -3,7 +3,11 @@ import { onMounted, ref, watch } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import GlowImage from '@/vues/components/ui/GlowImage.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
-import type { AlbumSortField, AlbumWithCount, SortDirection } from '@/scripts/types/api/album'
+import type {
+  Album,
+  AlbumSortField,
+  SortDirection,
+} from '@/scripts/types/api/album'
 import albumService from '@/scripts/services/albumService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRouter } from 'vue-router'
@@ -28,7 +32,7 @@ watch(
   currentSortDirection,
   () => (localStorage.albumLibrarySortDirection = currentSortDirection.value),
 )
-const userAlbums = ref<AlbumWithCount[]>([])
+const userAlbums = ref<Album[]>([])
 
 const sortOptions = [
   {
