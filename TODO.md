@@ -66,8 +66,9 @@
 * ✅ make albums list in nav drawer not scrollable, and cut off at 5 items or so (maybe add view all button at the bottom
   of the list if theres more items available)
 * ✅ remember if albums list in navbar is open with localstorage
-* ✅ if an album has media items in it, but no title, then show it as <No Title> or something in the nav bar and the albums
-    page
+* ✅ if an album has media items in it, but no title, then show it as <No Title> or something in the nav bar and the
+  albums
+  page
 * ✅ timeline scrollbar is shitty when we have few media items
 * ✅ make way to see time range of album (include in metadata with ratios request)
 * ✅ only request main timeline ratios/ids/by-month if we're visiting the main timeline
@@ -115,3 +116,5 @@
 * add way to add description
 * album page: add sort options (also sort by added on date)
 * als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.
+* als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is nu
+  stuk, en mogelijk conflict met scrollSession, misschien kan ik de view photo date en scroll session unifyen?)

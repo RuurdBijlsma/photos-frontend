@@ -134,7 +134,7 @@ export function registerNavigationGuard() {
     // Slightly faster load time for timeline
     if (to.name === 'timeline') {
       const timelineStore = useTimelineStore()
-      timelineStore.initialize().then()
+      if (!timelineStore.isInitialized) timelineStore.initialize().then()
     }
 
     // --- Admin Route Logic ---

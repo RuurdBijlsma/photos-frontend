@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, shallowRef, triggerRef } from 'vue'
+import { computed, ref, shallowRef, triggerRef } from 'vue'
 import {
   type TimelineItem,
   TimelineMonthRatios,
@@ -11,8 +11,8 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 export const useTimelineStore = defineStore('timeline', () => {
   const snackbarStore = useSnackbarsStore()
 
+  const isInitialized = ref(false)
   const scrollSessionDate = shallowRef<Date | null>(null)
-
   const monthRatios = shallowRef<TimelineMonthRatios[]>([])
   const monthItems = shallowRef(new Map<string, TimelineItem[]>())
   const mediaItems = computed(() => {
@@ -71,6 +71,7 @@ export const useTimelineStore = defineStore('timeline', () => {
       .filter(Boolean)
 
     if (monthsToFetch.length > 0) await fetchMediaByMonth(monthsToFetch)
+    isInitialized.value = true
   }
 
   return {
@@ -80,6 +81,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     mediaItemIds,
     totalMediaCount,
     scrollSessionDate,
+    isInitialized,
 
     fetchMonthRatios,
     fetchMediaByMonth,
