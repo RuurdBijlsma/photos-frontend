@@ -44,11 +44,10 @@ const mediaItemService = {
 
   search(
     query: string,
-    threshold?: number,
     limit?: number,
   ): Promise<AxiosResponse<SearchResultItem[]>> {
     return apiClient.get<SearchResultItem[]>('/search', {
-      params: { query, threshold, limit },
+      params: { query, limit },
     })
   },
 }

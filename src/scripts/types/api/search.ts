@@ -7,4 +7,6 @@ export interface SearchResultItem {
   ftsScore: number
   vectorScore: number
   combinedScore: number
+  ftsRank: number
+  vectorRank: number
 }

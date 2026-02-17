@@ -19,7 +19,7 @@ async function executeSearch() {
   if (query.value === '') return
   setQuery().then()
   try {
-    const { data } = await mediaItemService.search(query.value, 0.25)
+    const { data } = await mediaItemService.search(query.value)
     data.sort((a, b) => b.combinedScore - a.combinedScore)
     results.value = data
   } catch (e) {
@@ -101,7 +101,7 @@ onMounted(async () => {
         ></div>
         <div class="info">
           <div class="info-progress" v-tooltip:top="`FTS: ${res.ftsScore}`">
-            <span>FTS</span>
+            <span>FTS: #{{ res.ftsRank }}</span>
             <v-progress-linear
               :model-value="Math.round(res.ftsScore * 100)"
               :height="10"
@@ -110,7 +110,7 @@ onMounted(async () => {
             />
           </div>
           <div class="info-progress" v-tooltip:top="`Vector: ${res.vectorScore}`">
-            <span>VEC</span>
+            <span>VEC: #{{ res.vectorRank }}</span>
             <v-progress-linear
               :model-value="Math.round(res.vectorScore * 100)"
               :height="10"
@@ -123,6 +123,7 @@ onMounted(async () => {
             <v-progress-linear
               :model-value="Math.round(res.combinedScore * 100)"
               :height="10"
+              :max="3"
               rounded
               color="green"
             />
@@ -176,7 +177,7 @@ onMounted(async () => {
 }
 .info-progress span {
   display: block;
-  width: 50px;
+  width: 60px;
   text-align: center;
 }
 </style>
