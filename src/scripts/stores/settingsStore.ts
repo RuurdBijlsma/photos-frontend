@@ -35,6 +35,7 @@ export const useSettingStore = defineStore('settings', () => {
   const imageBackground = usePersistentSetting('settingsImageBackground', true)
   const customThemeColor = usePersistentSetting('settingsCustomThemeColor', '#462de8')
   const timelineRowHeight = usePersistentSetting('settingsTimelineRowHeight', 240)
+  const timelineUseDayLabels = usePersistentSetting('settingsTimelineUseDayLabels', true)
 
   return {
     useImageGlow,
@@ -42,7 +43,7 @@ export const useSettingStore = defineStore('settings', () => {
     imageBackground,
     customThemeColor,
     timelineRowHeight,
+    timelineUseDayLabels,
   }
 })
 
-export type SettingsStore = ReturnType<typeof useSettingStore>

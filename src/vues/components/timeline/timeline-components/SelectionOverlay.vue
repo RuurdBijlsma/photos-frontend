@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AddToAlbumButton from '@/vues/components/timeline/AddToAlbumButton.vue'
+import AddToAlbumButton from '@/vues/components/timeline/timeline-components/AddToAlbumButton.vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 
 withDefaults(

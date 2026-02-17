@@ -3,7 +3,7 @@ import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import type { LayoutRow } from '@/scripts/types/timeline/layout.ts'
 import { computed } from 'vue'
-import GridItem from '@/vues/components/timeline/GridItem.vue'
+import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vue'
 
 const timelineStore = useTimelineStore()
 

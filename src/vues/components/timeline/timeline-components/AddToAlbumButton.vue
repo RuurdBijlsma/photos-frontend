@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type { Album } from '@/scripts/types/api/album.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
-import ItemsPreview from '@/vues/components/timeline/ItemsPreview.vue'
+import ItemsPreview from '@/vues/components/timeline/timeline-components/ItemsPreview.vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
