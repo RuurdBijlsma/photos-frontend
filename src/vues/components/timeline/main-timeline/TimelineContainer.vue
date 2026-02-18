@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
@@ -47,7 +47,6 @@ const scrollTrackEl = useTemplateRef('scrollTrack')
 const gridLayout = shallowRef<LayoutRow[]>([])
 const scrollHeight = ref(0)
 const virtualizerInitialOffset = ref(0)
-const isReady = ref(false)
 const virtualizerOptions = computed(() => ({
   count: gridLayout.value.length,
   getScrollElement: () => scrollContainerEl.value,
@@ -400,79 +399,6 @@ async function initializeViewPhoto() {
 }
 initializeViewPhoto()
 
-function layoutRowIndexFromDate(date: Date, sort: 'desc' | 'asc'): number {
-  if (gridLayout.value.length === 0) return 0
-  const targetMonthId = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
-  const targetTime = date.getTime()
-  const rowsInMonth = gridLayout.value.filter((r) => r.monthId === targetMonthId)
-  if (rowsInMonth.length === 0) {
-    return gridLayout.value.findIndex((r) => {
-      return sort === 'desc' ? r.date <= date : r.date >= date
-    })
-  }
-  const monthMedia = timelineStore.monthItems.get(targetMonthId)
-  if (!monthMedia || monthMedia.length === 0) {
-    console.warn('Use month header')
-    const firstRow = rowsInMonth[0]!
-    return gridLayout.value.indexOf(firstRow)
-  }
-  let itemIndex = -1
-  if (sort === 'desc') {
-    itemIndex = monthMedia.findIndex((m) => new Date(m.timestamp).getTime() <= targetTime)
-  } else {
-    itemIndex = monthMedia.findIndex((m) => new Date(m.timestamp).getTime() >= targetTime)
-  }
-  if (itemIndex === -1) itemIndex = sort === 'desc' ? monthMedia.length - 1 : 0
-  const targetRow =
-    rowsInMonth.find((r) => r.items.some((item) => item.index === itemIndex)) || rowsInMonth[0]!
-  return gridLayout.value.indexOf(targetRow)
-}
-
-function dateToScrollTop(date: Date, sort: 'desc' | 'asc'): number {
-  if (gridLayout.value.length === 0) return 0
-  const targetMonthId = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
-  const targetTime = date.getTime()
-  const rowsInMonth = gridLayout.value.filter((r) => r.monthId === targetMonthId)
-  if (rowsInMonth.length === 0) {
-    const closestRow = gridLayout.value.find((r) => {
-      return sort === 'desc' ? r.date <= date : r.date >= date
-    })
-    if (!closestRow) return sort === 'desc' ? scrollHeight.value : 0
-    return closestRow.firstOfTheMonth
-      ? closestRow.offsetTop - ROW_HEADER_HEIGHT
-      : closestRow.offsetTop
-  }
-  const monthMedia = timelineStore.monthItems.get(targetMonthId)
-  if (!monthMedia || monthMedia.length === 0) {
-    console.warn('Use month header')
-    const firstRow = rowsInMonth[0]!
-    return firstRow.offsetTop - ROW_HEADER_HEIGHT
-  }
-  let itemIndex = -1
-  if (sort === 'desc') {
-    itemIndex = monthMedia.findIndex((m) => new Date(m.timestamp).getTime() <= targetTime)
-  } else {
-    itemIndex = monthMedia.findIndex((m) => new Date(m.timestamp).getTime() >= targetTime)
-  }
-  if (itemIndex === -1) itemIndex = sort === 'desc' ? monthMedia.length - 1 : 0
-  const targetRow =
-    rowsInMonth.find((r) => r.items.some((item) => item.index === itemIndex)) || rowsInMonth[0]!
-  return targetRow.firstOfTheMonth ? targetRow.offsetTop - ROW_HEADER_HEIGHT : targetRow.offsetTop
-}
-
-function scrollToDate(date: Date, align: 'top' | 'middle') {
-  if (scrollContainerEl.value) {
-    let targetOffset = dateToScrollTop(date, 'desc')
-    if (align === 'middle') {
-      targetOffset -= window.innerHeight / 4
-      if (targetOffset < 0) targetOffset = 0
-    }
-    virtualizerInitialOffset.value = targetOffset
-    scrollContainerEl.value.scrollTop = targetOffset
-    currentScrollTop.value = targetOffset
-  }
-}
-
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
     const contentRect = entries[0].contentRect
@@ -505,12 +431,7 @@ const stopScrollingFast = useDebounceFn(() => {
   isScrollingFast.value = false
 }, 150)
 
-let preventOverwritingScrollSessionTime = performance.now()
-useEventListener(window, 'resize', () => {
-  preventOverwritingScrollSessionTime = performance.now()
-})
-
-watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize]) => {
+watch([() => timelineStore.monthRatios, containerSize], () => {
   const now = performance.now()
   const { rows, scrollYears, scrollMonths, totalHeight } = calculateLayout(
     timelineStore.monthRatios,
@@ -525,25 +446,6 @@ watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize
   }
   gridLayout.value = rows
   scrollHeight.value = totalHeight
-
-  const isResize = oldSize.width !== 0 && newSize.width !== 0 && oldSize.width !== newSize.width
-
-  if (timelineStore.scrollSessionDate !== null) {
-    if (isResize) {
-      console.warn('Scroll to date from scroll session [resize]')
-      scrollToDate(timelineStore.scrollSessionDate, 'top')
-    } else {
-      requestAnimationFrame(() => {
-        if (timelineStore.scrollSessionDate !== null) {
-          console.warn('Scroll to date from scroll session [init-load]')
-          scrollToDate(timelineStore.scrollSessionDate, 'top')
-        }
-        isReady.value = true
-      })
-    }
-  } else {
-    isReady.value = true
-  }
 })
 
 watch(
@@ -574,37 +476,6 @@ watch(currentScrollTop, (newVal, oldVal) => {
     stopScrollingFast()
   } else if (isScrollingFast.value && scrollDelta > 300) stopScrollingFast()
 })
-
-watch(mediaItemInViewDate, (newVal, oldVal) => {
-  if (
-    newVal?.toISOString() !== oldVal?.toISOString() &&
-    performance.now() - preventOverwritingScrollSessionTime > 1000
-  ) {
-    console.warn('Overwriting scrollSessionDate')
-    timelineStore.scrollSessionDate = newVal
-  }
-})
-
-watch(
-  () => route.name,
-  (newName, oldName) => {
-    if (
-      oldName === 'view-photo-timeline' &&
-      newName === 'timeline' &&
-      viewPhotoStore.scrollToDate
-    ) {
-      const targetIndex = layoutRowIndexFromDate(viewPhotoStore.scrollToDate, 'desc')
-      if (targetIndex === -1) return
-      nextTick(() => {
-        rowVirtualizer.value.scrollToIndex(targetIndex, {
-          behavior: 'smooth',
-          align: 'center',
-        })
-      })
-      viewPhotoStore.scrollToDate = null
-    }
-  },
-)
 </script>
 
 <template>
@@ -619,10 +490,8 @@ watch(
         class="scroll-container"
         ref="scrollContainer"
         @scroll.passive="onScroll"
-        :style="{ visibility: isReady ? 'visible' : 'hidden' }"
       >
         <div
-          v-if="isReady"
           :style="{
             height: `${rowVirtualizer.getTotalSize()}px`,
             width: '100%',

@@ -12,7 +12,6 @@ export const useTimelineStore = defineStore('timeline', () => {
   const snackbarStore = useSnackbarsStore()
 
   const isInitialized = ref(false)
-  const scrollSessionDate = shallowRef<Date | null>(null)
   const monthRatios = shallowRef<TimelineMonthRatios[]>([])
   const monthItems = shallowRef(new Map<string, TimelineItem[]>())
   const mediaItems = computed(() => {
@@ -80,7 +79,6 @@ export const useTimelineStore = defineStore('timeline', () => {
     mediaItems,
     mediaItemIds,
     totalMediaCount,
-    scrollSessionDate,
     isInitialized,
 
     fetchMonthRatios,

@@ -46,11 +46,6 @@ async function initialize() {
   if (id.value !== loadingId) return
   console.log('FULL MEDIA ITEM', mediaItemStore.mediaItems.get(loadingId))
   fullImage.value = mediaItemStore.mediaItems.get(loadingId)
-  if (fullImage.value && fullImage.value.id === loadingId) {
-    console.log('set scroll to date for', loadingId)
-    // todo: scroll item to middle of screen of something or highlight it or animate it.
-    viewPhotoStore.scrollToDate = new Date(fullImage.value.taken_at_local)
-  }
   const imageTheme = fullImage.value?.visual_analyses[0]?.colors?.themes?.[0]
   if (!imageTheme) return
   const vTheme = themeStore.themeFromJson(imageTheme)
