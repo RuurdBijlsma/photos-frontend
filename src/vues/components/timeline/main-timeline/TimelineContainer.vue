@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
@@ -397,28 +397,50 @@ async function initializeViewPhoto() {
 initializeViewPhoto()
 
 function findRowIndexByMediaId(mediaId: string): number {
-  return gridLayout.value.findIndex((row) => {
-    const itemsInMonth = timelineStore.monthItems.get(row.monthId) || []
-    return row.items.some((item) => itemsInMonth[item.index]?.id === mediaId)
-  })
+  const mediaItemIndex = timelineStore.mediaItemIds.indexOf(mediaId)
+  if (mediaItemIndex === -1) {
+    console.error('Media item not found in full mediaItemId list')
+    return -1
+  }
+  let rowItemCount = 0
+  for (let i = 0; i < gridLayout.value.length; i++) {
+    const row = gridLayout.value[i]!
+    rowItemCount += row.items.length
+    if (rowItemCount > mediaItemIndex) return i
+  }
+  return -1
 }
 
-function scrollToMediaId(mediaId: string, behavior: 'auto' | 'smooth' = 'auto') {
-  const index = findRowIndexByMediaId(mediaId)
-  if (index !== -1) {
-    rowVirtualizer.value.scrollToIndex(index, { align: 'center', behavior })
+function offsetScrollToMediaId(index: number, behavior: 'auto' | 'smooth' = 'auto') {
+  const offsetTop = gridLayout.value[index]?.offsetTop
+  if (offsetTop && scrollContainerEl.value) {
+    scrollContainerEl.value.scrollTo({ top: offsetTop, behavior: behavior })
   }
 }
 
-// Todo: this works: get inspired by it
-// setTimeout(() => {
-//   console.warn('SCROLL TO SPIDER')
-//   scrollToMediaId('MpBuWLRac8')
-//   setTimeout(() => {
-//     console.warn('SCROLL TO AMBULANCE')
-//     scrollToMediaId('aGhVDR1hgD')
-//   }, 3000)
-// }, 1500)
+interface ScrollOptions {
+  type: 'offset' | 'virtual'
+  behavior: 'auto' | 'smooth'
+  align: 'start' | 'center' | 'end' | 'auto'
+}
+
+function scrollToMediaId(
+  mediaId: string,
+  options: ScrollOptions = {
+    align: 'start',
+    behavior: 'auto',
+    type: 'offset',
+  },
+) {
+  const index = findRowIndexByMediaId(mediaId)
+  if (index !== -1) {
+    if (options.type === 'virtual') {
+      rowVirtualizer.value.scrollToIndex(index, options)
+    } else {
+      offsetScrollToMediaId(index, options.behavior)
+    }
+  }
+}
 
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
@@ -452,7 +474,21 @@ const stopScrollingFast = useDebounceFn(() => {
   isScrollingFast.value = false
 }, 150)
 
-watch([() => timelineStore.monthRatios, containerSize], () => {
+let resizeAnchor: string | null = null
+let resizeRafId: number | null = null
+
+const resetResizeAnchorDb = useDebounceFn(() => {
+  resizeAnchor = null
+  if (resizeRafId !== null) cancelAnimationFrame(resizeRafId)
+}, 200)
+
+function lockResize() {
+  if (resizeAnchor !== null)
+    scrollToMediaId(resizeAnchor, { type: 'virtual', align: 'start', behavior: 'auto' })
+  resizeRafId = requestAnimationFrame(lockResize)
+}
+
+watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize]) => {
   const now = performance.now()
   const { rows, scrollYears, scrollMonths, totalHeight } = calculateLayout(
     timelineStore.monthRatios,
@@ -467,6 +503,27 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
   }
   gridLayout.value = rows
   scrollHeight.value = totalHeight
+
+  const isResize = newSize.width !== 0 && oldSize.width !== 0 && oldSize.width !== newSize.width
+
+  if (isResize) {
+    if (timelineStore.mediaIdInView) {
+      if (resizeAnchor === null) {
+        resizeAnchor = timelineStore.mediaIdInView
+      }
+      if (resizeRafId !== null) cancelAnimationFrame(resizeRafId)
+      resizeRafId = requestAnimationFrame(lockResize)
+    }
+    resetResizeAnchorDb()
+  } else {
+    if (timelineStore.mediaIdInView) {
+      console.warn('TIMELINE STORE HAS MEDIA_ITEM_IN_VIEW', timelineStore.mediaIdInView)
+      const mediaItemInViewId = timelineStore.mediaIdInView
+      nextTick(() => {
+        scrollToMediaId(mediaItemInViewId, { type: 'offset', align: 'start', behavior: 'auto' })
+      })
+    }
+  }
 })
 
 watch(
@@ -498,19 +555,42 @@ watch(currentScrollTop, (newVal, oldVal) => {
   } else if (isScrollingFast.value && scrollDelta > 300) stopScrollingFast()
 })
 
-// Watch item viewed in ViewPhoto
 watch(
   () => route.params.mediaId,
-  (newId) => {
-    if (newId && typeof newId === 'string') {
-      setTimeout(() => {
-        console.warn('ROUTE WATCHER, we should scroll to ', newId,"but we can't because timelineStore.initialize() hasnt been called or something? I think.")
-        scrollToMediaId(newId, 'smooth')
-      }, 1500)
+  (newId, oldId) => {
+    if (newId === undefined && oldId && typeof oldId === 'string') {
+      const newOffsetTop = gridLayout.value[findRowIndexByMediaId(oldId)]?.offsetTop
+      const diff =
+        newOffsetTop === undefined ? Infinity : Math.abs(currentScrollTop.value - newOffsetTop)
+      const DIFF_THRESHOLD = 10000
+      scrollToMediaId(oldId, {
+        type: 'virtual',
+        align: 'center',
+        behavior: diff > DIFF_THRESHOLD ? 'auto' : 'smooth',
+      })
     }
   },
   { immediate: true },
 )
+watch(
+  () => route.name,
+  (newName, oldName) => {
+    console.log({ newName, oldName })
+    if (newName === 'view-photo-timeline' && oldName === undefined) {
+      // Initial page load to view-photo-timeline detected
+      // todo: as soon as fetched all media by month is done, scroll to this media id in background
+    }
+  },
+  { immediate: true },
+)
+
+watch(mediaItemInView, () => {
+  if (mediaItemInView.value) {
+    timelineStore.mediaIdInView = mediaItemInView.value.id
+  }
+})
+
+if (!timelineStore.isInitialized) timelineStore.initialize()
 </script>
 
 <template>
@@ -531,7 +611,7 @@ watch(
         >
           <div
             v-for="virtualRow in rowVirtualizer.getVirtualItems()"
-            :key="virtualRow.key"
+            :key="virtualRow.key as string"
             :data-index="virtualRow.index"
             :ref="rowVirtualizer.measureElement"
             :style="{
@@ -642,6 +722,7 @@ watch(
   width: 100%;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  overflow-anchor: none;
 }
 
 .scroll-container::-webkit-scrollbar {

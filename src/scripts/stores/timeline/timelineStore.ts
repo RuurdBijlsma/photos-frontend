@@ -11,6 +11,7 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 export const useTimelineStore = defineStore('timeline', () => {
   const snackbarStore = useSnackbarsStore()
 
+  const mediaIdInView = ref<string | null>(null)
   const isInitialized = ref(false)
   const monthRatios = shallowRef<TimelineMonthRatios[]>([])
   const monthItems = shallowRef(new Map<string, TimelineItem[]>())
@@ -61,6 +62,7 @@ export const useTimelineStore = defineStore('timeline', () => {
   }
 
   async function initialize() {
+    isInitialized.value = true
     await fetchMonthRatios()
 
     const MONTHS_PREFETCH_COUNT = 2
@@ -70,7 +72,6 @@ export const useTimelineStore = defineStore('timeline', () => {
       .filter(Boolean)
 
     if (monthsToFetch.length > 0) await fetchMediaByMonth(monthsToFetch)
-    isInitialized.value = true
   }
 
   return {
@@ -80,6 +81,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     mediaItemIds,
     totalMediaCount,
     isInitialized,
+    mediaIdInView,
 
     fetchMonthRatios,
     fetchMediaByMonth,
