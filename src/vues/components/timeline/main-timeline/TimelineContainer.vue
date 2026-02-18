@@ -46,24 +46,22 @@ const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
 const gridLayout = shallowRef<LayoutRow[]>([])
 const scrollHeight = ref(0)
-const virtualizerInitialOffset = ref(0)
 const virtualizerOptions = computed(() => ({
   count: gridLayout.value.length,
   getScrollElement: () => scrollContainerEl.value,
   estimateSize: (index: number) => {
     const row = gridLayout.value[index]
     if (!row) return 0
-
     let size = row.height
     if (row.firstOfTheMonth) size += ROW_HEADER_HEIGHT
     if (!row.lastOfTheMonth) size += ITEM_GAP
-
     return size
   },
   overscan: 5,
   paddingEnd: 20,
-  initialOffset: virtualizerInitialOffset.value,
+  getItemKey: (index: number) => gridLayout.value[index]?.key || index,
 }))
+
 const rowVirtualizer = useVirtualizer(virtualizerOptions)
 const scrollThumbHeight = computed(() =>
   Math.max(
@@ -286,12 +284,11 @@ function layoutRowFromScrollTop(rows: LayoutRow[], scrollTop: number) {
   return rows[index] ?? null
 }
 
-function rawOnScroll(e: Event) {
+const onScroll = useThrottleFn((e: Event) => {
   const target = e.target as HTMLElement
   scrollHeight.value = target.scrollHeight
   currentScrollTop.value = target.scrollTop
-}
-const onScroll = useThrottleFn(rawOnScroll, 33)
+}, 33)
 
 async function preLoadAllMonths(
   monthRatios: TimelineMonthRatios[],
@@ -399,6 +396,30 @@ async function initializeViewPhoto() {
 }
 initializeViewPhoto()
 
+function findRowIndexByMediaId(mediaId: string): number {
+  return gridLayout.value.findIndex((row) => {
+    const itemsInMonth = timelineStore.monthItems.get(row.monthId) || []
+    return row.items.some((item) => itemsInMonth[item.index]?.id === mediaId)
+  })
+}
+
+function scrollToMediaId(mediaId: string, behavior: 'auto' | 'smooth' = 'auto') {
+  const index = findRowIndexByMediaId(mediaId)
+  if (index !== -1) {
+    rowVirtualizer.value.scrollToIndex(index, { align: 'center', behavior })
+  }
+}
+
+// Todo: this works: get inspired by it
+// setTimeout(() => {
+//   console.warn('SCROLL TO SPIDER')
+//   scrollToMediaId('MpBuWLRac8')
+//   setTimeout(() => {
+//     console.warn('SCROLL TO AMBULANCE')
+//     scrollToMediaId('aGhVDR1hgD')
+//   }, 3000)
+// }, 1500)
+
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
     const contentRect = entries[0].contentRect
@@ -476,6 +497,20 @@ watch(currentScrollTop, (newVal, oldVal) => {
     stopScrollingFast()
   } else if (isScrollingFast.value && scrollDelta > 300) stopScrollingFast()
 })
+
+// Watch item viewed in ViewPhoto
+watch(
+  () => route.params.mediaId,
+  (newId) => {
+    if (newId && typeof newId === 'string') {
+      setTimeout(() => {
+        console.warn('ROUTE WATCHER, we should scroll to ', newId,"but we can't because timelineStore.initialize() hasnt been called or something? I think.")
+        scrollToMediaId(newId, 'smooth')
+      }, 1500)
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -486,11 +521,7 @@ watch(currentScrollTop, (newVal, oldVal) => {
       <teleport to="body">
         <router-view />
       </teleport>
-      <div
-        class="scroll-container"
-        ref="scrollContainer"
-        @scroll.passive="onScroll"
-      >
+      <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
         <div
           :style="{
             height: `${rowVirtualizer.getTotalSize()}px`,
@@ -500,7 +531,9 @@ watch(currentScrollTop, (newVal, oldVal) => {
         >
           <div
             v-for="virtualRow in rowVirtualizer.getVirtualItems()"
-            :key="String(virtualRow.key)"
+            :key="virtualRow.key"
+            :data-index="virtualRow.index"
+            :ref="rowVirtualizer.measureElement"
             :style="{
               position: 'absolute',
               top: 0,
