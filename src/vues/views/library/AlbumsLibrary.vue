@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch, computed } from 'vue'
+import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import GlowImage from '@/vues/components/ui/GlowImage.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
@@ -11,6 +11,8 @@ import { useRouter } from 'vue-router'
 const snackbarStore = useSnackbarsStore()
 const router = useRouter()
 const loading = ref(false)
+const showSkeleton = ref(false)
+let skeletonTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Sorting State
 const currentSortField = ref<AlbumSortField>(
@@ -67,6 +69,16 @@ const sortDirectionTooltip = computed(() => {
 
 async function loadAlbums() {
   loading.value = true
+  showSkeleton.value = false
+
+  // Clear any existing timeout to avoid race conditions
+  if (skeletonTimeout) clearTimeout(skeletonTimeout)
+
+  // Set skeleton to appear only after 150ms
+  skeletonTimeout = setTimeout(() => {
+    showSkeleton.value = true
+  }, 150)
+
   try {
     const { data } = await albumService.getUserAlbums(
       currentSortField.value,
@@ -78,6 +90,8 @@ async function loadAlbums() {
     snackbarStore.error('Could not fetch albums', e)
   } finally {
     loading.value = false
+    showSkeleton.value = false
+    if (skeletonTimeout) clearTimeout(skeletonTimeout)
   }
 }
 
@@ -112,6 +126,11 @@ function makeNewAlbum() {
 
 onMounted(() => {
   loadAlbums()
+})
+
+onUnmounted(() => {
+  // Prevent memory leaks / UI state issues if the component mounts/unmounts quickly
+  if (skeletonTimeout) clearTimeout(skeletonTimeout)
 })
 </script>
 
@@ -176,7 +195,8 @@ onMounted(() => {
       </header>
 
       <!-- Grid Layout -->
-      <div v-if="loading" class="album-grid">
+      <!-- Changed from "loading" to "showSkeleton" to utilize the 150ms delay -->
+      <div v-if="showSkeleton" class="album-grid">
         <div v-for="i in 9" :key="i" class="album-card-skeleton">
           <v-skeleton-loader
             type="card"
