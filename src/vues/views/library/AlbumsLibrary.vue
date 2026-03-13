@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import GlowImage from '@/vues/components/ui/GlowImage.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
-import type {
-  Album,
-  AlbumSortField,
-  SortDirection,
-} from '@/scripts/types/api/album'
+import type { Album, AlbumSortField, SortDirection } from '@/scripts/types/api/album'
 import albumService from '@/scripts/services/albumService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRouter } from 'vue-router'
@@ -34,44 +30,40 @@ watch(
 )
 const userAlbums = ref<Album[]>([])
 
-const sortOptions = [
-  {
-    title: 'Most recent content',
-    field: 'latestPhoto',
-    direction: 'desc',
-    icon: 'mdi-sort-calendar-descending',
-  },
-  {
-    title: 'Oldest content',
-    field: 'latestPhoto',
-    direction: 'asc',
-    icon: 'mdi-sort-calendar-ascending',
-  },
-  {
-    title: 'Name (A-Z)',
-    field: 'name',
-    direction: 'asc',
-    icon: 'mdi-sort-alphabetical-ascending-variant',
-  },
-  {
-    title: 'Name (Z-A)',
-    field: 'name',
-    direction: 'desc',
-    icon: 'mdi-sort-alphabetical-descending-variant',
-  },
-  {
-    title: 'Recently Updated',
-    field: 'updatedAt',
-    direction: 'desc',
-    icon: 'mdi-sort-clock-descending-outline',
-  },
-  {
-    title: 'Oldest Updated',
-    field: 'updatedAt',
-    direction: 'asc',
-    icon: 'mdi-sort-clock-ascending-outline',
-  },
+// Separated Field Options
+const sortFields = [
+  { title: 'Name', field: 'name' },
+  { title: 'Content date', field: 'latestPhoto' },
+  { title: 'Updated date', field: 'updatedAt' },
 ]
+
+const currentSortFieldTitle = computed(() => {
+  return sortFields.find((f) => f.field === currentSortField.value)?.title || 'Sort'
+})
+
+// Dynamically select the correct icon depending on the field and direction
+const sortDirectionIcon = computed(() => {
+  if (currentSortField.value === 'name') {
+    return currentSortDirection.value === 'asc'
+      ? 'mdi-sort-alphabetical-ascending-variant'
+      : 'mdi-sort-alphabetical-descending-variant'
+  }
+  if (currentSortField.value === 'updatedAt') {
+    return currentSortDirection.value === 'asc'
+      ? 'mdi-sort-clock-ascending-outline'
+      : 'mdi-sort-clock-descending-outline'
+  }
+  // Default to Calendar/latestPhoto
+  return currentSortDirection.value === 'asc'
+    ? 'mdi-sort-calendar-ascending'
+    : 'mdi-sort-calendar-descending'
+})
+const sortDirectionTooltip = computed(() => {
+  if (currentSortField.value === 'name') {
+    return currentSortDirection.value === 'asc' ? 'A-Z' : 'Z-A'
+  }
+  return currentSortDirection.value === 'asc' ? 'Old to new' : 'New to old'
+})
 
 async function loadAlbums() {
   loading.value = true
@@ -89,10 +81,15 @@ async function loadAlbums() {
   }
 }
 
-function handleSort(field: AlbumSortField, direction: SortDirection) {
-  console.log('handlesort', field, direction)
-  currentSortField.value = field
-  currentSortDirection.value = direction
+function handleFieldChange(field: AlbumSortField) {
+  if (currentSortField.value !== field) {
+    currentSortField.value = field
+    loadAlbums()
+  }
+}
+
+function toggleDirection() {
+  currentSortDirection.value = currentSortDirection.value === 'asc' ? 'desc' : 'asc'
   loadAlbums()
 }
 
@@ -127,42 +124,50 @@ onMounted(() => {
           <span class="album-count">{{ userAlbums.length }} albums</span>
         </div>
 
-        <div class="header-actions">
-          <!-- Sort Menu -->
+        <div class="header-actions d-flex align-center">
           <v-menu location="bottom end">
             <template v-slot:activator="{ props }">
               <v-btn
+                variant="text"
+                color="primary"
                 v-bind="props"
-                variant="tonal"
-                rounded
-                prepend-icon="mdi-sort"
-                class="text-none"
+                rounded="xl"
+                append-icon="mdi-chevron-down"
+                class="text-none sort-text"
               >
-                {{ sortOptions.find((o) => o.field === currentSortField)?.title }}
+                {{ currentSortFieldTitle }}
               </v-btn>
             </template>
-            <v-list density="compact">
+            <v-list color="primary" density="compact">
               <v-list-item
-                v-for="(option, index) in sortOptions"
+                v-for="(option, index) in sortFields"
                 :key="index"
-                :prepend-icon="option.icon"
                 :title="option.title"
-                :active="
-                  currentSortField === option.field && currentSortDirection === option.direction
-                "
-                @click="
-                  handleSort(option.field as AlbumSortField, option.direction as SortDirection)
-                "
+                :active="currentSortField === option.field"
+                @click="handleFieldChange(option.field as AlbumSortField)"
               />
             </v-list>
           </v-menu>
+
+          <!-- Direction Toggle (Right) -->
+          <v-btn
+            variant="text"
+            color="primary"
+            class="sort-direction-button"
+            :icon="sortDirectionIcon"
+            @click="toggleDirection"
+            v-tooltip="{
+              location: 'top',
+              text: sortDirectionTooltip,
+            }"
+          />
 
           <v-btn
             color="primary"
             prepend-icon="mdi-plus"
             rounded
             variant="flat"
-            class="text-none ml-3"
+            class="text-none ml-3 new-album"
             @click="makeNewAlbum"
           >
             New Album
@@ -331,5 +336,9 @@ onMounted(() => {
 /* Custom shadow/glow effect on hover similar to GlowImage's logic */
 .album-card:hover :deep(.glow-image-container) {
   box-shadow: 0 10px 30px -10px rgba(var(--v-theme-primary), 0.3);
+}
+
+.new-album {
+  font-weight: 600 !important;
 }
 </style>
