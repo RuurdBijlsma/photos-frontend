@@ -10,14 +10,12 @@ import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import SelectionOverlay from '@/vues/components/timeline/timeline-components/SelectionOverlay.vue'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
-import { useRoute } from 'vue-router'
 
 const props = defineProps<{
   timelineItems: AlbumTimelineItem[]
   viewLink: string
 }>()
 
-const route = useRoute()
 const viewPhotoStore = useViewPhotoStore()
 const selectionStore = useSelectionStore()
 
