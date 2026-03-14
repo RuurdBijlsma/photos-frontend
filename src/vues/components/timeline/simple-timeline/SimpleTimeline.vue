@@ -180,6 +180,16 @@ const stopScrollingFast = useDebounceFn(() => {
   isScrollingFast.value = false
 }, 150)
 
+function scrollToTop() {
+  if (scrollContainerEl.value) {
+    scrollContainerEl.value.scrollTop = 0
+  }
+}
+
+defineExpose({
+  scrollToTop,
+})
+
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
     const rect = entries[0].contentRect

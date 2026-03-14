@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import GlowImage from '@/vues/components/ui/GlowImage.vue'
@@ -14,6 +14,7 @@ import albumService from '@/scripts/services/albumService.ts'
 const route = useRoute()
 const router = useRouter()
 const albumStore = useAlbumStore()
+const simpleTimeline = useTemplateRef('simpleTimeline')
 
 const id = computed(() => {
   const rawId = route.params.albumId
@@ -118,6 +119,7 @@ watch(
     albumTitle.value = null
     albumDescription.value = null
     console.log('Album ID change', id.value)
+    simpleTimeline.value?.scrollToTop()
     if (!id.value) return
     albumStore.fetchAlbumMedia(id.value)
   },
@@ -162,7 +164,7 @@ watch(
 </script>
 
 <template>
-  <simple-timeline :timeline-items="items" :view-link="`/album/${id}/view/`">
+  <simple-timeline ref="simpleTimeline" :timeline-items="items" :view-link="`/album/${id}/view/`">
     <div class="album-header">
       <div class="album-header-left">
         <glow-image
