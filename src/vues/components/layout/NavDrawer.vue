@@ -91,7 +91,7 @@ const route = useRoute()
             </v-list-item-title>
             <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
             <v-list-item-subtitle
-              >{{ album.mediaCount }} item{{
+              >{{ album.mediaCount.toLocaleString() }} item{{
                 album.mediaCount === 1 ? '' : 's'
               }}</v-list-item-subtitle
             >

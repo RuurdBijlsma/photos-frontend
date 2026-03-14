@@ -17,6 +17,7 @@ export interface Album {
   updatedAt: string // ISO Date string
   mediaCount: number
   latestMediaItemTimestamp: string | null // ISO Date string
+  earliestMediaItemTimestamp: string | null // ISO Date string
 }
 
 export interface AlbumCollaborator {

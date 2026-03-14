@@ -7,6 +7,7 @@ import type { Album, AlbumSortField, SortDirection } from '@/scripts/types/api/a
 import albumService from '@/scripts/services/albumService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRouter } from 'vue-router'
+import { MONTHS } from '@/scripts/constants.ts'
 
 const snackbarStore = useSnackbarsStore()
 const router = useRouter()
@@ -124,6 +125,24 @@ function makeNewAlbum() {
   })
 }
 
+function getAlbumTimeSpan(album: Album) {
+  if (!album.earliestMediaItemTimestamp || !album.latestMediaItemTimestamp) return ''
+  const date1 = new Date(album.earliestMediaItemTimestamp)
+  const date2 = new Date(album.latestMediaItemTimestamp)
+  const year1 = date1.getFullYear()
+  const year2 = date2.getFullYear()
+  if (year1 === year2) {
+    const month1 = MONTHS[date1.getMonth()]?.substring(0, 3)
+    const month2 = MONTHS[date2.getMonth()]?.substring(0, 3)
+    if (!month1 || !month2) return year1
+    if (month1 === month2) {
+      return `${month1} ${year1}`
+    }
+    return `${month1} - ${month2} ${year1}`
+  }
+  return `${year1} - ${year2}`
+}
+
 onMounted(() => {
   loadAlbums()
 })
@@ -195,7 +214,6 @@ onUnmounted(() => {
       </header>
 
       <!-- Grid Layout -->
-      <!-- Changed from "loading" to "showSkeleton" to utilize the 150ms delay -->
       <div v-if="showSkeleton" class="album-grid">
         <div v-for="i in 9" :key="i" class="album-card-skeleton">
           <v-skeleton-loader
@@ -235,7 +253,10 @@ onUnmounted(() => {
             >
               {{ album.name || 'Untitled Album' }}
             </h3>
-            <p class="album-meta">{{ album.mediaCount ?? 0 }} items</p>
+            <p class="album-meta">
+              <span>{{ album.mediaCount.toLocaleString() ?? 0 }} item{{ album.mediaCount === 1 ? '' : 's' }}</span> •
+              <span>{{ getAlbumTimeSpan(album) }}</span>
+            </p>
           </div>
         </router-link>
       </div>

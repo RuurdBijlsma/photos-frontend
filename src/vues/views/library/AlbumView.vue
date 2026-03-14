@@ -59,7 +59,7 @@ const formattedDates = computed(() => {
   const yearSuffix = startYear === CURRENT_YEAR ? '' : `, ${startYear}`
   if (startMonthIdx !== endMonthIdx)
     return `${getShortMonth(startMonthIdx)} ${startDay} – ${getShortMonth(endMonthIdx)} ${endDay}${yearSuffix}`
-  if (startDay === endDay) return `${getShortMonth(startMonthIdx)} ${startDay}${yearSuffix}`
+  if (startDay === endDay) return `${MONTHS[startMonthIdx]} ${startDay}${yearSuffix}`
   return `${getShortMonth(startMonthIdx)} ${startDay} – ${endDay}${yearSuffix}`
 })
 const textAreaDescription = computed(() => albumDescription.value ?? '')
