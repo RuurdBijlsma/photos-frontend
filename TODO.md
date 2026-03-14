@@ -101,7 +101,6 @@
 * stomme nav bar start te hoog en animeert naar beneden on page load
 * add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
 * ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
-* when holding shift, show what would be selected with shift
 * idea to fix desync timeline bug:
     * bug: timeline ids/ratios/by month might by out of sync because theyre separate requests
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
@@ -115,7 +114,9 @@
 * 🫸 remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
 * ✅ add way to add description
 * ✅ als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.
-* ✅ als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is nu
-  stuk, en mogelijk conflict met scrollSession, misschien kan ik de view photo date en scroll session unifyen?)
+* ✅ als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is
+  nu stuk, en mogelijk conflict met scrollSession, misschien kan ik de view photo date en scroll session unifyen?)
 * add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
 * album page: add sort options (also sort by added on date)
+* make proper search page
+* dont smooth scroll when returning from /view photo when the item it should scroll to is still fully in browser view.
