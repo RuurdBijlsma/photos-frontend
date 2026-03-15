@@ -75,6 +75,16 @@
 * ✅ make date overlay hide when near the top of the page
 * ✅ fix griditem rendering
 * ✅ hij is weer shitty laggy lol waarom doet ie dat :((( bisect maar weer even ofzo
+* ✅ [bug] scroll via timeline to some far away date → scroll up & down a bit → it janks to a month later? idk
+* ✅ next: make add to album via selection work. make the UX nice. (also be able to add to existing album)
+* ✅ when holding shift & selecting dont insta lose preview when not hovering a photo
+* ✅ fix lag spike when moving from photos → explore → [LAG HERE] photos
+* ✅ [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
+* 🫸 remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
+* ✅ add way to add description
+* ✅ als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.
+* ✅ als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is
+  nu stuk, en mogelijk conflict met scrollSession, misschien kan ik de view photo date en scroll session unifyen?)
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -106,16 +116,6 @@
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* ✅ [bug] scroll via timeline to some far away date → scroll up & down a bit → it janks to a month later? idk
-* ✅ next: make add to album via selection work. make the UX nice. (also be able to add to existing album)
-* ✅ when holding shift & selecting dont insta lose preview when not hovering a photo
-* ✅ fix lag spike when moving from photos → explore → [LAG HERE] photos
-* ✅ [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
-* 🫸 remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
-* ✅ add way to add description
-* ✅ als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.
-* ✅ als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is
-  nu stuk, en mogelijk conflict met scrollSession, misschien kan ik de view photo date en scroll session unifyen?)
 * add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
 * album page: add sort options (also sort by added on date)
 * make proper search page

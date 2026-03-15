@@ -559,26 +559,26 @@ watch(
   () => route.params.mediaId,
   (newId, oldId) => {
     if (newId === undefined && oldId && typeof oldId === 'string') {
-      const newOffsetTop = gridLayout.value[findRowIndexByMediaId(oldId)]?.offsetTop
+      const rowIndex = findRowIndexByMediaId(oldId)
+      const row = gridLayout.value[rowIndex]
+      if (row) {
+        const viewportTop = currentScrollTop.value
+        const viewportBottom = viewportTop + containerSize.value.height
+        const rowTop = row.firstOfTheMonth ? row.offsetTop - ROW_HEADER_HEIGHT : row.offsetTop
+        const rowBottom = row.offsetTop + row.height
+        const isFullyInViewport = rowTop >= viewportTop && rowBottom <= viewportBottom
+        if (isFullyInViewport) return
+      }
+
+      const newOffsetTop = row?.offsetTop
       const diff =
         newOffsetTop === undefined ? Infinity : Math.abs(currentScrollTop.value - newOffsetTop)
-      const DIFF_THRESHOLD = 10000
+      const DIFF_THRESHOLD = 5000
       scrollToMediaId(oldId, {
         type: 'virtual',
         align: 'center',
         behavior: diff > DIFF_THRESHOLD ? 'auto' : 'smooth',
       })
-    }
-  },
-  { immediate: true },
-)
-watch(
-  () => route.name,
-  (newName, oldName) => {
-    console.log({ newName, oldName })
-    if (newName === 'view-photo-timeline' && oldName === undefined) {
-      // Initial page load to view-photo-timeline detected
-      // todo: as soon as fetched all media by month is done, scroll to this media id in background
     }
   },
   { immediate: true },
