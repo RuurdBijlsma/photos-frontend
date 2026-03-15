@@ -613,7 +613,6 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
             v-for="virtualRow in rowVirtualizer.getVirtualItems()"
             :key="virtualRow.key as string"
             :data-index="virtualRow.index"
-            :ref="rowVirtualizer.measureElement"
             :style="{
               position: 'absolute',
               top: 0,
