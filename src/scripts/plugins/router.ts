@@ -115,7 +115,6 @@ export function registerNavigationGuard() {
     }
 
     // --- Get Fresh Auth State ---
-    // This ensures `isAuthenticated` and `isAdmin` have the most up-to-date values.
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
 
@@ -129,12 +128,6 @@ export function registerNavigationGuard() {
     // If onboarding is needed, and we are already going to the onboarding page, allow it.
     if (needsOnboarding && to.name === 'onboarding') {
       return next()
-    }
-
-    // Slightly faster load time for timeline
-    if (to.name === 'timeline') {
-      const timelineStore = useTimelineStore()
-      if (!timelineStore.isInitialized) timelineStore.initialize().then()
     }
 
     // --- Admin Route Logic ---
@@ -163,6 +156,12 @@ export function registerNavigationGuard() {
       } else {
         return next()
       }
+    }
+
+    // Slightly faster load time for timeline
+    if (to.name === 'timeline') {
+      const timelineStore = useTimelineStore()
+      if (!timelineStore.isInitialized) timelineStore.initialize().then()
     }
 
     // --- Fallback for public routes ---

@@ -117,6 +117,7 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
-* album page: add sort options (also sort by added on date)
+* album page: add sort (also sort by added on date)
 * make proper search page
-* dont smooth scroll when returning from /view photo when the item it should scroll to is still fully in browser view.
+* ✅ dont smooth scroll when returning from /view photo when the item it should scroll to is still fully in browser view.
+* ✅ [BUG] after login, photo grid isnt loaded
