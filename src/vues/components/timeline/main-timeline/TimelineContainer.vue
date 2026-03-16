@@ -302,6 +302,12 @@ async function preLoadAllMonths(
   let monthIdsToFetch: string[] = []
   let countToFetch = 0
   const BATCH_SIZE = 500
+
+  if (currentMonthIndex !== -1) {
+    monthIdsToFetch.push(monthRatios[currentMonthIndex]!.monthId)
+    countToFetch += monthRatios[currentMonthIndex]!.count
+  }
+
   while (true) {
     i++
     const beforeIndex = currentMonthIndex - i
@@ -329,7 +335,7 @@ async function preLoadAllMonths(
       if (abortSignal.aborted) {
         console.warn('ABORTED prefetch')
       } else {
-        console.log('Fetched all media by month')
+        console.log('Fetched all media by month',timelineStore.monthItems.keys())
         allMonthsPreloaded = true
         selectionStore.allIds = timelineStore.mediaItemIds
       }
