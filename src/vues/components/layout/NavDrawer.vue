@@ -19,6 +19,7 @@ const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
 const maxShownAlbums = ref(5)
 const truncatedAlbums = computed(() => albumStore.userAlbums.slice(0, maxShownAlbums.value))
 const hasMoreAlbums = computed(() => albumStore.userAlbums.length > maxShownAlbums.value)
+const useOnDemandThumb = ref(new Map<string | null, boolean>())
 
 const route = useRoute()
 </script>
@@ -66,7 +67,16 @@ const route = useRoute()
           >
             <template v-slot:prepend>
               <v-avatar rounded color="surface-container-high">
-                <v-img :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 144)"></v-img>
+                <v-img
+                  :src="
+                    mediaItemService.getPhotoThumbnail(
+                      album.thumbnailId,
+                      144,
+                      useOnDemandThumb.get(album.thumbnailId),
+                    )
+                  "
+                  @error="useOnDemandThumb.set(album.thumbnailId, true)"
+                />
               </v-avatar>
             </template>
             <v-list-item-title
@@ -81,7 +91,7 @@ const route = useRoute()
             </v-list-item-title>
             <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
             <v-list-item-subtitle
-              >{{ album.mediaCount }} item{{
+              >{{ album.mediaCount.toLocaleString() }} item{{
                 album.mediaCount === 1 ? '' : 's'
               }}</v-list-item-subtitle
             >
@@ -89,16 +99,20 @@ const route = useRoute()
           <v-btn
             density="compact"
             variant="plain"
+            rounded
+            color="secondary"
             v-if="hasMoreAlbums"
-            class="mt-1"
+            class="mt-1 show-more-less-button"
             @click="maxShownAlbums += 5"
             >Show more</v-btn
           >
           <v-btn
             density="compact"
             variant="plain"
+            rounded
+            color="secondary"
             v-else-if="maxShownAlbums > 5"
-            class="mt-1"
+            class="mt-1 show-more-less-button"
             @click="maxShownAlbums = 5"
             >Show less</v-btn
           >
@@ -145,5 +159,9 @@ const route = useRoute()
 
 .point-down {
   transform: rotate(180deg);
+}
+
+.show-more-less-button {
+  font-size: 10px;
 }
 </style>

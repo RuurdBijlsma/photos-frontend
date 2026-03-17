@@ -1,23 +1,21 @@
 <script setup lang="ts">
-import type { AlbumTimelineItem } from '@/scripts/types/generated/timeline.ts'
+import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import type { SimpleLayoutRow } from '@/scripts/types/timeline/layout.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
-import VirtualSimpleRow from '@/vues/components/simple-timeline/VirtualSimpleRow.vue'
+import VirtualSimpleRow from '@/vues/components/timeline/simple-timeline/VirtualSimpleRow.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import SelectionOverlay from '@/vues/components/timeline/SelectionOverlay.vue'
+import SelectionOverlay from '@/vues/components/timeline/timeline-components/SelectionOverlay.vue'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
-import { useRoute } from 'vue-router'
 
 const props = defineProps<{
-  timelineItems: AlbumTimelineItem[]
+  timelineItems: SimpleTimelineItem[]
   viewLink: string
 }>()
 
-const route = useRoute()
 const viewPhotoStore = useViewPhotoStore()
 const selectionStore = useSelectionStore()
 
@@ -71,12 +69,12 @@ let isDragging = false
 let lastScrollTop = 0
 let dragStartOffsetY = 0
 
-function calculateLayout(timelineItems: AlbumTimelineItem[], containerWidth: number) {
+function calculateLayout(timelineItems: SimpleTimelineItem[], containerWidth: number) {
   if (timelineItems.length === 0 || containerWidth === 0) return { rows: [], totalHeight: 0 }
   const layoutRows: SimpleLayoutRow[] = []
   let rowWidth = 0
   let offsetTop = 0
-  let rowItems: AlbumTimelineItem[] = []
+  let rowItems: SimpleTimelineItem[] = []
 
   for (const [i, item] of timelineItems.entries()) {
     rowItems.push(item)
@@ -182,6 +180,16 @@ const stopScrollingFast = useDebounceFn(() => {
   isScrollingFast.value = false
 }, 150)
 
+function scrollToTop() {
+  if (scrollContainerEl.value) {
+    scrollContainerEl.value.scrollTop = 0
+  }
+}
+
+defineExpose({
+  scrollToTop,
+})
+
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
     const rect = entries[0].contentRect
@@ -225,16 +233,6 @@ useEventListener(window, 'mousemove', (e: MouseEvent) => {
 })
 useEventListener(window, 'mouseup', () => {
   isDragging = false
-})
-useEventListener(document, 'keydown', (e) => {
-  if (e.key === 'a' && e.ctrlKey) {
-    e.preventDefault()
-    selectionStore.selectAll()
-  }
-  if (e.key === 'Escape' && !route.name!.toString().startsWith('view-photo')) {
-    e.preventDefault()
-    selectionStore.deselectAll()
-  }
 })
 </script>
 

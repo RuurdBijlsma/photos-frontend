@@ -2,6 +2,7 @@
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import NavDrawer from '@/vues/components/layout/NavDrawer.vue'
+import SearchBar from '@/vues/components/ui/SearchBar.vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
@@ -26,18 +27,7 @@ backgroundStore.initialize()
     <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
       <h1 class="appbar-title"><span>Ruurd</span> Photos</h1>
       <v-spacer />
-      <label class="search-bar">
-        <span class="search-icon-div">
-          <v-icon class="search-icon" icon="mdi-magnify"></v-icon>
-        </span>
-        <v-text-field
-          class="search-text-field"
-          placeholder="Search..."
-          rounded
-          hide-details
-          clearable
-        />
-      </label>
+      <search-bar />
       <v-spacer />
       <div class="header-buttons">
         <v-btn variant="plain" rounded>
@@ -106,43 +96,6 @@ backgroundStore.initialize()
 
 .appbar-title > span {
   font-weight: 400;
-}
-
-.search-bar {
-  cursor: text;
-  height: 50px;
-  width: calc(100% - 800px);
-  max-width: 700px;
-  border-radius: 25px;
-  background-color: rgba(var(--v-theme-surface-container), 0.8);
-  display: flex;
-  flex-direction: row;
-}
-
-.search-bar:has(.search-text-field input:focus) {
-  background-color: white;
-  color: black;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.2);
-}
-
-.search-icon-div {
-  width: 40px;
-  height: 50px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.search-text-field {
-  margin-top: -3px;
-}
-
-.search-bar:deep(.v-field__overlay) {
-  display: none;
-}
-
-.search-bar:deep(.v-field__outline) {
-  display: none;
 }
 
 .header-buttons {

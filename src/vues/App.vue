@@ -2,6 +2,7 @@
 import { RouterView } from 'vue-router'
 import SnackbarQueue from '@/vues/components/SnackbarQueue.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import AlertQueue from '@/vues/components/AlertQueue.vue'
 
 const settings = useSettingStore()
 </script>
@@ -12,6 +13,7 @@ const settings = useSettingStore()
   </v-app>
 
   <snackbar-queue />
+  <alert-queue />
 </template>
 
 <style scoped>

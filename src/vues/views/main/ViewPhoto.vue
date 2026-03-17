@@ -33,8 +33,10 @@ const isSelected = computed(() =>
 function closeViewer() {
   const parentRoute = route.matched[route.matched.length - 2]
   console.log(parentRoute)
-  if (parentRoute) router.push(parentRoute)
-  else router.push({ path: '/' })
+  if (parentRoute) {
+    const p = parentRoute.path === '' ? '/' : parentRoute.path
+    router.push({ path: p, query: route.query })
+  } else router.push({ path: '/', query: route.query })
 }
 
 const fullImage = ref<undefined | FullMediaItem>(undefined)
@@ -79,10 +81,10 @@ watch(nextId, () => nextId.value && mediaItemStore.fetchMediaItem(nextId.value))
 function handleKeyDown(e: KeyboardEvent) {
   if (e.key === 'ArrowLeft' && prevId.value) {
     e.preventDefault()
-    router.replace({ path: `${viewPhotoStore.viewLink}${prevId.value}` })
+    router.replace({ path: `${viewPhotoStore.viewLink}${prevId.value}`, query: route.query })
   } else if (e.key === 'ArrowRight' && nextId.value) {
     e.preventDefault()
-    router.replace({ path: `${viewPhotoStore.viewLink}${nextId.value}` })
+    router.replace({ path: `${viewPhotoStore.viewLink}${nextId.value}`, query: route.query })
   } else if (e.key === 'Escape') {
     e.preventDefault()
     e.stopPropagation()
@@ -93,7 +95,10 @@ function handleKeyDown(e: KeyboardEvent) {
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeyDown))
 
-const imageUrl = computed(() => mediaItemService.getPhotoThumbnail(id.value, 1440))
+const generatedThumbsAvailable = computed(() => fullImage.value?.has_thumbnails ?? false)
+const imageUrl = computed(() =>
+  mediaItemService.getPhotoThumbnail(id.value, 1440, !generatedThumbsAvailable.value),
+)
 
 const timestampString = computed(() => {
   const dateStr = fullImage.value?.taken_at_local
@@ -241,7 +246,7 @@ watch(
         </div>
       </div>
       <div
-        @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}` })"
+        @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}`, query: route.query })"
         v-if="prevId !== null"
         class="prev-area"
         @mouseenter="showLeftButton = true"
@@ -256,7 +261,7 @@ watch(
         ></v-btn>
       </div>
       <div
-        @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}` })"
+        @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}`, query: route.query })"
         v-if="nextId !== null"
         class="next-area"
         @mouseenter="showRightButton = true"

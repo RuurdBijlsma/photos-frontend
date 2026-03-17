@@ -26,8 +26,8 @@ const rules = {
 }
 
 const showPassword = ref(false)
-const email = ref('')
-const password = ref('')
+const email = ref('ruurd@example.com')
+const password = ref('kibbeling')
 const isSubmitted = ref(false)
 const errorMessage: Ref<string | undefined> = ref(undefined)
 const isLoading = ref(false)

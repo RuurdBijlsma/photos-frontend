@@ -5,11 +5,14 @@ withDefaults(
     height?: number
     width?: number
     borderRadius?: string
+    strength?: number
   }>(),
   {
     borderRadius: '0',
+    strength: 1,
   },
 )
+const emit = defineEmits(['error'])
 </script>
 
 <template>
@@ -17,6 +20,7 @@ withDefaults(
     <img
       :height="height"
       :width="width"
+      @error="(e) => emit('error', e)"
       aria-hidden="true"
       alt="Album thumbnail"
       class="image-bg"
@@ -36,6 +40,7 @@ withDefaults(
   border-radius: v-bind(borderRadius);
   box-shadow: 0 20px 30px 0 rgba(0, 0, 0, 0.2);
   z-index: 5;
+  object-fit: cover;
 }
 
 .image-bg {
@@ -43,5 +48,7 @@ withDefaults(
   position: absolute;
   filter: blur(100px) brightness(80%);
   pointer-events: none;
+  object-fit: cover;
+  opacity: v-bind(strength);
 }
 </style>

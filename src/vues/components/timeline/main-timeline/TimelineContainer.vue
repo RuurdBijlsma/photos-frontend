@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
@@ -9,9 +9,9 @@ import { getThumbnailHeight, requestIdleCallbackAsync } from '@/scripts/utils.ts
 import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
 import { MONTHS } from '@/scripts/constants.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
-import VirtualRow from '@/vues/components/timeline/VirtualRow.vue'
-import SelectionOverlay from '@/vues/components/timeline/SelectionOverlay.vue'
-import DateOverlay from '@/vues/components/timeline/DateOverlay.vue'
+import VirtualRow from '@/vues/components/timeline/main-timeline/VirtualRow.vue'
+import SelectionOverlay from '@/vues/components/timeline/timeline-components/SelectionOverlay.vue'
+import DateOverlay from '@/vues/components/timeline/timeline-components/DateOverlay.vue'
 import { useRoute } from 'vue-router'
 import timelineService from '@/scripts/services/timelineService.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
@@ -52,15 +52,16 @@ const virtualizerOptions = computed(() => ({
   estimateSize: (index: number) => {
     const row = gridLayout.value[index]
     if (!row) return 0
-
     let size = row.height
     if (row.firstOfTheMonth) size += ROW_HEADER_HEIGHT
     if (!row.lastOfTheMonth) size += ITEM_GAP
-
     return size
   },
   overscan: 5,
+  paddingEnd: 20,
+  getItemKey: (index: number) => gridLayout.value[index]?.key || index,
 }))
+
 const rowVirtualizer = useVirtualizer(virtualizerOptions)
 const scrollThumbHeight = computed(() =>
   Math.max(
@@ -160,7 +161,6 @@ function calculateLayout(
 ) {
   if (monthRatios.length === 0 || containerWidth === 0)
     return { rows: [], scrollMonths: [], scrollYears: [], totalHeight: 0 }
-  console.log(monthRatios)
   const layoutRows: LayoutRow[] = []
   const monthScrollLabels: MonthScrollLabel[] = []
   const yearScrollLabels: YearScrollLabel[] = []
@@ -284,12 +284,11 @@ function layoutRowFromScrollTop(rows: LayoutRow[], scrollTop: number) {
   return rows[index] ?? null
 }
 
-function rawOnScroll(e: Event) {
+const onScroll = useThrottleFn((e: Event) => {
   const target = e.target as HTMLElement
   scrollHeight.value = target.scrollHeight
   currentScrollTop.value = target.scrollTop
-}
-const onScroll = useThrottleFn(rawOnScroll, 33)
+}, 33)
 
 async function preLoadAllMonths(
   monthRatios: TimelineMonthRatios[],
@@ -303,6 +302,12 @@ async function preLoadAllMonths(
   let monthIdsToFetch: string[] = []
   let countToFetch = 0
   const BATCH_SIZE = 500
+
+  if (currentMonthIndex !== -1) {
+    monthIdsToFetch.push(monthRatios[currentMonthIndex]!.monthId)
+    countToFetch += monthRatios[currentMonthIndex]!.count
+  }
+
   while (true) {
     i++
     const beforeIndex = currentMonthIndex - i
@@ -330,7 +335,7 @@ async function preLoadAllMonths(
       if (abortSignal.aborted) {
         console.warn('ABORTED prefetch')
       } else {
-        console.log('Fetched all media by month')
+        console.log('Fetched all media by month', timelineStore.monthItems.keys())
         allMonthsPreloaded = true
         selectionStore.allIds = timelineStore.mediaItemIds
       }
@@ -395,8 +400,53 @@ async function initializeViewPhoto() {
     await requestIdleCallbackAsync(fetchViewPhotoIds)
   }
 }
-
 initializeViewPhoto()
+
+function findRowIndexByMediaId(mediaId: string): number {
+  const mediaItemIndex = timelineStore.mediaItemIds.indexOf(mediaId)
+  if (mediaItemIndex === -1) {
+    console.error('Media item not found in full mediaItemId list')
+    return -1
+  }
+  let rowItemCount = 0
+  for (let i = 0; i < gridLayout.value.length; i++) {
+    const row = gridLayout.value[i]!
+    rowItemCount += row.items.length
+    if (rowItemCount > mediaItemIndex) return i
+  }
+  return -1
+}
+
+function offsetScrollToMediaId(index: number, behavior: 'auto' | 'smooth' = 'auto') {
+  const offsetTop = gridLayout.value[index]?.offsetTop
+  if (offsetTop && scrollContainerEl.value) {
+    scrollContainerEl.value.scrollTo({ top: offsetTop, behavior: behavior })
+  }
+}
+
+interface ScrollOptions {
+  type: 'offset' | 'virtual'
+  behavior: 'auto' | 'smooth'
+  align: 'start' | 'center' | 'end' | 'auto'
+}
+
+function scrollToMediaId(
+  mediaId: string,
+  options: ScrollOptions = {
+    align: 'start',
+    behavior: 'auto',
+    type: 'offset',
+  },
+) {
+  const index = findRowIndexByMediaId(mediaId)
+  if (index !== -1) {
+    if (options.type === 'virtual') {
+      rowVirtualizer.value.scrollToIndex(index, options)
+    } else {
+      offsetScrollToMediaId(index, options.behavior)
+    }
+  }
+}
 
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
@@ -422,17 +472,6 @@ useEventListener(document, 'mouseup', (e) => {
   updateScrollPosition(e.clientY)
 })
 
-useEventListener(document, 'keydown', (e) => {
-  if (e.key === 'a' && e.ctrlKey) {
-    e.preventDefault()
-    selectionStore.selectAll()
-  }
-  if (e.key === 'Escape' && route.name === 'timeline') {
-    e.preventDefault()
-    selectionStore.deselectAll()
-  }
-})
-
 const hideScrollDetails = useDebounceFn(() => {
   showScrollDetails.value = false
 }, 5000)
@@ -441,7 +480,21 @@ const stopScrollingFast = useDebounceFn(() => {
   isScrollingFast.value = false
 }, 150)
 
-watch([() => timelineStore.monthRatios, containerSize], () => {
+let resizeAnchor: string | null = null
+let resizeRafId: number | null = null
+
+const resetResizeAnchorDb = useDebounceFn(() => {
+  resizeAnchor = null
+  if (resizeRafId !== null) cancelAnimationFrame(resizeRafId)
+}, 200)
+
+function lockResize() {
+  if (resizeAnchor !== null)
+    scrollToMediaId(resizeAnchor, { type: 'virtual', align: 'start', behavior: 'auto' })
+  resizeRafId = requestAnimationFrame(lockResize)
+}
+
+watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize]) => {
   const now = performance.now()
   const { rows, scrollYears, scrollMonths, totalHeight } = calculateLayout(
     timelineStore.monthRatios,
@@ -456,6 +509,27 @@ watch([() => timelineStore.monthRatios, containerSize], () => {
   }
   gridLayout.value = rows
   scrollHeight.value = totalHeight
+
+  const isResize = newSize.width !== 0 && oldSize.width !== 0 && oldSize.width !== newSize.width
+
+  if (isResize) {
+    if (timelineStore.mediaIdInView) {
+      if (resizeAnchor === null) {
+        resizeAnchor = timelineStore.mediaIdInView
+      }
+      if (resizeRafId !== null) cancelAnimationFrame(resizeRafId)
+      resizeRafId = requestAnimationFrame(lockResize)
+    }
+    resetResizeAnchorDb()
+  } else {
+    if (timelineStore.mediaIdInView) {
+      console.warn('TIMELINE STORE HAS MEDIA_ITEM_IN_VIEW', timelineStore.mediaIdInView)
+      const mediaItemInViewId = timelineStore.mediaIdInView
+      nextTick(() => {
+        scrollToMediaId(mediaItemInViewId, { type: 'offset', align: 'start', behavior: 'auto' })
+      })
+    }
+  }
 })
 
 watch(
@@ -486,6 +560,43 @@ watch(currentScrollTop, (newVal, oldVal) => {
     stopScrollingFast()
   } else if (isScrollingFast.value && scrollDelta > 300) stopScrollingFast()
 })
+
+watch(
+  () => route.params.mediaId,
+  (newId, oldId) => {
+    if (newId === undefined && oldId && typeof oldId === 'string') {
+      const rowIndex = findRowIndexByMediaId(oldId)
+      const row = gridLayout.value[rowIndex]
+      if (row) {
+        const viewportTop = currentScrollTop.value
+        const viewportBottom = viewportTop + containerSize.value.height
+        const rowTop = row.firstOfTheMonth ? row.offsetTop - ROW_HEADER_HEIGHT : row.offsetTop
+        const rowBottom = row.offsetTop + row.height
+        const isFullyInViewport = rowTop >= viewportTop && rowBottom <= viewportBottom
+        if (isFullyInViewport) return
+      }
+
+      const newOffsetTop = row?.offsetTop
+      const diff =
+        newOffsetTop === undefined ? Infinity : Math.abs(currentScrollTop.value - newOffsetTop)
+      const DIFF_THRESHOLD = 5000
+      scrollToMediaId(oldId, {
+        type: 'virtual',
+        align: 'center',
+        behavior: diff > DIFF_THRESHOLD ? 'auto' : 'smooth',
+      })
+    }
+  },
+  { immediate: true },
+)
+
+watch(mediaItemInView, () => {
+  if (mediaItemInView.value) {
+    timelineStore.mediaIdInView = mediaItemInView.value.id
+  }
+})
+
+if (!timelineStore.isInitialized) timelineStore.initialize()
 </script>
 
 <template>
@@ -506,7 +617,8 @@ watch(currentScrollTop, (newVal, oldVal) => {
         >
           <div
             v-for="virtualRow in rowVirtualizer.getVirtualItems()"
-            :key="String(virtualRow.key)"
+            :key="virtualRow.key as string"
+            :data-index="virtualRow.index"
             :style="{
               position: 'absolute',
               top: 0,
@@ -615,6 +727,7 @@ watch(currentScrollTop, (newVal, oldVal) => {
   width: 100%;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  overflow-anchor: none;
 }
 
 .scroll-container::-webkit-scrollbar {

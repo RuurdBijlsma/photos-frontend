@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type { Album } from '@/scripts/types/api/album.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
-import ItemsPreview from '@/vues/components/timeline/ItemsPreview.vue'
+import ItemsPreview from '@/vues/components/timeline/timeline-components/ItemsPreview.vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
@@ -30,6 +30,7 @@ const addLoading = ref(false)
 const filteredUserAlbums = computed(() =>
   albumStore.userAlbums.filter((a) => !props.excludeAlbumIds.includes(a.id)),
 )
+const useOnDemandThumb = ref(new Map<string | null, boolean>())
 
 async function createNew() {
   if (props.idsToAdd.length === 0) {
@@ -99,7 +100,14 @@ async function addToAlbum(album: Album) {
           <template v-slot:prepend>
             <v-avatar rounded color="surface-container-high">
               <v-img
-                :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 144)"
+                @error="useOnDemandThumb.set(album.thumbnailId, true)"
+                :src="
+                  mediaItemService.getPhotoThumbnail(
+                    album.thumbnailId,
+                    144,
+                    useOnDemandThumb.get(album.thumbnailId),
+                  )
+                "
                 v-if="album.thumbnailId"
               />
               <v-icon v-else icon="mdi-image-album" color="primary" class="opacity-70" />

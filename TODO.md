@@ -66,14 +66,25 @@
 * ✅ make albums list in nav drawer not scrollable, and cut off at 5 items or so (maybe add view all button at the bottom
   of the list if theres more items available)
 * ✅ remember if albums list in navbar is open with localstorage
-* ✅ if an album has media items in it, but no title, then show it as <No Title> or something in the nav bar and the albums
-    page
+* ✅ if an album has media items in it, but no title, then show it as <No Title> or something in the nav bar and the
+  albums
+  page
 * ✅ timeline scrollbar is shitty when we have few media items
 * ✅ make way to see time range of album (include in metadata with ratios request)
 * ✅ only request main timeline ratios/ids/by-month if we're visiting the main timeline
 * ✅ make date overlay hide when near the top of the page
 * ✅ fix griditem rendering
 * ✅ hij is weer shitty laggy lol waarom doet ie dat :((( bisect maar weer even ofzo
+* ✅ [bug] scroll via timeline to some far away date → scroll up & down a bit → it janks to a month later? idk
+* ✅ next: make add to album via selection work. make the UX nice. (also be able to add to existing album)
+* ✅ when holding shift & selecting dont insta lose preview when not hovering a photo
+* ✅ fix lag spike when moving from photos → explore → [LAG HERE] photos
+* ✅ [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
+* 🫸 remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
+* ✅ add way to add description
+* ✅ als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.
+* ✅ als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is
+  nu stuk, en mogelijk conflict met scrollSession, misschien kan ik de view photo date en scroll session unifyen?)
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -100,17 +111,23 @@
 * stomme nav bar start te hoog en animeert naar beneden on page load
 * add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
 * ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
-* when holding shift, show what would be selected with shift
 * idea to fix desync timeline bug:
     * bug: timeline ids/ratios/by month might by out of sync because theyre separate requests
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* ✅ [bug] scroll via timeline to some far away date → scroll up & down a bit → it janks to a month later? idk
-* ✅ next: make add to album via selection work. make the UX nice. (also be able to add to existing album)
-* ✅ when holding shift & selecting dont insta lose preview when not hovering a photo
-* ✅ fix lag spike when moving from photos → explore → [LAG HERE] photos
-* ✅ [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
-* 🫸 remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
-* add way to add description
-* album page: add sort options (also sort by added on date)
+* add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
+* album page: add sort (also sort by added on date)
+* make proper search page
+* ✅ dont smooth scroll when returning from /view photo when the item it should scroll to is still fully in browser view.
+* ✅ [BUG] after login, photo grid isnt loaded
+* ✅ make loading indicator for search
+* ✅ if you reload with ?query=asdf, make sure the search-bar is filled with that query on load.
+* show more results on search page
+* search suggestions while typing (llm data required)
+* make search sortable by relevancy or date
+* add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
+* more interesting filters to search page (advanced search collapsable section)
+  * face? maybe for later
+  * location? country? could be autofilling select input thing
+  * negative query?

@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import type { SearchResultItem } from '@/scripts/types/api/search.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRoute, useRouter } from 'vue-router'
-import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
+import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
+import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 
 const snackStore = useSnackbarsStore()
 const route = useRoute()
 const router = useRouter()
 
 const query = ref('')
-const results = ref<SearchResultItem[]>([])
+const results = ref<SimpleTimelineItem[]>([])
 const loading = ref(false)
 
 async function executeSearch() {
@@ -19,9 +19,8 @@ async function executeSearch() {
   if (query.value === '') return
   setQuery().then()
   try {
-    const { data } = await mediaItemService.search(query.value, 0.25)
-    data.sort((a, b) => b.combinedScore - a.combinedScore)
-    results.value = data
+    const { items } = await mediaItemService.search(query.value)
+    results.value = items
   } catch (e) {
     snackStore.error('Could not perform search', e)
   } finally {
@@ -31,15 +30,6 @@ async function executeSearch() {
 
 async function setQuery() {
   await router.push({ query: { query: query.value } })
-}
-
-async function openImg(id: string) {
-  window.open(mediaItemService.getPhotoThumbnail(id, 1440))
-}
-
-async function showDetails(id: string) {
-  const { data } = await mediaItemService.getMediaItem(id)
-  console.log(id, data)
 }
 
 watch(
@@ -61,122 +51,32 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main-layout-container>
-    <div class="search-header">
-      <h1>Search</h1>
-      <v-form @submit.prevent="executeSearch" class="search-form">
-        <v-text-field
-          variant="outlined"
-          rounded
-          placeholder="Search..."
-          class="mt-5"
-          width="500"
-          v-model="query"
-        />
-        <v-btn
-          :disabled="query === ''"
-          type="submit"
-          color="primary"
-          outlined
-          rounded
-          variant="tonal"
-          :loading="loading"
-          >Search</v-btn
-        >
-      </v-form>
-    </div>
-    <div class="photo-grid">
-      <div
-        v-for="res in results"
-        :key="res.id"
-        class="photo-item"
-        @click.left="openImg(res.id)"
-        @click.right="showDetails(res.id)"
-      >
-        <div
-          class="photo"
-          :style="{
-            backgroundImage: `url(${mediaItemService.getPhotoThumbnail(res.id, 1440)})`,
-          }"
-        ></div>
-        <div class="info">
-          <div class="info-progress" v-tooltip:top="`FTS: ${res.ftsScore}`">
-            <span>FTS</span>
-            <v-progress-linear
-              :model-value="Math.round(res.ftsScore * 100)"
-              :height="10"
-              rounded
-              color="blue"
-            />
-          </div>
-          <div class="info-progress" v-tooltip:top="`Vector: ${res.vectorScore}`">
-            <span>VEC</span>
-            <v-progress-linear
-              :model-value="Math.round(res.vectorScore * 100)"
-              :height="10"
-              rounded
-              color="purple"
-            />
-          </div>
-          <div class="info-progress" v-tooltip:top="`Combined: ${res.combinedScore}`">
-            <span>CBD</span>
-            <v-progress-linear
-              :model-value="Math.round(res.combinedScore * 100)"
-              :height="10"
-              rounded
-              color="green"
-            />
-          </div>
-        </div>
+  <simple-timeline :timeline-items="results" view-link="/search/view/">
+    <div class="search-results-header">
+      <div class="loading-indicator" v-if="loading">
+        <h2 class="search-summary">
+          Searching for "<span class="query-span">{{ query }}</span
+          >"...
+        </h2>
+        <v-progress-circular class="mt-6" :size="70" indeterminate />
       </div>
     </div>
-  </main-layout-container>
+  </simple-timeline>
 </template>
 
 <style scoped>
-.search-form {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  width: 600px;
-}
-
-.photo-grid {
-}
-.photo-item {
-  display: inline-block;
-  margin: 5px;
-  height: 300px;
-  width: 400px;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.photo {
-  background-size: contain;
-  background-position: center;
-  background-color: rgba(255, 255, 255, 0.1);
-  width: 100%;
-  height: calc(100% - 70px);
-}
-
-.info {
-  margin-top: 10px;
-  color: white;
-  height: 70px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.info-progress {
-  display: flex;
-  gap: 10px;
-  font-size: 10px;
-}
-.info-progress span {
-  display: block;
-  width: 50px;
+.search-results-header {
+  padding: 20px 40px 30px;
   text-align: center;
+}
+
+.search-summary {
+  font-weight: 400;
+}
+
+.query-span {
+  font-style: italic;
+  color: rgb(var(--v-theme-on-surface-bright));
+  font-weight: 600;
 }
 </style>

@@ -1,7 +1,7 @@
-import type { AlbumTimelineItem } from '@/scripts/types/generated/timeline.ts'
+import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 export interface SimpleLayoutRow {
-  items: AlbumTimelineItem[]
+  items: SimpleTimelineItem[]
   height: number
   key: string
   offsetTop: number

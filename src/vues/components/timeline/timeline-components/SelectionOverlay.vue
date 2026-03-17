@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AddToAlbumButton from '@/vues/components/timeline/AddToAlbumButton.vue'
+import AddToAlbumButton from '@/vues/components/timeline/timeline-components/AddToAlbumButton.vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 
 withDefaults(
@@ -23,6 +23,13 @@ const selectionStore = useSelectionStore()
         density="compact"
         v-tooltip:top="'Deselect all'"
         @click="selectionStore.deselectAll"
+      />
+      <v-btn
+        icon="mdi-checkbox-multiple-marked-circle-outline"
+        variant="plain"
+        density="compact"
+        @click="selectionStore.selectAll"
+        v-tooltip:top="'Select all'"
       />
       <div class="select-text">
         <span class="bold-select">{{ selectionStore.selection.size }}</span

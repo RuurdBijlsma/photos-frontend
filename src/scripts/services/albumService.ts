@@ -8,7 +8,6 @@ import type {
   AlbumCollaborator,
   AlbumSortField,
   AlbumSummary,
-  AlbumWithCount,
   CheckInviteRequest,
   CreateAlbumRequest,
   SortDirection,
@@ -23,8 +22,8 @@ const albumService = {
   getUserAlbums(
     sortField: AlbumSortField = 'updatedAt',
     sortDirection: SortDirection = 'desc',
-  ): Promise<AxiosResponse<AlbumWithCount[]>> {
-    return apiClient.get<AlbumWithCount[]>('/album', { params: { sortField, sortDirection } })
+  ): Promise<AxiosResponse<Album[]>> {
+    return apiClient.get<Album[]>('/album', { params: { sortField, sortDirection } })
   },
 
   /**
@@ -39,6 +38,20 @@ const albumService = {
    */
   updateAlbum(albumId: string, payload: UpdateAlbumRequest): Promise<AxiosResponse<Album>> {
     return apiClient.put<Album>(`/album/${albumId}`, payload)
+  },
+
+  /**
+   * Remove album description.
+   */
+  removeAlbumDescription(albumId: string): Promise<AxiosResponse> {
+    return apiClient.delete(`/album/${albumId}/description`)
+  },
+
+  /**
+   * Reset album ranks to sort it in chronological order.
+   */
+  sortAlbumByDate(albumId: string): Promise<AxiosResponse> {
+    return apiClient.post(`/album/${albumId}/sort-by-date`)
   },
 
   // --- Media Management ---

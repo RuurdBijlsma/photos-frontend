@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import type { AlbumTimelineItem, TimelineItem } from '@/scripts/types/generated/timeline.ts'
+import type { SimpleTimelineItem, TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { toHms } from '@/scripts/utils.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import { useRoute } from 'vue-router'
 import { computed, nextTick, ref } from 'vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 const props = withDefaults(
   defineProps<{
-    mediaItem: TimelineItem | AlbumTimelineItem | undefined
+    mediaItem: TimelineItem | SimpleTimelineItem | undefined
     width: number
     height: number
     thumbnailSize: number
@@ -20,6 +21,7 @@ const props = withDefaults(
 )
 
 const selectionStore = useSelectionStore()
+const route = useRoute()
 
 const id = computed(() => props.mediaItem?.id ?? null)
 const isVideo = computed(() => props.mediaItem?.isVideo ?? false)
@@ -75,7 +77,7 @@ function selectItem(e: PointerEvent) {
     :style="{
       width: `${width}px`,
       height: `${height}px`,
-      backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, thumbnailSize)})`,
+      backgroundImage: `url(${mediaItemService.getPhotoThumbnail(id, thumbnailSize, !mediaItem?.hasThumbnails)})`,
       '--scale-x': (width - 8) / width,
       '--scale-y': (height - 8) / height,
     }"
@@ -90,7 +92,7 @@ function selectItem(e: PointerEvent) {
         playsinline
         :width="width"
         :height="height"
-        :src="mediaItemService.getVideo(id, 480)"
+        :src="mediaItemService.getVideo(id, 480, !mediaItem?.hasThumbnails)"
       />
 
       <div v-if="selectionStore.isSelecting" class="selecting-overlay" @click="selectItem">
@@ -104,7 +106,7 @@ function selectItem(e: PointerEvent) {
         </div>
         <router-link
           class="fullscreen"
-          :to="`${viewLink}${id}`"
+          :to="{ path: `${viewLink}${id}`, query: route.query }"
           title="View in fullscreen"
           @click.stop
         >
@@ -114,7 +116,7 @@ function selectItem(e: PointerEvent) {
       </div>
 
       <template v-else>
-        <router-link class="view-link" :to="`${viewLink}${id}`">
+        <router-link class="view-link" :to="{ path: `${viewLink}${id}`, query: route.query }">
           <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
         </router-link>
         <div class="checkbox" @click.prevent="selectItem">

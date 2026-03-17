@@ -30,7 +30,7 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
   <div class="snackbar-queue-container">
     <transition-group name="snack" tag="div" class="snack-list">
       <div
-        v-for="snack in store.queue"
+        v-for="snack in store.snackQueue"
         :key="snack.id"
         class="snack-wrapper"
         @mouseenter="onMouseEnter(snack.id)"

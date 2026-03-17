@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import GlowImage from '@/vues/components/ui/GlowImage.vue'
 import { useDebounceFn, useTextareaAutosize } from '@vueuse/core'
 import EditableTitle from '@/vues/components/ui/EditableTitle.vue'
-import SimpleTimeline from '@/vues/components/simple-timeline/SimpleTimeline.vue'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
 import { stringToColor } from '@/scripts/utils.ts'
+import albumService from '@/scripts/services/albumService.ts'
 
 const route = useRoute()
 const router = useRouter()
 const albumStore = useAlbumStore()
+const simpleTimeline = useTemplateRef('simpleTimeline')
 
 const id = computed(() => {
   const rawId = route.params.albumId
@@ -30,20 +31,15 @@ const items = computed(() => albumResponse.value?.items ?? [])
 const updateAlbumTitleDb = useDebounceFn(updateAlbumTitle, 500)
 const updateAlbumDescriptionDb = useDebounceFn(updateAlbumDescription, 500)
 const albumTitle = ref<string | null>(null)
-const description = computed({
-  get: () => {
-    if (album.value !== null) return album.value?.description ?? null
-    return minimalAlbumInfo.value?.description ?? null
-  },
-  set: (val) => {
-    triggerResize()
-    if (val !== null) updateAlbumDescriptionDb(val)
-  },
-})
+const albumDescription = ref<string | null>('')
 const thumbnailId = computed(() => {
   if (album.value !== null) return album.value?.thumbnailId ?? null
   return minimalAlbumInfo.value?.thumbnailId ?? null
 })
+const useOnDemandThumb = ref(false)
+const primaryThumb = computed(() =>
+  mediaItemService.getPhotoThumbnail(thumbnailId.value, 720, useOnDemandThumb.value),
+)
 const formattedDates = computed(() => {
   const firstDate = album.value?.firstDate ?? null
   const lastDate = album.value?.lastDate ?? null
@@ -63,11 +59,12 @@ const formattedDates = computed(() => {
   const yearSuffix = startYear === CURRENT_YEAR ? '' : `, ${startYear}`
   if (startMonthIdx !== endMonthIdx)
     return `${getShortMonth(startMonthIdx)} ${startDay} – ${getShortMonth(endMonthIdx)} ${endDay}${yearSuffix}`
-  if (startDay === endDay) return `${getShortMonth(startMonthIdx)} ${startDay}${yearSuffix}`
+  if (startDay === endDay) return `${MONTHS[startMonthIdx]} ${startDay}${yearSuffix}`
   return `${getShortMonth(startMonthIdx)} ${startDay} – ${endDay}${yearSuffix}`
 })
-const textAreaDescription = computed(() => description.value ?? '')
+const textAreaDescription = computed(() => albumDescription.value ?? '')
 const { textarea, triggerResize } = useTextareaAutosize({ input: textAreaDescription })
+const descTextAreaFocus = ref(false)
 
 function updateAlbumTitle(name: string) {
   if (album.value === null || id.value === null) return
@@ -82,26 +79,48 @@ function updateAlbumTitle(name: string) {
   albumStore.updateAlbumDetails(id.value, { name })
 }
 
-function updateAlbumDescription(description: string) {
-  if (id.value && album.value?.description) {
+function updateAlbumDescription(albumId: string, description: string) {
+  if (id.value && albumId === id.value && album.value && album.value.description !== description) {
+    console.log(album.value.description, description)
     album.value.description = description
     triggerResize()
-    albumStore.updateAlbumDetails(id.value, { description: description })
+    albumStore.updateAlbumDetails(id.value, { description })
   }
+}
+
+function setDescription() {
+  albumDescription.value = ''
+  nextTick(() => {
+    textarea.value?.focus()
+  })
+}
+
+function focusTextArea() {
+  descTextAreaFocus.value = true
+}
+
+function blurTextArea() {
+  descTextAreaFocus.value = false
+}
+
+function removeDescription() {
+  if (!id.value) return
+  albumService.removeAlbumDescription(id.value).then(() => {
+    requestIdleCallback(() => albumStore.fetchUserAlbums())
+  })
+  albumDescription.value = null
 }
 
 watch(
   id,
   () => {
+    useOnDemandThumb.value = false
     albumTitle.value = null
+    albumDescription.value = null
     console.log('Album ID change', id.value)
-    const idToLoad = id.value
-    if (!idToLoad) return
-    albumStore.fetchAlbumMedia(idToLoad).then(() => {
-      if (id.value !== idToLoad) return
-      console.log('Album info', albumStore.albumMedia.get(idToLoad))
-      albumTitle.value = album.value?.name ?? ''
-    })
+    simpleTimeline.value?.scrollToTop()
+    if (!id.value) return
+    albumStore.fetchAlbumMedia(id.value)
   },
   { immediate: true },
 )
@@ -114,12 +133,20 @@ watch(
     nextTick(() => {
       if (!id.value) return
       if (!minimalAlbumInfo.value) return
-      if (albumTitle.value !== null) return
-      albumTitle.value = minimalAlbumInfo.value.name
+      if (albumTitle.value === null) albumTitle.value = minimalAlbumInfo.value.name
+      if (albumDescription.value === null)
+        albumDescription.value = minimalAlbumInfo.value.description
     })
   },
   { immediate: true },
 )
+
+watch(albumDescription, (newVal, oldVal) => {
+  if (newVal !== oldVal && id.value && newVal !== null) {
+    triggerResize()
+    updateAlbumDescriptionDb(id.value, newVal ?? '')
+  }
+})
 
 watch(albumTitle, (newVal, oldVal) => {
   if (newVal && newVal !== oldVal) updateAlbumTitleDb(newVal)
@@ -136,13 +163,14 @@ watch(
 </script>
 
 <template>
-  <simple-timeline :timeline-items="items" :view-link="`/album/${id}/view/`">
+  <simple-timeline ref="simpleTimeline" :timeline-items="items" :view-link="`/album/${id}/view/`">
     <div class="album-header">
       <div class="album-header-left">
         <glow-image
           border-radius="44px"
           :height="222"
-          :src="mediaItemService.getPhotoThumbnail(thumbnailId, 720)"
+          @error="useOnDemandThumb = true"
+          :src="primaryThumb"
         ></glow-image>
       </div>
       <div class="album-header-right">
@@ -170,23 +198,42 @@ watch(
         />
         <div class="description-area" v-if="album">
           <v-btn
-            v-if="!description"
+            v-if="albumDescription === null"
             class="description-add-button"
             prepend-icon="mdi-plus"
             density="compact"
             variant="plain"
             rounded
-            @click="console.error('todo')"
+            @click="setDescription"
           >
             Add description
           </v-btn>
-          <textarea
-            v-else
-            class="album-description"
-            ref="textarea"
-            v-model="description"
-            @input="triggerResize"
-          ></textarea>
+          <div v-else class="description-with-remove">
+            <textarea
+              class="album-description"
+              ref="textarea"
+              :style="{
+                boxShadow:
+                  albumDescription?.length > 0
+                    ? ''
+                    : `inset 0 0 0 1px rgba(var(--v-theme-on-background), 0.3)`,
+              }"
+              v-model="albumDescription"
+              @input="triggerResize"
+              @focus="focusTextArea"
+              @blur="blurTextArea"
+            ></textarea>
+            <v-btn
+              @click="removeDescription"
+              v-tooltip:top="'Remove description'"
+              icon="mdi-close"
+              density="compact"
+              variant="plain"
+              :style="{
+                opacity: descTextAreaFocus ? 'inherit' : 0,
+              }"
+            ></v-btn>
+          </div>
         </div>
         <v-skeleton-loader
           v-else
@@ -230,6 +277,7 @@ watch(
           type="avatar,avatar"
           :style="{ transform: `translateX(-60px) scale(0.88)` }"
         />
+        <v-btn @click="albumService.sortAlbumByDate(id!)">Sort chronologically</v-btn>
       </div>
     </div>
   </simple-timeline>
@@ -268,20 +316,29 @@ watch(
   text-transform: capitalize;
   font-weight: 400;
   opacity: 0.5;
-  margin-top: 10px;
+  margin-top: 8px;
   margin-bottom: 5px;
 }
 
+.description-with-remove {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .album-description {
-  font-weight: 500;
-  font-size: 15px;
-  opacity: 0.9;
-  margin-top: 12px;
+  font-weight: 400;
+  font-size: 14px;
+  opacity: 0.8;
+  margin-top: 3px;
   resize: none;
   border-radius: 10px;
   padding: 5px;
   margin-left: -5px;
   width: calc(100% + 5px);
+  font-family: Roboto, sans-serif;
+  margin-bottom: 3px;
+  position: relative;
 }
 
 .album-description:focus {
@@ -289,7 +346,7 @@ watch(
 }
 
 .album-collaborators {
-  margin-top: 10px;
+  margin-top: 5px;
   display: flex;
   gap: 10px;
 }

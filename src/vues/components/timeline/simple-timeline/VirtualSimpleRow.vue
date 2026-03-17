@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SimpleLayoutRow } from '@/scripts/types/timeline/layout.ts'
-import GridItem from '@/vues/components/timeline/GridItem.vue'
+import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vue'
 
 defineProps<{
   item: SimpleLayoutRow
