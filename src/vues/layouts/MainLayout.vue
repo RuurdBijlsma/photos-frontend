@@ -27,7 +27,7 @@ backgroundStore.initialize()
     <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
       <h1 class="appbar-title"><span>Ruurd</span> Photos</h1>
       <v-spacer />
-      <search-bar/>
+      <search-bar />
       <v-spacer />
       <div class="header-buttons">
         <v-btn variant="plain" rounded>

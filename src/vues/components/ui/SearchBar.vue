@@ -79,7 +79,7 @@ watch(
     if (newQuery && newQuery.toString() !== query.value) {
       query.value = newQuery.toString()
     }
-  }
+  },
 )
 
 onUnmounted(() => {

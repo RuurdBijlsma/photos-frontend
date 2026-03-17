@@ -254,7 +254,12 @@ onUnmounted(() => {
               {{ album.name || 'Untitled Album' }}
             </h3>
             <p class="album-meta">
-              <span>{{ album.mediaCount.toLocaleString() ?? 0 }} item{{ album.mediaCount === 1 ? '' : 's' }}</span> •
+              <span
+                >{{ album.mediaCount.toLocaleString() ?? 0 }} item{{
+                  album.mediaCount === 1 ? '' : 's'
+                }}</span
+              >
+              •
               <span>{{ getAlbumTimeSpan(album) }}</span>
             </p>
           </div>

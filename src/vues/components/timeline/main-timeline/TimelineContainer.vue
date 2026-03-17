@@ -335,7 +335,7 @@ async function preLoadAllMonths(
       if (abortSignal.aborted) {
         console.warn('ABORTED prefetch')
       } else {
-        console.log('Fetched all media by month',timelineStore.monthItems.keys())
+        console.log('Fetched all media by month', timelineStore.monthItems.keys())
         allMonthsPreloaded = true
         selectionStore.allIds = timelineStore.mediaItemIds
       }

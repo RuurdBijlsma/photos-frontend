@@ -106,7 +106,7 @@ function selectItem(e: PointerEvent) {
         </div>
         <router-link
           class="fullscreen"
-        :to="{ path: `${viewLink}${id}`, query: route.query }"
+          :to="{ path: `${viewLink}${id}`, query: route.query }"
           title="View in fullscreen"
           @click.stop
         >

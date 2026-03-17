@@ -17,7 +17,8 @@ body {
   background-color: #101010 !important;
 }
 
-.v-navigation-drawer, .v-main {
+.v-navigation-drawer,
+.v-main {
   transition: 0s !important;
 }
 
