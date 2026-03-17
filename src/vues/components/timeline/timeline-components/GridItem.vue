@@ -2,6 +2,7 @@
 import type { SimpleTimelineItem, TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { toHms } from '@/scripts/utils.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import { useRoute } from 'vue-router'
 import { computed, nextTick, ref } from 'vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
@@ -20,6 +21,7 @@ const props = withDefaults(
 )
 
 const selectionStore = useSelectionStore()
+const route = useRoute()
 
 const id = computed(() => props.mediaItem?.id ?? null)
 const isVideo = computed(() => props.mediaItem?.isVideo ?? false)
@@ -104,7 +106,7 @@ function selectItem(e: PointerEvent) {
         </div>
         <router-link
           class="fullscreen"
-          :to="`${viewLink}${id}`"
+        :to="{ path: `${viewLink}${id}`, query: route.query }"
           title="View in fullscreen"
           @click.stop
         >
@@ -114,7 +116,7 @@ function selectItem(e: PointerEvent) {
       </div>
 
       <template v-else>
-        <router-link class="view-link" :to="`${viewLink}${id}`">
+        <router-link class="view-link" :to="{ path: `${viewLink}${id}`, query: route.query }">
           <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
         </router-link>
         <div class="checkbox" @click.prevent="selectItem">
