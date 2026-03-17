@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import type { SearchResultItem } from '@/scripts/types/api/search.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRoute, useRouter } from 'vue-router'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
+import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
+import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 
 const snackStore = useSnackbarsStore()
 const route = useRoute()
 const router = useRouter()
 
 const query = ref('')
-const results = ref<SearchResultItem[]>([])
+const results = ref<SimpleTimelineItem[]>([])
 const loading = ref(false)
 
 async function executeSearch() {
@@ -19,9 +20,8 @@ async function executeSearch() {
   if (query.value === '') return
   setQuery().then()
   try {
-    const { data } = await mediaItemService.search(query.value)
-    data.sort((a, b) => b.combinedScore - a.combinedScore)
-    results.value = data
+    const { items } = await mediaItemService.search(query.value)
+    results.value = items
   } catch (e) {
     snackStore.error('Could not perform search', e)
   } finally {
@@ -86,6 +86,7 @@ onMounted(async () => {
       </v-form>
     </div>
     <div class="photo-grid">
+      <simple-timeline :timeline-items="results" view-link="/search/view/"></simple-timeline>
       <div
         v-for="res in results"
         :key="res.id"
@@ -99,36 +100,6 @@ onMounted(async () => {
             backgroundImage: `url(${mediaItemService.getPhotoThumbnail(res.id, 720, false)})`,
           }"
         ></div>
-        <div class="info">
-          <div class="info-progress" v-tooltip:top="`FTS: ${res.ftsScore}`">
-            <span>FTS: #{{ res.ftsRank }}</span>
-            <v-progress-linear
-              :model-value="Math.round(res.ftsScore * 100)"
-              :height="10"
-              rounded
-              color="blue"
-            />
-          </div>
-          <div class="info-progress" v-tooltip:top="`Vector: ${res.vectorScore}`">
-            <span>VEC: #{{ res.vectorRank }}</span>
-            <v-progress-linear
-              :model-value="Math.round(res.vectorScore * 100)"
-              :height="10"
-              rounded
-              color="purple"
-            />
-          </div>
-          <div class="info-progress" v-tooltip:top="`Combined: ${res.combinedScore}`">
-            <span>CBD</span>
-            <v-progress-linear
-              :model-value="Math.round(res.combinedScore * 100)"
-              :height="10"
-              :max="3"
-              rounded
-              color="green"
-            />
-          </div>
-        </div>
       </div>
     </div>
   </main-layout-container>
@@ -142,8 +113,6 @@ onMounted(async () => {
   width: 600px;
 }
 
-.photo-grid {
-}
 .photo-item {
   display: inline-block;
   margin: 5px;

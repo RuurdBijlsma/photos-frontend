@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
-import type { SearchResultItem } from '@/scripts/types/api/search.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 const router = useRouter()
 const snackStore = useSnackbarsStore()
 const searchInputEl = useTemplateRef('searchInput')
 
 const query = ref('')
-const results = ref<SearchResultItem[]>([])
+const results = ref<SimpleTimelineItem[]>([])
 const loading = ref(false)
 const isFocused = ref(false)
 
@@ -27,9 +27,9 @@ async function performSearch(searchQuery: string) {
   loading.value = true
 
   try {
-    const { data } = await mediaItemService.search(searchQuery)
+    const { items } = await mediaItemService.search(searchQuery)
     if (requestId === latestRequestId) {
-      results.value = data
+      results.value = items
       console.log('Search Results:', results.value)
     }
   } catch (e) {

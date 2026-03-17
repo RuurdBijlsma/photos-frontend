@@ -3,7 +3,7 @@ import apiClient from './api.ts'
 import type { RandomPhotoResponse } from '@/scripts/types/api/photos.ts'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
 import type { Theme } from '@/scripts/types/themeColor.ts'
-import type { SearchResultItem } from '@/scripts/types/api/search.ts'
+import { SearchResponse } from '@/scripts/types/generated/timeline.ts'
 
 const mediaItemService = {
   getPhotoThumbnail(
@@ -42,13 +42,13 @@ const mediaItemService = {
     })
   },
 
-  search(
-    query: string,
-    limit?: number,
-  ): Promise<AxiosResponse<SearchResultItem[]>> {
-    return apiClient.get<SearchResultItem[]>('/search', {
+  async search(query: string, limit?: number): Promise<SearchResponse> {
+    const response = await apiClient.get('/search', {
       params: { query, limit },
+      responseType: 'arraybuffer',
     })
+    const buffer = new Uint8Array(response.data)
+    return SearchResponse.decode(buffer)
   },
 }
 

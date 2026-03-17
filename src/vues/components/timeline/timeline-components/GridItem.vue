@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AlbumTimelineItem, TimelineItem } from '@/scripts/types/generated/timeline.ts'
+import type { SimpleTimelineItem, TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { toHms } from '@/scripts/utils.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import { computed, nextTick, ref } from 'vue'
@@ -7,7 +7,7 @@ import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 const props = withDefaults(
   defineProps<{
-    mediaItem: TimelineItem | AlbumTimelineItem | undefined
+    mediaItem: TimelineItem | SimpleTimelineItem | undefined
     width: number
     height: number
     thumbnailSize: number

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AlbumTimelineItem } from '@/scripts/types/generated/timeline.ts'
+import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import type { SimpleLayoutRow } from '@/scripts/types/timeline/layout.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
@@ -12,7 +12,7 @@ import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 
 const props = defineProps<{
-  timelineItems: AlbumTimelineItem[]
+  timelineItems: SimpleTimelineItem[]
   viewLink: string
 }>()
 
@@ -69,12 +69,12 @@ let isDragging = false
 let lastScrollTop = 0
 let dragStartOffsetY = 0
 
-function calculateLayout(timelineItems: AlbumTimelineItem[], containerWidth: number) {
+function calculateLayout(timelineItems: SimpleTimelineItem[], containerWidth: number) {
   if (timelineItems.length === 0 || containerWidth === 0) return { rows: [], totalHeight: 0 }
   const layoutRows: SimpleLayoutRow[] = []
   let rowWidth = 0
   let offsetTop = 0
-  let rowItems: AlbumTimelineItem[] = []
+  let rowItems: SimpleTimelineItem[] = []
 
   for (const [i, item] of timelineItems.entries()) {
     rowItems.push(item)
