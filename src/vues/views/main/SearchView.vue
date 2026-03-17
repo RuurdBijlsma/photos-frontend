@@ -61,92 +61,30 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main-layout-container>
-    <div class="search-header">
-      <h1>Search</h1>
-      <v-form @submit.prevent="executeSearch" class="search-form">
-        <v-text-field
-          variant="outlined"
-          rounded
-          placeholder="Search..."
-          class="mt-5"
-          width="500"
-          v-model="query"
-        />
-        <v-btn
-          :disabled="query === ''"
-          type="submit"
-          color="primary"
-          outlined
-          rounded
-          variant="tonal"
-          :loading="loading"
-          >Search</v-btn
-        >
-      </v-form>
+  <simple-timeline :timeline-items="results" view-link="/search/view/">
+    <div class="search-results-header">
+      <h2 class="search-summary">
+        {{ results.length }} result{{ results.length === 1 ? '' : 's' }} found for "<span
+          class="query-span"
+          >{{ query }}</span
+        >"
+      </h2>
     </div>
-    <div class="photo-grid">
-      <simple-timeline :timeline-items="results" view-link="/search/view/"></simple-timeline>
-      <div
-        v-for="res in results"
-        :key="res.id"
-        class="photo-item"
-        @click.left="openImg(res.id)"
-        @click.right="showDetails(res.id)"
-      >
-        <div
-          class="photo"
-          :style="{
-            backgroundImage: `url(${mediaItemService.getPhotoThumbnail(res.id, 720, false)})`,
-          }"
-        ></div>
-      </div>
-    </div>
-  </main-layout-container>
+  </simple-timeline>
 </template>
 
 <style scoped>
-.search-form {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  width: 600px;
+.search-results-header {
+  padding: 20px 40px;
 }
 
-.photo-item {
-  display: inline-block;
-  margin: 5px;
-  height: 300px;
-  width: 400px;
-  border-radius: 10px;
-  overflow: hidden;
+.search-summary {
+  font-weight: 400;
 }
 
-.photo {
-  background-size: contain;
-  background-position: center;
-  background-color: rgba(255, 255, 255, 0.1);
-  width: 100%;
-  height: calc(100% - 70px);
-}
-
-.info {
-  margin-top: 10px;
-  color: white;
-  height: 70px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.info-progress {
-  display: flex;
-  gap: 10px;
-  font-size: 10px;
-}
-.info-progress span {
-  display: block;
-  width: 60px;
-  text-align: center;
+.query-span {
+  font-style: italic;
+  color: rgb(var(--v-theme-on-surface-bright));
+  font-weight: 600;
 }
 </style>
