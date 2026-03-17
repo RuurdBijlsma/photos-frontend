@@ -110,7 +110,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Styles remain identical to your previous version */
 .search-section {
   position: fixed;
   top: 7px;
@@ -148,7 +147,7 @@ onUnmounted(() => {
   cursor: text;
   height: 50px;
   border-radius: 25px;
-  background-color: rgba(var(--v-theme-surface-container));
+  background-color: rgba(var(--v-theme-on-background), 0.07);
   display: flex;
   flex-direction: row;
   z-index: 10;

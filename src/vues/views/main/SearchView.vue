@@ -3,7 +3,6 @@ import { onMounted, ref, watch } from 'vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRoute, useRouter } from 'vue-router'
-import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 
@@ -31,15 +30,6 @@ async function executeSearch() {
 
 async function setQuery() {
   await router.push({ query: { query: query.value } })
-}
-
-async function openImg(id: string) {
-  window.open(mediaItemService.getPhotoThumbnail(id, 1440, false))
-}
-
-async function showDetails(id: string) {
-  const { data } = await mediaItemService.getMediaItem(id)
-  console.log(id, data)
 }
 
 watch(
@@ -75,7 +65,8 @@ onMounted(async () => {
 
 <style scoped>
 .search-results-header {
-  padding: 20px 40px;
+  padding: 20px 40px 30px;
+  text-align: center;
 }
 
 .search-summary {
