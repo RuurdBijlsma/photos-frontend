@@ -53,12 +53,13 @@ onMounted(async () => {
 <template>
   <simple-timeline :timeline-items="results" view-link="/search/view/">
     <div class="search-results-header">
-      <h2 class="search-summary">
-        {{ results.length }} result{{ results.length === 1 ? '' : 's' }} found for "<span
-          class="query-span"
-          >{{ query }}</span
-        >"
-      </h2>
+      <div class="loading-indicator" v-if="loading">
+        <h2 class="search-summary">
+          Searching for "<span class="query-span">{{ query }}</span
+          >"...
+        </h2>
+        <v-progress-circular class="mt-6" :size="70" indeterminate />
+      </div>
     </div>
   </simple-timeline>
 </template>

@@ -19,7 +19,9 @@
   border-top-left-radius: 60px;
   border-top-right-radius: 60px;
   overflow: hidden;
-  box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 10px 200px 0 rgba(var(--v-theme-primary-lighten-1), 0.1),
+    0 10px 20px 0 rgba(0, 0, 0, 0.1);
   max-width: calc(100% - 50px);
   width: 100%;
   height: 100%;

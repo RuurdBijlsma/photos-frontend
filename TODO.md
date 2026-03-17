@@ -121,3 +121,13 @@
 * make proper search page
 * ✅ dont smooth scroll when returning from /view photo when the item it should scroll to is still fully in browser view.
 * ✅ [BUG] after login, photo grid isnt loaded
+* ✅ make loading indicator for search
+* ✅ if you reload with ?query=asdf, make sure the search-bar is filled with that query on load.
+* show more results on search page
+* search suggestions while typing (llm data required)
+* make search sortable by relevancy or date
+* add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
+* more interesting filters to search page (advanced search collapsable section)
+  * face? maybe for later
+  * location? country? could be autofilling select input thing
+  * negative query?

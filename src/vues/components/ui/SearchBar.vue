@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, useTemplateRef } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch, onUnmounted, useTemplateRef, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 const router = useRouter()
+const route = useRoute()
 const snackStore = useSnackbarsStore()
 const searchInputEl = useTemplateRef('searchInput')
 
@@ -65,6 +66,21 @@ function handleBlur() {
     isFocused.value = false
   }, 16)
 }
+
+onMounted(() => {
+  if (route.query.query) {
+    query.value = route.query.query.toString()
+  }
+})
+
+watch(
+  () => route.query.query,
+  (newQuery) => {
+    if (newQuery && newQuery.toString() !== query.value) {
+      query.value = newQuery.toString()
+    }
+  }
+)
 
 onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer)
