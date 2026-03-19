@@ -13,13 +13,6 @@ const repoName = 'photos-frontend'
 export default defineConfig({
   // Conditionally set the base path for GitHub Pages deployment
   base: process.env.GITHUB_PAGES ? `/${repoName}/` : '/',
-  server: {
-    host: 'localhost',
-    https: {
-      key: fs.readFileSync('C:/Users/Ruurd/Desktop/localhost-key.pem'),
-      cert: fs.readFileSync('C:/Users/Ruurd/Desktop/localhost.pem'),
-    },
-  },
   plugins: [vue(), vueJsx(), vueDevTools(), vuetify({ autoImport: { labs: true } })],
   resolve: {
     alias: {
