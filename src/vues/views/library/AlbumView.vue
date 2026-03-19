@@ -9,6 +9,8 @@ import EditableTitle from '@/vues/components/ui/EditableTitle.vue'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
 import { stringToColor } from '@/scripts/utils.ts'
 import albumService from '@/scripts/services/albumService.ts'
+// eslint-disable-next-line
+import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 
 const route = useRoute()
 const router = useRouter()
