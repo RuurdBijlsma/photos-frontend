@@ -131,6 +131,7 @@ onUnmounted(() => {
               :is-scrolling-fast="false"
               class="search-grid-item"
               :view-link="`/search/view/`"
+              :query="{ query }"
             />
           </div>
         </div>
