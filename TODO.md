@@ -132,4 +132,4 @@
   * location? country? could be autofilling select input thing
   * negative query?
 * delete album button in albums page en op album page
-* als een album geen thumbnail heeft ziet t er niet uit op /albums
+* als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet ondemand gebruikt denk ik)
