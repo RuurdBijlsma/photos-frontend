@@ -10,6 +10,7 @@ const router = useRouter()
 const route = useRoute()
 const snackStore = useSnackbarsStore()
 const searchInputEl = useTemplateRef('searchInput')
+const searchContainer = useTemplateRef('searchContainer')
 
 const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
@@ -62,10 +63,11 @@ function handleSubmit() {
   })
 }
 
-function handleBlur() {
-  setTimeout(() => {
-    isFocused.value = false
-  }, 16)
+function handleFocusOut(event: FocusEvent) {
+  if (event.relatedTarget && searchContainer.value?.contains(event.relatedTarget as Node)) {
+    return
+  }
+  isFocused.value = false
 }
 
 onMounted(() => {
@@ -90,9 +92,9 @@ onUnmounted(() => {
 
 <template>
   <div class="search-section">
-    <div class="search-centered-section">
+    <div ref="searchContainer" class="search-centered-section" @focusout="handleFocusOut">
       <form @submit.prevent="handleSubmit">
-        <label class="search-bar">
+        <label class="search-bar" tabindex="-1">
           <span class="search-icon-div">
             <v-icon
               class="search-icon"
@@ -109,13 +111,12 @@ onUnmounted(() => {
             hide-details
             clearable
             @focus="isFocused = true"
-            @blur="handleBlur"
             @click:clear="results = []"
           />
         </label>
       </form>
 
-      <div v-if="isFocused && query.length > 0" class="search-suggestions">
+      <div v-if="isFocused && query.length > 0" class="search-suggestions" tabindex="-1">
         <div class="search-suggestions-inner">
           <div v-if="loading && results.length === 0">Searching...</div>
           <div v-else-if="results.length === 0">No results found.</div>
@@ -129,6 +130,7 @@ onUnmounted(() => {
               :thumbnail-size="240"
               :is-scrolling-fast="false"
               class="search-grid-item"
+              :view-link="`/search/view/`"
             />
           </div>
         </div>
@@ -181,6 +183,10 @@ onUnmounted(() => {
   z-index: 10;
 }
 
+.search-bar:focus {
+  outline: none;
+}
+
 .search-bar:has(.search-text-field input:focus) {
   background-color: white;
   color: black;
@@ -226,7 +232,7 @@ onUnmounted(() => {
   padding-bottom: 5px;
 }
 
-.search-grid-item{
-  border-radius:20px;
+.search-grid-item {
+  border-radius: 20px;
 }
 </style>
