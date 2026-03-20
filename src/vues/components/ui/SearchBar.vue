@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
+import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -28,7 +29,7 @@ async function performSearch(searchQuery: string) {
   loading.value = true
 
   try {
-    const { items } = await mediaItemService.search(searchQuery)
+    const { items } = await mediaItemService.search(searchQuery, 10)
     if (requestId === latestRequestId) {
       results.value = items
       console.log('Search Results:', results.value)
@@ -118,7 +119,18 @@ onUnmounted(() => {
         <div class="search-suggestions-inner">
           <div v-if="loading && results.length === 0">Searching...</div>
           <div v-else-if="results.length === 0">No results found.</div>
-          <div v-else>Found {{ results.length }} items (Logged to console)</div>
+          <div v-else class="search-results">
+            <grid-item
+              v-for="result in results"
+              :key="result.id"
+              :media-item="result"
+              :width="160"
+              :height="648 / 5"
+              :thumbnail-size="240"
+              :is-scrolling-fast="false"
+              class="search-grid-item"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -205,5 +217,16 @@ onUnmounted(() => {
   to {
     transform: rotate(360deg);
   }
+}
+
+.search-results {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.search-grid-item{
+  border-radius:20px;
 }
 </style>

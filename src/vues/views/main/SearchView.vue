@@ -19,7 +19,7 @@ async function executeSearch() {
   if (query.value === '') return
   setQuery().then()
   try {
-    const { items } = await mediaItemService.search(query.value)
+    const { items } = await mediaItemService.search(query.value, 200)
     results.value = items
   } catch (e) {
     snackStore.error('Could not perform search', e)
