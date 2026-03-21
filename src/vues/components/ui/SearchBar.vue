@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, useTemplateRef, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useDebounceFn } from '@vueuse/core'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
@@ -14,10 +15,11 @@ const searchContainer = useTemplateRef('searchContainer')
 
 const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
+const suggestions = ref<string[]>([])
 const loading = ref(false)
 const isFocused = ref(false)
+const selectedSuggestionIndex = ref(-1)
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
 let latestRequestId = 0
 
 async function performSearch(searchQuery: string | null) {
@@ -30,11 +32,7 @@ async function performSearch(searchQuery: string | null) {
   loading.value = true
 
   try {
-    const [{ items }, { suggestions }] = await Promise.all([
-      mediaItemService.search(searchQuery, 10),
-      mediaItemService.searchSuggestions(searchQuery, 10),
-    ])
-    console.log('suggestions', suggestions)
+    const { items } = await mediaItemService.search(searchQuery, 10)
     if (requestId === latestRequestId) {
       console.log('Search Results:', items)
       results.value = items
@@ -50,14 +48,80 @@ async function performSearch(searchQuery: string | null) {
   }
 }
 
+async function fetchSuggestions(searchQuery: string | null) {
+  if (!searchQuery?.trim()) {
+    suggestions.value = []
+    return
+  }
+
+  try {
+    const { suggestions: fetchedSuggestions } = await mediaItemService.searchSuggestions(searchQuery, 10)
+    suggestions.value = fetchedSuggestions
+  } catch (e) {
+    console.error('Failed to fetch suggestions', e)
+  }
+}
+
+function highlightMatch(text: string, match: string | null) {
+  if (!match || !text) return text
+  const escapedMatch = match.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escapedMatch})`, 'gi')
+  return text.replace(regex, '<strong>$1</strong>')
+}
+
+function selectSuggestion(suggestion: string) {
+  query.value = suggestion
+  suggestions.value = []
+  isFocused.value = false
+  if (searchInputEl.value) {
+    searchInputEl.value.blur()
+  }
+  handleSubmit()
+}
+
+const debouncedFetchSuggestions = useDebounceFn((val: string | null) => {
+  fetchSuggestions(val)
+}, 16)
+
+const debouncedPerformSearch = useDebounceFn((val: string | null) => {
+  performSearch(val)
+}, 300)
+
 watch(query, (newVal) => {
-  if (debounceTimer) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => performSearch(newVal), 300)
+  selectedSuggestionIndex.value = -1
+  debouncedFetchSuggestions(newVal)
+  debouncedPerformSearch(newVal)
 })
+
+function handleKeyDown(e: KeyboardEvent) {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    if (selectedSuggestionIndex.value < suggestions.value.length - 1) {
+      selectedSuggestionIndex.value++
+    }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    if (selectedSuggestionIndex.value > -1) {
+      selectedSuggestionIndex.value--
+    }
+  } else if (e.key === 'Enter') {
+    if (
+      selectedSuggestionIndex.value >= 0 &&
+      selectedSuggestionIndex.value < suggestions.value.length
+    ) {
+      e.preventDefault()
+      selectSuggestion(suggestions.value[selectedSuggestionIndex.value]!)
+    }
+  } else if (e.key === 'Escape') {
+    isFocused.value = false
+    if (searchInputEl.value) {
+      searchInputEl.value.blur()
+    }
+  }
+}
 
 function handleSubmit() {
   if (!query.value?.trim()) return
-  if (debounceTimer) clearTimeout(debounceTimer)
   if (searchInputEl.value) {
     searchInputEl.value.blur()
   }
@@ -90,14 +154,14 @@ watch(
 )
 
 watch(
-  () => route.path,
+  () => [route.path, route.query.query],
   () => {
     isFocused.value = false
   },
 )
 
 onUnmounted(() => {
-  if (debounceTimer) clearTimeout(debounceTimer)
+  // No manual timer clearing needed with useDebounceFn if we don't store them manually
 })
 </script>
 
@@ -123,27 +187,44 @@ onUnmounted(() => {
             clearable
             @focus="isFocused = true"
             @click:clear="results = []"
+            @keydown="handleKeyDown"
           />
         </label>
       </form>
 
-      <div v-if="isFocused && query?.length > 0" class="search-suggestions" tabindex="-1">
+      <div v-if="isFocused && (query?.length > 0 || suggestions.length > 0)" class="search-suggestions" tabindex="-1">
         <div class="search-suggestions-inner">
-          <div v-if="loading && results.length === 0">Searching...</div>
-          <div v-else-if="results.length === 0">No results found.</div>
-          <div v-else class="search-results">
-            <grid-item
-              v-for="result in results"
-              :key="result.id"
-              :media-item="result"
-              :width="120 * result.ratio"
-              :height="120"
-              :thumbnail-size="240"
-              :is-scrolling-fast="false"
-              class="search-grid-item"
-              :view-link="`/search/view/`"
-              :query="{ query }"
-            />
+          <div v-if="suggestions.length > 0" class="suggestions-list">
+            <div
+              v-for="(suggestion, index) in suggestions"
+              :key="index"
+              class="suggestion-item"
+              :class="{ 'suggestion-selected': index === selectedSuggestionIndex }"
+              @click="selectSuggestion(suggestion)"
+              v-html="highlightMatch(suggestion, query)"
+            ></div>
+          </div>
+
+          <div v-if="loading && results.length === 0 && suggestions.length === 0">
+            Searching...
+          </div>
+          <div v-else-if="results.length === 0 && suggestions.length === 0">No results found.</div>
+          <div v-if="results.length > 0" class="search-results-section">
+            <div class="results-header">Media</div>
+            <div class="search-results">
+              <grid-item
+                v-for="result in results"
+                :key="result.id"
+                :media-item="result"
+                :width="120 * result.ratio"
+                :height="120"
+                :thumbnail-size="240"
+                :is-scrolling-fast="false"
+                class="search-grid-item"
+                :view-link="`/search/view/`"
+                :query="{ query }"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -177,6 +258,42 @@ onUnmounted(() => {
   padding-top: 25px;
   border-bottom-right-radius: 25px;
   border-bottom-left-radius: 25px;
+}
+
+.suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background-color 0.2s;
+}
+
+.suggestion-item:hover,
+.suggestion-item.suggestion-selected {
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
+}
+
+.suggestion-item :deep(strong) {
+  color: rgb(var(--v-theme-primary));
+}
+
+.search-results-section {
+  margin-top: 10px;
+}
+
+.results-header {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.6;
+  margin-bottom: 8px;
+  padding-left: 5px;
 }
 
 .search-suggestions-inner {
