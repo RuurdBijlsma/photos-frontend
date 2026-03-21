@@ -4,11 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import {
-  type SimpleTimelineItem,
-  SuggestionType,
-  type SearchSuggestion,
-} from '@/scripts/types/generated/timeline.ts'
+import { type SimpleTimelineItem, SuggestionType } from '@/scripts/types/generated/timeline.ts'
 import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vue'
 
 const router = useRouter()
@@ -19,7 +15,16 @@ const searchContainer = useTemplateRef('searchContainer')
 
 const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
-const suggestions = ref<(SearchSuggestion & { type: SuggestionType | 'HISTORY' })[]>([])
+
+type SearchBarSuggestionType = SuggestionType | 'HISTORY'
+
+interface SearchBarSuggestion {
+  text: string
+  suggestionType: SearchBarSuggestionType
+  id?: string
+}
+
+const suggestions = ref<SearchBarSuggestion[]>([])
 const loading = ref(false)
 const isFocused = ref(false)
 const selectedSuggestionIndex = ref(-1)
@@ -91,13 +96,12 @@ async function fetchSuggestions(searchQuery: string | null) {
   }
 
   const q = searchQuery.toLowerCase()
-  const historicMatches = searchHistory.value
+  const historicMatches: SearchBarSuggestion[] = searchHistory.value
     .filter((h) => h.toLowerCase().includes(q))
     .slice(0, MAX_HISTORY_SUGGESTIONS)
     .map((text) => ({
       text,
-      type: 'HISTORY' as const,
-      suggestionType: SuggestionType.SEARCH,
+      suggestionType: 'HISTORY',
     }))
 
   try {
@@ -106,12 +110,16 @@ async function fetchSuggestions(searchQuery: string | null) {
       MAX_TOTAL_SUGGESTIONS,
     )
     console.log('fetchedSuggestions', fetchedSuggestions)
-    const apiSuggestions = fetchedSuggestions
+    const apiSuggestions: SearchBarSuggestion[] = fetchedSuggestions
       .filter((s) => {
         if (s.suggestionType === SuggestionType.ALBUM) return true
         return !historicMatches.some((h) => h.text.toLowerCase() === s.text.toLowerCase())
       })
-      .map((s) => ({ ...s, type: s.suggestionType as any }))
+      .map((s) => ({
+        text: s.text,
+        suggestionType: s.suggestionType as SearchBarSuggestionType,
+        id: s.id,
+      }))
     suggestions.value = [...historicMatches, ...apiSuggestions].slice(0, MAX_TOTAL_SUGGESTIONS)
   } catch (e) {
     console.error('Failed to fetch suggestions', e)
@@ -126,7 +134,7 @@ function highlightMatch(text: string, match: string | null) {
   return text.replace(regex, '<strong>$1</strong>')
 }
 
-function selectSuggestion(suggestion: SearchSuggestion & { type: SuggestionType | 'HISTORY' }) {
+function selectSuggestion(suggestion: SearchBarSuggestion) {
   if (suggestion.suggestionType === SuggestionType.ALBUM && suggestion.id) {
     router.push(`/album/${suggestion.id}`)
     isFocused.value = false
@@ -233,7 +241,7 @@ watch(
 <template>
   <div class="search-section">
     <div ref="searchContainer" class="search-centered-section" @focusout="handleFocusOut">
-      <form @submit.prevent="handleSubmit">
+      <form @submit.prevent="() => handleSubmit(true)">
         <label class="search-bar" tabindex="-1" :class="{ 'is-focused': isFocused }">
           <span class="search-icon-div">
             <v-icon
@@ -272,7 +280,7 @@ watch(
               @click="selectSuggestion(suggestion)"
             >
               <v-icon
-                v-if="suggestion.type === 'HISTORY'"
+                v-if="suggestion.suggestionType === 'HISTORY'"
                 icon="mdi-history"
                 size="small"
                 class="suggestion-icon"

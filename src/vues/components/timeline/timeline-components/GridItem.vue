@@ -118,7 +118,10 @@ function selectItem(e: PointerEvent) {
       </div>
 
       <template v-else>
-        <router-link class="view-link" :to="{ path: `${viewLink}${id}`, query: props.query ?? route.query }">
+        <router-link
+          class="view-link"
+          :to="{ path: `${viewLink}${id}`, query: props.query ?? route.query }"
+        >
           <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
         </router-link>
         <div class="checkbox" @click.prevent="selectItem">
