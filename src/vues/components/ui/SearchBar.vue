@@ -30,12 +30,14 @@ async function performSearch(searchQuery: string) {
   loading.value = true
 
   try {
-    const { items } = await mediaItemService.search(searchQuery, 10)
-    let x = await mediaItemService.searchSuggestions(searchQuery, 10)
-    console.log('suggestions', x)
+    const [{ items }, { suggestions }] = await Promise.all([
+      mediaItemService.search(searchQuery, 10),
+      mediaItemService.searchSuggestions(searchQuery, 10),
+    ])
+    console.log('suggestions', suggestions)
     if (requestId === latestRequestId) {
+      console.log('Search Results:', items)
       results.value = items
-      console.log('Search Results:', results.value)
     }
   } catch (e) {
     if (requestId === latestRequestId) {
@@ -127,8 +129,8 @@ onUnmounted(() => {
               v-for="result in results"
               :key="result.id"
               :media-item="result"
-              :width="160"
-              :height="648 / 5"
+              :width="120 * result.ratio"
+              :height="120"
               :thumbnail-size="240"
               :is-scrolling-fast="false"
               class="search-grid-item"
