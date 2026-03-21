@@ -31,6 +31,8 @@ async function performSearch(searchQuery: string) {
 
   try {
     const { items } = await mediaItemService.search(searchQuery, 10)
+    let x = await mediaItemService.searchSuggestions(searchQuery, 10)
+    console.log('suggestions', x)
     if (requestId === latestRequestId) {
       results.value = items
       console.log('Search Results:', results.value)
