@@ -232,18 +232,14 @@ onMounted(() => {
 })
 
 watch(
-  () => route.query.query,
-  (newQuery) => {
-    if (newQuery && newQuery.toString() !== query.value) {
+  () => [route.path, route.query.query],
+  ([newPath, newQuery]) => {
+    isFocused.value = false
+    if (newPath && !newPath.toString().startsWith('/search')) {
+      query.value = ''
+    } else if (newQuery && newQuery.toString() !== query.value) {
       query.value = newQuery.toString()
     }
-  },
-)
-
-watch(
-  () => [route.path, route.query.query],
-  () => {
-    isFocused.value = false
   },
 )
 </script>
