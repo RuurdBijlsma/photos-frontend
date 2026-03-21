@@ -89,6 +89,13 @@ watch(
   },
 )
 
+watch(
+  () => route.path,
+  () => {
+    isFocused.value = false
+  },
+)
+
 onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer)
 })
@@ -98,7 +105,7 @@ onUnmounted(() => {
   <div class="search-section">
     <div ref="searchContainer" class="search-centered-section" @focusout="handleFocusOut">
       <form @submit.prevent="handleSubmit">
-        <label class="search-bar" tabindex="-1">
+        <label class="search-bar" tabindex="-1" :class="{ 'is-focused': isFocused }">
           <span class="search-icon-div">
             <v-icon
               class="search-icon"
@@ -192,7 +199,8 @@ onUnmounted(() => {
   outline: none;
 }
 
-.search-bar:has(.search-text-field input:focus) {
+.search-centered-section:focus-within .search-bar,
+.search-bar.is-focused {
   background-color: white;
   color: black;
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.2);
