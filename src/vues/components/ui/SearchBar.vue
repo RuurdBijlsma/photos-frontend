@@ -20,8 +20,8 @@ const isFocused = ref(false)
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 let latestRequestId = 0
 
-async function performSearch(searchQuery: string) {
-  if (!searchQuery.trim()) {
+async function performSearch(searchQuery: string | null) {
+  if (!searchQuery?.trim()) {
     results.value = []
     return
   }
@@ -56,7 +56,7 @@ watch(query, (newVal) => {
 })
 
 function handleSubmit() {
-  if (!query.value.trim()) return
+  if (!query.value?.trim()) return
   if (debounceTimer) clearTimeout(debounceTimer)
   if (searchInputEl.value) {
     searchInputEl.value.blur()
@@ -127,7 +127,7 @@ onUnmounted(() => {
         </label>
       </form>
 
-      <div v-if="isFocused && query.length > 0" class="search-suggestions" tabindex="-1">
+      <div v-if="isFocused && query?.length > 0" class="search-suggestions" tabindex="-1">
         <div class="search-suggestions-inner">
           <div v-if="loading && results.length === 0">Searching...</div>
           <div v-else-if="results.length === 0">No results found.</div>
