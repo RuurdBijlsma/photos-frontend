@@ -9,6 +9,39 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "api";
 
+export enum SuggestionType {
+  SEARCH = 0,
+  ALBUM = 1,
+  UNRECOGNIZED = -1,
+}
+
+export function suggestionTypeFromJSON(object: any): SuggestionType {
+  switch (object) {
+    case 0:
+    case "SEARCH":
+      return SuggestionType.SEARCH;
+    case 1:
+    case "ALBUM":
+      return SuggestionType.ALBUM;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return SuggestionType.UNRECOGNIZED;
+  }
+}
+
+export function suggestionTypeToJSON(object: SuggestionType): string {
+  switch (object) {
+    case SuggestionType.SEARCH:
+      return "SEARCH";
+    case SuggestionType.ALBUM:
+      return "ALBUM";
+    case SuggestionType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 /** --- Main Timeline (Main library view) --- */
 export interface TimelineRatiosResponse {
   months: TimelineMonthRatios[];
@@ -77,8 +110,14 @@ export interface SearchResponse {
   items: SimpleTimelineItem[];
 }
 
+export interface SearchSuggestion {
+  text: string;
+  suggestionType: SuggestionType;
+  id?: string | undefined;
+}
+
 export interface SearchSuggestionsResponse {
-  suggestions: string[];
+  suggestions: SearchSuggestion[];
 }
 
 function createBaseTimelineRatiosResponse(): TimelineRatiosResponse {
@@ -1100,6 +1139,98 @@ export const SearchResponse: MessageFns<SearchResponse> = {
   },
 };
 
+function createBaseSearchSuggestion(): SearchSuggestion {
+  return { text: "", suggestionType: 0, id: undefined };
+}
+
+export const SearchSuggestion: MessageFns<SearchSuggestion> = {
+  encode(message: SearchSuggestion, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.text !== "") {
+      writer.uint32(10).string(message.text);
+    }
+    if (message.suggestionType !== 0) {
+      writer.uint32(16).int32(message.suggestionType);
+    }
+    if (message.id !== undefined) {
+      writer.uint32(26).string(message.id);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SearchSuggestion {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSearchSuggestion();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.text = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.suggestionType = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SearchSuggestion {
+    return {
+      text: isSet(object.text) ? globalThis.String(object.text) : "",
+      suggestionType: isSet(object.suggestionType) ? suggestionTypeFromJSON(object.suggestionType) : 0,
+      id: isSet(object.id) ? globalThis.String(object.id) : undefined,
+    };
+  },
+
+  toJSON(message: SearchSuggestion): unknown {
+    const obj: any = {};
+    if (message.text !== "") {
+      obj.text = message.text;
+    }
+    if (message.suggestionType !== 0) {
+      obj.suggestionType = suggestionTypeToJSON(message.suggestionType);
+    }
+    if (message.id !== undefined) {
+      obj.id = message.id;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SearchSuggestion>, I>>(base?: I): SearchSuggestion {
+    return SearchSuggestion.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SearchSuggestion>, I>>(object: I): SearchSuggestion {
+    const message = createBaseSearchSuggestion();
+    message.text = object.text ?? "";
+    message.suggestionType = object.suggestionType ?? 0;
+    message.id = object.id ?? undefined;
+    return message;
+  },
+};
+
 function createBaseSearchSuggestionsResponse(): SearchSuggestionsResponse {
   return { suggestions: [] };
 }
@@ -1107,7 +1238,7 @@ function createBaseSearchSuggestionsResponse(): SearchSuggestionsResponse {
 export const SearchSuggestionsResponse: MessageFns<SearchSuggestionsResponse> = {
   encode(message: SearchSuggestionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.suggestions) {
-      writer.uint32(10).string(v!);
+      SearchSuggestion.encode(v!, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -1124,7 +1255,7 @@ export const SearchSuggestionsResponse: MessageFns<SearchSuggestionsResponse> = 
             break;
           }
 
-          message.suggestions.push(reader.string());
+          message.suggestions.push(SearchSuggestion.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -1139,7 +1270,7 @@ export const SearchSuggestionsResponse: MessageFns<SearchSuggestionsResponse> = 
   fromJSON(object: any): SearchSuggestionsResponse {
     return {
       suggestions: globalThis.Array.isArray(object?.suggestions)
-        ? object.suggestions.map((e: any) => globalThis.String(e))
+        ? object.suggestions.map((e: any) => SearchSuggestion.fromJSON(e))
         : [],
     };
   },
@@ -1147,7 +1278,7 @@ export const SearchSuggestionsResponse: MessageFns<SearchSuggestionsResponse> = 
   toJSON(message: SearchSuggestionsResponse): unknown {
     const obj: any = {};
     if (message.suggestions?.length) {
-      obj.suggestions = message.suggestions;
+      obj.suggestions = message.suggestions.map((e) => SearchSuggestion.toJSON(e));
     }
     return obj;
   },
@@ -1157,7 +1288,7 @@ export const SearchSuggestionsResponse: MessageFns<SearchSuggestionsResponse> = 
   },
   fromPartial<I extends Exact<DeepPartial<SearchSuggestionsResponse>, I>>(object: I): SearchSuggestionsResponse {
     const message = createBaseSearchSuggestionsResponse();
-    message.suggestions = object.suggestions?.map((e) => e) || [];
+    message.suggestions = object.suggestions?.map((e) => SearchSuggestion.fromPartial(e)) || [];
     return message;
   },
 };

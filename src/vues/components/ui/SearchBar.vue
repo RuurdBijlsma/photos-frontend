@@ -4,7 +4,11 @@ import { useRouter, useRoute } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
+import {
+  type SimpleTimelineItem,
+  SuggestionType,
+  type SearchSuggestion,
+} from '@/scripts/types/generated/timeline.ts'
 import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vue'
 
 const router = useRouter()
@@ -15,7 +19,7 @@ const searchContainer = useTemplateRef('searchContainer')
 
 const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
-const suggestions = ref<{ text: string; type: 'history' | 'api' }[]>([])
+const suggestions = ref<(SearchSuggestion & { type: SuggestionType | 'HISTORY' })[]>([])
 const loading = ref(false)
 const isFocused = ref(false)
 const selectedSuggestionIndex = ref(-1)
@@ -90,16 +94,24 @@ async function fetchSuggestions(searchQuery: string | null) {
   const historicMatches = searchHistory.value
     .filter((h) => h.toLowerCase().includes(q))
     .slice(0, MAX_HISTORY_SUGGESTIONS)
-    .map((text) => ({ text, type: 'history' as const }))
+    .map((text) => ({
+      text,
+      type: 'HISTORY' as const,
+      suggestionType: SuggestionType.SEARCH,
+    }))
 
   try {
     const { suggestions: fetchedSuggestions } = await mediaItemService.searchSuggestions(
       searchQuery,
       MAX_TOTAL_SUGGESTIONS,
     )
+    console.log('fetchedSuggestions', fetchedSuggestions)
     const apiSuggestions = fetchedSuggestions
-      .filter((s) => !historicMatches.some((h) => h.text.toLowerCase() === s.toLowerCase()))
-      .map((text) => ({ text, type: 'api' as const }))
+      .filter((s) => {
+        if (s.suggestionType === SuggestionType.ALBUM) return true
+        return !historicMatches.some((h) => h.text.toLowerCase() === s.text.toLowerCase())
+      })
+      .map((s) => ({ ...s, type: s.suggestionType as any }))
     suggestions.value = [...historicMatches, ...apiSuggestions].slice(0, MAX_TOTAL_SUGGESTIONS)
   } catch (e) {
     console.error('Failed to fetch suggestions', e)
@@ -114,7 +126,15 @@ function highlightMatch(text: string, match: string | null) {
   return text.replace(regex, '<strong>$1</strong>')
 }
 
-function selectSuggestion(suggestion: { text: string; type: 'history' | 'api' }) {
+function selectSuggestion(suggestion: SearchSuggestion & { type: SuggestionType | 'HISTORY' }) {
+  if (suggestion.suggestionType === SuggestionType.ALBUM && suggestion.id) {
+    router.push(`/album/${suggestion.id}`)
+    isFocused.value = false
+    if (searchInputEl.value) {
+      searchInputEl.value.blur()
+    }
+    return
+  }
   query.value = suggestion.text
   suggestions.value = []
   isFocused.value = false
@@ -252,8 +272,14 @@ watch(
               @click="selectSuggestion(suggestion)"
             >
               <v-icon
-                v-if="suggestion.type === 'history'"
+                v-if="suggestion.type === 'HISTORY'"
                 icon="mdi-history"
+                size="small"
+                class="suggestion-icon"
+              />
+              <v-icon
+                v-else-if="suggestion.suggestionType === SuggestionType.ALBUM"
+                icon="mdi-image-album"
                 size="small"
                 class="suggestion-icon"
               />
