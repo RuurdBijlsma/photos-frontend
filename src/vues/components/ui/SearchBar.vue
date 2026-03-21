@@ -91,7 +91,10 @@ async function performSearch(searchQuery: string | null) {
 
 async function fetchSuggestions(searchQuery: string | null) {
   if (!searchQuery?.trim()) {
-    suggestions.value = []
+    suggestions.value = searchHistory.value.slice(0, MAX_HISTORY_SUGGESTIONS * 2).map((text) => ({
+      text,
+      suggestionType: 'HISTORY',
+    }))
     return
   }
 
@@ -207,6 +210,13 @@ function handleSubmit(isManual = true) {
   })
 }
 
+function handleFocus() {
+  isFocused.value = true
+  if (!query.value?.trim()) {
+    fetchSuggestions(null)
+  }
+}
+
 function handleFocusOut(event: FocusEvent) {
   if (event.relatedTarget && searchContainer.value?.contains(event.relatedTarget as Node)) {
     return
@@ -258,7 +268,7 @@ watch(
             autocomplete="off"
             hide-details
             clearable
-            @focus="isFocused = true"
+            @focus="handleFocus"
             @click:clear="results = []"
             @keydown="handleKeyDown"
           />
@@ -352,7 +362,6 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 5px;
-  margin-bottom: 15px;
 }
 
 .suggestion-item {
