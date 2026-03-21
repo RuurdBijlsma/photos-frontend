@@ -15,10 +15,42 @@ const searchContainer = useTemplateRef('searchContainer')
 
 const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
-const suggestions = ref<string[]>([])
+const suggestions = ref<{ text: string; type: 'history' | 'api' }[]>([])
 const loading = ref(false)
 const isFocused = ref(false)
 const selectedSuggestionIndex = ref(-1)
+
+const MAX_HISTORY_SUGGESTIONS = 3
+const MAX_TOTAL_SUGGESTIONS = 10
+const HISTORY_STORAGE_KEY = 'search-history'
+const MAX_HISTORY_SIZE = 200
+
+const searchHistory = ref<string[]>([])
+
+function loadHistory() {
+  const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
+  if (stored) {
+    try {
+      searchHistory.value = JSON.parse(stored)
+    } catch (e) {
+      console.error('Failed to parse search history', e)
+      searchHistory.value = []
+    }
+  }
+}
+
+function saveToHistory(text: string) {
+  const trimmed = text.trim()
+  if (!trimmed) return
+  // Remove if already exists to move it to the front
+  searchHistory.value = searchHistory.value.filter((h) => h !== trimmed)
+  searchHistory.value.unshift(trimmed)
+  // Limit total history size
+  if (searchHistory.value.length > MAX_HISTORY_SIZE) {
+    searchHistory.value = searchHistory.value.slice(0, MAX_HISTORY_SIZE)
+  }
+  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(searchHistory.value))
+}
 
 let latestRequestId = 0
 
@@ -54,11 +86,24 @@ async function fetchSuggestions(searchQuery: string | null) {
     return
   }
 
+  const q = searchQuery.toLowerCase()
+  const historicMatches = searchHistory.value
+    .filter((h) => h.toLowerCase().includes(q))
+    .slice(0, MAX_HISTORY_SUGGESTIONS)
+    .map((text) => ({ text, type: 'history' as const }))
+
   try {
-    const { suggestions: fetchedSuggestions } = await mediaItemService.searchSuggestions(searchQuery, 10)
-    suggestions.value = fetchedSuggestions
+    const { suggestions: fetchedSuggestions } = await mediaItemService.searchSuggestions(
+      searchQuery,
+      MAX_TOTAL_SUGGESTIONS,
+    )
+    const apiSuggestions = fetchedSuggestions
+      .filter((s) => !historicMatches.some((h) => h.text.toLowerCase() === s.toLowerCase()))
+      .map((text) => ({ text, type: 'api' as const }))
+    suggestions.value = [...historicMatches, ...apiSuggestions].slice(0, MAX_TOTAL_SUGGESTIONS)
   } catch (e) {
     console.error('Failed to fetch suggestions', e)
+    suggestions.value = historicMatches
   }
 }
 
@@ -69,14 +114,14 @@ function highlightMatch(text: string, match: string | null) {
   return text.replace(regex, '<strong>$1</strong>')
 }
 
-function selectSuggestion(suggestion: string) {
-  query.value = suggestion
+function selectSuggestion(suggestion: { text: string; type: 'history' | 'api' }) {
+  query.value = suggestion.text
   suggestions.value = []
   isFocused.value = false
   if (searchInputEl.value) {
     searchInputEl.value.blur()
   }
-  handleSubmit()
+  handleSubmit(false)
 }
 
 const debouncedFetchSuggestions = useDebounceFn((val: string | null) => {
@@ -120,8 +165,11 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
-function handleSubmit() {
+function handleSubmit(isManual = true) {
   if (!query.value?.trim()) return
+  if (isManual) {
+    saveToHistory(query.value)
+  }
   if (searchInputEl.value) {
     searchInputEl.value.blur()
   }
@@ -139,6 +187,7 @@ function handleFocusOut(event: FocusEvent) {
 }
 
 onMounted(() => {
+  loadHistory()
   if (route.query.query) {
     query.value = route.query.query.toString()
   }
@@ -188,7 +237,11 @@ watch(
         </label>
       </form>
 
-      <div v-if="isFocused && (query?.length > 0 || suggestions.length > 0)" class="search-suggestions" tabindex="-1">
+      <div
+        v-if="isFocused && (query?.length > 0 || suggestions.length > 0)"
+        class="search-suggestions"
+        tabindex="-1"
+      >
         <div class="search-suggestions-inner">
           <div v-if="suggestions.length > 0" class="suggestions-list">
             <div
@@ -197,13 +250,18 @@ watch(
               class="suggestion-item"
               :class="{ 'suggestion-selected': index === selectedSuggestionIndex }"
               @click="selectSuggestion(suggestion)"
-              v-html="highlightMatch(suggestion, query)"
-            ></div>
+            >
+              <v-icon
+                v-if="suggestion.type === 'history'"
+                icon="mdi-history"
+                size="small"
+                class="suggestion-icon"
+              />
+              <span v-html="highlightMatch(suggestion.text, query)"></span>
+            </div>
           </div>
 
-          <div v-if="loading && results.length === 0 && suggestions.length === 0">
-            Searching...
-          </div>
+          <div v-if="loading && results.length === 0 && suggestions.length === 0">Searching...</div>
           <div v-else-if="results.length === 0 && suggestions.length === 0">No results found.</div>
           <div v-if="results.length > 0" class="search-results-section">
             <div class="results-header">Media</div>
@@ -268,11 +326,18 @@ watch(
   cursor: pointer;
   border-radius: 10px;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .suggestion-item:hover,
 .suggestion-item.suggestion-selected {
   background-color: rgba(var(--v-theme-on-surface), 0.1);
+}
+
+.suggestion-icon {
+  opacity: 0.6;
 }
 
 .suggestion-item :deep(strong) {
