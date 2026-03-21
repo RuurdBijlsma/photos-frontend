@@ -85,6 +85,13 @@
 * ✅ als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.
 * ✅ als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is
   nu stuk, en mogelijk conflict met scrollSession, misschien kan ik de view photo date en scroll session unifyen?)
+* ✅ albums in search suggestions includen
+* ✅ if you focus the searchbar and nothing is typed, show historic searches
+* ✅ dont smooth scroll when returning from /view photo when the item it should scroll to is still fully in browser view.
+* ✅ [BUG] after login, photo grid isnt loaded
+* ✅ make loading indicator for search
+* ✅ if you reload with ?query=asdf, make sure the search-bar is filled with that query on load.
+* ✅ show more results on search page
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -119,11 +126,6 @@
 * add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
 * album page: add sort (also sort by added on date)
 * make proper search page
-* ✅ dont smooth scroll when returning from /view photo when the item it should scroll to is still fully in browser view.
-* ✅ [BUG] after login, photo grid isnt loaded
-* ✅ make loading indicator for search
-* ✅ if you reload with ?query=asdf, make sure the search-bar is filled with that query on load.
-* show more results on search page
 * search suggestions while typing (llm data required)
 * make search sortable by relevancy or date
 * add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
@@ -133,6 +135,4 @@
   * negative query?
 * delete album button in albums page en op album page
 * als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet ondemand gebruikt denk ik)
-* albums in search suggestions includen
-* if you focus the searchbar and nothing is typed, show historic searches
 * show `Search "Greece"` in de seach bar as placeholder
