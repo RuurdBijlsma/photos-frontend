@@ -5,6 +5,7 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRoute, useRouter } from 'vue-router'
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
+import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 
 const snackStore = useSnackbarsStore()
 const route = useRoute()
@@ -51,17 +52,16 @@ onMounted(async () => {
 </script>
 
 <template>
-  <simple-timeline :timeline-items="results" view-link="/search/view/">
-    <div class="search-results-header">
-      <div class="loading-indicator" v-if="loading">
-        <h2 class="search-summary">
-          Searching for "<span class="query-span">{{ query }}</span
-          >"...
-        </h2>
-        <v-progress-circular class="mt-6" :size="70" indeterminate />
-      </div>
+  <main-layout-container class="search-results-header" v-if="loading">
+    <div class="loading-indicator">
+      <h2 class="search-summary">
+        Searching for "<span class="query-span">{{ query }}</span
+        >"...
+      </h2>
+      <v-progress-circular class="mt-6" :size="70" indeterminate />
     </div>
-  </simple-timeline>
+  </main-layout-container>
+  <simple-timeline :timeline-items="results" view-link="/search/view/" v-else> </simple-timeline>
 </template>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, useTemplateRef, onMounted } from 'vue'
+import { ref, watch, useTemplateRef, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
@@ -85,7 +85,7 @@ const debouncedFetchSuggestions = useDebounceFn((val: string | null) => {
 
 const debouncedPerformSearch = useDebounceFn((val: string | null) => {
   performSearch(val)
-}, 300)
+}, 100)
 
 watch(query, (newVal) => {
   selectedSuggestionIndex.value = -1
@@ -159,10 +159,6 @@ watch(
     isFocused.value = false
   },
 )
-
-onUnmounted(() => {
-  // No manual timer clearing needed with useDebounceFn if we don't store them manually
-})
 </script>
 
 <template>
