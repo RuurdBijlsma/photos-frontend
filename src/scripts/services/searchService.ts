@@ -1,6 +1,7 @@
 import apiClient from './api.ts'
 import { SearchResponse, SearchSuggestionsResponse } from '@/scripts/types/generated/timeline.ts'
 import type { AxiosResponse } from 'axios'
+import type { SearchFilterRanges } from '@/scripts/types/api/search.ts'
 
 export type SearchParams = {
   query: string
@@ -35,6 +36,10 @@ const searchService = {
 
   randomSuggestion(): Promise<AxiosResponse<string>> {
     return apiClient.get<string>('/search/suggestions/random')
+  },
+
+  filterRanges(): Promise<AxiosResponse<SearchFilterRanges>> {
+    return apiClient.get<SearchFilterRanges>('/search/params')
   },
 }
 
