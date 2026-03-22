@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRoute, useRouter } from 'vue-router'
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
+import searchService from '@/scripts/services/searchService.ts'
 
 const snackStore = useSnackbarsStore()
 const route = useRoute()
@@ -20,7 +20,7 @@ async function executeSearch() {
   if (query.value === '') return
   setQuery().then()
   try {
-    const { items } = await mediaItemService.search(query.value, 200)
+    const { items } = await searchService.search(query.value, 200)
     results.value = items
   } catch (e) {
     snackStore.error('Could not perform search', e)

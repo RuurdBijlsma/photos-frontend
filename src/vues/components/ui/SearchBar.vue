@@ -2,10 +2,10 @@
 import { ref, watch, useTemplateRef, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { type SimpleTimelineItem, SuggestionType } from '@/scripts/types/generated/timeline.ts'
 import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vue'
+import searchService from '@/scripts/services/searchService.ts'
 
 const router = useRouter()
 const route = useRoute()
@@ -29,11 +29,17 @@ const loading = ref(false)
 const isFocused = ref(false)
 const selectedSuggestionIndex = ref(-1)
 
+const SUGGESTION_PLACEHOLDER_KEY = 'search-suggestion-placeholder'
 const MAX_HISTORY_SUGGESTIONS = 3
 const MAX_TOTAL_SUGGESTIONS = 10
 const HISTORY_STORAGE_KEY = 'search-history'
 const MAX_HISTORY_SIZE = 200
 
+const placeholder = ref<string | null>(
+  localStorage.getItem(SUGGESTION_PLACEHOLDER_KEY) === null
+    ? null
+    : JSON.parse(localStorage.getItem(SUGGESTION_PLACEHOLDER_KEY)!),
+)
 const searchHistory = ref<string[]>([])
 
 function loadHistory() {
@@ -73,7 +79,7 @@ async function performSearch(searchQuery: string | null) {
   loading.value = true
 
   try {
-    const { items } = await mediaItemService.search(searchQuery, 10)
+    const { items } = await searchService.search(searchQuery, 10)
     if (requestId === latestRequestId) {
       console.log('Search Results:', items)
       results.value = items
@@ -108,7 +114,7 @@ async function fetchSuggestions(searchQuery: string | null) {
     }))
 
   try {
-    const { suggestions: fetchedSuggestions } = await mediaItemService.searchSuggestions(
+    const { suggestions: fetchedSuggestions } = await searchService.suggestions(
       searchQuery,
       MAX_TOTAL_SUGGESTIONS,
     )
@@ -224,11 +230,21 @@ function handleFocusOut(event: FocusEvent) {
   isFocused.value = false
 }
 
+async function loadNextPlaceholder() {
+  try {
+    const { data } = await searchService.randomSuggestion()
+    if (data) localStorage[SUGGESTION_PLACEHOLDER_KEY] = JSON.stringify(data)
+  } catch (err) {
+    console.warn(`Couldn't fetch random suggestion for placeholder`, err)
+  }
+}
+
 onMounted(() => {
   loadHistory()
   if (route.query.query) {
     query.value = route.query.query.toString()
   }
+  requestIdleCallback(loadNextPlaceholder)
 })
 
 watch(
@@ -259,7 +275,7 @@ watch(
             ref="searchInput"
             v-model="query"
             class="search-text-field"
-            placeholder="Search..."
+            :placeholder="placeholder === null ? 'Search...' : `Search “${placeholder}”`"
             rounded
             autocomplete="off"
             hide-details
