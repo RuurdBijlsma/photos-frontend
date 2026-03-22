@@ -79,7 +79,10 @@ async function performSearch(searchQuery: string | null) {
   loading.value = true
 
   try {
-    const { items } = await searchService.search(searchQuery, 10)
+    const { items } = await searchService.search({
+      query: searchQuery,
+      limit: MAX_TOTAL_SUGGESTIONS,
+    })
     if (requestId === latestRequestId) {
       console.log('Search Results:', items)
       results.value = items

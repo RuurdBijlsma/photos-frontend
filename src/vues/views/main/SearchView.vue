@@ -20,7 +20,10 @@ async function executeSearch() {
   if (query.value === '') return
   setQuery().then()
   try {
-    const { items } = await searchService.search(query.value, 200)
+    const { items } = await searchService.search({
+      query: query.value,
+      limit: 100,
+    })
     results.value = items
   } catch (e) {
     snackStore.error('Could not perform search', e)

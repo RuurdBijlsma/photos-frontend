@@ -126,7 +126,7 @@
 * add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
 * album page: add sort (also sort by added on date)
 * make proper search page
-* search suggestions while typing (llm data required)
+* ✅ search suggestions while typing (llm data required)
 * make search sortable by relevancy or date
 * add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
 * more interesting filters to search page (advanced search collapsable section)
@@ -135,4 +135,4 @@
   * negative query?
 * delete album button in albums page en op album page
 * als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet ondemand gebruikt denk ik)
-* show `Search "Greece"` in de seach bar as placeholder
+* ✅ show `Search "Greece"` in de search bar as placeholder

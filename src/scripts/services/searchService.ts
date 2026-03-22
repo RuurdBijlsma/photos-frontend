@@ -2,10 +2,22 @@ import apiClient from './api.ts'
 import { SearchResponse, SearchSuggestionsResponse } from '@/scripts/types/generated/timeline.ts'
 import type { AxiosResponse } from 'axios'
 
+export type SearchParams = {
+  query: string
+  limit?: number
+  startDate?: string
+  endDate?: string
+  mediaType?: string
+  sortBy?: string
+  negativeQuery?: string
+  countryCode?: string
+  faceName?: string
+}
+
 const searchService = {
-  async search(query: string, limit?: number): Promise<SearchResponse> {
+  async search(params: SearchParams): Promise<SearchResponse> {
     const response = await apiClient.get('/search', {
-      params: { query, limit },
+      params,
       responseType: 'arraybuffer',
     })
     const buffer = new Uint8Array(response.data)
