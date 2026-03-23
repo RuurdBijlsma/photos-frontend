@@ -1,19 +1,7 @@
 import apiClient from './api.ts'
 import { SearchResponse, SearchSuggestionsResponse } from '@/scripts/types/generated/timeline.ts'
 import type { AxiosResponse } from 'axios'
-import type { SearchFilterRanges } from '@/scripts/types/api/search.ts'
-
-export type SearchParams = {
-  query: string
-  limit?: number
-  startDate?: string
-  endDate?: string
-  mediaType?: string
-  sortBy?: string
-  negativeQuery?: string
-  countryCode?: string
-  faceName?: string
-}
+import type { SearchFilterRanges, SearchParams } from '@/scripts/types/api/search.ts'
 
 const searchService = {
   async search(params: SearchParams): Promise<SearchResponse> {
