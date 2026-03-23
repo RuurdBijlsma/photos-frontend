@@ -162,7 +162,6 @@ const showFilters = ref(false)
                     closable-chips
                     placeholder="Any country"
                   >
-                    <!-- Dropdown list items -->
                     <template #item="{ props, item }">
                       <v-list-item v-bind="props" :title="undefined">
                         <template #prepend>
@@ -172,33 +171,13 @@ const showFilters = ref(false)
                             width="20"
                             height="15"
                             style="object-fit: cover"
+                            :alt="'Flag of ' + item.raw.name"
                           />
                         </template>
                         <v-list-item-title class="ml-3">
                           {{ item.raw.name }}
                         </v-list-item-title>
                       </v-list-item>
-                    </template>
-
-                    <!-- Custom Chip Selection -->
-                    <template #selection="{ item, index }">
-                      <v-chip v-if="index < 2" size="small" class="ma-1">
-                        <template #prepend>
-                          <img
-                            :src="`https://purecatamphetamine.github.io/country-flag-icons/3x2/${item.raw.code}.svg`"
-                            width="16"
-                            height="12"
-                            style="object-fit: cover; margin-right: 6px"
-                          />
-                        </template>
-                        <span>{{ item.raw.name }}</span>
-                      </v-chip>
-                      <span
-                        v-if="index === 2"
-                        class="text-grey text-caption align-self-center ml-1"
-                      >
-                        (+{{ filterCountry.length - 2 }} more)
-                      </span>
                     </template>
                   </v-select>
                 </div>
@@ -226,7 +205,13 @@ const showFilters = ref(false)
                       }"
                     ></v-icon>
                   </p>
-                  <v-text-field hide-details variant="outlined" width="200" rounded />
+                  <v-text-field
+                    hide-details
+                    placeholder="E.g. “orange”"
+                    variant="outlined"
+                    width="200"
+                    rounded
+                  />
                 </div>
               </div>
             </v-card-text>
