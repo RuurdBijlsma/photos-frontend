@@ -125,7 +125,7 @@
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
 * album page: add sort (also sort by added on date)
-* make proper search page
+* ✅ make proper search page
 * ✅ search suggestions while typing (llm data required)
 * make search sortable by relevancy or date
 * add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
@@ -136,3 +136,4 @@
 * delete album button in albums page en op album page
 * als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet ondemand gebruikt denk ik)
 * ✅ show `Search "Greece"` in de search bar as placeholder
+* filters kan wel een v-menu zijn met de filters UI erin

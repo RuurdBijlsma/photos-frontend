@@ -60,20 +60,13 @@ onMounted(async () => {
   await executeSearch()
 
   try {
-    let { data } = await searchService.filterRanges()
+    const { data } = await searchService.filterRanges()
     filterRanges.value = data
     console.log('filterRanges', data)
   } catch (e) {
     console.warn("Couldn't fetch filter ranges", e)
   }
 })
-
-const showFilters = ref(
-  localStorage.getItem('searchShowFilters') === null
-    ? false
-    : JSON.parse(localStorage['searchShowFilters']),
-)
-watch(showFilters, () => (localStorage['searchShowFilters'] = JSON.stringify(showFilters.value)))
 
 const sortDirection = ref<'date' | 'relevancy'>(
   localStorage.getItem('searchSortDirection') === null
@@ -87,6 +80,11 @@ watch(
 
 const filterDateRange = ref([20, 40])
 const filterMediaType = ref('all')
+const filterCountry = ref([])
+const filterPerson = ref(null)
+watch(filterCountry, () => console.log('filterCountry', filterCountry.value))
+watch(filterPerson, () => console.log('filterPerson', filterPerson.value))
+const showFilters = ref(false)
 </script>
 
 <template>
@@ -109,14 +107,131 @@ const filterMediaType = ref('all')
       </h2>
       <v-spacer />
       <div class="advanced-search-button mr-5">
-        <v-btn
-          @click="showFilters = !showFilters"
-          :variant="showFilters ? 'flat' : 'text'"
-          :color="showFilters ? 'surface-container' : 'default'"
-          rounded
-          prepend-icon="mdi-tune-variant"
-          >Filters</v-btn
-        >
+        <v-menu v-model="showFilters" :close-on-content-click="false">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" variant="text" rounded prepend-icon="mdi-tune-variant">
+              Filters
+            </v-btn>
+          </template>
+          <v-card
+            variant="tonal"
+            rounded="xl"
+            class="search-filters"
+            :loading="filterRanges === null"
+          >
+            <v-card-text>
+              <p class="ml-3">Date range</p>
+              <v-range-slider
+                class="mt-6"
+                hide-details
+                color="primary"
+                v-model="filterDateRange"
+                thumb-label="always"
+                tick-size="4"
+                show-ticks="always"
+                strict
+                prepend-icon="mdi-calendar-outline"
+              ></v-range-slider>
+              <div class="small-filters">
+                <div class="media-type">
+                  <p class="mt-5 mb-2">Media type</p>
+                  <v-chip-group mandatory v-model="filterMediaType" color="primary">
+                    <v-chip value="hi">Photos</v-chip>
+                    <v-chip value="asd">Videos</v-chip>
+                    <v-chip value="all">All</v-chip>
+                  </v-chip-group>
+                </div>
+                <div class="country-code" v-if="filterRanges">
+                  <p class="mt-5 mb-2">Country</p>
+                  <v-select
+                    v-model="filterCountry"
+                    :items="
+                      filterRanges.countries.map((c) => ({
+                        code: c[0],
+                        name: c[1],
+                      }))
+                    "
+                    item-title="name"
+                    item-value="code"
+                    variant="outlined"
+                    width="250"
+                    rounded
+                    hide-details
+                    multiple
+                    chips
+                    closable-chips
+                    placeholder="Any country"
+                  >
+                    <!-- Dropdown list items -->
+                    <template #item="{ props, item }">
+                      <v-list-item v-bind="props" :title="undefined">
+                        <template #prepend>
+                          <img
+                            v-if="item.raw.code"
+                            :src="`https://purecatamphetamine.github.io/country-flag-icons/3x2/${item.raw.code}.svg`"
+                            width="20"
+                            height="15"
+                            style="object-fit: cover"
+                          />
+                        </template>
+                        <v-list-item-title class="ml-3">
+                          {{ item.raw.name }}
+                        </v-list-item-title>
+                      </v-list-item>
+                    </template>
+
+                    <!-- Custom Chip Selection -->
+                    <template #selection="{ item, index }">
+                      <v-chip v-if="index < 2" size="small" class="ma-1">
+                        <template #prepend>
+                          <img
+                            :src="`https://purecatamphetamine.github.io/country-flag-icons/3x2/${item.raw.code}.svg`"
+                            width="16"
+                            height="12"
+                            style="object-fit: cover; margin-right: 6px"
+                          />
+                        </template>
+                        <span>{{ item.raw.name }}</span>
+                      </v-chip>
+                      <span
+                        v-if="index === 2"
+                        class="text-grey text-caption align-self-center ml-1"
+                      >
+                        (+{{ filterCountry.length - 2 }} more)
+                      </span>
+                    </template>
+                  </v-select>
+                </div>
+                <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
+                  <p class="mt-5 mb-2">Person</p>
+                  <v-select
+                    variant="outlined"
+                    width="200"
+                    rounded
+                    hide-details
+                    v-model="filterPerson"
+                    :items="['Any', ...filterRanges.people]"
+                  ></v-select>
+                </div>
+                <div class="negative-query">
+                  <p class="mt-5 mb-2">
+                    Exclude
+                    <v-icon
+                      size="16"
+                      icon="mdi-information-outline"
+                      class="ml-2"
+                      v-tooltip="{
+                        location: 'top',
+                        text: 'Remove results matching these terms (e.g. “cat” + exclude “orange” → non-orange cats)',
+                      }"
+                    ></v-icon>
+                  </p>
+                  <v-text-field hide-details variant="outlined" width="200" rounded />
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-menu>
       </div>
       <div class="sort-text">Sort:</div>
       <v-btn-toggle v-model="sortDirection" divided rounded="xl" color="primary" variant="tonal">
@@ -130,66 +245,6 @@ const filterMediaType = ref('all')
           <v-icon end icon="mdi-sort-descending"></v-icon>
         </v-btn>
       </v-btn-toggle>
-    </div>
-    <div class="search-filters-container" v-if="showFilters">
-      <div class="triangle"></div>
-      <v-card
-        color="surface-container"
-        rounded="xl"
-        class="search-filters"
-        :loading="filterRanges === null"
-      >
-        <v-card-text>
-          <v-card-subtitle>FILTERS</v-card-subtitle>
-          <p class="mt-5">Date range</p>
-          <v-range-slider
-            class="mt-6"
-            hide-details
-            color="primary"
-            v-model="filterDateRange"
-            thumb-label="always"
-            tick-size="4"
-            show-ticks="always"
-            strict
-            prepend-icon="mdi-calendar-outline"
-          ></v-range-slider>
-          <div class="small-filters">
-            <div class="media-type">
-              <p class="mt-5 mb-2">Media type</p>
-              <v-chip-group mandatory v-model="filterMediaType" color="primary">
-                <v-chip value="hi">Photos</v-chip>
-                <v-chip value="asd">Videos</v-chip>
-                <v-chip value="all">All</v-chip>
-              </v-chip-group>
-            </div>
-            <div class="country-code">
-              <p class="mt-5 mb-2">Country</p>
-              <!--              todo: set select options to filterRanges.countries met emoji vlaggetjes ofzo-->
-              <v-select variant="outlined" width="200" rounded hide-details></v-select>
-            </div>
-            <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
-              <p class="mt-5 mb-2">Person</p>
-              <!--              todo: set select options to filterRanges.people-->
-              <v-select variant="outlined" width="200" rounded hide-details></v-select>
-            </div>
-            <div class="negative-query">
-              <p class="mt-5 mb-2">
-                Exclude
-                <v-icon
-                  size="16"
-                  icon="mdi-information-outline"
-                  class="ml-2"
-                  v-tooltip="{
-                    location: 'top',
-                    text: 'Remove results matching these terms (e.g. “cat” + exclude “orange” → non-orange cats)',
-                  }"
-                ></v-icon>
-              </p>
-              <v-text-field hide-details variant="outlined" width="200" rounded />
-            </div>
-          </div>
-        </v-card-text>
-      </v-card>
     </div>
     <div class="search-margin"></div>
   </simple-timeline>
@@ -237,23 +292,6 @@ const filterMediaType = ref('all')
   padding: 0 20px;
   font-size: 18px;
   opacity: 0.7;
-}
-
-.search-filters-container {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-  position: relative;
-}
-
-.triangle {
-  position: absolute;
-  width: 20px;
-  height: 12px;
-  background-color: rgb(var(--v-theme-surface-container));
-  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-  top: -12px;
-  right: 425px;
 }
 
 .search-filters {
