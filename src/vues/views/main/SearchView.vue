@@ -15,6 +15,7 @@ const router = useRouter()
 const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
 const loading = ref(false)
+const searchCache = new Map<string, SimpleTimelineItem[]>()
 const filterRanges = ref<SearchFilterRanges | null>(
   localStorage.getItem('searchFilterRanges') === null
     ? null
@@ -22,7 +23,7 @@ const filterRanges = ref<SearchFilterRanges | null>(
 )
 watch(filterRanges, () => (localStorage['searchFilterRanges'] = JSON.stringify(filterRanges.value)))
 
-const filterDateIndices = ref([0, 0])
+const filterDateIndices = ref([-1, -1])
 const filterDateObj = computed(() => ({
   first: filterDateIndices.value[0]!,
   last: filterDateIndices.value[1]!,
@@ -32,14 +33,14 @@ function formatMonth(dateStr: string | undefined) {
   const date = new Date(dateStr)
   return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
 }
-
-async function executeSearch() {
-  if (query.value === '') return
-  loading.value = true
-  setQuery().then()
+const filterDateRange = computed(() => {
   let startDate: string | undefined = undefined
   let endDate: string | undefined = undefined
-  if (filterRanges.value && filterRanges.value.availableMonths.length > 0) {
+  if (
+    filterRanges.value &&
+    filterRanges.value.availableMonths.length > 0 &&
+    filterDateObj.value.first !== -1
+  ) {
     const months = filterRanges.value.availableMonths
     if (filterDateObj.value.first !== 0) {
       startDate = new Date(months[filterDateObj.value.first]!).toISOString()
@@ -51,21 +52,37 @@ async function executeSearch() {
       endDate = date.toISOString()
     }
   }
+  return { start: startDate, end: endDate }
+})
+
+async function executeSearch() {
+  if (query.value === '') return
+  loading.value = true
+  setQuery().then()
 
   try {
-    const { items } = await searchService.search({
+    const searchParams = {
       query: query.value,
       limit: 100,
-      startDate,
-      endDate,
+      startDate: filterDateRange.value.start,
+      endDate: filterDateRange.value.end,
       countryCodes: filterCountries.value.join(','),
       mediaType: filterMediaType.value,
       negativeQuery:
         filterNegativeQuery.value === '' ? undefined : (filterNegativeQuery.value ?? undefined),
       faceName: filterPerson.value ?? undefined,
       sortBy: sortDirection.value,
-    })
-    results.value = items
+    }
+    const key = JSON.stringify(searchParams)
+    if (searchCache.has(key)) {
+      results.value = searchCache.get(key)!
+    } else {
+      const { items } = await searchService.search(searchParams)
+      results.value = items
+      requestIdleCallback(() => {
+        searchCache.set(key, items)
+      })
+    }
   } catch (e) {
     snackStore.error('Could not perform search', e)
   } finally {
@@ -75,6 +92,18 @@ async function executeSearch() {
 
 async function setQuery() {
   await router.push({ query: { query: query.value } })
+}
+
+function clearFilters() {
+  filterCountries.value = []
+  filterPerson.value = null
+  filterNegativeQuery.value = null
+  if (filterRanges.value) {
+    filterDateIndices.value = [0, filterRanges.value.availableMonths.length - 1]
+  } else {
+    filterDateIndices.value = [-1, -1]
+  }
+  filterMediaType.value = 'all'
 }
 
 watch(
@@ -121,10 +150,21 @@ const filterPerson = ref(null)
 const filterNegativeQuery = ref(null)
 const showFilters = ref(false)
 
+const hasFilters = computed(() => {
+  return (
+    filterCountries.value.length > 0 ||
+    filterPerson.value !== null ||
+    filterNegativeQuery.value ||
+    filterDateRange.value.start !== undefined ||
+    filterDateRange.value.end !== undefined ||
+    filterMediaType.value !== 'all'
+  )
+})
+
 const debounceSearch = useDebounceFn(executeSearch, 100)
 watch(
   [
-    filterDateIndices,
+    filterDateRange,
     filterCountries,
     filterPerson,
     filterMediaType,
@@ -270,6 +310,16 @@ watch(
             </v-card-text>
           </v-card>
         </v-menu>
+        <v-btn
+          v-if="hasFilters"
+          icon="mdi-close"
+          variant="plain"
+          @click="clearFilters"
+          v-tooltip="{
+            location: 'top',
+            text: 'Clear filters',
+          }"
+        ></v-btn>
       </div>
       <div class="sort-text">Sort:</div>
       <v-btn-toggle v-model="sortDirection" divided rounded="xl" color="primary" variant="tonal">
