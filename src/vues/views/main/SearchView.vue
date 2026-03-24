@@ -23,6 +23,10 @@ const filterRanges = ref<SearchFilterRanges | null>(
 watch(filterRanges, () => (localStorage['searchFilterRanges'] = JSON.stringify(filterRanges.value)))
 
 const filterDateIndices = ref([0, 0])
+const filterDateObj = computed(() => ({
+  first: filterDateIndices.value[0]!,
+  last: filterDateIndices.value[1]!,
+}))
 function formatMonth(dateStr: string | undefined) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -37,11 +41,11 @@ async function executeSearch() {
   let endDate: string | undefined = undefined
   if (filterRanges.value && filterRanges.value.availableMonths.length > 0) {
     const months = filterRanges.value.availableMonths
-    if (filterDateIndices.value[0] !== 0) {
-      startDate = new Date(months[filterDateIndices.value[0]]).toISOString()
+    if (filterDateObj.value.first !== 0) {
+      startDate = new Date(months[filterDateObj.value.first]!).toISOString()
     }
-    if (filterDateIndices.value[1] !== months.length - 1) {
-      const date = new Date(months[filterDateIndices.value[1]])
+    if (filterDateObj.value.last !== months.length - 1) {
+      const date = new Date(months[filterDateObj.value.last]!)
       date.setMonth(date.getMonth() + 1)
       date.setMilliseconds(-1)
       endDate = date.toISOString()
@@ -163,8 +167,8 @@ watch(
               >
                 <p class="mb-2 font-weight-medium">Date Range</p>
                 <div class="d-flex justify-space-between text-caption opacity-70 mb-1">
-                  <span>{{ formatMonth(filterRanges.availableMonths[filterDateIndices[0]]) }}</span>
-                  <span>{{ formatMonth(filterRanges.availableMonths[filterDateIndices[1]]) }}</span>
+                  <span>{{ formatMonth(filterRanges.availableMonths[filterDateObj.first]) }}</span>
+                  <span>{{ formatMonth(filterRanges.availableMonths[filterDateObj.last]) }}</span>
                 </div>
                 <v-range-slider
                   v-model="filterDateIndices"
