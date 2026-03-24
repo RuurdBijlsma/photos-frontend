@@ -1,5 +1,5 @@
 export interface SearchFilterRanges {
-  available_months: string[]
+  availableMonths: string[]
   people: string[]
   countries: string[][]
 }

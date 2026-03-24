@@ -22,16 +22,38 @@ const filterRanges = ref<SearchFilterRanges | null>(
 )
 watch(filterRanges, () => (localStorage['searchFilterRanges'] = JSON.stringify(filterRanges.value)))
 
+const filterDateIndices = ref([0, 0])
+function formatMonth(dateStr: string | undefined) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+}
+
 async function executeSearch() {
   if (query.value === '') return
   loading.value = true
   setQuery().then()
+  let startDate: string | undefined = undefined
+  let endDate: string | undefined = undefined
+  if (filterRanges.value && filterRanges.value.availableMonths.length > 0) {
+    const months = filterRanges.value.availableMonths
+    if (filterDateIndices.value[0] !== 0) {
+      startDate = new Date(months[filterDateIndices.value[0]]).toISOString()
+    }
+    if (filterDateIndices.value[1] !== months.length - 1) {
+      const date = new Date(months[filterDateIndices.value[1]])
+      date.setMonth(date.getMonth() + 1)
+      date.setMilliseconds(-1)
+      endDate = date.toISOString()
+    }
+  }
+
   try {
     const { items } = await searchService.search({
       query: query.value,
       limit: 100,
-      startDate: '2020-03-24T11:56:59.204Z',
-      endDate: '2025-03-24T11:56:59.204Z',
+      startDate,
+      endDate,
       countryCodes: filterCountries.value.join(','),
       mediaType: filterMediaType.value,
       negativeQuery:
@@ -70,6 +92,9 @@ onMounted(async () => {
   try {
     const { data } = await searchService.filterRanges()
     filterRanges.value = data
+    if (data.availableMonths.length > 0) {
+      filterDateIndices.value = [0, data.availableMonths.length - 1]
+    }
     console.log('filterRanges', data)
   } catch (e) {
     console.warn("Couldn't fetch filter ranges", e)
@@ -86,7 +111,6 @@ watch(
   () => (localStorage['searchSortDirection'] = JSON.stringify(sortDirection.value)),
 )
 
-const filterDateRange = ref([0, 100])
 const filterMediaType = ref<'all' | 'photo' | 'video'>('all')
 const filterCountries = ref<string[]>([])
 const filterPerson = ref(null)
@@ -96,7 +120,7 @@ const showFilters = ref(false)
 const debounceSearch = useDebounceFn(executeSearch, 100)
 watch(
   [
-    filterDateRange,
+    filterDateIndices,
     filterCountries,
     filterPerson,
     filterMediaType,
@@ -133,13 +157,31 @@ watch(
             :loading="filterRanges === null"
           >
             <v-card-text>
-              <div class="date-range-filter">
-                <p class="ml-3">Date filter</p>
-                <!--                todo put date range filter here-->
+              <div
+                class="date-range-filter px-4 py-2"
+                v-if="filterRanges && filterRanges.availableMonths.length > 0"
+              >
+                <p class="mb-2 font-weight-medium">Date Range</p>
+                <div class="d-flex justify-space-between text-caption opacity-70 mb-1">
+                  <span>{{ formatMonth(filterRanges.availableMonths[filterDateIndices[0]]) }}</span>
+                  <span>{{ formatMonth(filterRanges.availableMonths[filterDateIndices[1]]) }}</span>
+                </div>
+                <v-range-slider
+                  v-model="filterDateIndices"
+                  :max="filterRanges.availableMonths.length - 1"
+                  :min="0"
+                  :step="1"
+                  hide-details
+                  color="primary"
+                  strict
+                ></v-range-slider>
               </div>
+
+              <v-divider class="mt-3 ml-3 mr-3" />
+
               <div class="small-filters">
                 <div class="media-type">
-                  <p class="mt-5 mb-2">Media type</p>
+                  <p class="mt-5 mb-2 font-weight-medium">Media type</p>
                   <v-chip-group mandatory v-model="filterMediaType" color="primary">
                     <v-chip value="photo">Photos</v-chip>
                     <v-chip value="video">Videos</v-chip>
@@ -147,7 +189,7 @@ watch(
                   </v-chip-group>
                 </div>
                 <div class="country-code" v-if="filterRanges">
-                  <p class="mt-5 mb-2">Country</p>
+                  <p class="mt-5 mb-2 font-weight-medium">Country</p>
                   <v-select
                     v-model="filterCountries"
                     :items="
@@ -187,7 +229,7 @@ watch(
                   </v-select>
                 </div>
                 <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
-                  <p class="mt-5 mb-2">Person</p>
+                  <p class="mt-5 mb-2 font-weight-medium">Person</p>
                   <v-select
                     variant="outlined"
                     width="200"
@@ -199,7 +241,7 @@ watch(
                   ></v-select>
                 </div>
                 <div class="negative-query">
-                  <p class="mt-5 mb-2">
+                  <p class="mt-5 mb-2 font-weight-medium">
                     Exclude
                     <v-icon
                       size="16"
@@ -295,6 +337,7 @@ watch(
 .small-filters {
   display: flex;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .small-filters > div {
