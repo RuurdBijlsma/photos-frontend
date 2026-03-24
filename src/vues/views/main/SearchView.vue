@@ -27,19 +27,12 @@ async function executeSearch() {
   loading.value = true
   setQuery().then()
   try {
-    console.log('Search with params', {
-      startDate: startDateParam.value,
-      endDate: endDateParam.value,
-      countryCode: filterCountry.value,
-      negativeQuery: filterNegativeQuery.value === '' ? null : filterNegativeQuery.value,
-      faceName: filterPerson.value,
-    })
     const { items } = await searchService.search({
       query: query.value,
       limit: 100,
-      startDate: startDateParam.value,
-      endDate: endDateParam.value,
-      countryCode: filterCountry.value,
+      startDate: '2020-03-24T11:56:59.204Z',
+      endDate: '2025-03-24T11:56:59.204Z',
+      countryCodes: filterCountries.value.join(','),
       mediaType: filterMediaType.value,
       negativeQuery:
         filterNegativeQuery.value === '' ? undefined : (filterNegativeQuery.value ?? undefined),
@@ -56,10 +49,6 @@ async function executeSearch() {
 
 async function setQuery() {
   await router.push({ query: { query: query.value } })
-}
-
-const formatMonthYear = (date: Date) => {
-  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' })
 }
 
 watch(
@@ -99,55 +88,16 @@ watch(
 
 const filterDateRange = ref([0, 100])
 const filterMediaType = ref<'all' | 'photo' | 'video'>('all')
-const filterCountry = ref<string[]>([])
+const filterCountries = ref<string[]>([])
 const filterPerson = ref(null)
 const filterNegativeQuery = ref(null)
 const showFilters = ref(false)
 
-const availableMonths = computed(() => {
-  if (!filterRanges.value) return []
-
-  const start = new Date(filterRanges.value.dateStart)
-  const end = new Date(filterRanges.value.dateEnd)
-
-  const months: Date[] = []
-  const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1))
-  const last = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1))
-
-  while (current <= last) {
-    months.push(new Date(current))
-    current.setUTCMonth(current.getUTCMonth() + 1)
-  }
-  return months
-})
-
-watch(
-  availableMonths,
-  (newMonths) => {
-    if (newMonths.length > 0) {
-      filterDateRange.value = [0, newMonths.length - 1]
-    }
-  },
-  { immediate: true },
-)
-const startDateParam = computed(() => {
-  if (filterDateRange.value[0] === 0 || availableMonths.value.length === 0) return undefined
-  return availableMonths.value[filterDateRange.value[0]!]!.toISOString()
-})
-const endDateParam = computed(() => {
-  const lastIdx = availableMonths.value.length - 1
-  if (filterDateRange.value[1] === lastIdx || lastIdx < 0) return undefined
-  // To include the whole month, we take the 1st of the NEXT month
-  const selectedMonth = availableMonths.value[filterDateRange.value[1]!]!
-  const nextMonth = new Date(selectedMonth)
-  nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1)
-  return nextMonth.toISOString()
-})
-const debounceSearch = useDebounceFn(executeSearch, 150)
+const debounceSearch = useDebounceFn(executeSearch, 100)
 watch(
   [
     filterDateRange,
-    filterCountry,
+    filterCountries,
     filterPerson,
     filterMediaType,
     filterNegativeQuery,
@@ -157,16 +107,6 @@ watch(
     debounceSearch()
   },
 )
-// todo: filters in url query zetten
-// todo: is text field is empty, make sure null is sent
-// todo: if startdate is earliest point, send null, if enddate is latest point, send null
-// todo: clean up UI for date range, its ugly now. If last date range is selected, show
-// todo: filterDateRange moet obj zijn, niet een array of 2 items
-// todo: backend - support multiple countries
-// todo: hij execute search 2x
-// todo: haal epilepsie aanval weg als je filter aanpast (misschien pas loading laten zien als t langer dan 500ms duurt, of als er 0 results zijn en loading true is.
-// todo: alleen month dots in date slider waar de months ook bestaan in de backend (pas backend aan)
-// todo: filter v-menu kan wel blurry bg krijgen, is leuk
 </script>
 
 <template>
@@ -193,35 +133,10 @@ watch(
             :loading="filterRanges === null"
           >
             <v-card-text>
-              <p class="ml-3">
-                <span v-if="availableMonths.length">
-                  <span class="font-weight-bold">Filter:</span>
-                  {{ formatMonthYear(availableMonths[filterDateRange[0]!]!) }}
-                  -
-                  {{ formatMonthYear(availableMonths[filterDateRange[1]!]!) }}
-                </span>
-              </p>
-
-              <v-range-slider
-                v-if="availableMonths.length > 0"
-                class="mt-10 px-4"
-                hide-details
-                color="primary"
-                v-model="filterDateRange"
-                :min="0"
-                :max="availableMonths.length - 1"
-                :step="1"
-                strict
-                thumb-label="always"
-                prepend-icon="mdi-calendar-outline"
-              >
-                <!-- Custom Thumb Label to show "MMM YYYY" -->
-                <template v-slot:thumb-label="{ modelValue }">
-                  <div style="white-space: nowrap">
-                    {{ formatMonthYear(availableMonths[modelValue]!) }}
-                  </div>
-                </template>
-              </v-range-slider>
+              <div class="date-range-filter">
+                <p class="ml-3">Date filter</p>
+                <!--                todo put date range filter here-->
+              </div>
               <div class="small-filters">
                 <div class="media-type">
                   <p class="mt-5 mb-2">Media type</p>
@@ -234,7 +149,7 @@ watch(
                 <div class="country-code" v-if="filterRanges">
                   <p class="mt-5 mb-2">Country</p>
                   <v-select
-                    v-model="filterCountry"
+                    v-model="filterCountries"
                     :items="
                       filterRanges.countries.map((c) => ({
                         code: c[0],

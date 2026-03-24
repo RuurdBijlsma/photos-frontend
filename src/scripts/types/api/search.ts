@@ -1,6 +1,5 @@
 export interface SearchFilterRanges {
-  dateStart: string
-  dateEnd: string
+  available_months: string[]
   people: string[]
   countries: string[][]
 }
@@ -13,6 +12,6 @@ export type SearchParams = {
   mediaType?: string
   sortBy?: string
   negativeQuery?: string
-  countryCode: string[]
+  countryCodes: string
   faceName?: string
 }
