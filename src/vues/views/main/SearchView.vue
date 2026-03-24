@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRoute, useRouter } from 'vue-router'
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
@@ -15,6 +15,8 @@ const router = useRouter()
 const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
 const loading = ref(false)
+const showLoadingUI = ref(false)
+let loadingTimer: ReturnType<typeof setTimeout> | null = null
 const searchCache = new Map<string, SimpleTimelineItem[]>()
 const filterRanges = ref<SearchFilterRanges | null>(
   localStorage.getItem('searchFilterRanges') === null
@@ -57,7 +59,15 @@ const filterDateRange = computed(() => {
 
 async function executeSearch() {
   if (query.value === '') return
+  if (loadingTimer) clearTimeout(loadingTimer)
   loading.value = true
+  if (results.value.length === 0) {
+    showLoadingUI.value = true
+  } else {
+    loadingTimer = setTimeout(() => {
+      showLoadingUI.value = true
+    }, 300)
+  }
   setQuery().then()
 
   try {
@@ -79,6 +89,7 @@ async function executeSearch() {
     } else {
       const { items } = await searchService.search(searchParams)
       results.value = items
+      console.log('Full search result', items)
       requestIdleCallback(() => {
         searchCache.set(key, items)
       })
@@ -86,7 +97,9 @@ async function executeSearch() {
   } catch (e) {
     snackStore.error('Could not perform search', e)
   } finally {
+    if (loadingTimer) clearTimeout(loadingTimer)
     loading.value = false
+    showLoadingUI.value = false
   }
 }
 
@@ -133,6 +146,9 @@ onMounted(async () => {
     console.warn("Couldn't fetch filter ranges", e)
   }
 })
+onUnmounted(() => {
+  if (loadingTimer) clearTimeout(loadingTimer)
+})
 
 const sortDirection = ref<'date' | 'relevancy'>(
   localStorage.getItem('searchSortDirection') === null
@@ -178,7 +194,7 @@ watch(
 </script>
 
 <template>
-  <simple-timeline :timeline-items="loading ? [] : results" view-link="/search/view/">
+  <simple-timeline :timeline-items="showLoadingUI ? [] : results" view-link="/search/view/">
     <div class="search-options">
       <h2 class="search-query-title">
         <v-icon class="mr-5 search-query-icon" icon="mdi-magnify" />Search for “<span
@@ -322,7 +338,14 @@ watch(
         ></v-btn>
       </div>
       <div class="sort-text">Sort:</div>
-      <v-btn-toggle v-model="sortDirection" divided rounded="xl" color="primary" variant="tonal">
+      <v-btn-toggle
+        v-model="sortDirection"
+        divided
+        rounded="xl"
+        color="primary"
+        variant="tonal"
+        mandatory
+      >
         <v-btn value="date">
           <span>Date</span>
           <v-icon end icon="mdi-sort-calendar-ascending"></v-icon>
@@ -335,7 +358,7 @@ watch(
       </v-btn-toggle>
     </div>
     <div class="search-margin"></div>
-    <div class="loading-indicator" v-if="loading">
+    <div class="loading-indicator" v-if="showLoadingUI">
       <h2 class="search-summary">
         Searching for "<span class="query-span">{{ query }}</span
         >"...

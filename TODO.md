@@ -92,6 +92,23 @@
 * ✅ make loading indicator for search
 * ✅ if you reload with ?query=asdf, make sure the search-bar is filled with that query on load.
 * ✅ show more results on search page
+* ✅ make proper search page
+* ✅ search suggestions while typing (llm data required)
+* ✅ show `Search "Greece"` in de search bar as placeholder
+* ✅ filters kan wel een v-menu zijn met de filters UI erin
+* ✅ search: is text field is empty, make sure null is sent
+* ✅ search: filterDateRange moet obj zijn, niet een array of 2 items
+* ✅ search: hij execute search 2x
+* ✅ search: haal epilepsie aanval weg als je filter aanpast (misschien pas loading laten zien als t langer dan 500ms
+  duurt, of als er 0 results zijn en loading true is.
+* ✅ search: alleen month dots in date slider waar de months ook bestaan in de backend (pas backend aan)
+* ✅ search: if startdate is earliest point, send null, if enddate is latest point, send null
+* ✅ more interesting filters to search page (advanced search collapsable section)
+    * ✅ face? maybe for later
+    * ✅ location? country? could be autofilling select input thing
+    * ✅ negative query?
+* ✅ make search sortable by relevancy or date
+* ✅ stomme nav bar start te hoog en animeert naar beneden on page load
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -115,7 +132,6 @@
 * setting: usebackdropblur doesnt apply everywhere.
 * preload 1440p thumbnail on grid item hover
 * re-establish ws connection if auth failed and it's refreshed automatically afterwards
-* stomme nav bar start te hoog en animeert naar beneden on page load
 * add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
 * ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
 * idea to fix desync timeline bug:
@@ -125,26 +141,15 @@
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
 * album page: add sort (also sort by added on date)
-* ✅ make proper search page
-* ✅ search suggestions while typing (llm data required)
-* make search sortable by relevancy or date
-* add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
-* more interesting filters to search page (advanced search collapsable section)
-  * face? maybe for later
-  * location? country? could be autofilling select input thing
-  * negative query?
+* add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all
+  the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
 * delete album button in albums page en op album page
-* als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet ondemand gebruikt denk ik)
-* ✅ show `Search "Greece"` in de search bar as placeholder
-* filters kan wel een v-menu zijn met de filters UI erin
+* als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
+  ondemand gebruikt denk ik)
+* [BUG] kruisje linksboven op viewphoto is stuk op album page
 
-
-// todo: filters in url query zetten
-// todo: is text field is empty, make sure null is sent
-// todo: if startdate is earliest point, send null, if enddate is latest point, send null
-// todo: clean up UI for date range, its ugly now. If last date range is selected, show something like "Showing items from March 2019 until present"
-// todo: filterDateRange moet obj zijn, niet een array of 2 items
-// todo: hij execute search 2x
-// todo: haal epilepsie aanval weg als je filter aanpast (misschien pas loading laten zien als t langer dan 500ms duurt, of als er 0 results zijn en loading true is.
-// todo: alleen month dots in date slider waar de months ook bestaan in de backend (pas backend aan)
-// todo: filter v-menu kan wel blurry bg krijgen, is leuk
+* search: filters in url query zetten
+* search: clean up UI for date range, its ugly now. If last date range is selected, show something like "Showing items
+  from March 2019 until present", if start date range is set to first available month, then show: "Showing items until
+  March 2019 or something", where march 2019 is the end filter in this case.
+* search: filter v-menu kan wel blurry bg krijgen, is leuk
