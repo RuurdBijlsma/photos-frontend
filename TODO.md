@@ -147,6 +147,7 @@
 * als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
   ondemand gebruikt denk ik)
 * [BUG] kruisje linksboven op viewphoto is stuk op album page
+* foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
 
 * search: filters in url query zetten
 * search: clean up UI for date range, its ugly now. If last date range is selected, show something like "Showing items
