@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRoute, useRouter } from 'vue-router'
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
@@ -13,36 +13,111 @@ const snackStore = useSnackbarsStore()
 const route = useRoute()
 const router = useRouter()
 
-const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
 const loading = ref(false)
 const showLoadingUI = ref(false)
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
 const searchCache = new Map<string, SimpleTimelineItem[]>()
 const defaultSortDirection: 'date' | 'relevancy' = 'relevancy'
+
 const filterRanges = ref<SearchFilterRanges | null>(
   localStorage.getItem('searchFilterRanges') === null
     ? null
     : JSON.parse(localStorage['searchFilterRanges']),
 )
 watch(filterRanges, () => (localStorage['searchFilterRanges'] = JSON.stringify(filterRanges.value)))
-
-const filterDateIndices = ref([-1, -1])
-const filterMediaType = ref<'all' | 'photo' | 'video'>('all')
-const filterCountries = ref<string[]>([])
-const filterPerson = ref<string | null>(null)
-const filterNegativeQuery = ref<string | null>(null)
 const showFilters = ref(false)
-const sortDirection = ref<'date' | 'relevancy'>(defaultSortDirection)
+
+// URL Source of Truth
+const query = computed(() => (route.query.query as string) || '')
+const filterMediaType = computed({
+  get: () => (route.query.type as 'all' | 'photo' | 'video') || 'all',
+  set: (val) => updateURL({ type: val === 'all' ? undefined : val }),
+})
+const filterPerson = computed({
+  get: () => (route.query.person as string) || null,
+  set: (val) => updateURL({ person: val || undefined }),
+})
+const filterNegativeQuery = computed({
+  get: () => (route.query.exclude as string) || null,
+  set: (val) => updateURL({ exclude: val || undefined }),
+})
+const filterCountries = computed({
+  get: () => (route.query.countries ? (route.query.countries as string).split(',') : []),
+  set: (val) => updateURL({ countries: val?.length ? val.join(',') : undefined }),
+})
+const sortDirection = computed({
+  get: () => (route.query.sort as 'date' | 'relevancy') || defaultSortDirection,
+  set: (val) => updateURL({ sort: val === defaultSortDirection ? undefined : val }),
+})
+
+// Date Range Helpers
+function urlParamToISO(param: string | undefined, endOfMonth = false): string | undefined {
+  if (!param) return undefined
+  const monthStr = param.substring(0, 3).toLowerCase()
+  const year = parseInt(param.substring(3))
+  const monthIndex = MONTHS.findIndex((m) => m.toLowerCase().startsWith(monthStr))
+  if (monthIndex === -1) return undefined
+  const date = new Date(Date.UTC(year, monthIndex, 1))
+  if (endOfMonth) {
+    date.setUTCMonth(date.getUTCMonth() + 1)
+    date.setUTCMilliseconds(-1)
+  }
+  return date.toISOString()
+}
+
+function isoToUrlParam(iso: string | undefined): string | undefined {
+  if (!iso) return undefined
+  const date = new Date(iso)
+  return MONTHS[date.getUTCMonth()]!.substring(0, 3).toLowerCase() + date.getUTCFullYear()
+}
+
+const filterDateRange = computed(() => ({
+  start: urlParamToISO(route.query.start as string),
+  end: urlParamToISO(route.query.end as string, true),
+}))
+
+// Slider state management (local because it depends on filterRanges)
+const filterDateIndices = ref([0, 0])
+let ignoreSliderWatch = false
 watch(
-  sortDirection,
-  () => (localStorage['searchSortDirection'] = JSON.stringify(sortDirection.value)),
+  [filterRanges, () => route.query.start, () => route.query.end],
+  () => {
+    if (!filterRanges.value) return
+    const months = filterRanges.value.availableMonths
+    if (months.length === 0) return
+
+    let startIdx = 0
+    let endIdx = months.length - 1
+
+    if (route.query.start) {
+      const iso = urlParamToISO(route.query.start as string)
+      const datePart = iso?.substring(0, 10)
+      const found = months.findIndex((m) => m.startsWith(datePart!))
+      if (found !== -1) startIdx = found
+    }
+    if (route.query.end) {
+      const iso = urlParamToISO(route.query.end as string)
+      const datePart = iso?.substring(0, 10)
+      const found = months.findIndex((m) => m.startsWith(datePart!))
+      if (found !== -1) endIdx = found
+    }
+    ignoreSliderWatch = true
+    filterDateIndices.value = [startIdx, endIdx]
+    nextTick(() => (ignoreSliderWatch = false))
+  },
+  { immediate: true },
 )
 
-const filterDateObj = computed(() => ({
-  first: filterDateIndices.value[0]!,
-  last: filterDateIndices.value[1]!,
-}))
+watch(filterDateIndices, (newVal) => {
+  if (ignoreSliderWatch || !filterRanges.value) return
+  const [start = 0, end = 0] = newVal
+  const months = filterRanges.value.availableMonths
+  updateURL({
+    start: start === 0 ? undefined : isoToUrlParam(months[start!]),
+    end: end === months.length - 1 ? undefined : isoToUrlParam(months[end!]),
+  })
+})
 
 function formatMonth(dateStr: string | undefined) {
   if (!dateStr) return ''
@@ -50,51 +125,42 @@ function formatMonth(dateStr: string | undefined) {
   return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
 }
 
-const filterDateRange = computed(() => {
-  let startDate: string | undefined = undefined
-  let endDate: string | undefined = undefined
-  if (filterRanges.value?.availableMonths.length && filterDateObj.value.first !== -1) {
-    const months = filterRanges.value.availableMonths
-    if (filterDateObj.value.first !== 0 && filterDateObj.value.first !== -1) {
-      startDate = new Date(months[filterDateObj.value.first]!).toISOString()
-    }
-    if (filterDateObj.value.last !== months.length - 1 && filterDateObj.value.last !== -1) {
-      const date = new Date(months[filterDateObj.value.last]!)
-      date.setMonth(date.getMonth() + 1)
-      date.setMilliseconds(-1)
-      endDate = date.toISOString()
-    }
-  }
-  return { start: startDate, end: endDate }
-})
+const debouncedPush = useDebounceFn((query: Record<string, string>) => {
+  router.push({ query })
+}, 100)
 
-function replaceRouteFilters() {
-  const params: Record<string, string> = { query: query.value }
-  if (filterMediaType.value !== 'all') params.type = filterMediaType.value
-  if (sortDirection.value !== defaultSortDirection) params.sort = sortDirection.value
-  if (filterPerson.value) params.person = filterPerson.value
-  if (filterNegativeQuery.value) params.exclude = filterNegativeQuery.value
-  if (filterCountries.value.length) params.countries = filterCountries.value.join(',')
-  if (filterDateRange.value.start) {
-    const startDate = new Date(filterDateRange.value.start)
-    params.start =
-      MONTHS[startDate.getUTCMonth()]!.substring(0, 3).toLowerCase() + startDate.getFullYear()
+const updateURL = (newParams: Record<string, string | undefined>) => {
+  const currentQuery = { ...route.query }
+  const nextQuery = { ...currentQuery, ...newParams }
+
+  // Clean up undefined/null/empty/default values
+  Object.keys(nextQuery).forEach((key) => {
+    if (
+      nextQuery[key] === undefined ||
+      nextQuery[key] === null ||
+      nextQuery[key] === '' ||
+      (key === 'type' && nextQuery[key] === 'all') ||
+      (key === 'sort' && nextQuery[key] === defaultSortDirection)
+    ) {
+      delete nextQuery[key]
+    }
+  })
+
+  // Only push if something actually changed
+  if (JSON.stringify(currentQuery) !== JSON.stringify(nextQuery)) {
+    debouncedPush(nextQuery as Record<string, string>)
   }
-  if (filterDateRange.value.end) {
-    const endDate = new Date(filterDateRange.value.end)
-    params.end =
-      MONTHS[endDate.getUTCMonth()]!.substring(0, 3).toLowerCase() + endDate.getFullYear()
-  }
-  router.push({ query: params })
 }
 
 async function executeSearch() {
-  if (query.value === '') return
+  if (query.value === '') {
+    results.value = []
+    return
+  }
   if (loadingTimer) clearTimeout(loadingTimer)
   loading.value = true
   if (results.value.length === 0) showLoadingUI.value = true
   else loadingTimer = setTimeout(() => (showLoadingUI.value = true), 300)
-  replaceRouteFilters()
 
   try {
     const searchParams = {
@@ -103,11 +169,10 @@ async function executeSearch() {
       startDate: filterDateRange.value.start,
       endDate: filterDateRange.value.end,
       countryCodes: filterCountries.value.join(','),
-      mediaType: filterMediaType.value,
-      negativeQuery:
-        filterNegativeQuery.value === '' ? undefined : (filterNegativeQuery.value ?? undefined),
-      faceName: filterPerson.value ?? undefined,
-      sortBy: sortDirection.value,
+      mediaType: filterMediaType.value as 'all' | 'photo' | 'video',
+      negativeQuery: filterNegativeQuery.value || undefined,
+      faceName: filterPerson.value || undefined,
+      sortBy: sortDirection.value as 'date' | 'relevancy',
     }
     const key = JSON.stringify(searchParams)
     if (searchCache.has(key)) {
@@ -115,7 +180,6 @@ async function executeSearch() {
     } else {
       const { items } = await searchService.search(searchParams)
       results.value = items
-      console.log('Full search result', items)
       requestIdleCallback(() => searchCache.set(key, items))
     }
   } catch (e) {
@@ -128,61 +192,26 @@ async function executeSearch() {
 }
 
 function clearFilters() {
-  filterCountries.value = []
-  filterPerson.value = null
-  filterNegativeQuery.value = null
-  filterMediaType.value = 'all'
-  if (filterRanges.value) {
-    filterDateIndices.value = [0, filterRanges.value.availableMonths.length - 1]
-  } else {
-    filterDateIndices.value = [-1, -1]
-  }
+  router.push({ query: { query: query.value } })
 }
 
 async function fetchFilterRanges() {
   try {
     const { data } = await searchService.filterRanges()
     filterRanges.value = data
-    if (data.availableMonths.length > 0) {
-      filterDateIndices.value = [0, data.availableMonths.length - 1]
-    }
-    console.log('filterRanges', data)
   } catch (e) {
     console.warn("Couldn't fetch filter ranges", e)
   }
 }
 
 onMounted(async () => {
-  const q = route.query
-  const searchTerm = q.query
-  if (!q || !searchTerm) return fetchFilterRanges()
-  query.value = searchTerm.toString()
-
-  if (q.type) filterMediaType.value = q.type as 'all' | 'photo' | 'video'
-  if (q.sort) sortDirection.value = q.sort as 'date' | 'relevancy'
-  if (q.person) filterPerson.value = q.person.toString()
-  if (q.exclude) filterNegativeQuery.value = q.exclude.toString()
-  if (q.countries) filterCountries.value = q.countries.toString().split(',')
-
-  if (q.start || q.end) {
-    await fetchFilterRanges()
-    if (!filterRanges.value) return
-    const indices = [0, filterRanges.value.availableMonths.length - 1]
-    if (q.start) {
-      const start = q.start.toString()
-      const monthId = `${start.substring(3)}-${(MONTHS.findIndex((m) => m.toLowerCase().startsWith(start.substring(0, 3))) + 1).toString().padStart(2, '0')}`
-      indices[0] = filterRanges.value.availableMonths.findIndex((m) => m.startsWith(monthId))
-    }
-    if (q.end) {
-      const end = q.end.toString()
-      const monthId = `${end.substring(3)}-${(MONTHS.findIndex((m) => m.toLowerCase().startsWith(end.substring(0, 3))) + 1).toString().padStart(2, '0')}`
-      indices[1] = filterRanges.value.availableMonths.findIndex((m) => m.startsWith(monthId))
-    }
-    filterDateIndices.value = indices
-  } else {
-    await fetchFilterRanges()
+  // Execute search immediately from URL state
+  if (query.value) {
+    executeSearch()
   }
-  await executeSearch()
+
+  // Fetch ranges in parallel or after, doesn't block search
+  fetchFilterRanges()
 })
 
 onUnmounted(() => {
@@ -194,39 +223,14 @@ const hasFilters = computed(() => {
     filterCountries.value.length > 0 ||
     filterPerson.value !== null ||
     filterNegativeQuery.value ||
-    filterDateRange.value.start !== undefined ||
-    filterDateRange.value.end !== undefined ||
+    route.query.start !== undefined ||
+    route.query.end !== undefined ||
     filterMediaType.value !== 'all'
   )
 })
 
-const debounceSearch = useDebounceFn(executeSearch, 100)
-watch(
-  [
-    filterDateIndices,
-    filterCountries,
-    filterPerson,
-    filterMediaType,
-    filterNegativeQuery,
-    sortDirection,
-    query,
-  ],
-  () => {
-    debounceSearch()
-  },
-)
-
-watch(
-  () => route.query,
-  (newQ) => {
-    console.log('QUERY CHANGE', route.query)
-    const searchTerm = newQ.query
-    if (searchTerm) {
-      query.value = searchTerm.toString()
-      executeSearch()
-    }
-  },
-)
+// Watch route query to re-execute search
+watch(() => route.query, executeSearch)
 </script>
 
 <template>
@@ -263,8 +267,12 @@ watch(
               >
                 <p class="mb-2 font-weight-medium">Date Range</p>
                 <div class="d-flex justify-space-between text-caption opacity-70 mb-1">
-                  <span>{{ formatMonth(filterRanges.availableMonths[filterDateObj.first]) }}</span>
-                  <span>{{ formatMonth(filterRanges.availableMonths[filterDateObj.last]) }}</span>
+                  <span>{{
+                    formatMonth(filterRanges.availableMonths[filterDateIndices[0]!])
+                  }}</span>
+                  <span>{{
+                    formatMonth(filterRanges.availableMonths[filterDateIndices[1]!])
+                  }}</span>
                 </div>
                 <v-range-slider
                   v-model="filterDateIndices"

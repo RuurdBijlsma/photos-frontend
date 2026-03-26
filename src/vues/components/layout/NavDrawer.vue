@@ -8,9 +8,7 @@ const albumStore = useAlbumStore()
 requestIdleCallback(() => albumStore.fetchUserAlbums())
 
 const albumsExpanded = ref(
-  localStorage.getItem('navExpandAlbums') === null
-    ? true
-    : localStorage.navExpandAlbums === 'true',
+  localStorage.getItem('navExpandAlbums') === null ? true : localStorage.navExpandAlbums === 'true',
 )
 watch(albumsExpanded, () =>
   localStorage.setItem('navExpandAlbums', JSON.stringify(albumsExpanded.value)),

@@ -5,7 +5,7 @@ import type { SearchFilterRanges, SearchParams } from '@/scripts/types/api/searc
 
 const searchService = {
   async search(params: SearchParams): Promise<SearchResponse> {
-    console.log("Search with params", params);
+    console.log('Search with params', params)
     const response = await apiClient.get('/search', {
       params,
       responseType: 'arraybuffer',

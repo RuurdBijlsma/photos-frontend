@@ -12,6 +12,6 @@ export type SearchParams = {
   mediaType?: string
   sortBy?: string
   negativeQuery?: string
-  countryCodes: string
+  countryCodes?: string
   faceName?: string
 }
