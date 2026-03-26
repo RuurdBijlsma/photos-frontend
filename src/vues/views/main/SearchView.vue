@@ -329,7 +329,7 @@ watch(() => route.query, executeSearch)
               <div class="small-filters">
                 <div class="media-type">
                   <p class="mt-5 mb-2 font-weight-medium">Media type</p>
-                  <v-chip-group mandatory v-model="filterMediaType" color="primary">
+                  <v-chip-group mandatory v-model="filterMediaType" color="primary" variant="text">
                     <v-chip value="all">All</v-chip>
                     <v-chip value="photo">Photos</v-chip>
                     <v-chip value="video">Videos</v-chip>
