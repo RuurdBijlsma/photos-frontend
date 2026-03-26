@@ -362,8 +362,6 @@ watch(
 
 .search-suggestions {
   color: rgb(var(--v-theme-on-surface-container-high));
-  background-color: rgba(var(--v-theme-surface-container-high), 0.7);
-  backdrop-filter: brightness(100%) saturate(250%) blur(50px) contrast(100%) !important;
   top: 25px;
   position: absolute;
   z-index: 5;
@@ -371,6 +369,13 @@ watch(
   padding-top: 25px;
   border-bottom-right-radius: 25px;
   border-bottom-left-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(var(--v-theme-surface-container-high), 0.95);
+}
+
+.backdrop-blur .search-suggestions {
+  background-color: rgba(var(--v-theme-surface-container-high), 0.8);
+  backdrop-filter: saturate(250%) blur(12px) !important;
 }
 
 .suggestions-list {

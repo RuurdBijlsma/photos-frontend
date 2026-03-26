@@ -9,7 +9,7 @@ requestIdleCallback(() => albumStore.fetchUserAlbums())
 
 const albumsExpanded = ref(
   localStorage.getItem('navExpandAlbums') === null
-    ? false
+    ? true
     : localStorage.navExpandAlbums === 'true',
 )
 watch(albumsExpanded, () =>

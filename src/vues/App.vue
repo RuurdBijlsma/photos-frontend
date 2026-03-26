@@ -3,12 +3,25 @@ import { RouterView } from 'vue-router'
 import SnackbarQueue from '@/vues/components/SnackbarQueue.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import AlertQueue from '@/vues/components/AlertQueue.vue'
+import { watch } from 'vue'
 
 const settings = useSettingStore()
+
+watch(
+  () => settings.useBackdropBlur,
+  () => {
+    if (settings.useBackdropBlur) {
+      document.body.classList.add('backdrop-blur')
+    } else {
+      document.body.classList.remove('backdrop-blur')
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
-  <v-app class="main-content" :class="{ 'backdrop-blur': settings.useBackdropBlur }">
+  <v-app class="main-content">
     <RouterView />
   </v-app>
 

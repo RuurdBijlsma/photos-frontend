@@ -203,15 +203,19 @@ watch(
         >”
       </h2>
       <v-spacer />
-      <div class="advanced-search-button mr-5">
-        <v-menu v-model="showFilters" :close-on-content-click="false">
+      <div class="advanced-search-button">
+        <v-menu
+          v-model="showFilters"
+          :close-on-content-click="false"
+          content-class="search-filter-menu"
+        >
           <template v-slot:activator="{ props }">
             <v-btn v-bind="props" variant="text" rounded prepend-icon="mdi-tune-variant">
               Filters
             </v-btn>
           </template>
           <v-card
-            variant="tonal"
+            variant="flat"
             rounded="xl"
             class="search-filters"
             :loading="filterRanges === null"
@@ -243,9 +247,9 @@ watch(
                 <div class="media-type">
                   <p class="mt-5 mb-2 font-weight-medium">Media type</p>
                   <v-chip-group mandatory v-model="filterMediaType" color="primary">
+                    <v-chip value="all">All</v-chip>
                     <v-chip value="photo">Photos</v-chip>
                     <v-chip value="video">Videos</v-chip>
-                    <v-chip value="all">All</v-chip>
                   </v-chip-group>
                 </div>
                 <div class="country-code" v-if="filterRanges">
@@ -260,7 +264,8 @@ watch(
                     "
                     item-title="name"
                     item-value="code"
-                    variant="outlined"
+                    variant="solo"
+                    density="comfortable"
                     width="250"
                     rounded
                     hide-details
@@ -291,11 +296,12 @@ watch(
                 <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
                   <p class="mt-5 mb-2 font-weight-medium">Person</p>
                   <v-select
-                    variant="outlined"
                     width="200"
                     rounded
                     hide-details
                     placeholder="Anyone"
+                    variant="solo"
+                    density="comfortable"
                     v-model="filterPerson"
                     :items="filterRanges.people"
                   ></v-select>
@@ -317,7 +323,8 @@ watch(
                     v-model="filterNegativeQuery"
                     hide-details
                     placeholder="E.g. “orange”"
-                    variant="outlined"
+                    variant="solo"
+                    density="comfortable"
                     width="200"
                     rounded
                   />
@@ -327,13 +334,18 @@ watch(
           </v-card>
         </v-menu>
         <v-btn
-          v-if="hasFilters"
           icon="mdi-close"
           variant="plain"
           @click="clearFilters"
+          class="clear-filters-button"
+          density="comfortable"
           v-tooltip="{
             location: 'top',
             text: 'Clear filters',
+          }"
+          :style="{
+            pointerEvents: hasFilters ? 'auto' : 'none',
+            opacity: hasFilters ? '.6' : '0',
           }"
         ></v-btn>
       </div>
@@ -381,6 +393,7 @@ watch(
 
 .search-options {
   padding: 15px 20px;
+  padding-bottom:13px;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -411,6 +424,17 @@ watch(
   max-width: 1000px;
 }
 
+.search-filter-menu .search-filters {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(var(--v-theme-surface-container-low), 0.95);
+}
+
+.backdrop-blur .search-filter-menu .search-filters {
+  background-color: rgba(var(--v-theme-surface-container-low), 0.8) !important;
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
 .small-filters {
   display: flex;
   gap: 20px;
@@ -428,5 +452,9 @@ watch(
 .loading-indicator {
   padding: 20px 40px 30px;
   text-align: center;
+}
+
+.clear-filters-button {
+  transition: opacity 0.15s;
 }
 </style>
