@@ -85,7 +85,7 @@ function replaceRouteFilters() {
     params.end =
       MONTHS[endDate.getUTCMonth()]!.substring(0, 3).toLowerCase() + endDate.getFullYear()
   }
-  router.replace({ query: params })
+  router.push({ query: params })
 }
 
 async function executeSearch() {
