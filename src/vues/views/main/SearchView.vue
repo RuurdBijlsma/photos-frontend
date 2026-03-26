@@ -125,6 +125,12 @@ function formatMonth(dateStr: string | undefined) {
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 }
 
+function formatMonthShort(dateStr: string | undefined) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+}
+
 const dateRangeText = computed(() => {
   if (!filterRanges.value || filterRanges.value.availableMonths.length === 0) return ''
   const months = filterRanges.value.availableMonths
@@ -132,14 +138,14 @@ const dateRangeText = computed(() => {
   const isFirst = startIdx === 0
   const isLast = endIdx === months.length - 1
 
-  if (isFirst && isLast) return 'Showing all items'
+  if (isFirst && isLast) return 'All dates'
 
   const startMonth = formatMonth(months[startIdx!])
   const endMonth = formatMonth(months[endIdx!])
 
-  if (isFirst) return `Showing items until ${endMonth}`
-  if (isLast) return `Showing items from ${startMonth} until present`
-  return `Showing items from ${startMonth} to ${endMonth}`
+  if (isFirst) return `Captured up to ${endMonth}`
+  if (isLast) return `Captured from ${startMonth}`
+  return `Captured between ${startMonth} and ${endMonth}`
 })
 
 const debouncedPush = useDebounceFn((query: Record<string, string>) => {
@@ -282,23 +288,22 @@ watch(() => route.query, executeSearch)
                 class="date-range-filter px-4 py-2"
                 v-if="filterRanges && filterRanges.availableMonths.length > 0"
               >
-                <div class="d-flex align-center mb-2">
-                  <p class="font-weight-medium">Date Range</p>
-                  <v-spacer />
-                  <v-btn
-                    variant="text"
-                    density="compact"
-                    size="small"
-                    color="primary"
-                    rounded="xl"
-                    v-if="route.query.start || route.query.end"
-                    @click="filterDateIndices = [0, filterRanges.availableMonths.length - 1]"
-                  >
-                    Show all
-                  </v-btn>
-                </div>
-                <div class="text-caption opacity-70 mb-1 text-center">
-                  {{ dateRangeText }}
+                <div class="d-flex date-range-text text-caption font-weight-medium">
+                  <div class="flex-grow-1 font-weight-regular opacity-70">
+                    {{ dateRangeText }}
+                  </div>
+                  <template v-if="route.query.start || route.query.end">
+                    <v-btn
+                      variant="text"
+                      density="comfortable"
+                      size="small"
+                      color="primary"
+                      rounded="xl"
+                      @click="filterDateIndices = [0, filterRanges.availableMonths.length - 1]"
+                    >
+                      All dates
+                    </v-btn>
+                  </template>
                 </div>
                 <v-range-slider
                   v-model="filterDateIndices"
@@ -306,12 +311,20 @@ watch(() => route.query, executeSearch)
                   :min="0"
                   :step="1"
                   hide-details
-                  color="primary"
+                  color="primary-darken-1"
                   strict
-                ></v-range-slider>
+                  thumb-label="always"
+                  class="mt-8"
+                >
+                  <template #thumb-label="{ modelValue }">
+                    <span class="text-no-wrap" style="font-size: 10px">
+                      {{ formatMonthShort(filterRanges.availableMonths[modelValue!]) }}
+                    </span>
+                  </template>
+                </v-range-slider>
               </div>
 
-              <v-divider class="mt-3 ml-3 mr-3" />
+              <v-divider class="mt-1 ml-3 mr-3" />
 
               <div class="small-filters">
                 <div class="media-type">
@@ -513,6 +526,7 @@ watch(() => route.query, executeSearch)
 
 .small-filters > div {
   padding: 10px;
+  padding-top: 0;
 }
 
 .search-margin {
@@ -526,5 +540,9 @@ watch(() => route.query, executeSearch)
 
 .clear-filters-button {
   transition: opacity 0.15s;
+}
+
+.date-range-text {
+  align-items: center;
 }
 </style>
