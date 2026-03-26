@@ -109,6 +109,13 @@
     * ✅ negative query?
 * ✅ make search sortable by relevancy or date
 * ✅ stomme nav bar start te hoog en animeert naar beneden on page load
+* ✅ search: filters in url query zetten
+* ✅ search: filter v-menu kan wel blurry bg krijgen, is leuk
+* ✅ search: clean up UI for date range. If last date range is selected, show something like "Showing items
+  from March 2019 until present", if start date range is set to first available month, then show: "Showing items until
+  March 2019 or something", where march 2019 is the end filter in this case.
+* ✅ add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all
+  the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -141,16 +148,8 @@
     * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
 * album page: add sort (also sort by added on date)
-* add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all
-  the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
 * delete album button in albums page en op album page
 * als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
   ondemand gebruikt denk ik)
 * [BUG] kruisje linksboven op viewphoto is stuk op album page
 * foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
-* search: filters in url query zetten
-* search: filter v-menu kan wel blurry bg krijgen, is leuk
-* 
-* search: clean up UI for date range. If last date range is selected, show something like "Showing items
-  from March 2019 until present", if start date range is set to first available month, then show: "Showing items until
-  March 2019 or something", where march 2019 is the end filter in this case.

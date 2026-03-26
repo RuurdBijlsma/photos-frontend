@@ -311,13 +311,15 @@ watch(() => route.query, executeSearch)
                   :min="0"
                   :step="1"
                   hide-details
-                  color="primary-darken-1"
+                  color="primary"
+                  track-size="2"
+                  thumb-size="16"
                   strict
                   thumb-label="always"
                   class="mt-8"
                 >
                   <template #thumb-label="{ modelValue }">
-                    <span class="text-no-wrap" style="font-size: 10px">
+                    <span class="text-no-wrap" style="font-size: 10px; font-weight: 600">
                       {{ formatMonthShort(filterRanges.availableMonths[modelValue!]) }}
                     </span>
                   </template>
