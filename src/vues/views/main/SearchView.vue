@@ -122,8 +122,25 @@ watch(filterDateIndices, (newVal) => {
 function formatMonth(dateStr: string | undefined) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
-  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+  return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 }
+
+const dateRangeText = computed(() => {
+  if (!filterRanges.value || filterRanges.value.availableMonths.length === 0) return ''
+  const months = filterRanges.value.availableMonths
+  const [startIdx, endIdx] = filterDateIndices.value
+  const isFirst = startIdx === 0
+  const isLast = endIdx === months.length - 1
+
+  if (isFirst && isLast) return 'Showing all items'
+
+  const startMonth = formatMonth(months[startIdx!])
+  const endMonth = formatMonth(months[endIdx!])
+
+  if (isFirst) return `Showing items until ${endMonth}`
+  if (isLast) return `Showing items from ${startMonth} until present`
+  return `Showing items from ${startMonth} to ${endMonth}`
+})
 
 const debouncedPush = useDebounceFn((query: Record<string, string>) => {
   router.push({ query })
@@ -265,14 +282,23 @@ watch(() => route.query, executeSearch)
                 class="date-range-filter px-4 py-2"
                 v-if="filterRanges && filterRanges.availableMonths.length > 0"
               >
-                <p class="mb-2 font-weight-medium">Date Range</p>
-                <div class="d-flex justify-space-between text-caption opacity-70 mb-1">
-                  <span>{{
-                    formatMonth(filterRanges.availableMonths[filterDateIndices[0]!])
-                  }}</span>
-                  <span>{{
-                    formatMonth(filterRanges.availableMonths[filterDateIndices[1]!])
-                  }}</span>
+                <div class="d-flex align-center mb-2">
+                  <p class="font-weight-medium">Date Range</p>
+                  <v-spacer />
+                  <v-btn
+                    variant="text"
+                    density="compact"
+                    size="small"
+                    color="primary"
+                    rounded="xl"
+                    v-if="route.query.start || route.query.end"
+                    @click="filterDateIndices = [0, filterRanges.availableMonths.length - 1]"
+                  >
+                    Show all
+                  </v-btn>
+                </div>
+                <div class="text-caption opacity-70 mb-1 text-center">
+                  {{ dateRangeText }}
                 </div>
                 <v-range-slider
                   v-model="filterDateIndices"

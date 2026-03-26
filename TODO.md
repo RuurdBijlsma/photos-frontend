@@ -148,9 +148,9 @@
   ondemand gebruikt denk ik)
 * [BUG] kruisje linksboven op viewphoto is stuk op album page
 * foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
-
 * search: filters in url query zetten
-* search: clean up UI for date range, its ugly now. If last date range is selected, show something like "Showing items
+* search: filter v-menu kan wel blurry bg krijgen, is leuk
+* 
+* search: clean up UI for date range. If last date range is selected, show something like "Showing items
   from March 2019 until present", if start date range is set to first available month, then show: "Showing items until
   March 2019 or something", where march 2019 is the end filter in this case.
-* search: filter v-menu kan wel blurry bg krijgen, is leuk
