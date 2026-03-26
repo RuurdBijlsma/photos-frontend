@@ -268,6 +268,7 @@ watch(() => route.query, executeSearch)
       <v-spacer />
       <div class="advanced-search-button">
         <v-menu
+          location="bottom center"
           v-model="showFilters"
           :close-on-content-click="false"
           content-class="search-filter-menu"
@@ -337,8 +338,24 @@ watch(() => route.query, executeSearch)
                     <v-chip value="video">Videos</v-chip>
                   </v-chip-group>
                 </div>
+              </div>
+
+              <div class="small-filters">
+                <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
+                  <p class="mt-2 mb-2 font-weight-medium">Person</p>
+                  <v-select
+                    width="200"
+                    rounded
+                    hide-details
+                    placeholder="Anyone"
+                    variant="solo"
+                    density="comfortable"
+                    v-model="filterPerson"
+                    :items="filterRanges.people"
+                  ></v-select>
+                </div>
                 <div class="country-code" v-if="filterRanges">
-                  <p class="mt-5 mb-2 font-weight-medium">Country</p>
+                  <p class="mt-2 mb-2 font-weight-medium">Country</p>
                   <v-select
                     v-model="filterCountries"
                     :items="
@@ -378,21 +395,8 @@ watch(() => route.query, executeSearch)
                     </template>
                   </v-select>
                 </div>
-                <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
-                  <p class="mt-5 mb-2 font-weight-medium">Person</p>
-                  <v-select
-                    width="200"
-                    rounded
-                    hide-details
-                    placeholder="Anyone"
-                    variant="solo"
-                    density="comfortable"
-                    v-model="filterPerson"
-                    :items="filterRanges.people"
-                  ></v-select>
-                </div>
                 <div class="negative-query">
-                  <p class="mt-5 mb-2 font-weight-medium">
+                  <p class="mt-2 mb-2 font-weight-medium">
                     Exclude
                     <v-icon
                       size="16"
@@ -506,7 +510,7 @@ watch(() => route.query, executeSearch)
 }
 
 .search-filters {
-  max-width: 1000px;
+  max-width: 1100px;
 }
 
 .search-filter-menu .search-filters {
