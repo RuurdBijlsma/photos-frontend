@@ -8,6 +8,7 @@ import searchService from '@/scripts/services/searchService.ts'
 import type { SearchFilterRanges } from '@/scripts/types/api/search.ts'
 import { useDebounceFn } from '@vueuse/core'
 import { MONTHS } from '@/scripts/constants.ts'
+import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 const snackStore = useSnackbarsStore()
 const route = useRoute()
@@ -469,14 +470,34 @@ watch(() => route.query, executeSearch)
                     rounded
                     hide-details
                     placeholder="Anyone"
+                    item-title="name"
+                    item-value="name"
                     variant="solo"
                     density="comfortable"
                     multiple
                     chips
                     closable-chips
                     v-model="filterPeople"
-                    :items="filterRanges.people.map((p) => p[0])"
-                  ></v-select>
+                    :items="filterRanges.people.map((p) => ({ name: p[0], personId: p[1] }))"
+                  >
+                    <template #item="{ props, item }">
+                      <v-list-item v-bind="props" :title="undefined">
+                        <template #prepend>
+                          <v-avatar>
+                            <v-img
+                              v-if="item.raw.name"
+                              :src="mediaItemService.getFaceThumbnail(item.raw.personId)"
+                              style="object-fit: cover"
+                              :alt="item.raw.name"
+                            />
+                          </v-avatar>
+                        </template>
+                        <v-list-item-title class="ml-3">
+                          {{ item.raw.name }}
+                        </v-list-item-title>
+                      </v-list-item>
+                    </template>
+                  </v-select>
                 </div>
 
                 <div class="country-code" v-if="filterRanges">
