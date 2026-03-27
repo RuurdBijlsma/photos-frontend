@@ -468,6 +468,7 @@ watch(() => route.query, executeSearch)
                     width="200"
                     rounded
                     hide-details
+                    clearable
                     placeholder="Anyone"
                     variant="solo"
                     density="comfortable"
@@ -494,6 +495,7 @@ watch(() => route.query, executeSearch)
                     hide-details
                     multiple
                     chips
+                    clearable
                     closable-chips
                     placeholder="Any country"
                   >
@@ -532,6 +534,7 @@ watch(() => route.query, executeSearch)
                   <v-text-field
                     v-model="filterNegativeQuery"
                     hide-details
+                    clearable
                     placeholder="E.g. “orange”"
                     variant="solo"
                     density="comfortable"
