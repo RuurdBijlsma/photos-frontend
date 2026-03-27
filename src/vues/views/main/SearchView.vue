@@ -495,7 +495,6 @@ watch(() => route.query, executeSearch)
                     hide-details
                     multiple
                     chips
-                    clearable
                     closable-chips
                     placeholder="Any country"
                   >
