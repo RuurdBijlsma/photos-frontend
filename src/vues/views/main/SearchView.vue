@@ -401,6 +401,7 @@ watch(() => route.query, executeSearch)
             </v-btn>
           </template>
           <v-card
+            :min-width="350"
             variant="flat"
             rounded="xl"
             class="search-filters"
@@ -466,7 +467,7 @@ watch(() => route.query, executeSearch)
                 <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
                   <p class="mt-2 mb-2 font-weight-medium">People</p>
                   <v-select
-                    width="250"
+                    width="300"
                     rounded
                     hide-details
                     placeholder="Anyone"
@@ -479,6 +480,8 @@ watch(() => route.query, executeSearch)
                     :items="filterRanges.people.map((p) => p[0])"
                   ></v-select>
                 </div>
+              </div>
+              <div class="small-filters">
                 <div class="country-code" v-if="filterRanges">
                   <p class="mt-2 mb-2 font-weight-medium">Country</p>
                   <v-select
@@ -493,7 +496,7 @@ watch(() => route.query, executeSearch)
                     item-value="code"
                     variant="solo"
                     density="comfortable"
-                    width="250"
+                    width="300"
                     rounded
                     hide-details
                     multiple
@@ -520,6 +523,8 @@ watch(() => route.query, executeSearch)
                     </template>
                   </v-select>
                 </div>
+              </div>
+              <div class="small-filters">
                 <div class="negative-query">
                   <p class="mt-2 mb-2 font-weight-medium">
                     Exclude
@@ -540,7 +545,7 @@ watch(() => route.query, executeSearch)
                     placeholder="E.g. “orange”"
                     variant="solo"
                     density="comfortable"
-                    width="250"
+                    width="300"
                     rounded
                   />
                 </div>
