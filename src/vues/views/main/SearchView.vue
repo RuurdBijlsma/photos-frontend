@@ -454,16 +454,14 @@ watch(() => route.query, executeSearch)
 
               <div class="small-filters">
                 <div class="media-type">
-                  <p class="mt-5 mb-2 font-weight-medium">Media type</p>
+                  <p class="mt-2 mb-2 font-weight-medium">Media type</p>
                   <v-chip-group mandatory v-model="filterMediaType" color="primary" variant="text">
                     <v-chip value="all">All</v-chip>
                     <v-chip value="photo">Photos</v-chip>
                     <v-chip value="video">Videos</v-chip>
                   </v-chip-group>
                 </div>
-              </div>
 
-              <div class="small-filters">
                 <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
                   <p class="mt-2 mb-2 font-weight-medium">People</p>
                   <v-select
@@ -480,8 +478,7 @@ watch(() => route.query, executeSearch)
                     :items="filterRanges.people.map((p) => p[0])"
                   ></v-select>
                 </div>
-              </div>
-              <div class="small-filters">
+
                 <div class="country-code" v-if="filterRanges">
                   <p class="mt-2 mb-2 font-weight-medium">Country</p>
                   <v-select
@@ -523,8 +520,7 @@ watch(() => route.query, executeSearch)
                     </template>
                   </v-select>
                 </div>
-              </div>
-              <div class="small-filters">
+
                 <div class="negative-query">
                   <p class="mt-2 mb-2 font-weight-medium">
                     Exclude
@@ -677,8 +673,8 @@ watch(() => route.query, executeSearch)
 
 .small-filters {
   display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .small-filters > div {
