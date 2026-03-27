@@ -153,3 +153,4 @@
   ondemand gebruikt denk ik)
 * [BUG] kruisje linksboven op viewphoto is stuk op album page
 * foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
+* ✅ misschien filter chips in de search pagina, rechts van Search for "photo", dan -> (Date: Jan 2018 - Dec 2026") (Photos) (Berber) (Albania, Greece or Morocco (of met vlaggetjes+tooltip?)), (Exclude: "orange")

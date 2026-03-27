@@ -252,6 +252,97 @@ const hasFilters = computed(() => {
   )
 })
 
+const activeFilterChips = computed(() => {
+  const chips: {
+    id: string
+    type: string
+    label: string
+    clear: () => void
+    tooltip?: string
+    countries?: { code: string; name: string }[]
+  }[] = []
+
+  // Date Range
+  if (route.query.start || route.query.end) {
+    const start = route.query.start
+      ? formatMonthShort(urlParamToISO(route.query.start as string))
+      : null
+    const end = route.query.end
+      ? formatMonthShort(urlParamToISO(route.query.end as string, true))
+      : null
+    let label = ''
+    if (start && end) label = `Date: ${start} - ${end}`
+    else if (start) label = `From ${start}`
+    else if (end) label = `Until ${end}`
+
+    chips.push({
+      id: 'date',
+      type: 'Date range',
+      label,
+      clear: () => {
+        filterDateIndices.value = [
+          0,
+          filterRanges.value?.availableMonths.length
+            ? filterRanges.value.availableMonths.length - 1
+            : 0,
+        ]
+      },
+    })
+  }
+
+  // Media Type
+  if (filterMediaType.value !== 'all') {
+    chips.push({
+      id: 'mediaType',
+      type: 'Media type',
+      label: filterMediaType.value === 'photo' ? 'Photos' : 'Videos',
+      clear: () => (filterMediaType.value = 'all'),
+    })
+  }
+
+  // Person
+  if (filterPerson.value) {
+    chips.push({
+      id: 'person',
+      type: 'Person',
+      label: filterPerson.value,
+      clear: () => (filterPerson.value = null),
+    })
+  }
+
+  // Countries
+  if (filterCountries.value.length > 0 && filterRanges.value) {
+    const countries = filterCountries.value.map((code) => {
+      const country = filterRanges.value?.countries.find((c) => c[0] === code)
+      return { code, name: (country ? country[1] : null) ?? code }
+    })
+
+    chips.push({
+      id: 'countries',
+      type: 'Countries',
+      tooltip: countries
+        .map((c) => c.name)
+        .join(', ')
+        .replace(/, ([^,]*)$/, ' or $1'),
+      label: '',
+      countries: countries,
+      clear: () => (filterCountries.value = []),
+    })
+  }
+
+  // Exclude
+  if (filterNegativeQuery.value) {
+    chips.push({
+      id: 'exclude',
+      type: 'Exclude',
+      label: `Exclude: "${filterNegativeQuery.value}"`,
+      clear: () => (filterNegativeQuery.value = null),
+    })
+  }
+
+  return chips
+})
+
 // Watch route query to re-execute search
 watch(() => route.query, executeSearch)
 </script>
@@ -267,6 +358,36 @@ watch(() => route.query, executeSearch)
       </h2>
       <v-spacer />
       <div class="advanced-search-button">
+        <div class="active-filters-chips mr-2">
+          <v-chip
+            v-for="chip in activeFilterChips"
+            :key="chip.id"
+            closable
+            size="small"
+            @click:close="chip.clear"
+            variant="tonal"
+            v-tooltip="{
+              location: 'top',
+              text: chip.tooltip || chip.type,
+            }"
+          >
+            <template v-if="chip.countries" #prepend>
+              <img
+                v-for="(country, index) in chip.countries"
+                :key="country.code"
+                :src="`https://purecatamphetamine.github.io/country-flag-icons/3x2/${country.code}.svg`"
+                width="20"
+                height="15"
+                style="object-fit: cover; border-radius: 2px"
+                :style="{
+                  marginRight: index === chip.countries.length - 1 && !chip.label ? '0' : '4px',
+                }"
+                :alt="'Flag of ' + country.name"
+              />
+            </template>
+            {{ chip.label }}
+          </v-chip>
+        </div>
         <v-menu
           location="bottom center"
           v-model="showFilters"
@@ -438,13 +559,17 @@ watch(() => route.query, executeSearch)
           }"
         ></v-btn>
       </div>
-      <div class="sort-text">Sort:</div>
       <v-btn-toggle
+        v-tooltip="{
+          location: 'top',
+          text: 'Sort',
+        }"
         v-model="sortDirection"
         divided
         rounded="xl"
         color="primary"
         variant="tonal"
+        class="sort-button-group"
         mandatory
       >
         <v-btn value="date">
@@ -488,8 +613,16 @@ watch(() => route.query, executeSearch)
   align-items: center;
 }
 
+@media screen and (max-width: 1350px) {
+  .search-query-title {
+    display: none;
+  }
+}
+
 .search-query-title {
   font-weight: 400;
+  white-space: nowrap;
+  padding-right: 15px;
 }
 
 .search-query-icon {
@@ -502,11 +635,19 @@ watch(() => route.query, executeSearch)
   font-weight: 600;
 }
 
-.sort-text {
-  font-weight: 500;
-  padding: 0 20px;
-  font-size: 18px;
-  opacity: 0.7;
+.advanced-search-button {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+}
+
+.active-filters-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 60px;
+  align-items: center;
+  overflow: hidden;
 }
 
 .search-filters {
@@ -550,5 +691,9 @@ watch(() => route.query, executeSearch)
 
 .date-range-text {
   align-items: center;
+}
+
+.sort-button-group {
+  overflow-x: hidden;
 }
 </style>
