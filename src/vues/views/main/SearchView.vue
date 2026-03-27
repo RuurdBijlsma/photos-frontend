@@ -413,8 +413,8 @@ watch(() => route.query, executeSearch)
                 class="date-range-filter px-4 py-2"
                 v-if="filterRanges && filterRanges.availableMonths.length > 0"
               >
-                <div class="d-flex date-range-text text-caption font-weight-medium">
-                  <div class="flex-grow-1 font-weight-regular opacity-70">
+                <div class="d-flex date-range-text font-weight-medium">
+                  <div class="flex-grow-1 font-weight-regular opacity-70 text-body-small">
                     {{ dateRangeText }}
                   </div>
                   <template v-if="route.query.start || route.query.end">
@@ -485,15 +485,15 @@ watch(() => route.query, executeSearch)
                         <template #prepend>
                           <v-avatar>
                             <v-img
-                              v-if="item.raw.name"
-                              :src="mediaItemService.getFaceThumbnail(item.raw.personId)"
+                              v-if="item.name"
+                              :src="mediaItemService.getFaceThumbnail(item.personId)"
                               style="object-fit: cover"
-                              :alt="item.raw.name"
+                              :alt="item.name"
                             />
                           </v-avatar>
                         </template>
                         <v-list-item-title class="ml-3">
-                          {{ item.raw.name }}
+                          {{ item.name }}
                         </v-list-item-title>
                       </v-list-item>
                     </template>
@@ -526,16 +526,16 @@ watch(() => route.query, executeSearch)
                       <v-list-item v-bind="props" :title="undefined">
                         <template #prepend>
                           <img
-                            v-if="item.raw.code"
-                            :src="`https://purecatamphetamine.github.io/country-flag-icons/3x2/${item.raw.code}.svg`"
+                            v-if="item.code"
+                            :src="`https://purecatamphetamine.github.io/country-flag-icons/3x2/${item.code}.svg`"
                             width="20"
                             height="15"
                             style="object-fit: cover"
-                            :alt="'Flag of ' + item.raw.name"
+                            :alt="'Flag of ' + item.name"
                           />
                         </template>
                         <v-list-item-title class="ml-3">
-                          {{ item.raw.name }}
+                          {{ item.name }}
                         </v-list-item-title>
                       </v-list-item>
                     </template>

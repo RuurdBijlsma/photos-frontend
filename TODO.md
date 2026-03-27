@@ -154,3 +154,14 @@
   ondemand gebruikt denk ik)
 * [BUG] kruisje linksboven op viewphoto is stuk op album page
 * foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
+* max-width op album thumbnail zetten ofzo, anders verpest panorama t. Misschien max ratio op 16/9 zetten?
+* vuetify naar 4.0 geupdate:
+  * Search for "kotor" <- die balk heeft random meer padding en is nu te hoog
+  * De v-menu v-card van de filters op searchview heeft geen min width meer lijkt het
+  * ik denk ook de verticale padding op de /albums page
+  * teveel padding op month dividers in frontpage timeline
+  * top balk in /view/{id} is lelijk geworden in t midden
+  * album page meta info is niet meer goed, ook ergens teveel verticale padding
+  * als je date range selecteerd shift de layout
+  * migration guide: https://vuetifyjs.com/en/getting-started/upgrade-guide/#multi-step-migration
+  * vergelijk met vuetify 3 zodat ik niet mooie ui kwijt raak
