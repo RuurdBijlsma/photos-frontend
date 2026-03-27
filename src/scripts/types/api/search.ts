@@ -1,6 +1,6 @@
 export interface SearchFilterRanges {
   availableMonths: string[]
-  people: string[]
+  people: string[][]
   countries: string[][]
 }
 
@@ -13,5 +13,6 @@ export type SearchParams = {
   sortBy?: string
   negativeQuery?: string
   countryCodes?: string
-  faceName?: string
+  faceNames?: string
+  all_faces_required?: boolean
 }

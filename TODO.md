@@ -116,6 +116,7 @@
   March 2019 or something", where march 2019 is the end filter in this case.
 * ✅ add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all
   the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
+* ✅ misschien filter chips in de search pagina, rechts van Search for "photo", dan -> (Date: Jan 2018 - Dec 2026") (Photos) (Berber) (Albania, Greece or Morocco (of met vlaggetjes+tooltip?)), (Exclude: "orange")
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -153,4 +154,3 @@
   ondemand gebruikt denk ik)
 * [BUG] kruisje linksboven op viewphoto is stuk op album page
 * foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
-* ✅ misschien filter chips in de search pagina, rechts van Search for "photo", dan -> (Date: Jan 2018 - Dec 2026") (Photos) (Berber) (Albania, Greece or Morocco (of met vlaggetjes+tooltip?)), (Exclude: "orange")

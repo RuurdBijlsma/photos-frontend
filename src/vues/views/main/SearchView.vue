@@ -34,9 +34,9 @@ const filterMediaType = computed({
   get: () => (route.query.type as 'all' | 'photo' | 'video') || 'all',
   set: (val) => updateURL({ type: val === 'all' ? undefined : val }),
 })
-const filterPerson = computed({
-  get: () => (route.query.person as string) || null,
-  set: (val) => updateURL({ person: val || undefined }),
+const filterPeople = computed({
+  get: () => (route.query.people ? (route.query.people as string).split(',') : []),
+  set: (val) => updateURL({ people: val?.length ? val.join(',') : undefined }),
 })
 const filterNegativeQuery = computed({
   get: () => (route.query.exclude as string) || null,
@@ -194,7 +194,7 @@ async function executeSearch() {
       countryCodes: filterCountries.value.join(','),
       mediaType: filterMediaType.value as 'all' | 'photo' | 'video',
       negativeQuery: filterNegativeQuery.value || undefined,
-      faceName: filterPerson.value || undefined,
+      faceNames: filterPeople.value.join(','),
       sortBy: sortDirection.value as 'date' | 'relevancy',
     }
     const key = JSON.stringify(searchParams)
@@ -221,6 +221,7 @@ function clearFilters() {
 async function fetchFilterRanges() {
   try {
     const { data } = await searchService.filterRanges()
+    console.log('FilterRanges', data)
     filterRanges.value = data
   } catch (e) {
     console.warn("Couldn't fetch filter ranges", e)
@@ -244,7 +245,7 @@ onUnmounted(() => {
 const hasFilters = computed(() => {
   return (
     filterCountries.value.length > 0 ||
-    filterPerson.value !== null ||
+    filterPeople.value.length > 0 ||
     filterNegativeQuery.value ||
     route.query.start !== undefined ||
     route.query.end !== undefined ||
@@ -300,13 +301,13 @@ const activeFilterChips = computed(() => {
     })
   }
 
-  // Person
-  if (filterPerson.value) {
+  // People
+  if (filterPeople.value.length > 0) {
     chips.push({
-      id: 'person',
-      type: 'Person',
-      label: filterPerson.value,
-      clear: () => (filterPerson.value = null),
+      id: 'people',
+      type: 'People',
+      label: filterPeople.value.join(', ').replace(/, ([^,]*)$/, ' or $1'),
+      clear: () => (filterPeople.value = []),
     })
   }
 
@@ -463,17 +464,19 @@ watch(() => route.query, executeSearch)
 
               <div class="small-filters">
                 <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
-                  <p class="mt-2 mb-2 font-weight-medium">Person</p>
+                  <p class="mt-2 mb-2 font-weight-medium">People</p>
                   <v-select
-                    width="200"
+                    width="250"
                     rounded
                     hide-details
-                    clearable
                     placeholder="Anyone"
                     variant="solo"
                     density="comfortable"
-                    v-model="filterPerson"
-                    :items="filterRanges.people"
+                    multiple
+                    chips
+                    closable-chips
+                    v-model="filterPeople"
+                    :items="filterRanges.people.map((p) => p[0])"
                   ></v-select>
                 </div>
                 <div class="country-code" v-if="filterRanges">
@@ -537,7 +540,7 @@ watch(() => route.query, executeSearch)
                     placeholder="E.g. “orange”"
                     variant="solo"
                     density="comfortable"
-                    width="200"
+                    width="250"
                     rounded
                   />
                 </div>
