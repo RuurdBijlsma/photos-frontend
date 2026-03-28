@@ -25,7 +25,9 @@ const id = computed(() => {
 })
 const albumResponse = computed(() => {
   if (!id.value) return null
-  return albumStore.albumMedia.get(id.value) ?? null
+  const response = albumStore.albumMedia.get(id.value) ?? null
+  console.log('AlbumResponse', response)
+  return response
 })
 const minimalAlbumInfo = computed(() => albumStore.userAlbums.find((a) => a.id === id.value))
 const album = computed(() => albumResponse.value?.album ?? null)

@@ -417,10 +417,15 @@ function findRowIndexByMediaId(mediaId: string): number {
   return -1
 }
 
-function offsetScrollToMediaId(index: number, behavior: 'auto' | 'smooth' = 'auto') {
-  const offsetTop = gridLayout.value[index]?.offsetTop
+function offsetScrollToMediaId(
+  index: number,
+  behavior: 'auto' | 'smooth' = 'auto',
+  offset?: number,
+) {
+  let offsetTop = gridLayout.value[index]?.offsetTop
   if (offsetTop && scrollContainerEl.value) {
-    scrollContainerEl.value.scrollTo({ top: offsetTop, behavior: behavior })
+    if (offsetTop < 100) offsetTop = 0
+    scrollContainerEl.value.scrollTo({ top: offsetTop + (offset ?? 0), behavior: behavior })
   }
 }
 
@@ -428,6 +433,7 @@ interface ScrollOptions {
   type: 'offset' | 'virtual'
   behavior: 'auto' | 'smooth'
   align: 'start' | 'center' | 'end' | 'auto'
+  offset?: number
 }
 
 function scrollToMediaId(
@@ -526,7 +532,11 @@ watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize
       console.warn('TIMELINE STORE HAS MEDIA_ITEM_IN_VIEW', timelineStore.mediaIdInView)
       const mediaItemInViewId = timelineStore.mediaIdInView
       nextTick(() => {
-        scrollToMediaId(mediaItemInViewId, { type: 'offset', align: 'start', behavior: 'auto' })
+        scrollToMediaId(mediaItemInViewId, {
+          type: 'offset',
+          align: 'start',
+          behavior: 'auto',
+        })
       })
     }
   }
