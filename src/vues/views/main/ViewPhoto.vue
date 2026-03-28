@@ -355,11 +355,13 @@ watch(
 
 .top-main-text h3 {
   font-weight: 500;
+  margin: 0;
   margin-bottom: 5px;
   font-size: 16px;
 }
 
 .top-main-text p {
+  margin: 0;
   font-weight: 300;
   color: rgba(255, 255, 255, 0.6);
   font-size: 13px;

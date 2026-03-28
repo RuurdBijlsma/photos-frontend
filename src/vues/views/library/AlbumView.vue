@@ -171,6 +171,7 @@ watch(
         <glow-image
           border-radius="44px"
           :height="222"
+          :max-width="(222 * 16) / 9"
           @error="useOnDemandThumb = true"
           :src="primaryThumb"
         ></glow-image>
@@ -309,6 +310,7 @@ watch(
   font-weight: 400;
   font-size: 15px;
   opacity: 0.7;
+  margin: 0;
   margin-top: 3px;
 }
 

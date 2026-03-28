@@ -8,4 +8,5 @@ import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
   </main-layout-container>
 </template>
 
-<style scoped></style>
+<style scoped>
+</style>

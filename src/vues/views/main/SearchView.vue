@@ -414,7 +414,7 @@ watch(() => route.query, executeSearch)
                 v-if="filterRanges && filterRanges.availableMonths.length > 0"
               >
                 <div class="d-flex date-range-text font-weight-medium">
-                  <div class="flex-grow-1 font-weight-regular opacity-70 text-body-small">
+                  <div class="flex-grow-1 font-weight-regular opacity-70 text-body-small mb-1 mt-1">
                     {{ dateRangeText }}
                   </div>
                   <template v-if="route.query.start || route.query.end">
@@ -466,9 +466,10 @@ watch(() => route.query, executeSearch)
                 <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
                   <p class="mt-2 mb-2 font-weight-medium">People</p>
                   <v-select
-                    width="300"
+                    width="430"
                     rounded
                     hide-details
+                    clearable
                     placeholder="Anyone"
                     item-title="name"
                     item-value="name"
@@ -514,9 +515,10 @@ watch(() => route.query, executeSearch)
                     item-value="code"
                     variant="solo"
                     density="comfortable"
-                    width="300"
+                    width="430"
                     rounded
                     hide-details
+                    clearable
                     multiple
                     chips
                     closable-chips
@@ -562,7 +564,7 @@ watch(() => route.query, executeSearch)
                     placeholder="E.g. “orange”"
                     variant="solo"
                     density="comfortable"
-                    width="300"
+                    width="430"
                     rounded
                   />
                 </div>
@@ -650,6 +652,7 @@ watch(() => route.query, executeSearch)
   font-weight: 400;
   white-space: nowrap;
   padding-right: 15px;
+  margin: 0;
 }
 
 .search-query-icon {

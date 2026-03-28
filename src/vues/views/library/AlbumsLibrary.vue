@@ -293,6 +293,7 @@ onUnmounted(() => {
 }
 
 .header-left h1 {
+  margin:0;
   font-size: 2.5rem;
   font-weight: 600;
   line-height: 1.2;
