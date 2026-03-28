@@ -55,7 +55,7 @@ async function initialize() {
   if (id.value !== loadingId) return
   console.log('FULL MEDIA ITEM', mediaItemStore.mediaItems.get(loadingId))
   fullImage.value = mediaItemStore.mediaItems.get(loadingId)
-  const imageTheme = fullImage.value?.visualAnalyses[0]?.colors?.themes?.[0]
+  const imageTheme = fullImage.value?.visual_analyses[0]?.colors?.themes?.[0]
   if (!imageTheme) return
   const vTheme = themeStore.themeFromJson(imageTheme)
   if (vuetifyTheme.themes.value.darkView && vTheme?.dark.colors) {
@@ -102,7 +102,7 @@ function handleKeyDown(e: KeyboardEvent) {
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeyDown))
 
-const generatedThumbsAvailable = computed(() => fullImage.value?.hasThumbnails ?? false)
+const generatedThumbsAvailable = computed(() => fullImage.value?.has_thumbnails ?? true)
 const imageUrl = computed(() => {
   const imageU = mediaItemService.getPhotoThumbnail(id.value, 1440, !generatedThumbsAvailable.value)
   console.log({ imageU })
@@ -110,7 +110,7 @@ const imageUrl = computed(() => {
 })
 
 const timestampString = computed(() => {
-  const dateStr = fullImage.value?.takenAtLocal
+  const dateStr = fullImage.value?.taken_at_local
   if (!dateStr) return ''
   const date = new Date(dateStr)
   const day = date.getDate()
@@ -130,7 +130,7 @@ const locationString = computed(() => {
   if (location.name && location.admin1) {
     finalParts = [location.name, location.admin1]
   } else {
-    const prioritizedParts = [location.name, location.admin2, location.admin1, location.countryName]
+    const prioritizedParts = [location.name, location.admin2, location.admin1, location.country_name]
     finalParts = prioritizedParts.filter((part) => part).slice(0, 2)
   }
   const result = finalParts.join(' - ')
