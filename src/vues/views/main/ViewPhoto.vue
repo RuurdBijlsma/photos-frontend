@@ -30,20 +30,27 @@ const isSelected = computed(() =>
   id.value === null ? false : selectionStore.selection.has(id.value),
 )
 
-function closeViewer() {
+const parentLocation = computed(() => {
   const parentRoute = route.matched[route.matched.length - 2]
-  console.log(parentRoute)
-  if (parentRoute) {
-    const p = parentRoute.path === '' ? '/' : parentRoute.path
-    router.push({ path: p, query: route.query })
-  } else router.push({ path: '/', query: route.query })
-}
+
+  if (parentRoute && parentRoute.name) {
+    const params = { ...route.params }
+    delete params['mediaId']
+    return {
+      name: parentRoute.name,
+      params,
+      query: route.query,
+    }
+  } else {
+    return { name: 'timeline' }
+  }
+})
 
 const fullImage = ref<undefined | FullMediaItem>(undefined)
 
 async function initialize() {
   const loadingId = id.value
-  if (loadingId === null) return closeViewer()
+  if (loadingId === null) return router.push(parentLocation.value)
   await mediaItemStore.fetchMediaItem(loadingId)
   if (id.value !== loadingId) return
   console.log('FULL MEDIA ITEM', mediaItemStore.mediaItems.get(loadingId))
@@ -88,7 +95,7 @@ function handleKeyDown(e: KeyboardEvent) {
   } else if (e.key === 'Escape') {
     e.preventDefault()
     e.stopPropagation()
-    closeViewer()
+    router.push(parentLocation.value)
   }
 }
 
@@ -162,7 +169,7 @@ watch(
       <div class="top-bar">
         <div class="left-buttons">
           <v-btn
-            @click="closeViewer"
+            :to="parentLocation"
             color="white"
             rounded
             icon="mdi-close"

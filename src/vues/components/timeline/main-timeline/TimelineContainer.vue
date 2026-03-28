@@ -529,7 +529,7 @@ watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize
     resetResizeAnchorDb()
   } else {
     if (timelineStore.mediaIdInView) {
-      console.warn('TIMELINE STORE HAS MEDIA_ITEM_IN_VIEW', timelineStore.mediaIdInView)
+      console.info('Restoring scroll position to media item:', timelineStore.mediaIdInView)
       const mediaItemInViewId = timelineStore.mediaIdInView
       nextTick(() => {
         scrollToMediaId(mediaItemInViewId, {

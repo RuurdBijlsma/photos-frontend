@@ -130,6 +130,8 @@
     * ✅ migration guide: https://vuetifyjs.com/en/getting-started/upgrade-guide/#multi-step-migration
     * ✅ vergelijk met vuetify 3 zodat ik niet mooie ui kwijt raak
 * ✅ max-width op album thumbnail zetten ofzo, anders verpest panorama t. Misschien max ratio op 16/9 zetten?
+* ✅ als je helemaal bovenin de timeline op homepage bent, en gaat dan naar andere page, en komt dan terug, dan scrollt ie
+  naar de 1e foto, en verdwijnt de "January" header text omdat ie er voorbij scrollt stiekem
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -167,5 +169,3 @@
   ondemand gebruikt denk ik)
 * [BUG] kruisje linksboven op viewphoto is stuk op album page
 * foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
-* als je helemaal bovenin de timeline op homepage bent, en gaat dan naar andere page, en komt dan terug, dan scrollt ie
-  naar de 1e foto, en verdwijnt de "January" header text omdat ie er voorbij scrollt stiekem
