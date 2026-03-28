@@ -1,3 +1,5 @@
+@import url('vuetify/styles');
+
 :root {
   --font-size-big: 24px;
   --font-size-normal: 16px;

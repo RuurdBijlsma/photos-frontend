@@ -358,6 +358,7 @@ watch(
   margin: 0;
   margin-bottom: 5px;
   font-size: 16px;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .top-main-text p {
