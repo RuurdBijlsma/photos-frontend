@@ -130,7 +130,12 @@ const locationString = computed(() => {
   if (location.name && location.admin1) {
     finalParts = [location.name, location.admin1]
   } else {
-    const prioritizedParts = [location.name, location.admin2, location.admin1, location.country_name]
+    const prioritizedParts = [
+      location.name,
+      location.admin2,
+      location.admin1,
+      location.country_name,
+    ]
     finalParts = prioritizedParts.filter((part) => part).slice(0, 2)
   }
   const result = finalParts.join(' - ')

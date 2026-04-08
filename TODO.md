@@ -132,6 +132,8 @@
 * ✅ max-width op album thumbnail zetten ofzo, anders verpest panorama t. Misschien max ratio op 16/9 zetten?
 * ✅ als je helemaal bovenin de timeline op homepage bent, en gaat dan naar andere page, en komt dan terug, dan scrollt ie
   naar de 1e foto, en verdwijnt de "January" header text omdat ie er voorbij scrollt stiekem
+* ✅ [BUG] kruisje linksboven op viewphoto is stuk op album page
+* ✅ foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -167,5 +169,3 @@
 * delete album button in albums page en op album page
 * als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
   ondemand gebruikt denk ik)
-* ✅ [BUG] kruisje linksboven op viewphoto is stuk op album page
-* foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad

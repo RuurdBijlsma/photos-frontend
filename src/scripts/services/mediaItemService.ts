@@ -25,7 +25,7 @@ const mediaItemService = {
     return new URL(path, baseUrl).href
   },
 
-  getFaceThumbnail(personId: string | null | undefined): string {
+  getFaceThumbnail(personId: string | number | null | undefined): string {
     if (personId === null || personId === undefined) return ''
     const baseUrl = apiClient.defaults.baseURL
     const path = `/thumbnails/people/${personId}.webp`

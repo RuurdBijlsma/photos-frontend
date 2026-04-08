@@ -19,6 +19,19 @@ const truncatedAlbums = computed(() => albumStore.userAlbums.slice(0, maxShownAl
 const hasMoreAlbums = computed(() => albumStore.userAlbums.length > maxShownAlbums.value)
 const useOnDemandThumb = ref(new Map<string | null, boolean>())
 
+const faceIcons = [
+  'mdi-face-man',
+  'mdi-face-man-outline',
+  'mdi-face-man-shimmer',
+  'mdi-face-man-shimmer-outline',
+  'mdi-face-woman',
+  'mdi-face-woman-outline',
+  'mdi-face-woman-shimmer',
+  'mdi-face-woman-shimmer-outline',
+  'mdi-baby-face-outline',
+]
+const faceIcon = faceIcons[Math.floor(Math.random() * faceIcons.length)]
+
 const route = useRoute()
 </script>
 
@@ -116,6 +129,7 @@ const route = useRoute()
           >
         </div>
       </v-expand-transition>
+      <v-list-item rounded :prepend-icon="faceIcon" title="People" to="/people" />
     </v-list>
     <a href="web+burger:cheeseburger">cheeseburger</a>
   </v-navigation-drawer>
