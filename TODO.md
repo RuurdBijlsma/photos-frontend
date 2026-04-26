@@ -169,3 +169,5 @@
 * delete album button in albums page en op album page
 * als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
   ondemand gebruikt denk ik)
+* niet "People" tab laten zien als je nog geen faces hebt
+* als je op de date overlay klikt moet er een kalender komen om naar een exacte date te scrollen bijv 7 juni 2022

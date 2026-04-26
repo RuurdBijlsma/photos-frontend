@@ -1,7 +1,6 @@
 import apiClient from './api.ts'
 import { FullPersonMediaResponse, ListPeopleResponse } from '@/scripts/types/generated/timeline.ts'
 import type { AxiosResponse } from 'axios'
-import type { SearchFilterRanges } from '@/scripts/types/api/search.ts'
 
 const peopleService = {
   async list(): Promise<ListPeopleResponse> {

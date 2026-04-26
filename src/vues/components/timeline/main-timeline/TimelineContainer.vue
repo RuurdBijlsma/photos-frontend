@@ -21,7 +21,7 @@ const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
 const route = useRoute()
 
-const IDEAL_ROW_HEIGHT = 240
+const IDEAL_ROW_HEIGHT = 320
 const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 2
 const ROW_HEADER_HEIGHT = 76
