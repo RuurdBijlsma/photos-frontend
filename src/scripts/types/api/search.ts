@@ -7,6 +7,7 @@ export interface SearchFilterRanges {
 export type SearchParams = {
   query: string
   limit?: number
+  offset?: number
   startDate?: string
   endDate?: string
   mediaType?: string

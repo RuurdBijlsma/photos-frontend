@@ -14,7 +14,15 @@ import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 const props = defineProps<{
   timelineItems: SimpleTimelineItem[]
   viewLink: string
+  loadingMore?: boolean
 }>()
+
+watch(
+  () => props.timelineItems,
+  () => console.log('Total timeline items', props.timelineItems.length),
+)
+
+const emit = defineEmits(['loadMore'])
 
 const viewPhotoStore = useViewPhotoStore()
 const selectionStore = useSelectionStore()
@@ -172,6 +180,10 @@ const onScroll = useThrottleFn((e: Event) => {
   contentHeight.value = target.scrollHeight
   scrollTop.value = target.scrollTop
   handleFastScroll(target.scrollTop)
+
+  if (scrollTop.value + containerHeight.value > contentHeight.value - 1000) {
+    emit('loadMore')
+  }
 }, 16)
 
 watch(isScrollingFast, () => console.log('isScrollingFast', isScrollingFast.value))
@@ -276,6 +288,9 @@ useEventListener(window, 'mouseup', () => {
               :view-link="viewLink"
             />
           </div>
+          <div v-if="loadingMore" class="loading-more">
+            <v-progress-circular indeterminate color="primary" size="32" />
+          </div>
         </div>
       </div>
     </main-layout-container>
@@ -353,5 +368,12 @@ useEventListener(window, 'mouseup', () => {
   will-change: transform;
   transform: translateZ(0);
   pointer-events: none;
+}
+
+.loading-more {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+  width: 100%;
 }
 </style>

@@ -20,6 +20,10 @@ const showLoadingUI = ref(false)
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
 const searchCache = new Map<string, SimpleTimelineItem[]>()
 const defaultSortDirection: 'date' | 'relevancy' = 'relevancy'
+const SEARCH_LIMIT = 500
+const offset = ref(0)
+const hasMore = ref(true)
+const loadingMore = ref(false)
 
 const filterRanges = ref<SearchFilterRanges | null>(
   localStorage.getItem('searchFilterRanges') === null
@@ -176,21 +180,30 @@ const updateURL = (newParams: Record<string, string | undefined>) => {
   }
 }
 
-async function executeSearch() {
+async function executeSearch(isLoadMore = false) {
   if (query.value === '') {
     results.value = []
     return
   }
-  if (loadingTimer) clearTimeout(loadingTimer)
-  loading.value = true
-  if (results.value.length === 0) showLoadingUI.value = true
-  else loadingTimer = setTimeout(() => (showLoadingUI.value = true), 300)
+
+  if (isLoadMore) {
+    if (loadingMore.value || !hasMore.value) return
+    loadingMore.value = true
+  } else {
+    if (loading.value && !loadingMore.value) return
+    offset.value = 0
+    hasMore.value = true
+    if (loadingTimer) clearTimeout(loadingTimer)
+    loading.value = true
+    if (results.value.length === 0) showLoadingUI.value = true
+    else loadingTimer = setTimeout(() => (showLoadingUI.value = true), 300)
+  }
 
   try {
     const searchParams = {
       query: query.value,
-      limit: 200,
-      offset: 0,
+      limit: SEARCH_LIMIT,
+      offset: offset.value,
       startDate: filterDateRange.value.start,
       endDate: filterDateRange.value.end,
       countryCodes: filterCountries.value.join(','),
@@ -200,19 +213,31 @@ async function executeSearch() {
       sortBy: sortDirection.value as 'date' | 'relevancy',
     }
     const key = JSON.stringify(searchParams)
+    let items: SimpleTimelineItem[] = []
+
     if (searchCache.has(key)) {
-      results.value = searchCache.get(key)!
+      items = searchCache.get(key)!
     } else {
-      const { items } = await searchService.search(searchParams)
-      console.log("SearchPage results", items)
-      results.value = items
+      const response = await searchService.search(searchParams)
+      items = response.items
+      console.log('SearchPage results', items)
       requestIdleCallback(() => searchCache.set(key, items))
     }
+
+    if (isLoadMore) {
+      results.value = [...results.value, ...items]
+    } else {
+      results.value = items
+    }
+
+    hasMore.value = items.length === SEARCH_LIMIT
+    offset.value += items.length
   } catch (e) {
     snackStore.error('Could not perform search', e)
   } finally {
     if (loadingTimer) clearTimeout(loadingTimer)
     loading.value = false
+    loadingMore.value = false
     showLoadingUI.value = false
   }
 }
@@ -348,11 +373,19 @@ const activeFilterChips = computed(() => {
 })
 
 // Watch route query to re-execute search
-watch(() => route.query, executeSearch)
+watch(
+  () => route.query,
+  () => executeSearch(false),
+)
 </script>
 
 <template>
-  <simple-timeline :timeline-items="showLoadingUI ? [] : results" view-link="/search/view/">
+  <simple-timeline
+    :timeline-items="showLoadingUI ? [] : results"
+    view-link="/search/view/"
+    :loading-more="loadingMore"
+    @load-more="executeSearch(true)"
+  >
     <div class="search-options">
       <h2 class="search-query-title">
         <v-icon class="mr-5 search-query-icon" icon="mdi-magnify" />Search for “<span
