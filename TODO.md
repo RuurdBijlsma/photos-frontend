@@ -170,4 +170,5 @@
 * als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
   ondemand gebruikt denk ik)
 * niet "People" tab laten zien als je nog geen faces hebt
+* misschien image thumbnail loading fallback naar on-demand abstracten? Zodat het overal werkt. Nu zie je soms geen img als de avif er nog niet is
 * als je op de date overlay klikt moet er een kalender komen om naar een exacte date te scrollen bijv 7 juni 2022

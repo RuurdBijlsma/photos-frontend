@@ -189,7 +189,8 @@ async function executeSearch() {
   try {
     const searchParams = {
       query: query.value,
-      limit: 100,
+      limit: 200,
+      offset: 0,
       startDate: filterDateRange.value.start,
       endDate: filterDateRange.value.end,
       countryCodes: filterCountries.value.join(','),
@@ -203,6 +204,7 @@ async function executeSearch() {
       results.value = searchCache.get(key)!
     } else {
       const { items } = await searchService.search(searchParams)
+      console.log("SearchPage results", items)
       results.value = items
       requestIdleCallback(() => searchCache.set(key, items))
     }
