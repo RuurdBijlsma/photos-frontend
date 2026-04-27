@@ -3,7 +3,7 @@ import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
-import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
+import type { TimelineItem, TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { getThumbnailHeight, requestIdleCallbackAsync } from '@/scripts/utils.ts'
 import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
@@ -454,6 +454,36 @@ function scrollToMediaId(
   }
 }
 
+function findNearestMediaItem(date: Date) {
+  const targetTime = date.getTime()
+  let bestItem: TimelineItem | null = null
+  let minDiff = Infinity
+
+  for (const item of timelineStore.mediaItems) {
+    const itemTime = new Date(item.timestamp).getTime()
+    const diff = Math.abs(itemTime - targetTime)
+    if (diff < minDiff) {
+      minDiff = diff
+      bestItem = item
+    }
+  }
+  return bestItem ? { item: bestItem, diff: minDiff } : null
+}
+
+function scrollToDate(date: Date) {
+  const nearest = findNearestMediaItem(date)
+
+  const targetYearMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`
+  const monthIndex = gridLayout.value.findIndex((row) => row.monthId.startsWith(targetYearMonth))
+
+  // If the closest item we have is in the same month, or we don't even have that month in the grid
+  if (nearest && (nearest.item.timestamp.startsWith(targetYearMonth) || monthIndex === -1)) {
+    scrollToMediaId(nearest.item.id, { type: 'virtual', align: 'start', behavior: 'auto' })
+  } else if (monthIndex !== -1) {
+    rowVirtualizer.value.scrollToIndex(monthIndex, { align: 'start' })
+  }
+}
+
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
     const contentRect = entries[0].contentRect
@@ -498,6 +528,10 @@ function lockResize() {
   if (resizeAnchor !== null)
     scrollToMediaId(resizeAnchor, { type: 'virtual', align: 'start', behavior: 'auto' })
   resizeRafId = requestAnimationFrame(lockResize)
+}
+
+function onDatePick(date: Date | null) {
+  if (date) scrollToDate(date)
 }
 
 watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize]) => {
@@ -613,7 +647,7 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
   <div class="timeline-container">
     <main-layout-container>
       <selection-overlay />
-      <date-overlay :date="overlayDate" />
+      <date-overlay :date="overlayDate" @date-picked="onDatePick" />
       <teleport to="body">
         <router-view />
       </teleport>
