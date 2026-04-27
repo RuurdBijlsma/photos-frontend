@@ -134,6 +134,7 @@
   naar de 1e foto, en verdwijnt de "January" header text omdat ie er voorbij scrollt stiekem
 * ✅ [BUG] kruisje linksboven op viewphoto is stuk op album page
 * ✅ foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
+* ✅ als je op de date overlay klikt moet er een kalender komen om naar een exacte date te scrollen bijv 7 juni 2022
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -171,4 +172,3 @@
   ondemand gebruikt denk ik)
 * niet "People" tab laten zien als je nog geen faces hebt
 * misschien image thumbnail loading fallback naar on-demand abstracten? Zodat het overal werkt. Nu zie je soms geen img als de avif er nog niet is
-* als je op de date overlay klikt moet er een kalender komen om naar een exacte date te scrollen bijv 7 juni 2022

@@ -27,7 +27,7 @@ watch(pickedDate, () => {
 </script>
 
 <template>
-  <v-menu :close-on-content-click="false" v-model="dateMenuOpen">
+  <v-menu :close-on-content-click="false" v-model="dateMenuOpen" position="bottom-left">
     <template v-slot:activator="{ props }">
       <v-slide-y-transition>
         <div class="date-view" v-if="date" v-bind="props">
@@ -36,11 +36,24 @@ watch(pickedDate, () => {
         </div>
       </v-slide-y-transition>
     </template>
-    <v-date-picker v-model="pickedDate"></v-date-picker>
+    <v-date-picker
+      hide-header
+      elevation="5"
+      class="date-picker"
+      control-variant="docked"
+      rounded="xl"
+      v-model="pickedDate"
+    ></v-date-picker>
   </v-menu>
 </template>
 
 <style scoped>
+.date-picker {
+  background-color: rgba(var(--v-theme-surface-container-high), 0.8);
+  backdrop-filter: saturate(250%) blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .date-view {
   position: absolute;
   top: 30px;

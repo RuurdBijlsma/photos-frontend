@@ -423,7 +423,7 @@ function offsetScrollToMediaId(
   offset?: number,
 ) {
   let offsetTop = gridLayout.value[index]?.offsetTop
-  if (offsetTop && scrollContainerEl.value) {
+  if (offsetTop !== undefined && scrollContainerEl.value) {
     if (offsetTop < 100) offsetTop = 0
     scrollContainerEl.value.scrollTo({ top: offsetTop + (offset ?? 0), behavior: behavior })
   }
@@ -471,16 +471,27 @@ function findNearestMediaItem(date: Date) {
 }
 
 function scrollToDate(date: Date) {
-  const nearest = findNearestMediaItem(date)
+  const year = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  const targetDayStr = `${year}-${month}-${day}`
+  const targetYearMonth = `${year}-${month}`
 
-  const targetYearMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`
-  const monthIndex = gridLayout.value.findIndex((row) => row.monthId.startsWith(targetYearMonth))
+  // Try to find the first item on that specific day
+  const firstOnDay = timelineStore.mediaItems.find((item) => item.timestamp.startsWith(targetDayStr))
 
-  // If the closest item we have is in the same month, or we don't even have that month in the grid
-  if (nearest && (nearest.item.timestamp.startsWith(targetYearMonth) || monthIndex === -1)) {
-    scrollToMediaId(nearest.item.id, { type: 'virtual', align: 'start', behavior: 'auto' })
-  } else if (monthIndex !== -1) {
-    rowVirtualizer.value.scrollToIndex(monthIndex, { align: 'start' })
+  if (firstOnDay) {
+    scrollToMediaId(firstOnDay.id, { type: 'offset', align: 'start', behavior: 'smooth' })
+  } else {
+    const nearest = findNearestMediaItem(date)
+    const monthIndex = gridLayout.value.findIndex((row) => row.monthId.startsWith(targetYearMonth))
+
+    // If the closest item we have is in the same month, or we don't even have that month in the grid
+    if (nearest && (nearest.item.timestamp.startsWith(targetYearMonth) || monthIndex === -1)) {
+      scrollToMediaId(nearest.item.id, { type: 'offset', align: 'start', behavior: 'smooth' })
+    } else if (monthIndex !== -1) {
+      offsetScrollToMediaId(monthIndex, 'smooth')
+    }
   }
 }
 
