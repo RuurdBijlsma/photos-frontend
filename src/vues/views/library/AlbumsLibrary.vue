@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import GlowImage from '@/vues/components/ui/GlowImage.vue'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import type { Album, AlbumSortField, SortDirection } from '@/scripts/types/api/album'
 import albumService from '@/scripts/services/albumService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRouter } from 'vue-router'
 import { MONTHS } from '@/scripts/constants.ts'
+import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
 
 const snackbarStore = useSnackbarsStore()
 const router = useRouter()
@@ -234,8 +233,9 @@ onUnmounted(() => {
           :to="`/album/${album.id}`"
           class="album-card"
         >
-          <glow-image
-            :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 720, false)"
+          <glow-thumbnail
+            v-if="album.thumbnailId"
+            :media-item-id="album.thumbnailId"
             :height="200"
             :width="200"
             border-radius="20px"

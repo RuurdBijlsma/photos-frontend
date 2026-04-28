@@ -7,7 +7,7 @@ import type { Album } from '@/scripts/types/api/album.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import ItemsPreview from '@/vues/components/timeline/timeline-components/ItemsPreview.vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
+import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -30,7 +30,6 @@ const addLoading = ref(false)
 const filteredUserAlbums = computed(() =>
   albumStore.userAlbums.filter((a) => !props.excludeAlbumIds.includes(a.id)),
 )
-const useOnDemandThumb = ref(new Map<string | null, boolean>())
 
 async function createNew() {
   if (props.idsToAdd.length === 0) {
@@ -99,16 +98,10 @@ async function addToAlbum(album: Album) {
         <v-list-item rounded v-for="album in filteredUserAlbums" :key="album.id">
           <template v-slot:prepend>
             <v-avatar rounded color="surface-container-high">
-              <v-img
-                @error="useOnDemandThumb.set(album.thumbnailId, true)"
-                :src="
-                  mediaItemService.getPhotoThumbnail(
-                    album.thumbnailId,
-                    144,
-                    useOnDemandThumb.get(album.thumbnailId),
-                  )
-                "
+              <thumbnail-img
                 v-if="album.thumbnailId"
+                :media-item-id="album.thumbnailId"
+                :height="144"
               />
               <v-icon v-else icon="mdi-image-album" color="primary" class="opacity-70" />
             </v-avatar>

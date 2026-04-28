@@ -33,6 +33,7 @@ export interface Alert {
 export interface Snack {
   id: string // Changed to string for UUID
   message: string
+  icon?: string
   color: 'success' | 'info' | 'warning' | 'error' | 'surface-variant' | string
   timeout: number
   action?: SnackAction
@@ -47,6 +48,7 @@ export type SnackOptions = {
   color?: Snack['color']
   timeout?: number
   action?: SnackAction
+  icon?: string
   error?: unknown
 }
 
@@ -80,6 +82,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
       color: options.color || 'surface-variant',
       timeout: options.timeout ?? defaultTimeout,
       action: options.action,
+      icon: options.icon,
     }
 
     // Process Error objects if present

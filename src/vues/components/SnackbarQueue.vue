@@ -28,71 +28,35 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
 
 <template>
   <div class="snackbar-queue-container">
-    <transition-group name="snack" tag="div" class="snack-list">
-      <div
-        v-for="snack in store.snackQueue"
-        :key="snack.id"
-        class="snack-wrapper"
-        @mouseenter="onMouseEnter(snack.id)"
-        @mouseleave="onMouseLeave(snack.id)"
+    <div
+      v-for="(snack, index) in store.snackQueue"
+      :key="snack.id"
+      class="snack-wrapper"
+      @mouseenter="onMouseEnter(snack.id)"
+      @mouseleave="onMouseLeave(snack.id)"
+    >
+      <v-snackbar
+        :color="snack.color"
+        :prepend-icon="snack.icon"
+        :style="{ transform: `translateY(${index * -90}px)` }"
+        :text="snack.message"
+        variant="tonal"
+        contained
+        :timeout="snack.timeout"
+        :model-value="true"
       >
-        <!--
-          We use v-card styled as a snackbar.
-          elevation-6 gives it that pop-out look.
-        -->
-        <v-card
-          :style="{
-            backgroundColor: `rgba(var(--v-theme-${snack.color || 'primary'}), 0.9) !important`,
-          }"
-          :color="snack.color"
-          class="d-flex align-center py-2 pl-4 pr-2 snack-card"
-          elevation="6"
-          rounded="pill"
-          min-width="300"
-          max-width="600"
-        >
-          <!-- Message Content -->
-          <span class="text-body-2 font-weight-medium mr-auto">
-            {{ snack.message }}
-          </span>
-
-          <!-- Actions Area -->
-          <div class="d-flex align-center ml-4">
-            <!-- Custom Action Button -->
-            <v-btn
-              v-if="snack.action"
-              variant="text"
-              size="small"
-              class="rounded-pill"
-              @click="handleAction(snack)"
-            >
-              {{ snack.action.label }}
-            </v-btn>
-
-            <!-- Error Details Button -->
-            <v-btn
-              v-if="snack.error"
-              icon="mdi-information-outline"
-              variant="text"
-              size="small"
-              density="comfortable"
-              class="ml-1"
-              @click="showErrorDetails(snack)"
-            />
-
-            <!-- Close Button -->
-            <v-btn
-              icon="mdi-close"
-              variant="text"
-              size="small"
-              density="comfortable"
-              class="ml-1"
-              @click="store.remove(snack.id)"
-            />
-          </div>
-        </v-card>
-      </div>
-    </transition-group>
+        <template v-slot:actions>
+          <v-btn
+            v-if="snack.action"
+            :text="snack.action.label"
+            @click.stop="snack.action.onClick"
+            density="comfortable"
+            rounded="lg"
+            variant="tonal"
+          />
+        </template>
+      </v-snackbar>
+    </div>
 
     <!-- Detailed Error Dialog -->
     <v-dialog v-model="dialog" max-width="700">

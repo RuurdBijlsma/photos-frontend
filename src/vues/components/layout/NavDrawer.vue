@@ -2,7 +2,7 @@
 import { useRoute } from 'vue-router'
 import { computed, ref, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
+import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 
 const albumStore = useAlbumStore()
 requestIdleCallback(() => albumStore.fetchUserAlbums())
@@ -17,7 +17,6 @@ const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
 const maxShownAlbums = ref(5)
 const truncatedAlbums = computed(() => albumStore.userAlbums.slice(0, maxShownAlbums.value))
 const hasMoreAlbums = computed(() => albumStore.userAlbums.length > maxShownAlbums.value)
-const useOnDemandThumb = ref(new Map<string | null, boolean>())
 
 const faceIcons = [
   'mdi-face-man',
@@ -78,15 +77,10 @@ const route = useRoute()
           >
             <template v-slot:prepend>
               <v-avatar rounded color="surface-container-high">
-                <v-img
-                  :src="
-                    mediaItemService.getPhotoThumbnail(
-                      album.thumbnailId,
-                      144,
-                      useOnDemandThumb.get(album.thumbnailId),
-                    )
-                  "
-                  @error="useOnDemandThumb.set(album.thumbnailId, true)"
+                <thumbnail-img
+                  v-if="album.thumbnailId"
+                  :media-item-id="album.thumbnailId"
+                  :height="144"
                 />
               </v-avatar>
             </template>

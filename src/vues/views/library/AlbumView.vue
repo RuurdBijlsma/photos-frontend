@@ -2,8 +2,6 @@
 import { useRoute, useRouter } from 'vue-router'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
-import GlowImage from '@/vues/components/ui/GlowImage.vue'
 import { useDebounceFn, useTextareaAutosize } from '@vueuse/core'
 import EditableTitle from '@/vues/components/ui/EditableTitle.vue'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
@@ -11,6 +9,7 @@ import { stringToColor } from '@/scripts/utils.ts'
 import albumService from '@/scripts/services/albumService.ts'
 // eslint-disable-next-line
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
+import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,10 +39,7 @@ const thumbnailId = computed(() => {
   if (album.value !== null) return album.value?.thumbnailId ?? null
   return minimalAlbumInfo.value?.thumbnailId ?? null
 })
-const useOnDemandThumb = ref(false)
-const primaryThumb = computed(() =>
-  mediaItemService.getPhotoThumbnail(thumbnailId.value, 720, useOnDemandThumb.value),
-)
+
 const formattedDates = computed(() => {
   const firstDate = album.value?.firstDate ?? null
   const lastDate = album.value?.lastDate ?? null
@@ -118,7 +114,6 @@ function removeDescription() {
 watch(
   id,
   () => {
-    useOnDemandThumb.value = false
     albumTitle.value = null
     albumDescription.value = null
     console.log('Album ID change', id.value)
@@ -170,13 +165,13 @@ watch(
   <simple-timeline ref="simpleTimeline" :timeline-items="items" :view-link="`/album/${id}/view/`">
     <div class="album-header">
       <div class="album-header-left">
-        <glow-image
+        <glow-thumbnail
+          v-if="thumbnailId"
+          :media-item-id="thumbnailId"
           border-radius="44px"
           :height="222"
           :max-width="(222 * 16) / 9"
-          @error="useOnDemandThumb = true"
-          :src="primaryThumb"
-        ></glow-image>
+        />
       </div>
       <div class="album-header-right">
         <editable-title
