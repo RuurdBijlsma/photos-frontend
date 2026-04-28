@@ -65,16 +65,15 @@ export const useTimelineStore = defineStore('timeline', () => {
                 message:
                   "Your photos are still processing, the library will be less responsive until it's done.",
                 color: 'warning',
-                timeout: 5000,
+                timeout: -1,
                 icon: 'mdi-alert',
               })
               setTimeout(() => {
                 snackbarStore.enqueue({
-                  message:
-                    "Here's another snackbar.",
+                  message: "Here's another snackbar.",
                   color: 'info',
                   timeout: -1,
-                  icon: 'mdi-alert',
+                  icon: 'mdi-information-outline',
                 })
               }, 500)
               setTimeout(() => {
