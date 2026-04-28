@@ -15,10 +15,12 @@ import DateOverlay from '@/vues/components/timeline/timeline-components/DateOver
 import { useRoute } from 'vue-router'
 import timelineService from '@/scripts/services/timelineService.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
+import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
+const snackbarStore = useSnackbarsStore()
 const route = useRoute()
 
 const IDEAL_ROW_HEIGHT = 320
@@ -338,10 +340,33 @@ async function preLoadAllMonths(
         console.log('Fetched all media by month', timelineStore.monthItems.keys())
         allMonthsPreloaded = true
         selectionStore.allIds = timelineStore.mediaItemIds
+        if (!notifiedAboutThumbnails) requestIdleCallback(notifySlowThumbnails)
       }
       break
     }
   }
+}
+
+let notifiedAboutThumbnails = false
+function notifySlowThumbnails() {
+  notifiedAboutThumbnails = true
+  let unloadedCount = 0
+  for (const [, groupItems] of timelineStore.monthItems) {
+    for (const item of groupItems) {
+      if (!item.hasThumbnails) {
+        unloadedCount++
+      }
+    }
+  }
+  if (unloadedCount > 0) {
+    snackbarStore.enqueue({
+      message: `Your photos are still being prepared. Browsing may be slower and thumbnails may load gradually until processing is complete. [${unloadedCount} remaining]`,
+      color: 'white',
+      icon: 'mdi-information',
+      timeout: -1,
+    })
+  }
+  console.log('All AVIF thumbnails are available')
 }
 
 function abortMonthPreload() {
@@ -478,7 +503,9 @@ function scrollToDate(date: Date) {
   const targetYearMonth = `${year}-${month}`
 
   // Try to find the first item on that specific day
-  const firstOnDay = timelineStore.mediaItems.find((item) => item.timestamp.startsWith(targetDayStr))
+  const firstOnDay = timelineStore.mediaItems.find((item) =>
+    item.timestamp.startsWith(targetDayStr),
+  )
 
   if (firstOnDay) {
     scrollToMediaId(firstOnDay.id, { type: 'offset', align: 'start', behavior: 'smooth' })

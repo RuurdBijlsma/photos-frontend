@@ -11,7 +11,6 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 export const useTimelineStore = defineStore('timeline', () => {
   const snackbarStore = useSnackbarsStore()
 
-  let thumbAlertFired = false
   const mediaIdInView = ref<string | null>(null)
   const isInitialized = ref(false)
   const monthRatios = shallowRef<TimelineMonthRatios[]>([])
@@ -55,42 +54,6 @@ export const useTimelineStore = defineStore('timeline', () => {
         monthItems.value.set(monthId, items)
       }
       triggerRef(monthItems)
-      requestIdleCallback(() => {
-        if (thumbAlertFired) return
-        outer: for (const x of response.months) {
-          for (const item of x.items) {
-            if (item.hasThumbnails && !thumbAlertFired) {
-              thumbAlertFired = true
-              snackbarStore.enqueue({
-                message:
-                  "Your photos are still processing, the library will be less responsive until it's done.",
-                color: 'warning',
-                timeout: -1,
-                icon: 'mdi-alert',
-              })
-              setTimeout(() => {
-                snackbarStore.enqueue({
-                  message: "Here's another snackbar.",
-                  color: 'info',
-                  timeout: -1,
-                  icon: 'mdi-information-outline',
-                })
-              }, 500)
-              setTimeout(() => {
-                snackbarStore.enqueue({
-                  message:
-                    "Another one! Here's another snackbar.",
-                  color: 'info',
-                  timeout: -1,
-                  icon: 'mdi-alert',
-                })
-              }, 1000)
-              break outer
-            }
-          }
-        }
-        console.log('All AVIF thumbnails are available')
-      })
     } catch (e) {
       snackbarStore.error('Failed to fetch media.', e)
     } finally {

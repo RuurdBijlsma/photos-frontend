@@ -17,7 +17,9 @@ const useOnDemandThumb = ref(new Map<string | null, boolean>())
 
 <template>
   <v-img
-    :src="mediaItemService.getPhotoThumbnail(mediaItemId, height, useOnDemandThumb.get(mediaItemId))"
+    :src="
+      mediaItemService.getPhotoThumbnail(mediaItemId, height, useOnDemandThumb.get(mediaItemId))
+    "
     @error="useOnDemandThumb.set(mediaItemId, true)"
   />
 </template>

@@ -7,6 +7,7 @@ import { isAxiosError } from 'axios'
 export interface SnackAction {
   label: string
   onClick: () => unknown
+  hideOnClick?: boolean
 }
 
 export interface AlertAction {
@@ -31,7 +32,7 @@ export interface Alert {
 }
 
 export interface Snack {
-  id: string // Changed to string for UUID
+  id: string
   message: string
   icon?: string
   color: 'success' | 'info' | 'warning' | 'error' | 'surface-variant' | string
@@ -73,13 +74,13 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
    * Adds a snackbar to the queue.
    */
   function enqueue(options: SnackOptions) {
-    const id = crypto.randomUUID() // Robust unique ID
-    const defaultTimeout = options.color === 'error' ? 10000 : 5000
+    const id = crypto.randomUUID()
+    const defaultTimeout = 10000
 
     const snack: Snack = {
       id,
       message: options.message,
-      color: options.color || 'surface-variant',
+      color: options.color || 'white',
       timeout: options.timeout ?? defaultTimeout,
       action: options.action,
       icon: options.icon,
@@ -98,7 +99,6 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
         snack.error = new Error(String(options.error))
         console.error('[Snack Unknown]', options.message, options.error)
       }
-      // Force error styling if not set
       if (!options.color) snack.color = 'error'
     }
 
@@ -122,6 +122,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
   function pauseTimeout(id: string) {
     const snack = snackQueue.value.find((s) => s.id === id)
     if (snack && snack.timerId) {
+      console.log('TIMER PAUSED')
       clearTimeout(snack.timerId)
       snack.timerId = undefined
     }
@@ -144,19 +145,26 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
   // --- Convenience Helpers ---
 
   function info(message: string, action?: SnackAction) {
-    enqueue({ message, color: 'primary', action })
+    enqueue({ message, color: 'white', icon: 'mdi-information-outline', action })
   }
 
   function success(message: string, action?: SnackAction) {
-    enqueue({ message, color: 'success', timeout: 4000, action })
+    enqueue({ message, color: 'success', icon: 'mdi-check', action })
   }
 
   function warning(message: string, action?: SnackAction) {
-    enqueue({ message, color: 'warning', timeout: 6000, action })
+    enqueue({ message, color: 'warning', icon: 'mdi-alert', action })
   }
 
   function error(message: string, error?: unknown, action?: SnackAction) {
-    enqueue({ message, error, color: 'error', timeout: 10000, action })
+    enqueue({
+      message,
+      error,
+      color: 'error',
+      icon: 'mdi-fire-alert',
+      timeout: 10000,
+      action,
+    })
   }
 
   function alert(alert: CreateAlert) {

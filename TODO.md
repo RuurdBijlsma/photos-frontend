@@ -135,6 +135,10 @@
 * ✅ [BUG] kruisje linksboven op viewphoto is stuk op album page
 * ✅ foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
 * ✅ als je op de date overlay klikt moet er een kalender komen om naar een exacte date te scrollen bijv 7 juni 2022
+* ✅ misschien image thumbnail loading fallback naar on-demand abstracten? Zodat het overal werkt. Nu zie je soms geen img als de avif er nog niet is
+* ✅ add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
+* ✅ als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
+  ondemand gebruikt denk ik)
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -164,11 +168,12 @@
     * bug: timeline ids/ratios/by month might by out of sync because theyre separate requests
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
-    * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
+    * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * album page: add sort (also sort by added on date)
-* delete album button in albums page en op album page
-* als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
-  ondemand gebruikt denk ik)
 * niet "People" tab laten zien als je nog geen faces hebt
-* misschien image thumbnail loading fallback naar on-demand abstracten? Zodat het overal werkt. Nu zie je soms geen img als de avif er nog niet is
+* "Are you sure knop" bij "select all" en "deselect all" als je selectie meer dan X fotos is
+* album
+  * remove photo from album
+  * set photo as album cover
+  * delete entire album (on /albums and on /album/{id})
+* [BUG] view big picture when selecting is wrong (wrong BG?)
