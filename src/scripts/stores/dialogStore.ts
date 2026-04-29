@@ -3,15 +3,22 @@ import { ref } from 'vue'
 
 export type DialogType = 'alert' | 'confirm' | 'prompt'
 
+export interface DialogAction {
+  name: string
+  color?: string
+  action: () => unknown
+}
+
 export interface DialogOptions {
   title: string
   description?: string
   icon?: string
   confirmText?: string
   cancelText?: string
-  defaultValue?: string // Only for prompt
+  defaultValue?: string
   persistent?: boolean
   color?: string
+  actions?: DialogAction[]
 }
 
 interface DialogRequest {
@@ -27,15 +34,18 @@ export const useDialogStore = defineStore('dialog', () => {
   const visible = ref(false)
   const inputValue = ref('')
 
+  // Track the result internally so we can resolve after the transition
+  let pendingResult: any = null
+
   function processQueue() {
+    // If a dialog is already visible, don't start a new one.
+    // The 'close' function will call processQueue again.
     if (visible.value || queue.value.length === 0) return
 
     current.value = queue.value[0]
     inputValue.value = current.value.options.defaultValue ?? ''
     visible.value = true
   }
-
-  // --- Public API ---
 
   function alert(options: DialogOptions | string): Promise<void> {
     const opts = typeof options === 'string' ? { title: options } : options
@@ -61,31 +71,38 @@ export const useDialogStore = defineStore('dialog', () => {
     })
   }
 
-  // --- Internal Handlers ---
-
   function handleConfirm() {
     if (!current.value) return
-    const result = current.value.type === 'prompt' ? inputValue.value : true
-    current.value.resolve(result)
+    pendingResult = current.value.type === 'prompt' ? inputValue.value : true
     close()
   }
 
   function handleCancel() {
     if (!current.value) return
-    const result = current.value.type === 'confirm' ? false : null
-    current.value.resolve(result)
+    pendingResult = current.value.type === 'confirm' ? false : null
     close()
   }
 
-  function close() {
+  async function close() {
     visible.value = false
-    // Delay removal slightly to allow Vuetify transition to finish
-    setTimeout(() => {
-      queue.value.shift()
-      current.value = null
-      inputValue.value = ''
-      processQueue()
-    }, 200)
+
+    // Wait for Vuetify's transition to finish (~200-300ms)
+    // before resolving the promise and clearing the state.
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    const resolvedRequest = queue.value.shift()
+    current.value = null
+    inputValue.value = ''
+
+    // Resolve the promise only AFTER the UI is clear
+    if (resolvedRequest) {
+      resolvedRequest.resolve(pendingResult)
+    }
+
+    pendingResult = null
+
+    // Check if there are more dialogs waiting in the queue
+    processQueue()
   }
 
   return {

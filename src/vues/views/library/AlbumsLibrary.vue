@@ -13,32 +13,6 @@ const snackbarStore = useSnackbarsStore()
 const dialogs = useDialogStore()
 const router = useRouter()
 
-async function x() {
-  // 1. Alert (Just info)
-  await dialogs.alert('Settings saved!')
-
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-
-  // 2. Confirm (Returns boolean)
-  const confirmed = await dialogs.confirm({
-    title: 'Delete Photo?',
-    description: 'This action cannot be undone.',
-    confirmText: 'Delete',
-    color: 'error',
-  })
-  console.warn({ confirmed })
-
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-
-  // 3. Prompt (Returns string or null)
-  const folderName = await dialogs.prompt({
-    title: 'New Folder',
-    defaultValue: 'Vacation 2024',
-  })
-  console.warn({ folderName })
-}
-x()
-
 const loading = ref(false)
 const showSkeleton = ref(false)
 let skeletonTimeout: ReturnType<typeof setTimeout> | null = null
@@ -137,7 +111,7 @@ function toggleDirection() {
 }
 
 function makeNewAlbum() {
-  snackbarStore.alert({
+  dialogs.alert({
     title: 'Create album',
     description: 'Create an album by selecting some photos and clicking "Add to album"',
     icon: 'mdi-image-album',

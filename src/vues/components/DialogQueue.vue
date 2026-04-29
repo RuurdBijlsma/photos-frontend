@@ -1,9 +1,9 @@
 <template>
   <v-dialog
-    v-model="store.visible"
+    :model-value="store.visible"
+    @update:model-value="(val) => !val && store.handleCancel()"
     :persistent="store.current?.options.persistent"
     max-width="460"
-    @click:outside="store.handleCancel"
   >
     <v-card v-if="store.current" rounded="xl" color="surface-container">
       <v-card-item>
@@ -23,24 +23,19 @@
           {{ store.current.options.description }}
         </p>
 
-        <!-- Input field only for prompt -->
         <v-text-field
           v-if="store.current.type === 'prompt'"
           v-model="store.inputValue"
           autofocus
-          variant="outlined"
+          color="primary"
           density="comfortable"
           hide-details
           @keydown.enter="store.handleConfirm"
         />
       </v-card-text>
 
-      <v-divider v-if="store.current.type !== 'alert'"/>
-
-      <v-card-actions >
+      <v-card-actions>
         <v-spacer />
-
-        <!-- Cancel button: Shown for Confirm and Prompt -->
         <v-btn
           v-if="store.current.type !== 'alert'"
           variant="text"
@@ -51,6 +46,7 @@
         </v-btn>
 
         <v-btn
+          v-if="!store.current.options.actions"
           :color="store.current.options.color || 'primary'"
           variant="tonal"
           rounded="lg"
@@ -60,6 +56,15 @@
             store.current.options.confirmText || (store.current.type === 'alert' ? 'OK' : 'Confirm')
           }}
         </v-btn>
+
+        <v-btn
+          v-else
+          v-for="(action, i) in store.current.options.actions"
+          :key="i"
+          @click="action.action"
+          :color="action.color || 'default'"
+          >{{ action.name }}</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
