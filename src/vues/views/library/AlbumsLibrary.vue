@@ -110,15 +110,14 @@ function toggleDirection() {
   loadAlbums()
 }
 
-function makeNewAlbum() {
-  dialogs.alert({
+async function makeNewAlbum() {
+  await dialogs.alert({
     title: 'Create album',
     description: 'Create an album by selecting some photos and clicking "Add to album"',
     icon: 'mdi-image-album',
     actions: [
       {
         name: 'Go to photos',
-        color: 'primary',
         action: () => {
           router.push({ path: '/' })
         },

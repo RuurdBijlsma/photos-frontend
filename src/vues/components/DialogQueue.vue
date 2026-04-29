@@ -1,3 +1,15 @@
+<script setup lang="ts">
+import { type DialogAction, useDialogStore } from '@/scripts/stores/dialogStore'
+const store = useDialogStore()
+
+const handleAction = async (actionItem: DialogAction) => {
+  if (actionItem.action) {
+    await actionItem.action()
+  }
+  store.handleConfirm()
+}
+</script>
+
 <template>
   <v-dialog
     :model-value="store.visible"
@@ -6,22 +18,22 @@
     max-width="460"
   >
     <v-card v-if="store.current" rounded="xl" color="surface-container">
-      <v-card-item>
-        <v-card-title>
-          <v-icon
-            v-if="store.current.options.icon"
-            :color="store.current.options.color || 'primary'"
-          >
-            {{ store.current.options.icon }}
-          </v-icon>
-          <span>{{ store.current.options.title }}</span>
-        </v-card-title>
-      </v-card-item>
+      <v-card-title class="d-flex align-center bg-surface-variant text-h6 py-3 px-4">
+        <v-icon v-if="store.current.options.icon" :icon="store.current.options.icon" class="mr-3" />
+        <span>{{ store.current.options.title }}</span>
+        <v-spacer />
+        <v-btn
+          icon="mdi-close"
+          variant="text"
+          density="comfortable"
+          @click="store.handleCancel()"
+        />
+      </v-card-title>
 
-      <v-card-text>
-        <p v-if="store.current.options.description">
-          {{ store.current.options.description }}
-        </p>
+      <v-card-text class="pa-6 text-body-1">
+        <span v-if="store.current.options.description">{{
+          store.current.options.description
+        }}</span>
 
         <v-text-field
           v-if="store.current.type === 'prompt'"
@@ -34,7 +46,9 @@
         />
       </v-card-text>
 
-      <v-card-actions>
+      <v-divider />
+
+      <v-card-actions class="pa-3">
         <v-spacer />
         <v-btn
           v-if="store.current.type !== 'alert'"
@@ -61,16 +75,11 @@
           v-else
           v-for="(action, i) in store.current.options.actions"
           :key="i"
-          @click="action.action"
-          :color="action.color || 'default'"
+          @click="handleAction(action)"
+          :color="action.color || 'primary'"
           >{{ action.name }}</v-btn
         >
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
-
-<script setup lang="ts">
-import { useDialogStore } from '@/scripts/stores/dialogStore'
-const store = useDialogStore()
-</script>
