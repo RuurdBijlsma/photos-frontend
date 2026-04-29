@@ -181,7 +181,7 @@ function selectItem(e: PointerEvent) {
 }
 
 .virtual-scroll-item.selected .checkbox-selecting {
-  background-color: rgba(var(--v-theme-background), 0.3);
+  background-color: rgb(var(--v-theme-surface-container-highest));
 }
 
 .check-item-selecting {
@@ -211,7 +211,7 @@ function selectItem(e: PointerEvent) {
   align-items: center;
   transition: scale 0.2s ease-in-out;
   text-decoration: none;
-  background-color: rgb(var(--v-theme-surface));
+  background-color: rgb(var(--v-theme-surface-container-highest));
 }
 
 .fullscreen:hover {
@@ -227,7 +227,7 @@ function selectItem(e: PointerEvent) {
 }
 
 .fullscreen-icon {
-  color: rgb(var(--v-theme-on-secondary));
+  color: rgb(var(--v-theme-primary));
 }
 
 .checkbox {

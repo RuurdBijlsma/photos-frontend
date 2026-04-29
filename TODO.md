@@ -176,4 +176,4 @@
   * remove photo from album
   * set photo as album cover
   * delete entire album (on /albums and on /album/{id})
-* [BUG] view big picture when selecting is wrong (wrong BG?)
+* ✅ [BUG] view big picture when selecting is wrong (wrong BG?)

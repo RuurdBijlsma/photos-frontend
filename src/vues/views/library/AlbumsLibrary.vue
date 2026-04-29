@@ -7,9 +7,38 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRouter } from 'vue-router'
 import { MONTHS } from '@/scripts/constants.ts'
 import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
+import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 
 const snackbarStore = useSnackbarsStore()
+const dialogs = useDialogStore()
 const router = useRouter()
+
+async function x() {
+  // 1. Alert (Just info)
+  await dialogs.alert('Settings saved!')
+
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+
+  // 2. Confirm (Returns boolean)
+  const confirmed = await dialogs.confirm({
+    title: 'Delete Photo?',
+    description: 'This action cannot be undone.',
+    confirmText: 'Delete',
+    color: 'error',
+  })
+  console.warn({ confirmed })
+
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+
+  // 3. Prompt (Returns string or null)
+  const folderName = await dialogs.prompt({
+    title: 'New Folder',
+    defaultValue: 'Vacation 2024',
+  })
+  console.warn({ folderName })
+}
+x()
+
 const loading = ref(false)
 const showSkeleton = ref(false)
 let skeletonTimeout: ReturnType<typeof setTimeout> | null = null
@@ -142,6 +171,10 @@ function getAlbumTimeSpan(album: Album) {
   return `${year1} - ${year2}`
 }
 
+function deleteAlbum(album: Album) {
+  console.log('delete', album)
+}
+
 onMounted(() => {
   loadAlbums()
 })
@@ -233,14 +266,35 @@ onUnmounted(() => {
           :to="`/album/${album.id}`"
           class="album-card"
         >
-          <glow-thumbnail
-            v-if="album.thumbnailId"
-            :media-item-id="album.thumbnailId"
-            :height="200"
-            :width="200"
-            border-radius="20px"
-            :strength="0.7"
-          />
+          <div class="album-image">
+            <glow-thumbnail
+              class="album-glow-image"
+              v-if="album.thumbnailId"
+              :media-item-id="album.thumbnailId"
+              :height="200"
+              :width="200"
+              border-radius="20px"
+              :strength="0.7"
+            />
+            <v-menu location="bottom end">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  class="album-options-btn"
+                  icon="mdi-dots-vertical"
+                  variant="flat"
+                  density="comfortable"
+                  color="primary"
+                  @click.stop.prevent
+                />
+              </template>
+              <v-list>
+                <v-list-item @click="deleteAlbum(album)" prepend-icon="mdi-delete">
+                  <v-list-item-title>Delete</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
 
           <div class="album-info">
             <h3
@@ -312,6 +366,32 @@ onUnmounted(() => {
   justify-items: center;
 }
 
+.album-image {
+  position: relative;
+  height: 200px;
+  width: 200px;
+}
+
+.album-options-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  opacity: 0;
+}
+
+.album-image:hover .album-options-btn {
+  opacity: 1;
+}
+
+.album-glow-image {
+  top: 0;
+  left: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
 .album-card {
   text-decoration: none;
   color: inherit;
@@ -319,31 +399,7 @@ onUnmounted(() => {
 }
 
 .album-card:hover {
-  transform: translateY(-5px) scale(1.05);
-}
-
-.image-wrapper {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-}
-
-.album-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.album-card:hover .album-overlay {
-  opacity: 1;
+  transform: translateY(-5px) scale(1.01);
 }
 
 .album-info {
@@ -356,11 +412,13 @@ onUnmounted(() => {
   font-weight: 600;
   margin-bottom: 2px;
   max-width: 195px;
+  margin-top: 0;
 }
 
 .album-meta {
   font-size: 0.85rem;
   opacity: 0.6;
+  margin-top: 0;
 }
 
 .empty-state {

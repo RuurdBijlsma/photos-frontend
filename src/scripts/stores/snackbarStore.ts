@@ -10,27 +10,6 @@ export interface SnackAction {
   hideOnClick?: boolean
 }
 
-export interface AlertAction {
-  name: string
-  action: () => unknown
-  color?: string
-}
-
-export interface CreateAlert {
-  title: string
-  description: string
-  icon?: string
-  actions?: AlertAction[]
-}
-
-export interface Alert {
-  id: string
-  title: string
-  description: string
-  icon?: string
-  actions?: AlertAction[]
-}
-
 export interface Snack {
   id: string
   message: string
@@ -57,7 +36,6 @@ export type SnackOptions = {
 
 export const useSnackbarsStore = defineStore('snackbars', () => {
   const snackQueue = ref<Snack[]>([])
-  const alertQueue = ref<Alert[]>([])
 
   /**
    * Removes a snackbar by ID.
@@ -167,25 +145,8 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
     })
   }
 
-  function alert(alert: CreateAlert) {
-    const id = crypto.randomUUID()
-    alertQueue.value.push({
-      id,
-      ...alert,
-    })
-    return id
-  }
-
-  function removeAlert(id: string) {
-    const index = alertQueue.value.findIndex((a) => a.id === id)
-    if (index > -1) {
-      alertQueue.value.splice(index, 1)
-    }
-  }
-
   return {
     snackQueue,
-    alertQueue,
     remove,
     enqueue,
     info,
@@ -194,7 +155,5 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
     error,
     pauseTimeout,
     resumeTimeout,
-    alert,
-    removeAlert,
   }
 })
