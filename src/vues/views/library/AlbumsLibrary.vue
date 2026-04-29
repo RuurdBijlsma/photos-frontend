@@ -144,8 +144,21 @@ function getAlbumTimeSpan(album: Album) {
   return `${year1} - ${year2}`
 }
 
-function deleteAlbum(album: Album) {
-  console.log('delete', album)
+async function deleteAlbum(album: Album) {
+  const confirmed = await dialogs.confirm({
+    title: 'Are you sure?',
+    description: 'This will permanently delete the album.',
+    confirmText: 'Delete',
+    color: 'error',
+  })
+  if (!confirmed) return
+  console.warn('DELETING', { confirmed, album })
+  try {
+    await albumService.deleteAlbum(album.id)
+    await loadAlbums()
+  } catch (e) {
+    snackbarStore.error('Error deleting album', e)
+  }
 }
 
 onMounted(() => {

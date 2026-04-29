@@ -33,6 +33,10 @@ const albumService = {
     return apiClient.post<Album>('/album', payload)
   },
 
+  deleteAlbum(albumId: string): Promise<AxiosResponse<Album>> {
+    return apiClient.delete<Album>(`/album/${albumId}`)
+  },
+
   /**
    * Update an album's details (Name, Description, Visibility).
    */
