@@ -112,7 +112,7 @@ function selectItem(e: PointerEvent) {
           title="View in fullscreen"
           @click.stop
         >
-          <v-icon color="white" class="fullscreen-icon" size="20" icon="mdi-fullscreen" />
+          <v-icon color="white" class="fullscreen-icon" size="21" icon="mdi-fullscreen" />
         </router-link>
         <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
       </div>

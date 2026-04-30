@@ -8,10 +8,12 @@ import { useRouter } from 'vue-router'
 import { MONTHS } from '@/scripts/constants.ts'
 import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
+import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 
 const snackbarStore = useSnackbarsStore()
 const dialogs = useDialogStore()
 const router = useRouter()
+const albumStore = useAlbumStore()
 
 const loading = ref(false)
 const showSkeleton = ref(false)
@@ -144,6 +146,22 @@ function getAlbumTimeSpan(album: Album) {
   return `${year1} - ${year2}`
 }
 
+async function renameAlbum(album: Album) {
+  const newName = await dialogs.prompt({
+    title: 'Rename Album',
+    defaultValue: album.name,
+    confirmText: 'Rename',
+  })
+  if (album.name === newName || !newName) return
+  try {
+    await albumService.updateAlbum(album.id, { name: newName })
+    await loadAlbums()
+    requestIdleCallback(() => albumStore.fetchUserAlbums())
+  } catch (e) {
+    snackbarStore.error('Error renaming album', e)
+  }
+}
+
 async function deleteAlbum(album: Album) {
   const confirmed = await dialogs.confirm({
     title: 'Are you sure?',
@@ -274,9 +292,12 @@ onUnmounted(() => {
                   @click.stop.prevent
                 />
               </template>
-              <v-list>
-                <v-list-item @click="deleteAlbum(album)" prepend-icon="mdi-delete">
-                  <v-list-item-title>Delete</v-list-item-title>
+              <v-list density="compact">
+                <v-list-item @click="deleteAlbum(album)">
+                  <v-list-item-title>Delete album</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="renameAlbum(album)">
+                  <v-list-item-title>Rename album</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>

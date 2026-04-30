@@ -385,6 +385,7 @@ watch(
     view-link="/search/view/"
     :loading-more="loadingMore"
     @load-more="executeSearch(true)"
+    type="search"
   >
     <div class="search-options">
       <h2 class="search-query-title">

@@ -684,7 +684,7 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
 <template>
   <div class="timeline-container">
     <main-layout-container>
-      <selection-overlay />
+      <selection-overlay context="front-page" />
       <date-overlay :date="overlayDate" @date-picked="onDatePick" />
       <teleport to="body">
         <router-view />

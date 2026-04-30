@@ -70,8 +70,8 @@ const albumService = {
   /**
    * Remove a specific media item from an album.
    */
-  removeMediaFromAlbum(albumId: string, mediaItemId: string): Promise<AxiosResponse<void>> {
-    return apiClient.delete<void>(`/album/${albumId}/media/${mediaItemId}`)
+  removeMediaFromAlbum(albumId: string, mediaItemIds: string[]): Promise<AxiosResponse<void>> {
+    return apiClient.delete<void>(`/album/${albumId}/media/${mediaItemIds.join(',')}`)
   },
 
   // --- Collaborator Management ---

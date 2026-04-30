@@ -162,7 +162,13 @@ watch(
 </script>
 
 <template>
-  <simple-timeline ref="simpleTimeline" :timeline-items="items" :view-link="`/album/${id}/view/`">
+  <simple-timeline
+    ref="simpleTimeline"
+    :timeline-items="items"
+    :view-link="`/album/${id}/view/`"
+    v-if="id"
+    :type="{ album: id }"
+  >
     <div class="album-header">
       <div class="album-header-left">
         <glow-thumbnail

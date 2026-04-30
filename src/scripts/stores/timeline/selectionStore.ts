@@ -26,6 +26,14 @@ export const useSelectionStore = defineStore('selection', () => {
     anchorId = null
   }
 
+  function deselectMany(ids: string[]) {
+    for (const id of ids) {
+      selection.value.delete(id)
+      if (anchorId == id) anchorId = null
+    }
+    triggerRef(selection)
+  }
+
   function selectSpan(id: string) {
     if (anchorId === null) return toggleSelection(id)
 
@@ -62,6 +70,7 @@ export const useSelectionStore = defineStore('selection', () => {
     isSelecting,
     hoverDate,
 
+    deselectMany,
     toggleSelection,
     selectAll,
     deselectAll,

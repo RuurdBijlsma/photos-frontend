@@ -4,9 +4,13 @@ import type { Album, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
 import albumService from '@/scripts/services/albumService.ts'
 import type { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 
 export const useAlbumStore = defineStore('album', () => {
   const snackbarStore = useSnackbarsStore()
+  const selectionStore = useSelectionStore()
+  const dialogs = useDialogStore()
 
   const userAlbums = shallowRef<Album[]>(
     localStorage.getItem('userAlbums') === null ? [] : JSON.parse(localStorage.userAlbums),
@@ -48,6 +52,26 @@ export const useAlbumStore = defineStore('album', () => {
     }
   }
 
+  async function removeFromAlbum(albumId: string, removeItemIds: string[]) {
+    const confirmed = await dialogs.confirm({
+      title: 'Are you sure?',
+      description: `This will remove ${removeItemIds.length} item${removeItemIds.length === 1 ? '' : 's'} from the album.`,
+      confirmText: 'Remove',
+      color: 'error',
+    })
+    if (!confirmed) return
+    try {
+      await albumService.removeMediaFromAlbum(albumId, removeItemIds)
+      selectionStore.deselectMany(removeItemIds)
+      requestIdleCallback(() => {
+        fetchAlbumMedia(albumId, false)
+        fetchUserAlbums()
+      })
+    } catch (e) {
+      snackbarStore.error('Error removing items from album', e)
+    }
+  }
+
   return {
     userAlbums,
     albumMedia,
@@ -55,5 +79,6 @@ export const useAlbumStore = defineStore('album', () => {
     fetchUserAlbums,
     fetchAlbumMedia,
     updateAlbumDetails,
+    removeFromAlbum,
   }
 })

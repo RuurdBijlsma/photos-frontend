@@ -1,5 +1,7 @@
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 
+export type TimelineContext = { album?: string }
+
 export interface SimpleLayoutRow {
   items: SimpleTimelineItem[]
   height: number

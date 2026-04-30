@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
-import type { SimpleLayoutRow } from '@/scripts/types/timeline/layout.ts'
+import type { SimpleLayoutRow, TimelineContext } from '@/scripts/types/timeline/layout.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
@@ -15,6 +15,7 @@ const props = defineProps<{
   timelineItems: SimpleTimelineItem[]
   viewLink: string
   loadingMore?: boolean
+  type: TimelineContext
 }>()
 
 watch(
@@ -251,7 +252,7 @@ useEventListener(window, 'mouseup', () => {
 <template>
   <div class="simple-timeline">
     <main-layout-container>
-      <selection-overlay />
+      <selection-overlay :context="type" />
       <teleport to="body">
         <router-view />
       </teleport>

@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import AddToAlbumButton from '@/vues/components/timeline/timeline-components/AddToAlbumButton.vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import type { TimelineContext } from '@/scripts/types/timeline/layout.ts'
+import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 
 withDefaults(
   defineProps<{
     excludeAlbumIds?: string[]
+    context: TimelineContext
   }>(),
   {
     excludeAlbumIds: () => [],
+    context: {},
   },
 )
 
 const selectionStore = useSelectionStore()
+const albumStore = useAlbumStore()
 </script>
 
 <template>
@@ -46,12 +51,20 @@ const selectionStore = useSelectionStore()
         density="compact"
         v-tooltip:top="'Move to bin'"
       />
-      <v-btn
-        icon="mdi-dots-horizontal"
-        variant="plain"
-        density="compact"
-        v-tooltip:top="'More options'"
-      />
+
+      <v-menu>
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon="mdi-dots-horizontal" variant="plain" density="compact" />
+        </template>
+        <v-list density="compact">
+          <v-list-item
+            v-if="context.album"
+            @click="albumStore.removeFromAlbum(context.album, [...selectionStore.selection])"
+          >
+            <v-list-item-title>Remove from album</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
     </div>
   </v-slide-y-reverse-transition>
 </template>
