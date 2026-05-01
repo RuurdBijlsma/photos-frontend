@@ -83,7 +83,7 @@ const route = useRoute()
                   <thumbnail-img
                     v-if="album.thumbnailId"
                     :media-item-id="album.thumbnailId"
-                    :height="100"
+                    :height="144"
                   />
                 </v-avatar>
               </template>

@@ -12,8 +12,9 @@ The web interface for **Ruurd Photos**, a self-hosted Google Photos alternative.
 
 ## Prerequisites
 
-*   **Node.js**: Version `^20.19.0` or `>=22.12.0` (as required by the build engine).
 *   **[Ruurd Photos Backend](https://github.com/RuurdBijlsma/photos-backend)**: The frontend requires the API to be running.
+* Node
+* npm
 
 ## Installation
 
