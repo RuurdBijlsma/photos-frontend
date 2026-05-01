@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef, triggerRef } from 'vue'
+import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 
 export const useSelectionStore = defineStore('selection', () => {
   const allIds = shallowRef<string[]>([])
   const selection = shallowRef(new Set<string>())
   const isSelecting = computed(() => selection.value.size > 0)
   const hoverDate = ref<string | null>(null)
+
+  const dialogs = useDialogStore()
 
   let anchorId: string | null = null
 
@@ -16,12 +19,28 @@ export const useSelectionStore = defineStore('selection', () => {
     triggerRef(selection)
   }
 
-  function selectAll() {
+  async function selectAll() {
+    if (selection.value.size > 10) {
+      const confirmed = await dialogs.confirm({
+        title: 'Change Selection?',
+        description: 'Your current selection will be cleared and replaced with all items.',
+        confirmText: 'Select all',
+      })
+      if (!confirmed) return
+    }
     selection.value = new Set(allIds.value)
     anchorId = null
   }
 
-  function deselectAll() {
+  async function deselectAll() {
+    if (selection.value.size > 10 && allIds.value.length - selection.value.size > 10) {
+      const confirmed = await dialogs.confirm({
+        title: 'Clear Selection?',
+        description: 'This will remove all selected items. This action cannot be undone.',
+        confirmText: 'Clear selection',
+      })
+      if (!confirmed) return
+    }
     selection.value = new Set()
     anchorId = null
   }

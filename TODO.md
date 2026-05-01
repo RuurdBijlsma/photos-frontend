@@ -171,9 +171,9 @@
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * album page: add sort (also sort by added on date)
 * niet "People" tab laten zien als je nog geen faces hebt
-* "Are you sure knop" bij "select all" en "deselect all" als je selectie meer dan X fotos is
-* album
-  * remove photo from album
-  * set photo as album cover
-  * delete entire album (on /albums and on /album/{id})
+* ✅ "Are you sure knop" bij "select all" en "deselect all" als je selectie meer dan X fotos is
+* ✅ album
+  * ✅ remove photo from album
+  * ✅ set photo as album cover
+  * ✅ delete entire album (on /albums and on /album/{id})
 * ✅ [BUG] view big picture when selecting is wrong (wrong BG?)

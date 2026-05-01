@@ -208,7 +208,7 @@ watch(
                 v-bind="props"
                 class="album-options-btn"
                 icon="mdi-dots-horizontal"
-                variant="flat"
+                variant="tonal"
                 density="comfortable"
                 color="primary"
                 @click.stop.prevent
@@ -299,7 +299,7 @@ watch(
           <v-btn
             v-tooltip:top="'Add collaborator'"
             icon="mdi-plus"
-            variant="outlined"
+            variant="tonal"
             color="primary"
             size="40"
           ></v-btn>
@@ -379,6 +379,9 @@ watch(
   font-family: Roboto, sans-serif;
   margin-bottom: 3px;
   position: relative;
+  background-color: transparent;
+  outline: 0 solid transparent;
+  border: 0 solid transparent;
 }
 
 .album-description:focus {
