@@ -255,22 +255,38 @@ function scrollToTop() {
 function handleDragOver(e: DragEvent) {
   if (!props.isManualOrderMode || !scrollContainerEl.value) return
   const rect = scrollContainerEl.value.getBoundingClientRect()
-  const threshold = 100
-  const y = e.clientY - rect.top
+  const viewportHeight = window.innerHeight
+  const threshold = 120
 
-  if (scrollInterval) cancelAnimationFrame(scrollInterval)
+  // Calculate effective boundaries within the viewport
+  const containerTop = rect.top
+  const containerBottom = Math.min(rect.bottom, viewportHeight)
+  const mouseY = e.clientY
 
-  if (y < threshold && y > 0) {
-    const speed = Math.max(1, (threshold - y) / 5)
+  if (scrollInterval) {
+    cancelAnimationFrame(scrollInterval)
+    scrollInterval = null
+  }
+
+  let speed = 0
+  if (mouseY < containerTop + threshold) {
+    // Scroll up
+    const dist = containerTop + threshold - mouseY
+    speed = -Math.max(2, dist / 4)
+  } else if (mouseY > containerBottom - threshold) {
+    // Scroll down
+    const dist = mouseY - (containerBottom - threshold)
+    speed = Math.max(2, dist / 4)
+  }
+
+  if (speed !== 0) {
+    const maxSpeed = 35
+    const finalSpeed = Math.sign(speed) * Math.min(Math.abs(speed), maxSpeed)
     scrollInterval = requestAnimationFrame(function scroll() {
-      if (scrollContainerEl.value) scrollContainerEl.value.scrollTop -= speed
-      scrollInterval = requestAnimationFrame(scroll)
-    })
-  } else if (y > rect.height - threshold && y < rect.height) {
-    const speed = Math.max(1, (y - (rect.height - threshold)) / 5)
-    scrollInterval = requestAnimationFrame(function scroll() {
-      if (scrollContainerEl.value) scrollContainerEl.value.scrollTop += speed
-      scrollInterval = requestAnimationFrame(scroll)
+      if (scrollContainerEl.value) {
+        scrollContainerEl.value.scrollTop += finalSpeed
+        scrollInterval = requestAnimationFrame(scroll)
+      }
     })
   }
 }

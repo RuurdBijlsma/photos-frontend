@@ -27,9 +27,20 @@ function onDragOver(e: DragEvent, targetId: string) {
   dropPosition.value = position
 }
 
-function onDragLeave() {
-  dropTargetId.value = null
-  dropPosition.value = null
+function onDragLeave(e?: DragEvent) {
+  // If no event, we always clear (e.g. on drop)
+  if (!e) {
+    dropTargetId.value = null
+    dropPosition.value = null
+    return
+  }
+
+  // Only clear if we are leaving the row entirely
+  const target = e.relatedTarget as HTMLElement
+  if (!target || !e.currentTarget || !(e.currentTarget as HTMLElement).contains(target)) {
+    dropTargetId.value = null
+    dropPosition.value = null
+  }
 }
 
 function onDrop(e: DragEvent, targetId: string) {
@@ -53,6 +64,7 @@ function onDrop(e: DragEvent, targetId: string) {
 <template>
   <div
     class="reorder-grid-row"
+    @dragleave="onDragLeave"
     :style="{
       height: `${Math.round(item.height)}px`,
       width: `${containerWidth}px`,
@@ -64,7 +76,6 @@ function onDrop(e: DragEvent, targetId: string) {
       :key="mediaItem.id"
       class="item-wrapper"
       @dragover="onDragOver($event, mediaItem.id)"
-      @dragleave="onDragLeave"
       @drop="onDrop($event, mediaItem.id)"
       :class="{
         'drop-before': dropTargetId === mediaItem.id && dropPosition === 'before',
@@ -102,7 +113,6 @@ function onDrop(e: DragEvent, targetId: string) {
   background-color: rgb(var(--v-theme-primary));
   border-radius: 2px;
   opacity: 0;
-  transition: opacity 0.2s;
   pointer-events: none;
   z-index: 10;
 }
