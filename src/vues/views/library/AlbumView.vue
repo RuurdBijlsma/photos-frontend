@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useDebounceFn, useTextareaAutosize } from '@vueuse/core'
 import EditableTitle from '@/vues/components/ui/EditableTitle.vue'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
@@ -17,6 +18,7 @@ const router = useRouter()
 const albumStore = useAlbumStore()
 const simpleTimeline = useTemplateRef('simpleTimeline')
 const snackbars = useSnackbarsStore()
+const dialogs = useDialogStore()
 
 const isManualOrderMode = ref(false)
 const manualOrderList = ref<string[]>([])
@@ -157,9 +159,32 @@ async function sortAlbumByDate() {
   albumStore.fetchAlbumMedia(id.value, false)
 }
 
+async function confirmRouteLeave(next) {
+  if (isManualOrderMode.value) {
+    const confirmed = await dialogs.confirm({
+      title: 'Leave reorder mode?',
+      description: 'You have unsaved changes. Are you sure you want to leave?',
+      confirmText: 'Leave',
+      color: 'warning',
+    })
+    if (confirmed) {
+      isManualOrderMode.value = false
+      next()
+    } else {
+      next(false)
+    }
+  } else {
+    next()
+  }
+}
+
+onBeforeRouteLeave(async (to, from, next) => confirmRouteLeave(next))
+onBeforeRouteUpdate(async (to, from, next) => confirmRouteLeave(next))
+
 watch(
   id,
   () => {
+    isManualOrderMode.value = false
     albumTitle.value = null
     albumDescription.value = null
     console.log('Album ID change', id.value)

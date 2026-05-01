@@ -9,7 +9,7 @@ defineProps<{
   itemGap: number
 }>()
 
-const emit = defineEmits(['reorder'])
+const emit = defineEmits(['reorder', 'drag-start'])
 
 const dropTargetId = ref<string | null>(null)
 const dropPosition = ref<'before' | 'after' | null>(null)
@@ -21,9 +21,10 @@ function onDragOver(e: DragEvent, targetId: string) {
   const target = e.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
   const x = e.clientX - rect.left
+  const position = x < rect.width / 2 ? 'before' : 'after'
 
   dropTargetId.value = targetId
-  dropPosition.value = x < rect.width / 2 ? 'before' : 'after'
+  dropPosition.value = position
 }
 
 function onDragLeave() {
@@ -75,6 +76,7 @@ function onDrop(e: DragEvent, targetId: string) {
         :width="Math.round(mediaItem.ratio * item.height)"
         :height="Math.round(item.height)"
         :thumbnail-size="item.thumbnailSize"
+        @drag-start="emit('drag-start', $event)"
       />
       <div class="insertion-line"></div>
     </div>

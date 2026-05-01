@@ -37,6 +37,7 @@ const viewPhotoStore = useViewPhotoStore()
 const selectionStore = useSelectionStore()
 
 const localItemsOrder = ref<SimpleTimelineItem[]>([])
+let scrollInterval: number | null = null
 
 watch(
   () => props.timelineItems,
@@ -166,6 +167,14 @@ function calculateLayout(timelineItems: SimpleTimelineItem[], containerWidth: nu
     offsetTop += Math.round(rowHeight) + ITEM_GAP
   }
 
+  // Add indices to items for reordering logic
+  let currentIndex = 0
+  for (const row of layoutRows) {
+    for (const item of row.items as any[]) {
+      item.index = currentIndex++
+    }
+  }
+
   return {
     rows: layoutRows,
     totalHeight: offsetTop,
@@ -243,6 +252,42 @@ function scrollToTop() {
   }
 }
 
+function handleDragOver(e: DragEvent) {
+  if (!props.isManualOrderMode || !scrollContainerEl.value) return
+  const rect = scrollContainerEl.value.getBoundingClientRect()
+  const threshold = 100
+  const y = e.clientY - rect.top
+
+  if (scrollInterval) cancelAnimationFrame(scrollInterval)
+
+  if (y < threshold && y > 0) {
+    const speed = Math.max(1, (threshold - y) / 5)
+    scrollInterval = requestAnimationFrame(function scroll() {
+      if (scrollContainerEl.value) scrollContainerEl.value.scrollTop -= speed
+      scrollInterval = requestAnimationFrame(scroll)
+    })
+  } else if (y > rect.height - threshold && y < rect.height) {
+    const speed = Math.max(1, (y - (rect.height - threshold)) / 5)
+    scrollInterval = requestAnimationFrame(function scroll() {
+      if (scrollContainerEl.value) scrollContainerEl.value.scrollTop += speed
+      scrollInterval = requestAnimationFrame(scroll)
+    })
+  }
+}
+
+function handleDragEnd() {
+  console.warn("DRAGEND")
+  if (scrollInterval) cancelAnimationFrame(scrollInterval)
+  scrollInterval = null
+}
+
+useEventListener(window, 'dragend', handleDragEnd)
+useEventListener(window, 'drop', handleDragEnd)
+useEventListener(window, 'blur', handleDragEnd)
+useEventListener(document, 'visibilitychange', () => {
+  if (document.hidden) handleDragEnd()
+})
+
 defineExpose({
   scrollToTop,
 })
@@ -301,7 +346,14 @@ useEventListener(window, 'mouseup', () => {
         <router-view />
       </teleport>
 
-      <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
+      <div
+        class="scroll-container"
+        ref="scrollContainer"
+        @scroll.passive="onScroll"
+        @dragover="handleDragOver"
+        @dragend="handleDragEnd"
+        @drop="handleDragEnd"
+      >
         <div ref="customSlot">
           <slot></slot>
         </div>
@@ -344,6 +396,7 @@ useEventListener(window, 'mouseup', () => {
             <v-progress-circular indeterminate color="primary" size="32" />
           </div>
         </div>
+        <div v-if="isManualOrderMode" class="reorder-bottom-spacer" />
       </div>
     </main-layout-container>
 
@@ -426,6 +479,11 @@ useEventListener(window, 'mouseup', () => {
   display: flex;
   justify-content: center;
   padding: 40px;
+  width: 100%;
+}
+
+.reorder-bottom-spacer {
+  height: 75px;
   width: 100%;
 }
 </style>

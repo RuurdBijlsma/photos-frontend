@@ -11,6 +11,8 @@ const props = defineProps<{
   thumbnailSize: number
 }>()
 
+const emit = defineEmits(['drag-start'])
+
 const id = computed(() => props.mediaItem.id)
 const isVideo = computed(() => props.mediaItem.isVideo)
 const durationMs = computed(() => props.mediaItem.durationMs)
@@ -20,6 +22,7 @@ function onDragStart(e: DragEvent) {
     e.dataTransfer.setData('text/plain', id.value)
     e.dataTransfer.effectAllowed = 'move'
   }
+  emit('drag-start', id.value)
 }
 </script>
 
