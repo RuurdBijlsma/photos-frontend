@@ -11,12 +11,17 @@ import SelectionOverlay from '@/vues/components/timeline/timeline-components/Sel
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 
-const props = defineProps<{
-  timelineItems: SimpleTimelineItem[]
-  viewLink: string
-  loadingMore?: boolean
-  type: TimelineContext
-}>()
+const props = withDefaults(
+  defineProps<{
+    timelineItems: SimpleTimelineItem[]
+    viewLink: string
+    loadingMore?: boolean
+    context?: TimelineContext
+  }>(),
+  {
+    context: {},
+  },
+)
 
 watch(
   () => props.timelineItems,
@@ -252,7 +257,7 @@ useEventListener(window, 'mouseup', () => {
 <template>
   <div class="simple-timeline">
     <main-layout-container>
-      <selection-overlay :context="type" />
+      <selection-overlay v-if="context" :context="context" />
       <teleport to="body">
         <router-view />
       </teleport>

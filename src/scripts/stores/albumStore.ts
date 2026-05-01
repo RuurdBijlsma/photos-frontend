@@ -43,12 +43,22 @@ export const useAlbumStore = defineStore('album', () => {
     triggerRef(albumMedia)
   }
 
+  async function deleteAlbum(albumId: string) {
+    try {
+      await albumService.deleteAlbum(albumId)
+      requestIdleCallback(() => fetchUserAlbums())
+      snackbarStore.info("Album deleted")
+    } catch (e) {
+      snackbarStore.error(`Failed to delete album.`, e as Error)
+    }
+  }
+
   async function updateAlbumDetails(albumId: string, albumDetails: UpdateAlbumRequest) {
     try {
       await albumService.updateAlbum(albumId, albumDetails)
       requestIdleCallback(() => fetchUserAlbums())
     } catch (e) {
-      snackbarStore.error(`Failed to update album: ${albumId}.`, e as Error)
+      snackbarStore.error(`Failed to update album.`, e as Error)
     }
   }
 
@@ -80,5 +90,6 @@ export const useAlbumStore = defineStore('album', () => {
     fetchAlbumMedia,
     updateAlbumDetails,
     removeFromAlbum,
+    deleteAlbum,
   }
 })

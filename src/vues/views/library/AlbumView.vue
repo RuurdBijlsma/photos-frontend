@@ -167,7 +167,7 @@ watch(
     :timeline-items="items"
     :view-link="`/album/${id}/view/`"
     v-if="id"
-    :type="{ album: id }"
+    :context="{ album: id }"
   >
     <div class="album-header">
       <div class="album-header-left">

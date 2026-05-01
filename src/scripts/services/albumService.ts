@@ -16,9 +16,6 @@ import type {
 import { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'
 
 const albumService = {
-  /**
-   * List all albums for the current user.
-   */
   getUserAlbums(
     sortField: AlbumSortField = 'updatedAt',
     sortDirection: SortDirection = 'desc',
@@ -26,9 +23,6 @@ const albumService = {
     return apiClient.get<Album[]>('/album', { params: { sortField, sortDirection } })
   },
 
-  /**
-   * Create a new album.
-   */
   createAlbum(payload: CreateAlbumRequest): Promise<AxiosResponse<Album>> {
     return apiClient.post<Album>('/album', payload)
   },
@@ -37,16 +31,10 @@ const albumService = {
     return apiClient.delete<Album>(`/album/${albumId}`)
   },
 
-  /**
-   * Update an album's details (Name, Description, Visibility).
-   */
   updateAlbum(albumId: string, payload: UpdateAlbumRequest): Promise<AxiosResponse<Album>> {
     return apiClient.put<Album>(`/album/${albumId}`, payload)
   },
 
-  /**
-   * Remove album description.
-   */
   removeAlbumDescription(albumId: string): Promise<AxiosResponse> {
     return apiClient.delete(`/album/${albumId}/description`)
   },
@@ -60,25 +48,16 @@ const albumService = {
 
   // --- Media Management ---
 
-  /**
-   * Add media items to an album.
-   */
   addMediaToAlbum(albumId: string, payload: AddMediaToAlbumRequest): Promise<AxiosResponse<void>> {
     return apiClient.post<void>(`/album/${albumId}/media`, payload)
   },
 
-  /**
-   * Remove a specific media item from an album.
-   */
   removeMediaFromAlbum(albumId: string, mediaItemIds: string[]): Promise<AxiosResponse<void>> {
     return apiClient.delete<void>(`/album/${albumId}/media/${mediaItemIds.join(',')}`)
   },
 
   // --- Collaborator Management ---
 
-  /**
-   * Add a collaborator (user) to an album.
-   */
   addCollaborator(
     albumId: string,
     payload: AddCollaboratorRequest,

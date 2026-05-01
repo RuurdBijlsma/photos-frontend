@@ -7,7 +7,7 @@ import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 withDefaults(
   defineProps<{
     excludeAlbumIds?: string[]
-    context: TimelineContext
+    context?: TimelineContext
   }>(),
   {
     excludeAlbumIds: () => [],
@@ -58,7 +58,7 @@ const albumStore = useAlbumStore()
         </template>
         <v-list density="compact">
           <v-list-item
-            v-if="context.album"
+            v-if="context && context.album"
             @click="albumStore.removeFromAlbum(context.album, [...selectionStore.selection])"
           >
             <v-list-item-title>Remove from album</v-list-item-title>

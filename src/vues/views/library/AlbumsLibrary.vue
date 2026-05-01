@@ -9,6 +9,7 @@ import { MONTHS } from '@/scripts/constants.ts'
 import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
 
 const snackbarStore = useSnackbarsStore()
 const dialogs = useDialogStore()
@@ -173,7 +174,11 @@ async function deleteAlbum(album: Album) {
   console.warn('DELETING', { confirmed, album })
   try {
     await albumService.deleteAlbum(album.id)
-    await loadAlbums()
+    snackbarStore.enqueue({ message: 'Album deleted', icon: 'mdi-delete' })
+    requestIdleCallback(() => {
+      loadAlbums()
+      albumStore.fetchUserAlbums()
+    })
   } catch (e) {
     snackbarStore.error('Error deleting album', e)
   }
