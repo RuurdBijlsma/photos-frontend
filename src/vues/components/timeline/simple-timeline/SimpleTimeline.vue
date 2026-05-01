@@ -276,7 +276,6 @@ function handleDragOver(e: DragEvent) {
 }
 
 function handleDragEnd() {
-  console.warn("DRAGEND")
   if (scrollInterval) cancelAnimationFrame(scrollInterval)
   scrollInterval = null
 }
