@@ -46,6 +46,10 @@ const albumService = {
     return apiClient.post(`/album/${albumId}/sort-by-date`)
   },
 
+  reorderMedia(albumId: string, mediaItemIds: string[]): Promise<AxiosResponse<void>> {
+    return apiClient.put<void>(`/album/${albumId}/media/reorder`, { mediaItemIds })
+  },
+
   // --- Media Management ---
 
   addMediaToAlbum(albumId: string, payload: AddMediaToAlbumRequest): Promise<AxiosResponse<void>> {

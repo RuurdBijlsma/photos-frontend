@@ -10,6 +10,7 @@ import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import SelectionOverlay from '@/vues/components/timeline/timeline-components/SelectionOverlay.vue'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import ReorderGridRow from '@/vues/components/timeline/simple-timeline/ReorderGridRow.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -17,9 +18,11 @@ const props = withDefaults(
     viewLink: string
     loadingMore?: boolean
     context?: TimelineContext
+    isManualOrderMode?: boolean
   }>(),
   {
     context: {},
+    isManualOrderMode: false,
   },
 )
 
@@ -28,10 +31,46 @@ watch(
   () => console.log('Total timeline items', props.timelineItems.length),
 )
 
-const emit = defineEmits(['loadMore'])
+const emit = defineEmits(['loadMore', 'reorder'])
 
 const viewPhotoStore = useViewPhotoStore()
 const selectionStore = useSelectionStore()
+
+const localItemsOrder = ref<SimpleTimelineItem[]>([])
+
+watch(
+  () => props.timelineItems,
+  (newItems) => {
+    if (!props.isManualOrderMode) {
+      localItemsOrder.value = [...newItems]
+    }
+  },
+  { immediate: true },
+)
+
+function onReorder({
+  sourceId,
+  targetId,
+  position,
+}: {
+  sourceId: string
+  targetId: string
+  position: 'before' | 'after'
+}) {
+  const items = [...localItemsOrder.value]
+  const sourceIndex = items.findIndex((i) => i.id === sourceId)
+  if (sourceIndex === -1) return
+  const [movedItem] = items.splice(sourceIndex, 1)
+
+  let targetIndex = items.findIndex((i) => i.id === targetId)
+  if (targetIndex === -1) return
+
+  if (position === 'after') targetIndex++
+  items.splice(targetIndex, 0, movedItem!)
+
+  localItemsOrder.value = items
+  emit('reorder', items)
+}
 
 const IDEAL_ROW_HEIGHT = 330
 const MAX_SIZE_MULTIPLIER = 1.5
@@ -226,8 +265,8 @@ useResizeObserver(customSlotEl, (entries) => {
   }
 })
 
-watch([() => props.timelineItems, containerWidth], () => {
-  const { rows, totalHeight } = calculateLayout(props.timelineItems, containerWidth.value)
+watch([localItemsOrder, containerWidth], () => {
+  const { rows, totalHeight } = calculateLayout(localItemsOrder.value, containerWidth.value)
   gridLayout.value = rows
   contentHeight.value = totalHeight + customSlotHeight.value
   nextTick(() => rowVirtualizer.value.measure())
@@ -285,8 +324,15 @@ useEventListener(window, 'mouseup', () => {
               transform: `translateY(${virtualRow.start}px)`,
             }"
           >
+            <reorder-grid-row
+              v-if="isManualOrderMode && gridLayout[virtualRow.index]"
+              :item="gridLayout[virtualRow.index]!"
+              :container-width="containerWidth"
+              :item-gap="ITEM_GAP"
+              @reorder="onReorder"
+            />
             <virtual-simple-row
-              v-if="gridLayout[virtualRow.index]"
+              v-else-if="gridLayout[virtualRow.index]"
               :item="gridLayout[virtualRow.index]!"
               :container-width="containerWidth"
               :item-gap="ITEM_GAP"

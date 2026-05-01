@@ -106,6 +106,15 @@ export const useAlbumStore = defineStore('album', () => {
     }
   }
 
+  async function reorderMedia(albumId: string, mediaItemIds: string[]) {
+    try {
+      await albumService.reorderMedia(albumId, mediaItemIds)
+      requestIdleCallback(() => fetchAlbumMedia(albumId, false))
+    } catch (e) {
+      snackbarStore.error('Error reordering items', e)
+    }
+  }
+
   return {
     userAlbums,
     albumMedia,
@@ -114,6 +123,7 @@ export const useAlbumStore = defineStore('album', () => {
     fetchAlbumMedia,
     updateAlbumDetails,
     removeFromAlbum,
+    reorderMedia,
     deleteAlbum,
     renameAlbum,
   }

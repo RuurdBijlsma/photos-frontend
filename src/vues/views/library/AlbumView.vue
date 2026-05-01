@@ -2,6 +2,7 @@
 import { useRoute, useRouter } from 'vue-router'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useDebounceFn, useTextareaAutosize } from '@vueuse/core'
 import EditableTitle from '@/vues/components/ui/EditableTitle.vue'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
@@ -15,6 +16,10 @@ const route = useRoute()
 const router = useRouter()
 const albumStore = useAlbumStore()
 const simpleTimeline = useTemplateRef('simpleTimeline')
+const snackbars = useSnackbarsStore()
+
+const isManualOrderMode = ref(false)
+const manualOrderList = ref<string[]>([])
 
 const id = computed(() => {
   const rawId = route.params.albumId
@@ -118,6 +123,40 @@ async function deleteAlbum() {
   if (deleted) await router.push({ name: 'albums' })
 }
 
+function manualOrderMode() {
+  isManualOrderMode.value = true
+  snackbars.enqueue({
+    message: 'Drag photos to reorder the album',
+    icon: 'mdi-pencil-outline',
+    timeout: 5000,
+  })
+}
+
+function cancelReorder() {
+  isManualOrderMode.value = false
+  manualOrderList.value = []
+  // SimpleTimeline will reset its localItemsOrder because it watches props.timelineItems
+}
+
+async function saveReorder() {
+  if (!id.value || manualOrderList.value.length === 0) {
+    isManualOrderMode.value = false
+    return
+  }
+  await albumStore.reorderMedia(id.value, manualOrderList.value)
+  isManualOrderMode.value = false
+}
+
+function onReorder(items: any[]) {
+  manualOrderList.value = items.map((i) => i.id)
+}
+
+async function sortAlbumByDate() {
+  if (!id.value) return
+  await albumService.sortAlbumByDate(id.value)
+  albumStore.fetchAlbumMedia(id.value, false)
+}
+
 watch(
   id,
   () => {
@@ -169,154 +208,195 @@ watch(
 </script>
 
 <template>
-  <simple-timeline
-    ref="simpleTimeline"
-    :timeline-items="items"
-    :view-link="`/album/${id}/view/`"
-    v-if="id"
-    :context="{ album: id }"
-  >
-    <div class="album-header">
-      <div class="album-header-left">
-        <glow-thumbnail
-          v-if="thumbnailId"
-          :media-item-id="thumbnailId"
-          border-radius="44px"
-          :height="222"
-          :max-width="(222 * 16) / 9"
-        />
-      </div>
-      <div class="album-header-right">
-        <div class="album-header-first-row">
-          <editable-title
-            class="editable-header"
-            v-if="albumTitle !== null"
-            name="album title"
-            :autofocus="route.query?.create === '1'"
-            v-model="albumTitle"
+  <div class="album-container">
+    <div class="album-reorder-header" v-if="isManualOrderMode">
+      <v-btn
+        variant="tonal"
+        rounded
+        color="primary"
+        class="mr-3"
+        prepend-icon="mdi-sort-calendar-ascending"
+        @click="sortAlbumByDate"
+      >
+        Sort by date
+      </v-btn>
+      <v-spacer />
+      <v-btn variant="text" rounded class="mr-2" @click="cancelReorder">Cancel</v-btn>
+      <v-btn
+        variant="elevated"
+        color="primary"
+        rounded
+        @click="saveReorder"
+        prepend-icon="mdi-check"
+      >
+        Done
+      </v-btn>
+    </div>
+    <simple-timeline
+      ref="simpleTimeline"
+      :timeline-items="items"
+      :view-link="`/album/${id}/view/`"
+      v-if="id"
+      :context="{ album: id }"
+      :is-manual-order-mode="isManualOrderMode"
+      @reorder="onReorder"
+    >
+      <div class="album-header">
+        <div class="album-header-left">
+          <glow-thumbnail
+            v-if="thumbnailId"
+            :media-item-id="thumbnailId"
+            border-radius="44px"
+            :height="222"
+            :max-width="(222 * 16) / 9"
           />
+        </div>
+        <div class="album-header-right">
+          <div class="album-header-first-row">
+            <editable-title
+              class="editable-header"
+              v-if="albumTitle !== null"
+              name="album title"
+              :autofocus="route.query?.create === '1'"
+              v-model="albumTitle"
+            />
+            <v-skeleton-loader
+              v-else
+              type="heading"
+              width="50%"
+              height="17%"
+              :style="{ transform: `translateX(-18px)` }"
+            />
+            <v-menu location="bottom end" v-if="!isManualOrderMode">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  class="album-options-btn"
+                  icon="mdi-dots-horizontal"
+                  variant="tonal"
+                  density="comfortable"
+                  color="primary"
+                  @click.stop.prevent
+                />
+              </template>
+              <v-list density="compact" bg-color="surface-container-high">
+                <v-list-item @click="deleteAlbum" prepend-icon="mdi-delete">
+                  <v-list-item-title>Delete album</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="manualOrderMode" prepend-icon="mdi-pencil-outline">
+                  <v-list-item-title>Edit order</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
+          <p v-if="formattedDates" class="album-dates">{{ formattedDates }}</p>
           <v-skeleton-loader
             v-else
-            type="heading"
-            width="50%"
-            height="17%"
+            height="13%"
+            type="text"
+            width="30%"
             :style="{ transform: `translateX(-18px)` }"
           />
-          <v-menu location="bottom end">
-            <template v-slot:activator="{ props }">
-              <v-btn
-                v-bind="props"
-                class="album-options-btn"
-                icon="mdi-dots-horizontal"
-                variant="tonal"
-                density="comfortable"
-                color="primary"
-                @click.stop.prevent
-              />
-            </template>
-            <v-list density="compact" bg-color="surface-container-high">
-              <v-list-item @click="deleteAlbum">
-                <v-list-item-title>Delete album</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </div>
-        <p v-if="formattedDates" class="album-dates">{{ formattedDates }}</p>
-        <v-skeleton-loader
-          v-else
-          height="13%"
-          type="text"
-          width="30%"
-          :style="{ transform: `translateX(-18px)` }"
-        />
-        <div class="description-area" v-if="album">
-          <v-btn
-            v-if="albumDescription === null"
-            class="description-add-button"
-            prepend-icon="mdi-plus"
-            density="compact"
-            variant="plain"
-            rounded
-            @click="setDescription"
-          >
-            Add description
-          </v-btn>
-          <div v-else class="description-with-remove">
-            <textarea
-              class="album-description"
-              ref="textarea"
-              :style="{
-                boxShadow:
-                  albumDescription?.length > 0
-                    ? ''
-                    : `inset 0 0 0 1px rgba(var(--v-theme-on-background), 0.3)`,
-              }"
-              v-model="albumDescription"
-              @input="triggerResize"
-              @focus="focusTextArea"
-              @blur="blurTextArea"
-            ></textarea>
+          <div class="description-area" v-if="album">
             <v-btn
-              @click="removeDescription"
-              v-tooltip:top="'Remove description'"
-              icon="mdi-close"
+              v-if="albumDescription === null"
+              class="description-add-button"
+              prepend-icon="mdi-plus"
               density="compact"
               variant="plain"
-              :style="{
-                opacity: descTextAreaFocus ? 'inherit' : 0,
-              }"
+              rounded
+              @click="setDescription"
+            >
+              Add description
+            </v-btn>
+            <div v-else class="description-with-remove">
+              <textarea
+                class="album-description"
+                ref="textarea"
+                :style="{
+                  boxShadow:
+                    albumDescription?.length > 0
+                      ? ''
+                      : `inset 0 0 0 1px rgba(var(--v-theme-on-background), 0.3)`,
+                }"
+                v-model="albumDescription"
+                @input="triggerResize"
+                @focus="focusTextArea"
+                @blur="blurTextArea"
+              ></textarea>
+              <v-btn
+                @click="removeDescription"
+                v-tooltip:top="'Remove description'"
+                icon="mdi-close"
+                density="compact"
+                variant="plain"
+                :style="{
+                  opacity: descTextAreaFocus ? 'inherit' : 0,
+                }"
+              ></v-btn>
+            </div>
+          </div>
+          <v-skeleton-loader
+            v-else
+            type="subtitle"
+            height="13%"
+            width="37%"
+            :style="{ transform: `translateX(-18px)` }"
+          />
+          <div class="album-collaborators" v-if="album">
+            <div
+              class="album-collaborator"
+              v-for="collaborator in album.collaborators"
+              :key="collaborator.id"
+            >
+              <v-avatar
+                :color="stringToColor(collaborator.name)"
+                class="collaborator-avatar"
+                v-tooltip:top="
+                  `${collaborator.name}${collaborator.userId === album.ownerId ? ' (Owner)' : ''}`
+                "
+              >
+                {{
+                  collaborator.name
+                    .split(' ')
+                    .map((i) => i[0]!.toUpperCase())
+                    .join('')
+                }}
+              </v-avatar>
+            </div>
+            <v-btn
+              v-tooltip:top="'Add collaborator'"
+              icon="mdi-plus"
+              variant="tonal"
+              color="primary"
+              size="40"
             ></v-btn>
           </div>
+          <v-skeleton-loader
+            v-else
+            height="10%"
+            type="avatar,avatar"
+            :style="{ transform: `translateX(-60px) scale(0.88)` }"
+          />
+          <v-btn v-if="!isManualOrderMode" @click="sortAlbumByDate">Sort chronologically</v-btn>
         </div>
-        <v-skeleton-loader
-          v-else
-          type="subtitle"
-          height="13%"
-          width="37%"
-          :style="{ transform: `translateX(-18px)` }"
-        />
-        <div class="album-collaborators" v-if="album">
-          <div
-            class="album-collaborator"
-            v-for="collaborator in album.collaborators"
-            :key="collaborator.id"
-          >
-            <v-avatar
-              :color="stringToColor(collaborator.name)"
-              class="collaborator-avatar"
-              v-tooltip:top="
-                `${collaborator.name}${collaborator.userId === album.ownerId ? ' (Owner)' : ''}`
-              "
-            >
-              {{
-                collaborator.name
-                  .split(' ')
-                  .map((i) => i[0]!.toUpperCase())
-                  .join('')
-              }}
-            </v-avatar>
-          </div>
-          <v-btn
-            v-tooltip:top="'Add collaborator'"
-            icon="mdi-plus"
-            variant="tonal"
-            color="primary"
-            size="40"
-          ></v-btn>
-        </div>
-        <v-skeleton-loader
-          v-else
-          height="10%"
-          type="avatar,avatar"
-          :style="{ transform: `translateX(-60px) scale(0.88)` }"
-        />
-        <v-btn @click="albumService.sortAlbumByDate(id!)">Sort chronologically</v-btn>
       </div>
-    </div>
-  </simple-timeline>
+    </simple-timeline>
+  </div>
 </template>
 
 <style scoped>
+.album-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.album-reorder-header {
+  display: flex;
+  padding: 10px 50px 10px 10px;
+}
+
 .album-header {
   display: flex;
   width: 100%;
@@ -333,8 +413,12 @@ watch(
 
 .album-header-first-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
+}
+
+.album-options-btn {
+  margin: 4px;
 }
 
 .editable-header {
@@ -380,7 +464,6 @@ watch(
   margin-bottom: 3px;
   position: relative;
   background-color: transparent;
-  outline: 0 solid transparent;
   border: 0 solid transparent;
 }
 

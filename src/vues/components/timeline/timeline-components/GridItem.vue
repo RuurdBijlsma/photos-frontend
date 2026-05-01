@@ -131,9 +131,7 @@ function selectItem(e: PointerEvent) {
 
       <div class="video-info" v-if="isVideo">
         <span>{{ toHms(durationMs / 1000) }}</span>
-        <div class="video-icon">
-          <v-icon color="white" class="is-video-icon" size="15" icon="mdi-play" />
-        </div>
+        <v-icon color="white" size="16" icon="mdi-play" />
       </div>
     </template>
   </div>
@@ -271,27 +269,20 @@ function selectItem(e: PointerEvent) {
 
 .video-info {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   display: flex;
-  gap: 10px;
   align-items: center;
-  pointer-events: none;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 6px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
 }
 
 .video-info span {
-  font-weight: 500;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.video-icon {
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  display: flex;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
-  justify-content: center;
-  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
 }
 </style>
