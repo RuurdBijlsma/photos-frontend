@@ -111,6 +111,13 @@ function removeDescription() {
   albumDescription.value = null
 }
 
+async function deleteAlbum() {
+  const id = album.value?.id
+  if (!id) return
+  const deleted = await albumStore.deleteAlbum(id)
+  if (deleted) await router.push({ name: 'albums' })
+}
+
 watch(
   id,
   () => {
@@ -180,20 +187,40 @@ watch(
         />
       </div>
       <div class="album-header-right">
-        <editable-title
-          class="editable-header"
-          v-if="albumTitle !== null"
-          name="album title"
-          :autofocus="route.query?.create === '1'"
-          v-model="albumTitle"
-        />
-        <v-skeleton-loader
-          v-else
-          type="heading"
-          width="50%"
-          height="17%"
-          :style="{ transform: `translateX(-18px)` }"
-        />
+        <div class="album-header-first-row">
+          <editable-title
+            class="editable-header"
+            v-if="albumTitle !== null"
+            name="album title"
+            :autofocus="route.query?.create === '1'"
+            v-model="albumTitle"
+          />
+          <v-skeleton-loader
+            v-else
+            type="heading"
+            width="50%"
+            height="17%"
+            :style="{ transform: `translateX(-18px)` }"
+          />
+          <v-menu location="bottom end">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                v-bind="props"
+                class="album-options-btn"
+                icon="mdi-dots-horizontal"
+                variant="flat"
+                density="comfortable"
+                color="primary"
+                @click.stop.prevent
+              />
+            </template>
+            <v-list density="compact" bg-color="surface-container-high">
+              <v-list-item @click="deleteAlbum">
+                <v-list-item-title>Delete album</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
         <p v-if="formattedDates" class="album-dates">{{ formattedDates }}</p>
         <v-skeleton-loader
           v-else
@@ -302,6 +329,12 @@ watch(
 .album-header-right {
   padding: 20px;
   flex-grow: 1;
+}
+
+.album-header-first-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .editable-header {

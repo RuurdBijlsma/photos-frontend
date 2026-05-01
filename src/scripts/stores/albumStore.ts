@@ -44,12 +44,36 @@ export const useAlbumStore = defineStore('album', () => {
   }
 
   async function deleteAlbum(albumId: string) {
+    const confirmed = await dialogs.confirm({
+      title: 'Are you sure?',
+      description: 'This will permanently delete the album.',
+      confirmText: 'Delete',
+      color: 'error',
+    })
+    if (!confirmed) return false
+    console.warn('DELETING', { confirmed, albumId })
     try {
       await albumService.deleteAlbum(albumId)
+      snackbarStore.enqueue({ message: 'Album deleted', icon: 'mdi-delete' })
       requestIdleCallback(() => fetchUserAlbums())
-      snackbarStore.info("Album deleted")
     } catch (e) {
-      snackbarStore.error(`Failed to delete album.`, e as Error)
+      snackbarStore.error('Error deleting album', e)
+    }
+    return true
+  }
+
+  async function renameAlbum(albumId: string, currentName: string) {
+    const newName = await dialogs.prompt({
+      title: 'Rename Album',
+      defaultValue: currentName,
+      confirmText: 'Rename',
+    })
+    if (currentName === newName || !newName) return
+    try {
+      await albumService.updateAlbum(albumId, { name: newName })
+      requestIdleCallback(() => fetchUserAlbums())
+    } catch (e) {
+      snackbarStore.error('Error renaming album', e)
     }
   }
 
@@ -91,5 +115,6 @@ export const useAlbumStore = defineStore('album', () => {
     updateAlbumDetails,
     removeFromAlbum,
     deleteAlbum,
+    renameAlbum,
   }
 })

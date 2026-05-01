@@ -69,58 +69,62 @@ const route = useRoute()
 
       <v-expand-transition v-if="userHasAlbums">
         <div v-show="albumsExpanded" class="album-list-container">
-          <v-list-item
-            rounded
-            :to="`/album/${album.id}`"
-            v-for="album in truncatedAlbums"
-            :key="album.id"
-          >
-            <template v-slot:prepend>
-              <v-avatar rounded color="surface-container-high">
-                <thumbnail-img
-                  v-if="album.thumbnailId"
-                  :media-item-id="album.thumbnailId"
-                  :height="144"
-                />
-              </v-avatar>
-            </template>
-            <v-list-item-title
-              v-tooltip="{
-                location: 'top',
-                text: album.name,
-                disabled: album.name.length <= 15,
-              }"
-              v-if="album.name"
+          <div class="album-list-branch">
+            <v-list-item
+              :prepend-gap="10"
+              rounded
+              :to="`/album/${album.id}`"
+              v-for="album in truncatedAlbums"
+              :key="album.id"
+              class="album-sub-item"
             >
-              {{ album.name }}
-            </v-list-item-title>
-            <v-list-item-title v-else><i class="opacity-50">Unnamed</i></v-list-item-title>
-            <v-list-item-subtitle
-              >{{ album.mediaCount.toLocaleString() }} item{{
-                album.mediaCount === 1 ? '' : 's'
-              }}</v-list-item-subtitle
+              <template v-slot:prepend>
+                <v-avatar size="32" rounded color="surface-container-high">
+                  <thumbnail-img
+                    v-if="album.thumbnailId"
+                    :media-item-id="album.thumbnailId"
+                    :height="100"
+                  />
+                </v-avatar>
+              </template>
+
+              <v-list-item-title
+                v-tooltip="{
+                  location: 'top',
+                  text: album.name,
+                  disabled: album.name.length <= 15,
+                }"
+                v-if="album.name"
+              >
+                {{ album.name || 'Unnamed' }}
+              </v-list-item-title>
+
+              <v-list-item-subtitle style="font-size: 0.7rem">
+                {{ album.mediaCount.toLocaleString() }} item{{ album.mediaCount === 1 ? '' : 's' }}
+              </v-list-item-subtitle>
+            </v-list-item>
+
+            <v-btn
+              density="compact"
+              variant="plain"
+              rounded
+              color="secondary"
+              v-if="hasMoreAlbums"
+              class="show-more-less-button ms-4"
+              @click="maxShownAlbums += 5"
+              >Show more</v-btn
             >
-          </v-list-item>
-          <v-btn
-            density="compact"
-            variant="plain"
-            rounded
-            color="secondary"
-            v-if="hasMoreAlbums"
-            class="mt-1 show-more-less-button"
-            @click="maxShownAlbums += 5"
-            >Show more</v-btn
-          >
-          <v-btn
-            density="compact"
-            variant="plain"
-            rounded
-            color="secondary"
-            v-else-if="maxShownAlbums > 5"
-            class="mt-1 show-more-less-button"
-            @click="maxShownAlbums = 5"
-            >Show less</v-btn
-          >
+            <v-btn
+              density="compact"
+              variant="plain"
+              rounded
+              color="secondary"
+              v-else-if="maxShownAlbums > 5"
+              class="show-more-less-button ms-4"
+              @click="maxShownAlbums = 5"
+              >Show less</v-btn
+            >
+          </div>
         </div>
       </v-expand-transition>
       <v-list-item rounded :prepend-icon="faceIcon" title="People" to="/people" />
@@ -152,11 +156,25 @@ const route = useRoute()
   flex-grow: 1;
 }
 
-.album-list-container {
+.album-list-branch {
+  margin-left: 20px;
+  padding-left: 5px;
+  border-left: 1px solid rgba(var(--v-border-color), 0.12);
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding-right: 2px;
+  gap: 2px;
+}
+
+.album-sub-item {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.show-more-less-button {
+  font-size: 11px;
+  text-transform: none;
+  justify-content: start;
+  width: fit-content;
 }
 
 .albums-nav-btn {
@@ -165,9 +183,5 @@ const route = useRoute()
 
 .point-down {
   transform: rotate(180deg);
-}
-
-.show-more-less-button {
-  font-size: 10px;
 }
 </style>

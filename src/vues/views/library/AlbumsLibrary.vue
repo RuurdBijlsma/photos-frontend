@@ -61,7 +61,6 @@ const sortDirectionIcon = computed(() => {
       ? 'mdi-sort-clock-ascending-outline'
       : 'mdi-sort-clock-descending-outline'
   }
-  // Default to Calendar/latestPhoto
   return currentSortDirection.value === 'asc'
     ? 'mdi-sort-calendar-ascending'
     : 'mdi-sort-calendar-descending'
@@ -148,40 +147,13 @@ function getAlbumTimeSpan(album: Album) {
 }
 
 async function renameAlbum(album: Album) {
-  const newName = await dialogs.prompt({
-    title: 'Rename Album',
-    defaultValue: album.name,
-    confirmText: 'Rename',
-  })
-  if (album.name === newName || !newName) return
-  try {
-    await albumService.updateAlbum(album.id, { name: newName })
-    await loadAlbums()
-    requestIdleCallback(() => albumStore.fetchUserAlbums())
-  } catch (e) {
-    snackbarStore.error('Error renaming album', e)
-  }
+  await albumStore.renameAlbum(album.id, album.name)
+  requestIdleCallback(() => loadAlbums())
 }
 
-async function deleteAlbum(album: Album) {
-  const confirmed = await dialogs.confirm({
-    title: 'Are you sure?',
-    description: 'This will permanently delete the album.',
-    confirmText: 'Delete',
-    color: 'error',
-  })
-  if (!confirmed) return
-  console.warn('DELETING', { confirmed, album })
-  try {
-    await albumService.deleteAlbum(album.id)
-    snackbarStore.enqueue({ message: 'Album deleted', icon: 'mdi-delete' })
-    requestIdleCallback(() => {
-      loadAlbums()
-      albumStore.fetchUserAlbums()
-    })
-  } catch (e) {
-    snackbarStore.error('Error deleting album', e)
-  }
+async function deleteAlbum(albumId: string) {
+  await albumStore.deleteAlbum(albumId)
+  requestIdleCallback(() => loadAlbums())
 }
 
 onMounted(() => {
@@ -290,7 +262,7 @@ onUnmounted(() => {
                 <v-btn
                   v-bind="props"
                   class="album-options-btn"
-                  icon="mdi-dots-vertical"
+                  icon="mdi-dots-horizontal"
                   variant="flat"
                   density="comfortable"
                   color="primary"
@@ -298,7 +270,7 @@ onUnmounted(() => {
                 />
               </template>
               <v-list density="compact">
-                <v-list-item @click="deleteAlbum(album)">
+                <v-list-item @click="deleteAlbum()">
                   <v-list-item-title>Delete album</v-list-item-title>
                 </v-list-item>
                 <v-list-item @click="renameAlbum(album)">
