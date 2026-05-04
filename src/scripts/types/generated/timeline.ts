@@ -85,6 +85,10 @@ export interface FullAlbumMediaResponse {
   items: SimpleTimelineItem[]
 }
 
+export interface OrderedMediaResponse {
+  items: SimpleTimelineItem[]
+}
+
 export interface CollaboratorSummary {
   id: number
   userId: number
@@ -99,6 +103,7 @@ export interface AlbumInfo {
   isPublic: boolean
   ownerId: number
   createdAt: string
+  sortMode: string
   thumbnailId?: string | undefined
   firstDate?: string | undefined
   lastDate?: string | undefined
@@ -817,6 +822,70 @@ export const FullAlbumMediaResponse: MessageFns<FullAlbumMediaResponse> = {
   },
 }
 
+function createBaseOrderedMediaResponse(): OrderedMediaResponse {
+  return { items: [] }
+}
+
+export const OrderedMediaResponse: MessageFns<OrderedMediaResponse> = {
+  encode(message: OrderedMediaResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.items) {
+      SimpleTimelineItem.encode(v!, writer.uint32(10).fork()).join()
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): OrderedMediaResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseOrderedMediaResponse()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break
+          }
+
+          message.items.push(SimpleTimelineItem.decode(reader, reader.uint32()))
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): OrderedMediaResponse {
+    return {
+      items: globalThis.Array.isArray(object?.items)
+        ? object.items.map((e: any) => SimpleTimelineItem.fromJSON(e))
+        : [],
+    }
+  },
+
+  toJSON(message: OrderedMediaResponse): unknown {
+    const obj: any = {}
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => SimpleTimelineItem.toJSON(e))
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<OrderedMediaResponse>, I>>(base?: I): OrderedMediaResponse {
+    return OrderedMediaResponse.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<OrderedMediaResponse>, I>>(
+    object: I,
+  ): OrderedMediaResponse {
+    const message = createBaseOrderedMediaResponse()
+    message.items = object.items?.map((e) => SimpleTimelineItem.fromPartial(e)) || []
+    return message
+  },
+}
+
 function createBaseCollaboratorSummary(): CollaboratorSummary {
   return { id: 0, userId: 0, name: '', role: '' }
 }
@@ -939,6 +1008,7 @@ function createBaseAlbumInfo(): AlbumInfo {
     isPublic: false,
     ownerId: 0,
     createdAt: '',
+    sortMode: '',
     thumbnailId: undefined,
     firstDate: undefined,
     lastDate: undefined,
@@ -966,8 +1036,11 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
     if (message.createdAt !== '') {
       writer.uint32(50).string(message.createdAt)
     }
+    if (message.sortMode !== '') {
+      writer.uint32(58).string(message.sortMode)
+    }
     if (message.thumbnailId !== undefined) {
-      writer.uint32(58).string(message.thumbnailId)
+      writer.uint32(66).string(message.thumbnailId)
     }
     if (message.firstDate !== undefined) {
       writer.uint32(74).string(message.firstDate)
@@ -1041,6 +1114,14 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
             break
           }
 
+          message.sortMode = reader.string()
+          continue
+        }
+        case 8: {
+          if (tag !== 66) {
+            break
+          }
+
           message.thumbnailId = reader.string()
           continue
         }
@@ -1097,6 +1178,11 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
         : isSet(object.created_at)
           ? globalThis.String(object.created_at)
           : '',
+      sortMode: isSet(object.sortMode)
+        ? globalThis.String(object.sortMode)
+        : isSet(object.sort_mode)
+          ? globalThis.String(object.sort_mode)
+          : '',
       thumbnailId: isSet(object.thumbnailId)
         ? globalThis.String(object.thumbnailId)
         : isSet(object.thumbnail_id)
@@ -1138,6 +1224,9 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
     if (message.createdAt !== '') {
       obj.createdAt = message.createdAt
     }
+    if (message.sortMode !== '') {
+      obj.sortMode = message.sortMode
+    }
     if (message.thumbnailId !== undefined) {
       obj.thumbnailId = message.thumbnailId
     }
@@ -1164,6 +1253,7 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
     message.isPublic = object.isPublic ?? false
     message.ownerId = object.ownerId ?? 0
     message.createdAt = object.createdAt ?? ''
+    message.sortMode = object.sortMode ?? ''
     message.thumbnailId = object.thumbnailId ?? undefined
     message.firstDate = object.firstDate ?? undefined
     message.lastDate = object.lastDate ?? undefined

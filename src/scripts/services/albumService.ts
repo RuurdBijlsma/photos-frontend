@@ -6,6 +6,7 @@ import type {
   AddMediaToAlbumRequest,
   Album,
   AlbumCollaborator,
+  AlbumSort,
   AlbumSortField,
   AlbumSummary,
   CheckInviteRequest,
@@ -13,7 +14,7 @@ import type {
   SortDirection,
   UpdateAlbumRequest,
 } from '@/scripts/types/api/album'
-import { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'
+import { FullAlbumMediaResponse, OrderedMediaResponse } from '@/scripts/types/generated/timeline.ts'
 
 const albumService = {
   getUserAlbums(
@@ -39,15 +40,21 @@ const albumService = {
     return apiClient.delete(`/album/${albumId}/description`)
   },
 
-  /**
-   * Reset album ranks to sort it in chronological order.
-   */
-  sortAlbumByDate(albumId: string): Promise<AxiosResponse> {
-    return apiClient.post(`/album/${albumId}/sort-by-date`)
+  async getSortedMedia(albumId: string, sortMode: AlbumSort): Promise<OrderedMediaResponse> {
+    const response = await apiClient.get(`/album/${albumId}/media/sorted`, {
+      params: { sortMode },
+      responseType: 'arraybuffer',
+    })
+    const buffer = new Uint8Array(response.data)
+    return OrderedMediaResponse.decode(buffer)
   },
 
-  reorderMedia(albumId: string, mediaItemIds: string[]): Promise<AxiosResponse<void>> {
-    return apiClient.put<void>(`/album/${albumId}/media/reorder`, { mediaItemIds })
+  reorderMedia(
+    albumId: string,
+    mediaItemIds: string[],
+    sortMode: AlbumSort,
+  ): Promise<AxiosResponse<void>> {
+    return apiClient.put<void>(`/album/${albumId}/media/reorder`, { mediaItemIds, sortMode })
   },
 
   // --- Media Management ---

@@ -305,6 +305,9 @@ useEventListener(document, 'visibilitychange', () => {
 
 defineExpose({
   scrollToTop,
+  setOrder(items: SimpleTimelineItem[]) {
+    localItemsOrder.value = [...items]
+  },
 })
 
 useResizeObserver(scrollContainerEl, (entries) => {

@@ -2,6 +2,8 @@
 import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import type { AlbumSort } from '@/scripts/types/api/album.ts'
+import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useDebounceFn, useTextareaAutosize } from '@vueuse/core'
@@ -21,7 +23,8 @@ const snackbars = useSnackbarsStore()
 const dialogs = useDialogStore()
 
 const isManualOrderMode = ref(false)
-const manualOrderList = ref<string[]>([])
+const localItems = ref<SimpleTimelineItem[]>([])
+const pendingSortMode = ref<AlbumSort>('None')
 
 const id = computed(() => {
   const rawId = route.params.albumId
@@ -38,6 +41,7 @@ const albumResponse = computed(() => {
 const minimalAlbumInfo = computed(() => albumStore.userAlbums.find((a) => a.id === id.value))
 const album = computed(() => albumResponse.value?.album ?? null)
 const items = computed(() => albumResponse.value?.items ?? [])
+const displayedItems = computed(() => (isManualOrderMode.value ? localItems.value : items.value))
 const updateAlbumTitleDb = useDebounceFn(updateAlbumTitle, 500)
 const updateAlbumDescriptionDb = useDebounceFn(updateAlbumDescription, 500)
 const albumTitle = ref<string | null>(null)
@@ -127,6 +131,8 @@ async function deleteAlbum() {
 
 function manualOrderMode() {
   isManualOrderMode.value = true
+  localItems.value = [...items.value]
+  pendingSortMode.value = (album.value?.sortMode ?? 'None') as AlbumSort
   snackbars.enqueue({
     message: 'Drag photos to reorder the album',
     icon: 'mdi-pencil-outline',
@@ -136,27 +142,33 @@ function manualOrderMode() {
 
 function cancelReorder() {
   isManualOrderMode.value = false
-  manualOrderList.value = []
-  // SimpleTimeline will reset its localItemsOrder because it watches props.timelineItems
+  localItems.value = []
+  pendingSortMode.value = 'None'
 }
 
 async function saveReorder() {
-  if (!id.value || manualOrderList.value.length === 0) {
-    isManualOrderMode.value = false
-    return
-  }
-  await albumStore.reorderMedia(id.value, manualOrderList.value)
+  if (!id.value) return
+  await albumStore.reorderMedia(
+    id.value,
+    localItems.value.map((i) => i.id),
+    pendingSortMode.value,
+  )
   isManualOrderMode.value = false
 }
 
 function onReorder(items: any[]) {
-  manualOrderList.value = items.map((i) => i.id)
+  localItems.value = items
+  pendingSortMode.value = 'None'
 }
 
-async function sortAlbumByDate() {
+async function fetchSortedPreview(mode: AlbumSort) {
   if (!id.value) return
-  await albumService.sortAlbumByDate(id.value)
-  albumStore.fetchAlbumMedia(id.value, false)
+  if (!isManualOrderMode.value) manualOrderMode()
+
+  const response = await albumService.getSortedMedia(id.value, mode)
+  localItems.value = response.items
+  pendingSortMode.value = mode
+  simpleTimeline.value?.setOrder(localItems.value)
 }
 
 async function confirmRouteLeave(next) {
@@ -235,16 +247,35 @@ watch(
 <template>
   <div class="album-container">
     <div class="album-reorder-header" v-if="isManualOrderMode">
-      <v-btn
-        variant="tonal"
-        rounded
-        color="primary"
-        class="mr-3"
-        prepend-icon="mdi-sort-calendar-ascending"
-        @click="sortAlbumByDate"
-      >
-        Sort by date
-      </v-btn>
+      <v-menu location="bottom start">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            variant="tonal"
+            rounded
+            color="primary"
+            class="mr-3"
+            prepend-icon="mdi-sort"
+          >
+            Sort photos
+          </v-btn>
+        </template>
+        <v-list density="compact" bg-color="surface-container-high">
+          <v-list-item @click="fetchSortedPreview('DateDesc')" prepend-icon="mdi-calendar-arrow-down">
+            <v-list-item-title>Date (Newest first)</v-list-item-title>
+          </v-list-item>
+          <v-list-item @click="fetchSortedPreview('DateAsc')" prepend-icon="mdi-calendar-arrow-up">
+            <v-list-item-title>Date (Oldest first)</v-list-item-title>
+          </v-list-item>
+          <v-divider />
+          <v-list-item @click="fetchSortedPreview('AddedDesc')" prepend-icon="mdi-history">
+            <v-list-item-title>Recently added</v-list-item-title>
+          </v-list-item>
+          <v-list-item @click="fetchSortedPreview('AddedAsc')" prepend-icon="mdi-history">
+            <v-list-item-title>Oldest added</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
       <v-spacer />
       <v-btn variant="text" rounded class="mr-2" @click="cancelReorder">Cancel</v-btn>
       <v-btn
@@ -254,12 +285,12 @@ watch(
         @click="saveReorder"
         prepend-icon="mdi-check"
       >
-        Done
+        Save
       </v-btn>
     </div>
     <simple-timeline
       ref="simpleTimeline"
-      :timeline-items="items"
+      :timeline-items="displayedItems"
       :view-link="`/album/${id}/view/`"
       v-if="id"
       :context="{ album: id }"
@@ -403,7 +434,6 @@ watch(
             type="avatar,avatar"
             :style="{ transform: `translateX(-60px) scale(0.88)` }"
           />
-          <v-btn v-if="!isManualOrderMode" @click="sortAlbumByDate">Sort chronologically</v-btn>
         </div>
       </div>
     </simple-timeline>

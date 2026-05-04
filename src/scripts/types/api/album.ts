@@ -4,6 +4,7 @@ import type { TimelineItem } from '@/scripts/types/generated/timeline'
 export type AlbumRole = 'Owner' | 'Contributor' | 'Viewer'
 export type SortDirection = 'asc' | 'desc'
 export type AlbumSortField = 'updatedAt' | 'latestPhoto' | 'name'
+export type AlbumSort = 'DateAsc' | 'DateDesc' | 'AddedAsc' | 'AddedDesc' | 'None'
 
 // Entities
 export interface Album {
@@ -18,6 +19,7 @@ export interface Album {
   mediaCount: number
   latestMediaItemTimestamp: string | null // ISO Date string
   earliestMediaItemTimestamp: string | null // ISO Date string
+  sortMode: AlbumSort
 }
 
 export interface AlbumCollaborator {

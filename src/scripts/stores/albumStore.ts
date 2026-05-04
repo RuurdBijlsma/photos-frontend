@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { shallowRef, triggerRef, watch } from 'vue'
-import type { Album, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
+import type { Album, AlbumSort, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
 import albumService from '@/scripts/services/albumService.ts'
 import type { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
@@ -106,9 +106,9 @@ export const useAlbumStore = defineStore('album', () => {
     }
   }
 
-  async function reorderMedia(albumId: string, mediaItemIds: string[]) {
+  async function reorderMedia(albumId: string, mediaItemIds: string[], sortMode: AlbumSort) {
     try {
-      await albumService.reorderMedia(albumId, mediaItemIds)
+      await albumService.reorderMedia(albumId, mediaItemIds, sortMode)
       requestIdleCallback(() => fetchAlbumMedia(albumId, false))
     } catch (e) {
       snackbarStore.error('Error reordering items', e)
