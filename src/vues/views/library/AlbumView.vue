@@ -261,11 +261,17 @@ watch(
           </v-btn>
         </template>
         <v-list density="compact" bg-color="surface-container-high">
-          <v-list-item @click="fetchSortedPreview('DateDesc')" prepend-icon="mdi-calendar-arrow-down">
-            <v-list-item-title>Date (Newest first)</v-list-item-title>
+          <v-list-item
+            @click="fetchSortedPreview('DateDesc')"
+            prepend-icon="mdi-sort-calendar-descending"
+          >
+            <v-list-item-title>Newest first</v-list-item-title>
           </v-list-item>
-          <v-list-item @click="fetchSortedPreview('DateAsc')" prepend-icon="mdi-calendar-arrow-up">
-            <v-list-item-title>Date (Oldest first)</v-list-item-title>
+          <v-list-item
+            @click="fetchSortedPreview('DateAsc')"
+            prepend-icon="mdi-sort-calendar-ascending"
+          >
+            <v-list-item-title>Oldest first</v-list-item-title>
           </v-list-item>
           <v-divider />
           <v-list-item @click="fetchSortedPreview('AddedDesc')" prepend-icon="mdi-history">
