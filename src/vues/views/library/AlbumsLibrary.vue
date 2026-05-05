@@ -270,11 +270,11 @@ onUnmounted(() => {
                 />
               </template>
               <v-list density="compact">
-                <v-list-item @click="deleteAlbum()">
-                  <v-list-item-title>Delete album</v-list-item-title>
-                </v-list-item>
                 <v-list-item @click="renameAlbum(album)">
                   <v-list-item-title>Rename album</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="deleteAlbum(album.id)">
+                  <v-list-item-title>Delete album</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>

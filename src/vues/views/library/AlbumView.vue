@@ -247,52 +247,67 @@ watch(
 <template>
   <div class="album-container">
     <div class="album-reorder-header" v-if="isManualOrderMode">
-      <v-menu location="bottom start">
-        <template v-slot:activator="{ props }">
-          <v-btn
-            v-bind="props"
-            variant="tonal"
-            rounded
-            color="primary"
-            class="mr-3"
-            prepend-icon="mdi-sort"
-          >
-            Sort photos
-          </v-btn>
-        </template>
-        <v-list density="compact" bg-color="surface-container-high">
-          <v-list-item
-            @click="fetchSortedPreview('DateDesc')"
-            prepend-icon="mdi-sort-calendar-descending"
-          >
-            <v-list-item-title>Newest first</v-list-item-title>
-          </v-list-item>
-          <v-list-item
-            @click="fetchSortedPreview('DateAsc')"
-            prepend-icon="mdi-sort-calendar-ascending"
-          >
-            <v-list-item-title>Oldest first</v-list-item-title>
-          </v-list-item>
-          <v-divider />
-          <v-list-item @click="fetchSortedPreview('AddedDesc')" prepend-icon="mdi-history">
-            <v-list-item-title>Recently added</v-list-item-title>
-          </v-list-item>
-          <v-list-item @click="fetchSortedPreview('AddedAsc')" prepend-icon="mdi-history">
-            <v-list-item-title>Oldest added</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-      <v-spacer />
-      <v-btn variant="text" rounded class="mr-2" @click="cancelReorder">Cancel</v-btn>
-      <v-btn
-        variant="elevated"
-        color="primary"
-        rounded
-        @click="saveReorder"
-        prepend-icon="mdi-check"
-      >
-        Save
-      </v-btn>
+      <div class="reorder-header-title">
+        <v-icon icon="mdi-pencil" class="mr-5" size="25" />
+        <p>Edit album order</p>
+      </div>
+      <div>
+        <v-menu location="bottom start">
+          <template v-slot:activator="{ props }">
+            <v-btn
+              v-bind="props"
+              class="mr-5"
+              variant="text"
+              rounded
+              color="primary"
+              prepend-icon="mdi-sort"
+            >
+              Sort photos
+            </v-btn>
+          </template>
+          <v-list density="compact" bg-color="surface-container-high">
+            <v-list-item
+              v-if="album"
+              :active="album.sortMode == 'DateDesc'"
+              @click="fetchSortedPreview('DateDesc')"
+              prepend-icon="mdi-sort-calendar-descending"
+            >
+              <v-list-item-title>Newest first</v-list-item-title>
+            </v-list-item>
+            <v-list-item
+              v-if="album"
+              :active="album.sortMode == 'DateAsc'"
+              @click="fetchSortedPreview('DateAsc')"
+              prepend-icon="mdi-sort-calendar-ascending"
+            >
+              <v-list-item-title>Oldest first</v-list-item-title>
+            </v-list-item>
+            <v-divider />
+            <v-list-item
+              @click="fetchSortedPreview('AddedDesc')"
+              prepend-icon="mdi-sort-clock-descending-outline"
+            >
+              <v-list-item-title>Recently added</v-list-item-title>
+            </v-list-item>
+            <v-list-item
+              @click="fetchSortedPreview('AddedAsc')"
+              prepend-icon="mdi-sort-clock-ascending-outline"
+            >
+              <v-list-item-title>Oldest added</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        <v-btn variant="text" rounded class="mr-2" @click="cancelReorder">Cancel</v-btn>
+        <v-btn
+          variant="tonal"
+          color="primary"
+          rounded
+          @click="saveReorder"
+          prepend-icon="mdi-check"
+        >
+          Save
+        </v-btn>
+      </div>
     </div>
     <simple-timeline
       ref="simpleTimeline"
@@ -455,7 +470,27 @@ watch(
 
 .album-reorder-header {
   display: flex;
-  padding: 10px 50px 10px 10px;
+  padding: 20px 25px;
+  border-radius: 50px;
+  width: calc(100% - 50px);
+  margin-right: 50px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  background-color: rgb(var(--v-theme-background));
+  box-shadow: inset 0 0 0 1px rgba(var(--v-theme-primary), 0.1);
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reorder-header-title {
+  display: flex;
+  align-items: center;
+}
+
+.reorder-header-title p {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
 }
 
 .album-header {
