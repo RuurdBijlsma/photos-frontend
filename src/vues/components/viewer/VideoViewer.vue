@@ -1,4 +1,10 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+// TODO:
+// * video player to play video
+// * Use existing video endpoint (see mediaItemService.getVideo definition and usage)
+// * Native browser player is probably fine
+// * autoplay on load
+</script>
 
 <template>
   <div class="video-viewer">
@@ -19,6 +25,6 @@
   top: 0;
   left: 0;
   background-color: black;
-  color:white;
+  color: white;
 }
 </style>
