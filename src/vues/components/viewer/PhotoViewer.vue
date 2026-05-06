@@ -7,6 +7,7 @@ import { useWindowSize } from '@vueuse/core'
 import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 
 // TODO:
+// step 1: make required backend endpoints
 // * Initially load thumbnail AVIF image from getPhotoThumbnail
 // * In background load full original quality image (we'll need endpoint to load full quality image)
 // * When that's loaded, replace AVIF image with full quality image (will support embedded gain map for prettier image)
