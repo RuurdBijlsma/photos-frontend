@@ -4,13 +4,16 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useThemeStore } from '@/scripts/stores/themeStore.ts'
 import { useTheme } from 'vuetify/framework'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
 import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
+import MediaViewer from '@/vues/components/viewer/MediaViewer.vue'
+import { TimelineItem } from '@/scripts/types/generated/timeline.ts'
+import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
+import type { PhotoViewerType } from '@/scripts/types/viewerType'
 
 const mediaItemStore = useMediaItemStore()
+const timelineStore = useTimelineStore()
 const themeStore = useThemeStore()
 const settings = useSettingStore()
 const selectionStore = useSelectionStore()
@@ -46,15 +49,12 @@ const parentLocation = computed(() => {
   }
 })
 
-const fullImage = ref<undefined | FullMediaItem>(undefined)
-
 async function initialize() {
   const loadingId = id.value
   if (loadingId === null) return router.push(parentLocation.value)
   await mediaItemStore.fetchMediaItem(loadingId)
   if (id.value !== loadingId) return
   console.log('FULL MEDIA ITEM', mediaItemStore.mediaItems.get(loadingId))
-  fullImage.value = mediaItemStore.mediaItems.get(loadingId)
   const imageTheme = fullImage.value?.visual_analyses[0]?.colors?.themes?.[0]
   if (!imageTheme) return
   const vTheme = themeStore.themeFromJson(imageTheme)
@@ -102,13 +102,6 @@ function handleKeyDown(e: KeyboardEvent) {
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeyDown))
 
-const generatedThumbsAvailable = computed(() => fullImage.value?.has_thumbnails ?? true)
-const imageUrl = computed(() => {
-  const imageU = mediaItemService.getPhotoThumbnail(id.value, 1440, !generatedThumbsAvailable.value)
-  console.log({ imageU })
-  return imageU
-})
-
 const timestampString = computed(() => {
   const dateStr = fullImage.value?.taken_at_local
   if (!dateStr) return ''
@@ -142,6 +135,29 @@ const locationString = computed(() => {
   return result ? result + ' · ' : ''
 })
 
+const fullImage = computed(() => {
+  if (!id.value) return undefined
+  return mediaItemStore.mediaItems.get(id.value)
+})
+
+const timelineItem = computed<TimelineItem | undefined>(() => {
+  if (!id.value) return undefined
+  return timelineStore.mediaItemsMap.get(id.value)
+})
+
+const viewerType = computed<PhotoViewerType>(() => {
+  if (fullImage.value && fullImage.value.use_panorama_viewer) {
+    return 'panorama'
+  }
+  if (
+    (fullImage.value && fullImage.value.is_video) ||
+    (timelineItem.value && timelineItem.value.isVideo)
+  ) {
+    return 'video'
+  }
+  return 'photo'
+})
+
 watch(
   id,
   () => {
@@ -160,14 +176,7 @@ watch(
         backgroundColor: settings.useImageGlow ? 'rgb(var(--v-theme-background))' : 'black',
       }"
     >
-      <div
-        v-if="settings.useImageGlow"
-        class="blurry-bg"
-        :style="{
-          backgroundImage: `url(${imageUrl})`,
-        }"
-      ></div>
-      <img class="image-tag" :src="imageUrl" alt="Full size image" />
+      <media-viewer v-if="id" :view-type="viewerType" :media-item-id="id" class="photo-viewer" />
       <div class="top-bar">
         <div class="left-buttons">
           <v-btn
@@ -307,29 +316,19 @@ watch(
   z-index: 2400;
 }
 
-.blurry-bg {
-  position: absolute;
+.photo-viewer {
   width: 100%;
   height: 100%;
-  top: 0;
-  left: 0;
-  background-size: contain;
-  background-position: center;
-  filter: blur(50px) brightness(60%);
-}
-
-.image-tag {
   position: absolute;
-  width: 100%;
-  height: 100%;
   top: 0;
   left: 0;
-  object-fit: contain;
   z-index: 3000;
 }
 
 .top-bar {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 60px;
   display: flex;

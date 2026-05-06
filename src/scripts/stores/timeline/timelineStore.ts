@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref, shallowRef, triggerRef } from 'vue'
+import { computed, ref, shallowRef, triggerRef, watch } from 'vue'
 import {
   type TimelineItem,
   TimelineMonthRatios,
@@ -15,15 +15,26 @@ export const useTimelineStore = defineStore('timeline', () => {
   const isInitialized = ref(false)
   const monthRatios = shallowRef<TimelineMonthRatios[]>([])
   const monthItems = shallowRef(new Map<string, TimelineItem[]>())
-  const mediaItems = computed(() => {
-    const result: TimelineItem[] = []
+  const mediaItems = shallowRef<TimelineItem[]>([])
+  const mediaItemsMap = shallowRef(new Map<string, TimelineItem>())
+  watch(monthItems, () => {
+    const resultArr: TimelineItem[] = []
+    const resultMap: Map<string, TimelineItem> = new Map()
     const monthIds = [...monthItems.value.keys()].sort((a, b) => (a < b ? 1 : -1))
     for (const monthId of monthIds) {
       const group = monthItems.value.get(monthId)!
       const len = group.length
-      for (let i = 0; i < len; i++) result.push(group[i]!)
+      for (let i = 0; i < len; i++) {
+        const item = group[i]!
+        resultArr.push(item)
+        resultMap.set(item.id, item)
+      }
     }
-    return result
+    mediaItemsMap.value = resultMap
+    mediaItems.value = resultArr
+    triggerRef(mediaItems)
+    // not needed immediately:
+    requestIdleCallback(() => triggerRef(mediaItemsMap))
   })
   const mediaItemIds = computed(() => mediaItems.value.map((m) => m.id))
   const totalMediaCount = computed(() => monthRatios.value.reduce((a, b) => a + b.count, 0))
@@ -78,6 +89,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     monthRatios,
     monthItems,
     mediaItems,
+    mediaItemsMap,
     mediaItemIds,
     totalMediaCount,
     isInitialized,
