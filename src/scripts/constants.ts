@@ -18,3 +18,4 @@ export const MONTHS = [
 export const CURRENT_YEAR = new Date().getFullYear()
 
 export const THUMBNAIL_SIZES = [144, 240, 360, 480, 720, 1080, 1440]
+export const VIDEO_SIZES = [144, 480]

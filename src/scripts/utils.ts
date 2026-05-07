@@ -1,4 +1,4 @@
-import { THUMBNAIL_SIZES } from '@/scripts/constants.ts'
+import { THUMBNAIL_SIZES, VIDEO_SIZES } from '@/scripts/constants.ts'
 
 export function prettyBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return '0 B'
@@ -40,6 +40,13 @@ export function getThumbnailHeight(rowHeight: number) {
     if (size > rowHeight) return size
   }
   return THUMBNAIL_SIZES[THUMBNAIL_SIZES.length - 1]!
+}
+
+export function getVideoHeight(rowHeight: number) {
+  for (const size of VIDEO_SIZES) {
+    if (size > rowHeight) return size
+  }
+  return VIDEO_SIZES[VIDEO_SIZES.length - 1]!
 }
 
 export const stringToColor = (

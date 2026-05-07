@@ -77,6 +77,7 @@ const route = useRoute()
               v-for="album in truncatedAlbums"
               :key="album.id"
               class="album-sub-item"
+              @mouseenter="albumStore.fetchAlbumMedia(album.id)"
             >
               <template v-slot:prepend>
                 <v-avatar size="32" rounded color="surface-container-high">
