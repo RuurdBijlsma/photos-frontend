@@ -9,7 +9,6 @@ import { MONTHS } from '@/scripts/constants.ts'
 import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
-import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
 
 const snackbarStore = useSnackbarsStore()
 const dialogs = useDialogStore()

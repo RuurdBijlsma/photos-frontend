@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
+import {
+  useRoute,
+  useRouter,
+  onBeforeRouteLeave,
+  onBeforeRouteUpdate,
+  type NavigationGuardNext,
+} from 'vue-router'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import type { AlbumSort } from '@/scripts/types/api/album.ts'
@@ -156,7 +162,7 @@ async function saveReorder() {
   isManualOrderMode.value = false
 }
 
-function onReorder(items: any[]) {
+function onReorder(items: SimpleTimelineItem[]) {
   localItems.value = items
   pendingSortMode.value = 'None'
 }
@@ -171,7 +177,7 @@ async function fetchSortedPreview(mode: AlbumSort) {
   simpleTimeline.value?.setOrder(localItems.value)
 }
 
-async function confirmRouteLeave(next) {
+async function confirmRouteLeave(next: NavigationGuardNext) {
   if (isManualOrderMode.value) {
     const confirmed = await dialogs.confirm({
       title: 'Leave reorder mode?',

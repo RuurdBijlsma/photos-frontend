@@ -11,7 +11,7 @@ withDefaults(
   }>(),
   {
     excludeAlbumIds: () => [],
-    context: {},
+    context: () => ({}),
   },
 )
 

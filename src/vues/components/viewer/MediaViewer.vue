@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import type { PhotoViewerType } from '@/scripts/types/viewerType.ts'
 import PhotoViewer from '@/vues/components/viewer/PhotoViewer.vue'
 import VideoViewer from '@/vues/components/viewer/VideoViewer.vue'

@@ -21,7 +21,7 @@ const props = withDefaults(
     isManualOrderMode?: boolean
   }>(),
   {
-    context: {},
+    context: () => ({}),
     isManualOrderMode: false,
   },
 )
@@ -170,7 +170,7 @@ function calculateLayout(timelineItems: SimpleTimelineItem[], containerWidth: nu
   // Add indices to items for reordering logic
   let currentIndex = 0
   for (const row of layoutRows) {
-    for (const item of row.items as any[]) {
+    for (const item of row.items as (SimpleTimelineItem & { index: number })[]) {
       item.index = currentIndex++
     }
   }

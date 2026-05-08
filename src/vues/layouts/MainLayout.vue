@@ -2,7 +2,6 @@
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import NavDrawer from '@/vues/components/layout/NavDrawer.vue'
-import SearchBar from '@/vues/components/ui/SearchBar.vue'
 import AppBar from '@/vues/components/layout/AppBar.vue'
 
 // Instantiate stores
@@ -25,7 +24,7 @@ backgroundStore.initialize()
   </div>
 
   <v-layout>
-    <app-bar/>
+    <app-bar />
 
     <nav-drawer />
 

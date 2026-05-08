@@ -25,7 +25,7 @@ interface DialogRequest {
   id: string
   type: DialogType
   options: DialogOptions
-  resolve: (value: any) => void
+  resolve: (value: any) => void // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export const useDialogStore = defineStore('dialog', () => {
@@ -35,7 +35,7 @@ export const useDialogStore = defineStore('dialog', () => {
   const inputValue = ref('')
 
   // Track the result internally so we can resolve after the transition
-  let pendingResult: any = null
+  let pendingResult: any = null // eslint-disable-line @typescript-eslint/no-explicit-any
 
   function processQueue() {
     // If a dialog is already visible, don't start a new one.

@@ -43,7 +43,7 @@ function onDragStart(e: DragEvent) {
         draggable="false"
       />
       <div class="video-info" v-if="isVideo">
-        <span>{{ toHms(durationMs / 1000) }}</span>
+        <span v-if="durationMs">{{ toHms(durationMs / 1000) }}</span>
         <v-icon color="white" size="16" icon="mdi-play" />
       </div>
     </div>

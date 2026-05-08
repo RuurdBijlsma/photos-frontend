@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import SearchBar from '@/vues/components/ui/SearchBar.vue'
-import { useRouter } from 'vue-router'
 
-function logout() {
+function logout(): void {
   localStorage.clear()
   location.reload()
 }

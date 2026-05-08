@@ -26,7 +26,7 @@ watch(
   </v-app>
 
   <snackbar-queue />
-  <dialog-queue/>
+  <dialog-queue />
 </template>
 
 <style scoped>
