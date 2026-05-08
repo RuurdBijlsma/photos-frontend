@@ -5,7 +5,8 @@ import { useAuthStore } from '@/scripts/stores/authStore.ts'
 const authStore = useAuthStore()
 
 async function logout() {
-  await authStore.logout()
+  await authStore.logout(false)
+  location.reload()
 }
 </script>
 

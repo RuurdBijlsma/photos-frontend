@@ -48,6 +48,17 @@ const router = createRouter({
           component: () => import('@/vues/views/library/AlbumsLibrary.vue'),
         },
         {
+          path: 'settings',
+          name: 'settings',
+          component: () => import('@/vues/views/main/SettingsView.vue'),
+        },
+        {
+          path: 'admin',
+          name: 'admin',
+          meta: { requiresAdmin: true },
+          component: () => import('@/vues/views/main/AdminView.vue'),
+        },
+        {
           path: 'album/:albumId',
           name: 'album-view',
           component: () => import('@/vues/views/library/AlbumView.vue'),

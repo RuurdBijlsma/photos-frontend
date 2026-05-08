@@ -123,7 +123,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Logs the user out, clears all auth state, and redirects.
    */
-  async function logout() {
+  async function logout(redirect = true) {
     if (refreshToken.value) {
       try {
         await authService.logout({ refreshToken: refreshToken.value })
@@ -145,7 +145,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('authUser')
 
     // Redirect to the login page to ensure the user isn't stuck on a protected route.
-    await router.push({ name: 'login' })
+    if (redirect) await router.push({ name: 'login' })
   }
 
   // --- RETURN ---

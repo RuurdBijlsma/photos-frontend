@@ -29,8 +29,15 @@ export interface CreateUser {
   email: string
   name: string
   password: string
+  token?: string
 }
 
 export interface RefreshTokenPayload {
   refreshToken: string
+}
+
+export interface UserInvite {
+  token: string
+  expires_at: Date
+  created_at: Date
 }

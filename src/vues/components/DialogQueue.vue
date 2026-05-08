@@ -31,9 +31,11 @@ const handleAction = async (actionItem: DialogAction) => {
       </v-card-title>
 
       <v-card-text class="pa-6 text-body-1">
-        <span v-if="store.current.options.description">{{
-          store.current.options.description
-        }}</span>
+        <p
+          class="card-text"
+          v-if="store.current.options.description"
+          v-html="store.current.options.description"
+        ></p>
 
         <v-text-field
           v-if="store.current.type === 'prompt'"
@@ -83,3 +85,10 @@ const handleAction = async (actionItem: DialogAction) => {
     </v-card>
   </v-dialog>
 </template>
+<style>
+.card-text {
+  margin: 0;
+  margin-bottom: 5px;
+  opacity: 0.9;
+}
+</style>

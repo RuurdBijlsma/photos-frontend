@@ -2,7 +2,7 @@
 import type { VForm } from 'vuetify/components'
 import { onMounted, type Ref, ref } from 'vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { isAxiosError } from 'axios'
 import FocusLayout from '@/vues/layouts/FocusLayout.vue'
@@ -11,6 +11,7 @@ import OnboardingLayout from '@/vues/layouts/OnboardingLayout.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const snackbarStore = useSnackbarsStore()
 
 const userInput: Ref<null | HTMLElement> = ref(null)
@@ -49,6 +50,7 @@ async function register() {
       name: displayName.value,
       email: email.value,
       password: password1.value,
+      token: route.query.token as string | undefined,
     })
     console.log('Register result', result)
     if (result.mediaFolder === null) {
@@ -74,7 +76,14 @@ async function register() {
 <template>
   <focus-layout>
     <div class="register-container">
-      <onboarding-layout :caption-text="false" text="Let's set up your account to get started.">
+      <onboarding-layout
+        :caption-text="false"
+        :text="
+          route.query.token
+            ? `Using ${route.query.token} to create your account.`
+            : `Let's set up your account to get started.`
+        "
+      >
         <h1 class="nice-h1">Create your account.</h1>
       </onboarding-layout>
 
@@ -101,11 +110,11 @@ async function register() {
             append-icon="empty"
             variant="outlined"
             rounded
+            base-color="outline"
             :rules="isSubmitted ? [rules.mailRequired, rules.min] : []"
             v-model="email"
             label="Email"
             color="primary"
-            base-color="rgba(0,0,0,0.5)"
             placeholder="user@example.com"
             :min-width="330"
             autocomplete="email"

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { watch } from 'vue'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
+import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 
 const pickFolderStore = usePickFolderStore()
-const newFolderName = ref('')
+const dialogs = useDialogStore()
 
 watch(
   () => pickFolderStore.viewedFolder,
@@ -18,10 +19,15 @@ async function onViewedChange() {
   }, 50)
 }
 
-async function makeFolder(isActive: { value: boolean }) {
-  isActive.value = false
-  await pickFolderStore.makeFolder(newFolderName.value)
-  newFolderName.value = ''
+async function promptCreateFolder() {
+  const folder = await dialogs.prompt({
+    title: 'Create folder',
+    description: 'Create folder',
+    icon: 'mdi-folder-plus-outline',
+    confirmText: 'Create',
+  })
+  if (!folder) return
+  await pickFolderStore.makeFolder(folder)
 }
 
 pickFolderStore.refreshFolders().then()
@@ -41,42 +47,15 @@ pickFolderStore.refreshFolders().then()
             density="compact"
             icon="mdi-arrow-up"
           />
-          <v-dialog max-width="500">
-            <template v-slot:activator="{ props: activatorProps }">
-              <v-btn
-                color="primary"
-                class="mr-2"
-                variant="text"
-                title="Create folder"
-                density="compact"
-                icon="mdi-folder-plus-outline"
-                v-bind="activatorProps"
-              />
-            </template>
-
-            <template v-slot:default="{ isActive }">
-              <v-card title="Create folder" variant="flat" class="rounded-xl">
-                <v-card-text>
-                  <v-text-field
-                    autofocus
-                    label="Folder name"
-                    placeholder="Enter folder name"
-                    prepend-icon="mdi-folder-plus-outline"
-                    v-model="newFolderName"
-                    variant="outlined"
-                    @keyup.enter="makeFolder(isActive)"
-                    :hide-details="true"
-                    rounded
-                    color="primary"
-                    base-color="outline"
-                  />
-                </v-card-text>
-                <v-card-actions>
-                  <v-btn @click="makeFolder(isActive)">Create</v-btn>
-                </v-card-actions>
-              </v-card>
-            </template>
-          </v-dialog>
+          <v-btn
+            color="primary"
+            class="mr-2"
+            variant="text"
+            title="Create folder"
+            density="compact"
+            icon="mdi-folder-plus-outline"
+            @click="promptCreateFolder"
+          />
         </div>
         <div class="current-route-display">
           <div

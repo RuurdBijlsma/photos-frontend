@@ -6,6 +6,7 @@ import type {
   LoginUser,
   CreateUser,
   RefreshTokenPayload,
+  UserInvite,
 } from '@/scripts/types/api/auth.ts'
 
 // This service is a collection of functions that map to your /auth endpoints
@@ -29,6 +30,10 @@ const authService = {
 
   getMe(): Promise<AxiosResponse<User>> {
     return apiClient.get<User>('/auth/me')
+  },
+
+  generateInvite(userFolder: string): Promise<AxiosResponse<UserInvite>> {
+    return apiClient.post<UserInvite>('/auth/generate-invite', { userFolder })
   },
 }
 
