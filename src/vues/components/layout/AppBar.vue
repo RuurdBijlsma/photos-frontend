@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import SearchBar from '@/vues/components/ui/SearchBar.vue'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
-function logout(): void {
-  localStorage.clear()
-  location.reload()
+const authStore = useAuthStore()
+
+async function logout() {
+  await authStore.logout()
 }
 </script>
 
@@ -28,15 +30,15 @@ function logout(): void {
         </template>
         <div>
           <v-sheet color="background">
-            <div class="menu-header">
+            <div class="menu-header" v-if="authStore.user">
               <div class="user-icon">
                 <v-avatar>
                   <v-img src="img/avatar.jpg"></v-img>
                 </v-avatar>
               </div>
               <div class="user-info">
-                <p class="user-name">Ruurd</p>
-                <p class="user-email">ruurd@bijlsma.dev</p>
+                <p class="user-name">{{ authStore.user.name }}</p>
+                <p class="user-email">{{ authStore.user.email }}</p>
               </div>
             </div>
             <v-list color="background">
@@ -47,6 +49,9 @@ function logout(): void {
                 <v-list-item-title>Sign out</v-list-item-title>
               </v-list-item>
               <v-divider />
+              <v-list-item prepend-icon="mdi-security" to="/admin" v-if="authStore.isAdmin">
+                <v-list-item-title>Admin</v-list-item-title>
+              </v-list-item>
               <v-list-item prepend-icon="mdi-cog" to="/settings">
                 <v-list-item-title>Settings</v-list-item-title>
               </v-list-item>
