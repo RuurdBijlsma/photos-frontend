@@ -59,6 +59,11 @@ const router = createRouter({
           component: () => import('@/vues/views/main/AdminView.vue'),
         },
         {
+          path: 'user/:userId/:name',
+          name: 'profile',
+          component: () => import('@/vues/views/main/ProfileView.vue'),
+        },
+        {
           path: 'album/:albumId',
           name: 'album-view',
           component: () => import('@/vues/views/library/AlbumView.vue'),

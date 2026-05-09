@@ -10,6 +10,7 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 
 export const useTimelineStore = defineStore('timeline', () => {
   const snackbarStore = useSnackbarsStore()
+  const thumbnailSnackSent = ref(false)
 
   const mediaIdInView = ref<string | null>(null)
   const isInitialized = ref(false)
@@ -94,6 +95,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     totalMediaCount,
     isInitialized,
     mediaIdInView,
+    thumbnailSnackSent,
 
     fetchMonthRatios,
     fetchMediaByMonth,

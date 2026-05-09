@@ -43,7 +43,11 @@ async function logout() {
               </div>
             </div>
             <v-list color="background">
-              <v-list-item prepend-icon="mdi-account-circle" to="/me">
+              <v-list-item
+                v-if="authStore.user"
+                prepend-icon="mdi-account-circle"
+                :to="`/user/${authStore.user.id}/${encodeURIComponent(authStore.user.name)}`"
+              >
                 <v-list-item-title>Profile</v-list-item-title>
               </v-list-item>
               <v-list-item prepend-icon="mdi-logout" @click="logout">

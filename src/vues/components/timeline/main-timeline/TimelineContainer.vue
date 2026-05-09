@@ -358,7 +358,8 @@ function notifySlowThumbnails() {
       }
     }
   }
-  if (unloadedCount > 0) {
+  if (unloadedCount > 0 && !timelineStore.thumbnailSnackSent) {
+    timelineStore.thumbnailSnackSent = true
     snackbarStore.enqueue({
       message: `Your photos are still being prepared. Browsing may be slower and thumbnails may load gradually until processing is complete. [${unloadedCount} remaining]`,
       color: 'white',
