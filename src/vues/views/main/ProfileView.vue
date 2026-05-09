@@ -112,7 +112,7 @@ const statCards = computed(() => [
 </script>
 
 <template>
-  <main-layout-container class="profile-view">
+  <main-layout-container class="profile-view" fit-to-content>
     <div v-if="loading" class="loading-state">
       <v-progress-circular indeterminate color="primary" size="64" />
     </div>
@@ -152,7 +152,7 @@ const statCards = computed(() => [
       </section>
 
       <!-- Stats Section -->
-      <section class="stats-section">
+      <section>
         <v-row>
           <v-col v-for="stat in statCards" :key="stat.title" cols="12" sm="6" md="3">
             <v-card class="stat-card" elevation="2">
@@ -183,7 +183,7 @@ const statCards = computed(() => [
 
     <!-- Edit Profile Dialog -->
     <v-dialog v-model="editDialog" max-width="500px">
-      <v-card class="edit-profile-card" color="surface-container-high">
+      <v-card class="edit-profile-card" color="surface-container-high" rounded="xl">
         <v-card-title class="dialog-header">
           <span class="dialog-title">Edit Profile</span>
           <v-btn
@@ -219,7 +219,7 @@ const statCards = computed(() => [
           ></v-text-field>
         </v-card-text>
 
-        <v-card-actions class="dialog-actions">
+        <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
           <v-btn variant="text" rounded @click="editDialog = false" :disabled="saving">
             Cancel
@@ -307,11 +307,6 @@ const statCards = computed(() => [
   margin-right: 8px;
 }
 
-/* Stats Section */
-.stats-section {
-  margin-bottom: 48px;
-}
-
 .stat-card {
   padding: 24px;
   border-radius: 24px;
@@ -359,21 +354,11 @@ const statCards = computed(() => [
   margin-top: 24px;
 }
 
-/* Edit Dialog Styles */
-.edit-profile-card {
-  border-radius: 28px !important;
-}
-
 .dialog-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px !important;
-}
-
-.dialog-title {
-  font-size: 1.5rem;
-  font-weight: 700;
 }
 
 .dialog-body {
@@ -384,18 +369,6 @@ const statCards = computed(() => [
   display: flex;
   justify-content: center;
   margin-bottom: 32px;
-}
-
-.dialog-actions {
-  padding: 0 24px 24px !important;
-}
-
-.save-btn {
-  padding: 0 24px !important;
-}
-
-:deep(.v-field--outline) {
-  --v-field-border-opacity: 0.15;
 }
 
 /* Mobile Adjustments */
