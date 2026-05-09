@@ -37,6 +37,39 @@ async function loadProfile() {
   }
 }
 
+const editDialog = ref(false)
+const editName = ref('')
+const saving = ref(false)
+
+function openEditDialog() {
+  if (!profile.value) return
+  editName.value = profile.value.name
+  editDialog.value = true
+}
+
+async function saveProfile() {
+  if (!editName.value.trim() || !profile.value) return
+
+  saving.value = true
+  try {
+    const response = await userService.updateProfile({
+      name: editName.value.trim(),
+    })
+    profile.value = response.data
+    // Update auth store too if it's the current user
+    if (isCurrentUser.value) {
+      await authStore.fetchCurrentUser()
+    }
+    snackbars.success('Profile updated successfully')
+    editDialog.value = false
+  } catch (error) {
+    snackbars.error('Failed to update profile')
+    console.error(error)
+  } finally {
+    saving.value = false
+  }
+}
+
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
   return date.format(new Date(dateStr), 'monthAndYear')
@@ -105,6 +138,7 @@ const statCards = computed(() => [
               rounded="xl"
               class="edit-btn"
               color="primary"
+              @click="openEditDialog"
             >
               Edit Profile
             </v-btn>
@@ -146,6 +180,63 @@ const statCards = computed(() => [
         Go Home
       </v-btn>
     </div>
+
+    <!-- Edit Profile Dialog -->
+    <v-dialog v-model="editDialog" max-width="500px">
+      <v-card class="edit-profile-card" color="surface-container-high">
+        <v-card-title class="dialog-header">
+          <span class="dialog-title">Edit Profile</span>
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            @click="editDialog = false"
+            :disabled="saving"
+          ></v-btn>
+        </v-card-title>
+
+        <v-divider></v-divider>
+
+        <v-card-text class="dialog-body">
+          <div class="avatar-preview-wrapper">
+            <user-avatar
+              :name="editName || (profile ? profile.name : '')"
+              :avatar-id="profile ? profile.avatarId : null"
+              :size="120"
+              elevation="2"
+            />
+          </div>
+
+          <v-text-field
+            v-model="editName"
+            label="Name"
+            variant="outlined"
+            base-color="outline"
+            rounded
+            prepend-inner-icon="mdi-account"
+            :disabled="saving"
+            hide-details
+            @keyup.enter="saveProfile"
+          ></v-text-field>
+        </v-card-text>
+
+        <v-card-actions class="dialog-actions">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" rounded @click="editDialog = false" :disabled="saving">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            rounded
+            class="save-btn"
+            :loading="saving"
+            @click="saveProfile"
+          >
+            Save Changes
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </main-layout-container>
 </template>
 
@@ -268,6 +359,45 @@ const statCards = computed(() => [
   margin-top: 24px;
 }
 
+/* Edit Dialog Styles */
+.edit-profile-card {
+  border-radius: 28px !important;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px !important;
+}
+
+.dialog-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.dialog-body {
+  padding: 32px 24px !important;
+}
+
+.avatar-preview-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.dialog-actions {
+  padding: 0 24px 24px !important;
+}
+
+.save-btn {
+  padding: 0 24px !important;
+}
+
+:deep(.v-field--outline) {
+  --v-field-border-opacity: 0.15;
+}
+
 /* Mobile Adjustments */
 @media (max-width: 600px) {
   .profile-header {
@@ -290,4 +420,3 @@ const statCards = computed(() => [
   }
 }
 </style>
-
