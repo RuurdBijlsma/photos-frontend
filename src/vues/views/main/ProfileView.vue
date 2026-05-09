@@ -124,7 +124,6 @@ const statCards = computed(() => [
           :name="profile.name"
           :avatar-id="profile.avatarId"
           :size="150"
-          class="profile-avatar"
           elevation="4"
         />
 
@@ -160,7 +159,7 @@ const statCards = computed(() => [
                 <v-avatar :color="stat.color" variant="tonal" class="stat-icon" rounded="lg">
                   <v-icon :icon="stat.icon" />
                 </v-avatar>
-                <div class="stat-details">
+                <div>
                   <div class="stat-value">{{ stat.value.toLocaleString() }}</div>
                   <div class="stat-label">
                     {{ stat.title }}
@@ -183,9 +182,9 @@ const statCards = computed(() => [
 
     <!-- Edit Profile Dialog -->
     <v-dialog v-model="editDialog" max-width="500px">
-      <v-card class="edit-profile-card" color="surface-container-high" rounded="xl">
+      <v-card color="surface-container-high" rounded="xl">
         <v-card-title class="dialog-header">
-          <span class="dialog-title">Edit Profile</span>
+          <span>Edit Profile</span>
           <v-btn
             icon="mdi-close"
             variant="text"
@@ -228,7 +227,6 @@ const statCards = computed(() => [
             color="primary"
             variant="tonal"
             rounded
-            class="save-btn"
             :loading="saving"
             @click="saveProfile"
           >
