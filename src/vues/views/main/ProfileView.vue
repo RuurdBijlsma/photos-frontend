@@ -80,56 +80,55 @@ const statCards = computed(() => [
 
 <template>
   <main-layout-container class="profile-view">
-    <div v-if="loading" class="d-flex align-center justify-center fill-height">
+    <div v-if="loading" class="loading-state">
       <v-progress-circular indeterminate color="primary" size="64" />
     </div>
 
     <div v-else-if="profile" class="profile-content">
       <!-- Header Section -->
-      <section class="profile-header d-flex align-end mb-12">
+      <section class="profile-header">
         <user-avatar
           :name="profile.name"
           :avatar-id="profile.avatarId"
           :size="150"
-          class="mr-8"
+          class="profile-avatar"
           elevation="4"
         />
 
-        <div class="user-info-container flex-grow-1">
-          <div class="d-flex align-center justify-between mb-2">
-            <h1 class="text-h2 font-weight-bold mb-0">{{ profile.name }}</h1>
-            <v-spacer />
+        <div class="user-info">
+          <div class="user-title-row">
+            <h1 class="user-name">{{ profile.name }}</h1>
             <v-btn
               v-if="isCurrentUser"
               prepend-icon="mdi-pencil"
               variant="tonal"
               rounded="xl"
-              class="text-none"
+              class="edit-btn"
               color="primary"
             >
               Edit Profile
             </v-btn>
           </div>
-          <p v-if="profile.email" class="text-subtitle-1 opacity-70 mb-2">{{ profile.email }}</p>
-          <div class="d-flex align-center opacity-60">
-            <v-icon icon="mdi-calendar-range" size="small" class="mr-2" />
+          <p v-if="profile.email" class="user-email">{{ profile.email }}</p>
+          <div class="user-joined">
+            <v-icon icon="mdi-calendar-range" size="small" class="joined-icon" />
             <span>Joined {{ formatDate(profile.createdAt) }}</span>
           </div>
         </div>
       </section>
 
       <!-- Stats Section -->
-      <section class="stats-section mb-12">
+      <section class="stats-section">
         <v-row>
           <v-col v-for="stat in statCards" :key="stat.title" cols="12" sm="6" md="3">
-            <v-card class="stat-card rounded-xl pa-4" elevation="2">
-              <div class="d-flex align-center">
-                <v-avatar :color="stat.color" variant="tonal" class="mr-4" rounded="lg">
+            <v-card class="stat-card" elevation="2">
+              <div class="stat-card-content">
+                <v-avatar :color="stat.color" variant="tonal" class="stat-icon" rounded="lg">
                   <v-icon :icon="stat.icon" />
                 </v-avatar>
-                <div>
-                  <div class="text-h4 font-weight-bold">{{ stat.value.toLocaleString() }}</div>
-                  <div class="text-caption text-uppercase font-weight-medium opacity-60">
+                <div class="stat-details">
+                  <div class="stat-value">{{ stat.value.toLocaleString() }}</div>
+                  <div class="stat-label">
                     {{ stat.title }}
                   </div>
                 </div>
@@ -140,10 +139,10 @@ const statCards = computed(() => [
       </section>
     </div>
 
-    <div v-else class="d-flex align-center justify-center fill-height flex-column">
-      <v-icon icon="mdi-account-off" size="100" class="mb-4 opacity-20" />
-      <h2 class="text-h4">User not found</h2>
-      <v-btn color="primary" variant="tonal" rounded class="mt-6" @click="router.push('/')">
+    <div v-else class="not-found-state">
+      <v-icon icon="mdi-account-off" size="100" class="not-found-icon" />
+      <h2 class="not-found-title">User not found</h2>
+      <v-btn color="primary" variant="tonal" rounded class="home-btn" @click="router.push('/')">
         Go Home
       </v-btn>
     </div>
@@ -160,27 +159,135 @@ const statCards = computed(() => [
   margin: 0 auto;
 }
 
+/* State Containers */
+.loading-state,
+.not-found-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* Header Section */
+.profile-header {
+  display: flex;
+  margin-bottom: 48px;
+  gap: 32px;
+}
+
+.user-info {
+  flex-grow: 1;
+}
+
+.user-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.user-name {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.edit-btn {
+  text-transform: none;
+}
+
+.user-email {
+  font-size: 1.125rem;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.user-joined {
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+  font-size: 0.875rem;
+}
+
+.joined-icon {
+  margin-right: 8px;
+}
+
+/* Stats Section */
+.stats-section {
+  margin-bottom: 48px;
+}
+
 .stat-card {
+  padding: 24px;
+  border-radius: 24px;
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
   background: rgba(var(--v-theme-surface-variant), 0.3);
 }
 
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 20px -10px rgba(0, 0, 0, 0.2);
+.stat-card-content {
+  display: flex;
+  align-items: center;
 }
 
-.opacity-70 {
-  opacity: 0.7;
+.stat-icon {
+  margin-right: 16px;
 }
 
-.opacity-60 {
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
   opacity: 0.6;
+  letter-spacing: 0.5px;
 }
 
-.opacity-20 {
+/* Not Found State */
+.not-found-icon {
   opacity: 0.2;
+  margin-bottom: 16px;
+}
+
+.not-found-title {
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.home-btn {
+  margin-top: 24px;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .user-title-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .user-name {
+    font-size: 2.5rem;
+  }
+
+  .user-joined {
+    justify-content: center;
+  }
 }
 </style>
+
