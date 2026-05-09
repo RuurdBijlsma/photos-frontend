@@ -15,11 +15,11 @@ import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useDebounceFn, useTextareaAutosize } from '@vueuse/core'
 import EditableTitle from '@/vues/components/ui/EditableTitle.vue'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
-import { stringToColor } from '@/scripts/utils.ts'
 import albumService from '@/scripts/services/albumService.ts'
 // eslint-disable-next-line
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
+import UserAvatar from '@/vues/components/ui/UserAvatar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -432,20 +432,13 @@ watch(
               v-for="collaborator in album.collaborators"
               :key="collaborator.id"
             >
-              <v-avatar
-                :color="stringToColor(collaborator.name)"
+              <user-avatar
+                :name="collaborator.name"
                 class="collaborator-avatar"
                 v-tooltip:top="
                   `${collaborator.name}${collaborator.userId === album.ownerId ? ' (Owner)' : ''}`
                 "
-              >
-                {{
-                  collaborator.name
-                    .split(' ')
-                    .map((i) => i[0]!.toUpperCase())
-                    .join('')
-                }}
-              </v-avatar>
+              />
             </div>
             <v-btn
               v-tooltip:top="'Add collaborator'"

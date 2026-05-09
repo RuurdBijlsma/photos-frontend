@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SearchBar from '@/vues/components/ui/SearchBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import UserAvatar from '@/vues/components/ui/UserAvatar.vue'
 
 const authStore = useAuthStore()
 
@@ -24,44 +25,48 @@ async function logout() {
       <v-menu>
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props">
-            <v-avatar>
-              <v-img src="img/avatar.jpg"></v-img>
-            </v-avatar>
+            <user-avatar
+              v-if="authStore.user"
+              :name="authStore.user.name"
+              :avatar-id="authStore.user.avatarId"
+            />
           </v-btn>
         </template>
         <div>
           <v-sheet color="background">
             <div class="menu-header" v-if="authStore.user">
               <div class="user-icon">
-                <v-avatar>
-                  <v-img src="img/avatar.jpg"></v-img>
-                </v-avatar>
+                <user-avatar
+                  v-if="authStore.user"
+                  :name="authStore.user.name"
+                  :avatar-id="authStore.user.avatarId"
+                />
               </div>
               <div class="user-info">
                 <p class="user-name">{{ authStore.user.name }}</p>
                 <p class="user-email">{{ authStore.user.email }}</p>
               </div>
             </div>
-            <v-list color="background">
-              <v-list-item
-                v-if="authStore.user"
-                prepend-icon="mdi-account-circle"
-                :to="`/user/${authStore.user.id}/${encodeURIComponent(authStore.user.name)}`"
-              >
-                <v-list-item-title>Profile</v-list-item-title>
-              </v-list-item>
-              <v-list-item prepend-icon="mdi-logout" @click="logout">
-                <v-list-item-title>Sign out</v-list-item-title>
-              </v-list-item>
-              <v-divider />
-              <v-list-item prepend-icon="mdi-security" to="/admin" v-if="authStore.isAdmin">
-                <v-list-item-title>Admin</v-list-item-title>
-              </v-list-item>
-              <v-list-item prepend-icon="mdi-cog" to="/settings">
-                <v-list-item-title>Settings</v-list-item-title>
-              </v-list-item>
-            </v-list>
           </v-sheet>
+          <v-list>
+            <v-list-item
+              v-if="authStore.user"
+              prepend-icon="mdi-account-circle"
+              :to="`/user/${authStore.user.id}/${encodeURIComponent(authStore.user.name)}`"
+            >
+              <v-list-item-title>Profile</v-list-item-title>
+            </v-list-item>
+            <v-list-item prepend-icon="mdi-logout" @click="logout">
+              <v-list-item-title>Sign out</v-list-item-title>
+            </v-list-item>
+            <v-divider />
+            <v-list-item prepend-icon="mdi-security" to="/admin" v-if="authStore.isAdmin">
+              <v-list-item-title>Admin</v-list-item-title>
+            </v-list-item>
+            <v-list-item prepend-icon="mdi-cog" to="/settings">
+              <v-list-item-title>Settings</v-list-item-title>
+            </v-list-item>
+          </v-list>
         </div>
       </v-menu>
     </div>
