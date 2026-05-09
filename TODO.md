@@ -130,12 +130,14 @@
     * ✅ migration guide: https://vuetifyjs.com/en/getting-started/upgrade-guide/#multi-step-migration
     * ✅ vergelijk met vuetify 3 zodat ik niet mooie ui kwijt raak
 * ✅ max-width op album thumbnail zetten ofzo, anders verpest panorama t. Misschien max ratio op 16/9 zetten?
-* ✅ als je helemaal bovenin de timeline op homepage bent, en gaat dan naar andere page, en komt dan terug, dan scrollt ie
+* ✅ als je helemaal bovenin de timeline op homepage bent, en gaat dan naar andere page, en komt dan terug, dan scrollt
+  ie
   naar de 1e foto, en verdwijnt de "January" header text omdat ie er voorbij scrollt stiekem
 * ✅ [BUG] kruisje linksboven op viewphoto is stuk op album page
 * ✅ foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
 * ✅ als je op de date overlay klikt moet er een kalender komen om naar een exacte date te scrollen bijv 7 juni 2022
-* ✅ misschien image thumbnail loading fallback naar on-demand abstracten? Zodat het overal werkt. Nu zie je soms geen img als de avif er nog niet is
+* ✅ misschien image thumbnail loading fallback naar on-demand abstracten? Zodat het overal werkt. Nu zie je soms geen
+  img als de avif er nog niet is
 * ✅ add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
 * ✅ als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
   ondemand gebruikt denk ik)
@@ -177,3 +179,4 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * niet "People" tab laten zien als je nog geen faces hebt
+* [BUG] als je /profile window klein maakt kan je niet scrollen naar onder

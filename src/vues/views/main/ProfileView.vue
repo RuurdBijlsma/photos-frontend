@@ -30,7 +30,7 @@ async function loadProfile() {
     const response = await userService.getUserProfile(userId)
     profile.value = response.data
   } catch (error) {
-    snackbars.error('Failed to load profile')
+    snackbars.error('Failed to load profile', error)
     console.error(error)
   } finally {
     loading.value = false
@@ -210,6 +210,7 @@ const statCards = computed(() => [
             label="Name"
             variant="outlined"
             base-color="outline"
+            autofocus
             rounded
             prepend-inner-icon="mdi-account"
             :disabled="saving"
