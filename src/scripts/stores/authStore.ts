@@ -151,8 +151,13 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('expiry')
     localStorage.removeItem('authUser')
 
-    // Redirect to the login page to ensure the user isn't stuck on a protected route.
-    if (redirect) await router.push({ name: 'login' })
+    // Redirect to the login page only if the current route requires authentication.
+    if (redirect) {
+      const requiresAuth = router.currentRoute.value.matched.some((record) => record.meta.requiresAuth)
+      if (requiresAuth) {
+        await router.push({ name: 'login' })
+      }
+    }
   }
 
   // --- RETURN ---

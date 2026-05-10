@@ -72,3 +72,36 @@ export async function copyToClipboard(text: string) {
     snackbarStore.error("Can't copy to clipboard", e)
   }
 }
+
+function base64UrlDecode(input: string): string {
+  const base64 = input.replace(/-/g, '+').replace(/_/g, '/')
+
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
+
+  return atob(padded)
+}
+
+export function isLikelyJwt(token: string): boolean {
+  const parts = token.trim().split('.')
+
+  if (parts.length !== 3) {
+    return false
+  }
+
+  try {
+    const header = JSON.parse(base64UrlDecode(parts[0]))
+    const payload = JSON.parse(base64UrlDecode(parts[1]))
+
+    if (typeof header !== 'object' || typeof payload !== 'object') {
+      return false
+    }
+
+    if (!header.alg) {
+      return false
+    }
+
+    return true
+  } catch {
+    return false
+  }
+}

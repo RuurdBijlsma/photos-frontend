@@ -13,6 +13,7 @@ import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useDebounceFn, useTextareaAutosize } from '@vueuse/core'
+import { onBeforeUnmount } from 'vue'
 import EditableTitle from '@/vues/components/ui/EditableTitle.vue'
 import { CURRENT_YEAR, MONTHS } from '@/scripts/constants.ts'
 import albumService from '@/scripts/services/albumService.ts'
@@ -240,17 +241,20 @@ async function crossServerInvite() {
   if (!album.value) return
   try {
     const { data: token } = await albumService.generateInvite(album.value.id)
-    const inviteUrl = `${location.origin}/export?token=${token}`
     await dialogs.alert({
-      title: 'Cross server invite',
+      title: 'Cross-Server Share',
       description: `
-        Share this link with someone so they can import this album to their own server running Ruurd Photos.
-        <br>
-        <br>
-        <a href="${inviteUrl}" target="_blank">${inviteUrl}</a>
+        <div>
+          <p>Send this token to someone. They can paste it into the search bar on their own Ruurd Photos instance to import this album.</p>
+          <br>
+          <code class="share-link">${token}</code>
+        </div>
       `,
       actions: [
-        { action: () => copyToClipboard(inviteUrl), name: 'Copy invite' },
+        {
+          action: () => copyToClipboard(token),
+          name: 'Copy Token',
+        },
         { action: () => ({}), name: 'Done' },
       ],
     })
@@ -260,8 +264,52 @@ async function crossServerInvite() {
   }
 }
 
+let importPollInterval: number | null = null
+
+function clearImportPoll() {
+  if (importPollInterval) {
+    clearInterval(importPollInterval)
+    importPollInterval = null
+  }
+}
+
+function startImportPoll() {
+  clearImportPoll()
+  importPollInterval = setInterval(() => {
+    if (id.value) {
+      albumStore.fetchAlbumMedia(id.value, false)
+    }
+  }, 5000)
+}
+
 onBeforeRouteLeave(async (to, from, next) => confirmRouteLeave(next))
 onBeforeRouteUpdate(async (to, from, next) => confirmRouteLeave(next))
+
+onBeforeUnmount(() => {
+  clearImportPoll()
+})
+
+watch(
+  () => route.query.importing,
+  (importing) => {
+    if (importing === '1' || importing === 'true') {
+      startImportPoll()
+    } else {
+      clearImportPoll()
+    }
+  },
+  { immediate: true },
+)
+
+let lastItemsCount = 0
+watch(items, () => {
+  const importing = route.query.importing === '1' || route.query.importing === 'true'
+  // When items count hasn't changed for 5 seconds, while not being 0 -> stop refreshing
+  if (items.value.length !== 0 && items.value.length === lastItemsCount && importing) {
+    router.replace({ query: {} })
+  }
+  lastItemsCount = items.value.length
+})
 
 watch(
   id,

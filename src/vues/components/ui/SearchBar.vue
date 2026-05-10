@@ -6,6 +6,7 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { type SimpleTimelineItem, SuggestionType } from '@/scripts/types/generated/timeline.ts'
 import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vue'
 import searchService from '@/scripts/services/searchService.ts'
+import { isLikelyJwt } from '@/scripts/utils.ts'
 
 const router = useRouter()
 const route = useRoute()
@@ -174,6 +175,16 @@ const debouncedPerformSearch = useDebounceFn((val: string | null) => {
 
 watch(query, (newVal) => {
   selectedSuggestionIndex.value = -1
+  if (newVal && isLikelyJwt(newVal)) {
+    const token = newVal.trim()
+    query.value = ''
+    if (searchInputEl.value) {
+      searchInputEl.value.blur()
+    }
+    isFocused.value = false
+    router.push(`/import-album/${token}`)
+    return
+  }
   debouncedFetchSuggestions(newVal)
   debouncedPerformSearch(newVal)
 })
