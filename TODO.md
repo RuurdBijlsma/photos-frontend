@@ -148,6 +148,12 @@
     * ✅ set photo as album cover
     * ✅ delete entire album (on /albums and on /album/{id})
 * ✅ [BUG] view big picture when selecting is wrong (wrong BG?)
+* ✅ make indication that album is shared on /albums page
+* ✅ avatar doesnt work on album page
+* ✅ when not album owner, you get options for removing item from album & set as album cover, should this be shown? If so
+  change backend authorization for this.
+* ✅ on s2s album import, make sure description is set to None, and pick an album thumbnail
+* ✅ show something for albums without thumbnail in the /albums page
 * on login redirect to where you were
 * standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
@@ -181,15 +187,9 @@
 * niet "People" tab laten zien als je nog geen faces hebt
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
 * Als je full screen foto bekijkt, manier maken om de top balk te hiden (als je muis niet beweegt ofzo)
-* ✅ make indication that album is shared on /albums page
 * filters on front page (small ui button)
     * similar to search page but not so random, and shows all results
     * face filter
     * location filter
     * video/photo type filter
-* ✅ avatar doesnt work on album page
-* ✅ when not album owner, you get options for removing item from album & set as album cover, should this be shown? If so
-  change backend authorization for this.
-* on s2s album import, make sure description is set to None, and pick an album thumbnail
 * render empty album UI better
-* show something for albums without thumbnail in the /albums page

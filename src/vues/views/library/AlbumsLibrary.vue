@@ -263,7 +263,6 @@ onUnmounted(() => {
           <div class="album-image">
             <glow-thumbnail
               class="album-glow-image"
-              v-if="album.thumbnailId"
               :media-item-id="album.thumbnailId"
               :height="200"
               :width="200"
