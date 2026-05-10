@@ -43,6 +43,6 @@ const backgroundColor = computed(() => stringToColor(props.name))
     :color="avatarId ? undefined : backgroundColor"
   >
     <v-img v-if="avatarUrl" :src="avatarUrl" cover />
-    {{ initials }}
+    <template v-else>{{ initials }}</template>
   </v-avatar>
 </template>

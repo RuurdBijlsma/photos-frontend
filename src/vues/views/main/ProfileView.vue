@@ -8,15 +8,18 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import userService from '@/scripts/services/userService.ts'
 import type { UserProfile } from '@/scripts/types/api/user.ts'
 import { useDate } from 'vuetify'
+import { usePeopleStore } from '@/scripts/stores/peopleStore.ts'
 
 const authStore = useAuthStore()
 const snackbars = useSnackbarsStore()
+const peopleStore = usePeopleStore()
 const router = useRouter()
 const route = useRoute()
 const date = useDate()
 
 const loading = ref(true)
 const profile = ref<UserProfile | null>(null)
+const showExplanation = ref<boolean>(false)
 
 const isCurrentUser = computed(() => {
   return authStore.user?.id === Number(route.params.userId)
@@ -39,11 +42,13 @@ async function loadProfile() {
 
 const editDialog = ref(false)
 const editName = ref('')
+const editAvatar = ref<string | null>(null)
 const saving = ref(false)
 
 function openEditDialog() {
   if (!profile.value) return
   editName.value = profile.value.name
+  editAvatar.value = profile.value.avatarId
   editDialog.value = true
 }
 
@@ -54,6 +59,7 @@ async function saveProfile() {
   try {
     const response = await userService.updateProfile({
       name: editName.value.trim(),
+      avatarId: editAvatar.value?.trim(),
     })
     profile.value = response.data
     // Update auth store too if it's the current user
@@ -73,6 +79,21 @@ async function saveProfile() {
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
   return date.format(new Date(dateStr), 'monthAndYear')
+}
+
+let peopleIdsTried: number[] = []
+
+async function autoSetProfilePic() {
+  await peopleStore.fetchPeople()
+  if (peopleStore.people.length === 0) return
+  const ids = peopleStore.people.map((p) => p.id).filter((pid) => !peopleIdsTried.includes(pid))
+  const id = ids[0]
+  peopleIdsTried.push(id)
+  if (ids.length === 1) {
+    peopleIdsTried = []
+  }
+  const person = peopleStore.people.find((p) => p.id === id)
+  if (person?.thumbnailId) editAvatar.value = person?.thumbnailId
 }
 
 watch(
@@ -120,13 +141,7 @@ const statCards = computed(() => [
     <div v-else-if="profile" class="profile-content">
       <!-- Header Section -->
       <section class="profile-header">
-        <user-avatar
-          :name="profile.name"
-          :avatar-id="profile.avatarId"
-          :size="150"
-          elevation="4"
-        />
-
+        <user-avatar :name="profile.name" :avatar-id="profile.avatarId" :size="150" elevation="4" />
         <div class="user-info">
           <div class="user-title-row">
             <h1 class="user-name">{{ profile.name }}</h1>
@@ -199,11 +214,57 @@ const statCards = computed(() => [
           <div class="avatar-preview-wrapper">
             <user-avatar
               :name="editName || (profile ? profile.name : '')"
-              :avatar-id="profile ? profile.avatarId : null"
-              :size="120"
+              :avatar-id="editAvatar || (profile ? profile.avatarId : null)"
+              :size="180"
               elevation="2"
             />
+            <v-btn
+              v-if="!showExplanation"
+              class="avatar-edit-overlay"
+              color="transparent"
+              @click="showExplanation = true"
+            >
+              <v-icon class="avatar-edit-icon" size="40">mdi-pencil</v-icon>
+            </v-btn>
           </div>
+
+          <v-expand-transition mode="out-in">
+            <v-card
+              rounded="xl"
+              variant="tonal"
+              color="primary"
+              v-if="showExplanation"
+              class="pa-4 mt-5"
+            >
+              <v-card-title>Edit picture</v-card-title>
+              <v-divider />
+              <v-card-text>
+                To edit your profile picture, select one image, and click 'Set as profile picture'
+                in the selection overlay. Or you can have the server automatically find a profile
+                picture.
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer />
+                <v-btn
+                  class="px-5"
+                  rounded
+                  variant="tonal"
+                  prepend-icon="mdi-auto-fix"
+                  @click="autoSetProfilePic"
+                  >Auto-set</v-btn
+                >
+                <v-btn
+                  class="px-5"
+                  exact
+                  rounded
+                  variant="tonal"
+                  prepend-icon="mdi-chevron-right"
+                  to="/"
+                  >Photos</v-btn
+                >
+              </v-card-actions>
+            </v-card>
+          </v-expand-transition>
 
           <v-text-field
             v-model="editName"
@@ -211,6 +272,7 @@ const statCards = computed(() => [
             variant="outlined"
             base-color="outline"
             autofocus
+            class="mt-5"
             rounded
             prepend-inner-icon="mdi-account"
             :disabled="saving"
@@ -224,13 +286,7 @@ const statCards = computed(() => [
           <v-btn variant="text" rounded @click="editDialog = false" :disabled="saving">
             Cancel
           </v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            rounded
-            :loading="saving"
-            @click="saveProfile"
-          >
+          <v-btn color="primary" variant="tonal" rounded :loading="saving" @click="saveProfile">
             Save Changes
           </v-btn>
         </v-card-actions>
@@ -367,7 +423,35 @@ const statCards = computed(() => [
 .avatar-preview-wrapper {
   display: flex;
   justify-content: center;
-  margin-bottom: 32px;
+  position: relative;
+}
+
+.avatar-edit-overlay {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  position: absolute;
+  transition: background-color 0.15s;
+  display: flex;
+  place-items: center;
+  place-content: center;
+}
+
+.avatar-edit-overlay:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.avatar-edit-icon {
+  opacity: 0;
+}
+
+.avatar-edit-overlay:hover .avatar-edit-icon {
+  opacity: 0.8;
+}
+
+.avatar-edit-buttons {
+  display: flex;
+  gap: 10px;
 }
 
 /* Mobile Adjustments */

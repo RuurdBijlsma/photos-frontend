@@ -115,6 +115,8 @@ const router = createRouter({
   ],
 })
 
+let userRefreshed = false
+
 export function registerNavigationGuard() {
   const snackbarsStore = useSnackbarsStore()
 
@@ -133,6 +135,9 @@ export function registerNavigationGuard() {
         // No need to proceed further, just go to login.
         return next({ name: 'login' })
       }
+    } else if (authStore.accessToken && authStore.user && !userRefreshed) {
+      userRefreshed = true
+      requestIdleCallback(() => authStore.fetchCurrentUser())
     }
 
     // --- Get Fresh Auth State ---

@@ -25,8 +25,12 @@ export const useAlbumStore = defineStore('album', () => {
   })
 
   async function fetchUserAlbums() {
-    const { data } = await albumService.getUserAlbums()
-    userAlbums.value = data
+    try{
+      const { data } = await albumService.getUserAlbums()
+      userAlbums.value = data
+    }catch(e){
+      snackbarStore.error("Can't fetch user albums", e)
+    }
   }
 
   async function fetchAlbumMedia(albumId: string, useCache = true) {

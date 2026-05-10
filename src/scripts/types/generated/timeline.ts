@@ -130,6 +130,7 @@ export interface PersonInfo {
   id: number
   name?: string | undefined
   photoCount: number
+  thumbnailId?: string | undefined
 }
 
 export interface ListPeopleResponse {
@@ -1491,7 +1492,7 @@ export const SearchSuggestionsResponse: MessageFns<SearchSuggestionsResponse> = 
 }
 
 function createBasePersonInfo(): PersonInfo {
-  return { id: 0, name: undefined, photoCount: 0 }
+  return { id: 0, name: undefined, photoCount: 0, thumbnailId: undefined }
 }
 
 export const PersonInfo: MessageFns<PersonInfo> = {
@@ -1503,7 +1504,10 @@ export const PersonInfo: MessageFns<PersonInfo> = {
       writer.uint32(18).string(message.name)
     }
     if (message.photoCount !== 0) {
-      writer.uint32(32).int32(message.photoCount)
+      writer.uint32(24).int32(message.photoCount)
+    }
+    if (message.thumbnailId !== undefined) {
+      writer.uint32(34).string(message.thumbnailId)
     }
     return writer
   },
@@ -1531,12 +1535,20 @@ export const PersonInfo: MessageFns<PersonInfo> = {
           message.name = reader.string()
           continue
         }
-        case 4: {
-          if (tag !== 32) {
+        case 3: {
+          if (tag !== 24) {
             break
           }
 
           message.photoCount = reader.int32()
+          continue
+        }
+        case 4: {
+          if (tag !== 34) {
+            break
+          }
+
+          message.thumbnailId = reader.string()
           continue
         }
       }
@@ -1557,6 +1569,11 @@ export const PersonInfo: MessageFns<PersonInfo> = {
         : isSet(object.photo_count)
           ? globalThis.Number(object.photo_count)
           : 0,
+      thumbnailId: isSet(object.thumbnailId)
+        ? globalThis.String(object.thumbnailId)
+        : isSet(object.thumbnail_id)
+          ? globalThis.String(object.thumbnail_id)
+          : undefined,
     }
   },
 
@@ -1571,6 +1588,9 @@ export const PersonInfo: MessageFns<PersonInfo> = {
     if (message.photoCount !== 0) {
       obj.photoCount = Math.round(message.photoCount)
     }
+    if (message.thumbnailId !== undefined) {
+      obj.thumbnailId = message.thumbnailId
+    }
     return obj
   },
 
@@ -1582,6 +1602,7 @@ export const PersonInfo: MessageFns<PersonInfo> = {
     message.id = object.id ?? 0
     message.name = object.name ?? undefined
     message.photoCount = object.photoCount ?? 0
+    message.thumbnailId = object.thumbnailId ?? undefined
     return message
   },
 }

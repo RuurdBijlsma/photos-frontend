@@ -3,6 +3,7 @@ import AddToAlbumButton from '@/vues/components/timeline/timeline-components/Add
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import type { TimelineContext } from '@/scripts/types/timeline/layout.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import { useProfileStore } from '@/scripts/stores/profileStore.ts'
 
 withDefaults(
   defineProps<{
@@ -15,8 +16,16 @@ withDefaults(
   },
 )
 
+const profileStore = useProfileStore()
 const selectionStore = useSelectionStore()
 const albumStore = useAlbumStore()
+
+async function setProfilePic() {
+  console.log('setProfilePic', selectionStore.selection.size)
+  if (selectionStore.selection.size !== 1) return
+  const mediaItemId = [...selectionStore.selection][0]
+  await profileStore.setProfilePic(mediaItemId)
+}
 </script>
 
 <template>
@@ -62,6 +71,9 @@ const albumStore = useAlbumStore()
             @click="albumStore.removeFromAlbum(context.album, [...selectionStore.selection])"
           >
             <v-list-item-title>Remove from album</v-list-item-title>
+          </v-list-item>
+          <v-list-item v-if="selectionStore.selection.size === 1" @click="setProfilePic">
+            <v-list-item-title>Set as profile picture</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
