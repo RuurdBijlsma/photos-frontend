@@ -6,38 +6,15 @@ import FullFolderPicker from '@/vues/components/onboarding/FullFolderPicker.vue'
 import { computed } from 'vue'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
-import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import { copyToClipboard } from '@/scripts/utils.ts'
 
 const dialogs = useDialogStore()
 const folderStore = usePickFolderStore()
 const authStore = useAuthStore()
-const snackbarStore = useSnackbarsStore()
 
 const userFolder = computed(() => folderStore.viewedFolder.join('/'))
 const invalidFolderSelected = computed(() => userFolder.value === authStore.user?.mediaFolder)
 
-async function copyToClipboard(text: string) {
-  try {
-    await navigator.clipboard.writeText(text)
-    console.log('Copied')
-  } catch (err) {
-    // Fallback for older browsers
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-
-    document.body.appendChild(textarea)
-    textarea.focus()
-    textarea.select()
-
-    document.execCommand('copy')
-
-    document.body.removeChild(textarea)
-    console.log('Copied with fallback')
-  }
-  snackbarStore.success('Copied invite to clipboard')
-}
 
 async function generateInvite() {
   if (invalidFolderSelected.value) return

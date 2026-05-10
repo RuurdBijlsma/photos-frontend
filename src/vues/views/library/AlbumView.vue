@@ -23,6 +23,7 @@ import UserAvatar from '@/vues/components/ui/UserAvatar.vue'
 import userService from '@/scripts/services/userService.ts'
 import type { SmallUser } from '@/scripts/types/api/user.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import { copyToClipboard } from '@/scripts/utils.ts'
 
 const route = useRoute()
 const router = useRouter()
@@ -232,6 +233,30 @@ async function addCollaborator(userId: number) {
     })
   } catch (e) {
     snackbars.error('Could not add collaborator', e)
+  }
+}
+
+async function crossServerInvite() {
+  if (!album.value) return
+  try {
+    const { data: token } = await albumService.generateInvite(album.value.id)
+    const inviteUrl = `${location.origin}/export?token=${token}`
+    await dialogs.alert({
+      title: 'Cross server invite',
+      description: `
+        Share this link with someone so they can import this album to their own server running Ruurd Photos.
+        <br>
+        <br>
+        <a href="${inviteUrl}" target="_blank">${inviteUrl}</a>
+      `,
+      actions: [
+        { action: () => copyToClipboard(inviteUrl), name: 'Copy invite' },
+        { action: () => ({}), name: 'Done' },
+      ],
+    })
+  } catch (e) {
+    snackbars.error("Can't generate invite", e)
+    return
   }
 }
 
@@ -523,7 +548,7 @@ watch(collabMenuOpen, () => {
                   </v-list-item>
                   <v-divider class="mt-2 mb-1" />
                 </template>
-                <v-list-item prepend-icon="mdi-share">
+                <v-list-item prepend-icon="mdi-share" @click="crossServerInvite">
                   <v-list-item-title>Share with other server</v-list-item-title>
                 </v-list-item>
               </v-list>

@@ -102,6 +102,18 @@ const router = createRouter({
       component: () => import('@/vues/views/auth/RegisterView.vue'),
     },
     {
+      path: '/export',
+      name: 'export-album',
+      meta: { requiresAuth: false },
+      component: () => import('@/vues/views/main/ExportAlbumView.vue'),
+    },
+    {
+      path: '/import',
+      name: 'import-album',
+      meta: { requiresAuth: false },
+      component: () => import('@/vues/views/main/ImportAlbumView.vue'),
+    },
+    {
       path: '/onboarding',
       name: 'onboarding',
       meta: { requiresAuth: true, requiresAdmin: true },
@@ -145,7 +157,7 @@ export function registerNavigationGuard() {
     const isAdmin = authStore.isAdmin
 
     if (isAuthenticated) {
-      requestIdleCallback(()=>authStore.onAuthenticated())
+      requestIdleCallback(() => authStore.onAuthenticated())
     }
 
     // --- "Onboarding Needed" Redirect Logic ---

@@ -1,4 +1,5 @@
 import { THUMBNAIL_SIZES, VIDEO_SIZES } from '@/scripts/constants.ts'
+import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 
 export function prettyBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return '0 B'
@@ -60,4 +61,14 @@ export const stringToColor = (
   }
   const hue = Math.abs(hash % 360)
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`
+}
+
+export async function copyToClipboard(text: string) {
+  const snackbarStore = useSnackbarsStore()
+  try {
+    await navigator.clipboard.writeText(text)
+    snackbarStore.success('Copied to clipboard')
+  } catch (e) {
+    snackbarStore.error("Can't copy to clipboard", e)
+  }
 }
