@@ -138,7 +138,6 @@ const route = useRoute()
         to="/people"
       />
     </v-list>
-    <a href="web+burger:cheeseburger">cheeseburger</a>
   </v-navigation-drawer>
 </template>
 
