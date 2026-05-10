@@ -4,8 +4,12 @@ import SnackbarQueue from '@/vues/components/SnackbarQueue.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { watch } from 'vue'
 import DialogQueue from '@/vues/components/DialogQueue.vue'
+import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 
 const settings = useSettingStore()
+const systemStore = useSystemStore()
+
+systemStore.fetchStats()
 
 watch(
   () => settings.useBackdropBlur,

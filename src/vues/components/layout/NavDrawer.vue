@@ -3,8 +3,10 @@ import { useRoute } from 'vue-router'
 import { computed, ref, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
+import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 
 const albumStore = useAlbumStore()
+const systemStore = useSystemStore()
 requestIdleCallback(() => albumStore.fetchUserAlbums())
 
 const albumsExpanded = ref(
@@ -128,7 +130,13 @@ const route = useRoute()
           </div>
         </div>
       </v-expand-transition>
-      <v-list-item rounded :prepend-icon="faceIcon" title="People" to="/people" />
+      <v-list-item
+        v-if="systemStore.stats.hasClusteredPeople"
+        rounded
+        :prepend-icon="faceIcon"
+        title="People"
+        to="/people"
+      />
     </v-list>
     <a href="web+burger:cheeseburger">cheeseburger</a>
   </v-navigation-drawer>
