@@ -20,18 +20,32 @@ import albumService from '@/scripts/services/albumService.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
 import UserAvatar from '@/vues/components/ui/UserAvatar.vue'
+import userService from '@/scripts/services/userService.ts'
+import type { SmallUser } from '@/scripts/types/api/user.ts'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 const route = useRoute()
 const router = useRouter()
-const albumStore = useAlbumStore()
 const simpleTimeline = useTemplateRef('simpleTimeline')
+const albumStore = useAlbumStore()
 const snackbars = useSnackbarsStore()
 const dialogs = useDialogStore()
+const authStore = useAuthStore()
 
 const isManualOrderMode = ref(false)
+const collabMenuOpen = ref(false)
 const localItems = ref<SimpleTimelineItem[]>([])
 const pendingSortMode = ref<AlbumSort>('None')
+const allUsers = ref<SmallUser[]>([])
+const otherUsers = computed(() =>
+  allUsers.value.filter((u) => !album.value?.collaborators.map((c) => c.userId).includes(u.id)),
+)
+const currentUserCollaborator = computed(() => {
+  if (!album.value) return undefined
+  return album.value.collaborators.find((c) => c.userId === authStore.user?.id)
+})
 
+const isOwner = computed(() => authStore.user?.id === album.value?.ownerId)
 const id = computed(() => {
   const rawId = route.params.albumId
   if (rawId && !Array.isArray(rawId)) return rawId
@@ -196,6 +210,31 @@ async function confirmRouteLeave(next: NavigationGuardNext) {
   }
 }
 
+async function fetchUserList() {
+  try {
+    const { data } = await userService.listUsers()
+    allUsers.value = data
+  } catch (e) {
+    snackbars.error("Can't fetch other users", e)
+  }
+}
+
+async function addCollaborator(userId: number) {
+  if (!album.value) return
+
+  try {
+    await albumService.addCollaborator(album.value.id, {
+      userId,
+      role: 'Contributor',
+    })
+    requestIdleCallback(() => {
+      if (album.value) albumStore.fetchAlbumMedia(album.value.id, false)
+    })
+  } catch (e) {
+    snackbars.error('Could not add collaborator', e)
+  }
+}
+
 onBeforeRouteLeave(async (to, from, next) => confirmRouteLeave(next))
 onBeforeRouteUpdate(async (to, from, next) => confirmRouteLeave(next))
 
@@ -248,6 +287,11 @@ watch(
     albumTitle.value = name
   },
 )
+
+watch(collabMenuOpen, () => {
+  if (!collabMenuOpen.value) return
+  fetchUserList()
+})
 </script>
 
 <template>
@@ -338,19 +382,22 @@ watch(
           <div class="album-header-first-row">
             <editable-title
               class="editable-header"
-              v-if="albumTitle !== null"
+              v-if="albumTitle !== null && isOwner"
               name="album title"
               :autofocus="route.query?.create === '1'"
               v-model="albumTitle"
             />
+            <h1 class="non-owner-title" v-else-if="albumTitle !== null && !isOwner">
+              {{ albumTitle }}
+            </h1>
             <v-skeleton-loader
-              v-else
+              v-else-if="albumTitle === null"
               type="heading"
               width="50%"
               height="17%"
               :style="{ transform: `translateX(-18px)` }"
             />
-            <v-menu location="bottom end" v-if="!isManualOrderMode">
+            <v-menu location="bottom end" v-if="!isManualOrderMode && isOwner">
               <template v-slot:activator="{ props }">
                 <v-btn
                   v-bind="props"
@@ -382,7 +429,7 @@ watch(
           />
           <div class="description-area" v-if="album">
             <v-btn
-              v-if="albumDescription === null"
+              v-if="albumDescription === null && isOwner"
               class="description-add-button"
               prepend-icon="mdi-plus"
               density="compact"
@@ -392,7 +439,7 @@ watch(
             >
               Add description
             </v-btn>
-            <div v-else class="description-with-remove">
+            <div v-else-if="albumDescription !== null" class="description-with-remove">
               <textarea
                 class="album-description"
                 ref="textarea"
@@ -406,8 +453,11 @@ watch(
                 @input="triggerResize"
                 @focus="focusTextArea"
                 @blur="blurTextArea"
+                v-if="isOwner"
               ></textarea>
+              <p v-else>{{ albumDescription }}</p>
               <v-btn
+                v-if="isOwner"
                 @click="removeDescription"
                 v-tooltip:top="'Remove description'"
                 icon="mdi-close"
@@ -427,26 +477,76 @@ watch(
             :style="{ transform: `translateX(-18px)` }"
           />
           <div class="album-collaborators" v-if="album">
-            <div
-              class="album-collaborator"
-              v-for="collaborator in album.collaborators"
-              :key="collaborator.id"
-            >
-              <user-avatar
-                :name="collaborator.name"
-                class="collaborator-avatar"
-                v-tooltip:top="
-                  `${collaborator.name}${collaborator.userId === album.ownerId ? ' (Owner)' : ''}`
-                "
-              />
-            </div>
-            <v-btn
-              v-tooltip:top="'Add collaborator'"
-              icon="mdi-plus"
-              variant="tonal"
-              color="primary"
-              size="40"
-            ></v-btn>
+            <v-menu v-for="collaborator in album.collaborators" :key="collaborator.id">
+              <template v-slot:activator="{ props }">
+                <user-avatar
+                  v-bind="collaborator.userId !== album.ownerId && isOwner ? props : undefined"
+                  :name="collaborator.name"
+                  class="collaborator-avatar"
+                  v-tooltip:top="
+                    `${collaborator.name}${collaborator.userId === album.ownerId ? ' (Owner)' : ''}`
+                  "
+                />
+              </template>
+              <v-list density="compact">
+                <v-list-item
+                  @click="albumStore.removeCollaborator(album.id, collaborator.id, false)"
+                >
+                  <v-list-item-title>Remove {{ collaborator.name }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+            <v-menu v-model="collabMenuOpen" v-if="isOwner">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  v-tooltip:top="'Add collaborator'"
+                  icon="mdi-plus"
+                  variant="tonal"
+                  color="primary"
+                  size="40"
+                  :loading="allUsers.length === 0 && collabMenuOpen"
+                ></v-btn>
+              </template>
+              <v-list density="compact">
+                <template v-if="otherUsers.length > 0">
+                  <v-list-subheader class="mb-1">Add a collaborator</v-list-subheader>
+                  <v-list-item
+                    @click="addCollaborator(user.id)"
+                    v-for="user in otherUsers"
+                    :key="user.id"
+                    class="collab-list-item"
+                  >
+                    <user-avatar :name="user.name" :avatar-id="user.avatarId" />
+                    <v-list-item-title>{{ user.name }}</v-list-item-title>
+                  </v-list-item>
+                  <v-divider class="mt-2 mb-1" />
+                </template>
+                <v-list-item prepend-icon="mdi-share">
+                  <v-list-item-title>Share with other server</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+            <v-menu v-else-if="currentUserCollaborator">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  v-tooltip:top="'Leave album'"
+                  icon="mdi-minus"
+                  variant="tonal"
+                  color="primary"
+                  size="40"
+                ></v-btn>
+              </template>
+              <v-list density="compact">
+                <v-list-item
+                  @click="albumStore.removeCollaborator(album.id, currentUserCollaborator.id, true)"
+                  class="collab-list-item"
+                >
+                  <v-list-item-title>Leave album</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
           </div>
           <v-skeleton-loader
             v-else
@@ -521,6 +621,15 @@ watch(
   width: calc(100% + 19px);
 }
 
+.non-owner-title {
+  margin: 0;
+  font-weight: 500;
+  font-size: 50px;
+  line-height: 1.2;
+  color: rgb(var(--v-theme-on-background));
+  padding: 5px 3px;
+}
+
 .album-dates {
   font-weight: 400;
   font-size: 15px;
@@ -574,5 +683,11 @@ watch(
 
 .collaborator-avatar {
   font-weight: 600;
+}
+
+.collab-list-item:deep(.v-list-item__content) {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 </style>

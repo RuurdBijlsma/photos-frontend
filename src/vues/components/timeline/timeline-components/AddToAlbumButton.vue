@@ -59,7 +59,10 @@ async function addToAlbum(album: Album) {
   addLoading.value = true
   try {
     await albumService.addMediaToAlbum(album.id, { mediaItemIds: props.idsToAdd })
-    requestIdleCallback(() => albumStore.fetchUserAlbums().then())
+    requestIdleCallback(() => {
+      albumStore.fetchAlbumMedia(album.id, false)
+      albumStore.fetchUserAlbums()
+    })
     selectionStore.selection = new Set()
     snackbarStore.info(
       `${props.idsToAdd.length} item${props.idsToAdd.length === 1 ? '' : 's'} added`,

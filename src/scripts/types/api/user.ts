@@ -11,3 +11,9 @@ export interface UserProfile extends BaseUser {
   stats: UserStats
   email: string | null
 }
+
+export interface SmallUser {
+  id: number
+  name: string
+  avatarId: string
+}

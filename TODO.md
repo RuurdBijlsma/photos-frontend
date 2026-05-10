@@ -180,3 +180,10 @@
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * niet "People" tab laten zien als je nog geen faces hebt
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
+* Als je full screen foto bekijkt, manier maken om de top balk te hiden (als je muis niet beweegt ofzo)
+* ✅ make indication that album is shared on /albums page
+* filters on front page (small ui button)
+  * similar to search page but not so random, and shows all results
+  * face filter
+  * location filter
+  * video/photo type filter

@@ -37,7 +37,7 @@ const backgroundColor = computed(() => stringToColor(props.name))
   <v-avatar
     :size="avatarSize"
     :style="{
-      fontSize: avatarSize / 2 + 'px',
+      fontSize: avatarSize / 2.7 + 'px',
       fontWeight: avatarSize > 40 ? 'bold' : '600',
     }"
     :color="avatarId ? undefined : backgroundColor"

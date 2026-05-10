@@ -6,11 +6,13 @@ import type { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
+import { useRouter } from 'vue-router'
 
 export const useAlbumStore = defineStore('album', () => {
   const snackbarStore = useSnackbarsStore()
   const selectionStore = useSelectionStore()
   const dialogs = useDialogStore()
+  const router = useRouter()
 
   const userAlbums = shallowRef<Album[]>(
     localStorage.getItem('userAlbums') === null ? [] : JSON.parse(localStorage.userAlbums),
@@ -115,6 +117,25 @@ export const useAlbumStore = defineStore('album', () => {
     }
   }
 
+  async function removeCollaborator(
+    albumId: string,
+    collaboratorId: number,
+    isSelfRemove: boolean = false,
+  ) {
+    try {
+      await albumService.removeCollaborator(albumId, collaboratorId)
+      if (isSelfRemove) {
+        requestIdleCallback(() => fetchUserAlbums())
+        snackbarStore.success("Successfully removed yourself from album")
+        await router.push('/albums')
+      } else {
+        requestIdleCallback(() => fetchAlbumMedia(albumId, false))
+      }
+    } catch (e) {
+      snackbarStore.error('Could not remove collaborator', e)
+    }
+  }
+
   return {
     userAlbums,
     albumMedia,
@@ -126,5 +147,6 @@ export const useAlbumStore = defineStore('album', () => {
     reorderMedia,
     deleteAlbum,
     renameAlbum,
+    removeCollaborator
   }
 })

@@ -1,8 +1,12 @@
 import type { AxiosResponse } from 'axios'
 import apiClient from './api.ts'
-import type { UserProfile } from '@/scripts/types/api/user.ts'
+import type { SmallUser, UserProfile } from '@/scripts/types/api/user.ts'
 
 const userService = {
+  listUsers(): Promise<AxiosResponse<SmallUser[]>> {
+    return apiClient.get<SmallUser[]>(`/user`)
+  },
+
   getUserProfile(userId: number): Promise<AxiosResponse<UserProfile>> {
     return apiClient.get<UserProfile>(`/user/${userId}/profile`)
   },

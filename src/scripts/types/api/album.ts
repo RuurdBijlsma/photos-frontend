@@ -30,12 +30,6 @@ export interface AlbumCollaborator {
   addedAt: string // ISO Date string
 }
 
-export interface CollaboratorSummary {
-  id: number
-  name: string
-  role: AlbumRole
-}
-
 export interface AlbumMediaItemSummary {
   mediaItem: TimelineItem
   addedAt: string // ISO Date string
@@ -45,19 +39,6 @@ export interface AlbumSummary {
   name: string
   description: string | null
   relativePaths: string[]
-}
-
-// Responses
-export interface AlbumDetailsResponse {
-  id: string
-  name: string
-  description?: string
-  thumbnailId?: string
-  isPublic: boolean
-  ownerId: number
-  createdAt: string // ISO Date string
-  mediaItems: AlbumMediaItemSummary[]
-  collaborators: CollaboratorSummary[]
 }
 
 // Request Payloads
@@ -80,7 +61,7 @@ export interface AddMediaToAlbumRequest {
 }
 
 export interface AddCollaboratorRequest {
-  userEmail: string
+  userId: number
   role: AlbumRole
 }
 

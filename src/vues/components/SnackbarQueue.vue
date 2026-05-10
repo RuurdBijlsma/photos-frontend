@@ -80,7 +80,7 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
     <v-card v-if="selectedSnack && selectedSnack.error">
       <v-toolbar color="error" density="compact">
         <v-toolbar-title class="text-subtitle-1">
-          {{ selectedSnack.error.name || 'Error Details' }}
+          {{ selectedSnack.error || 'Error Details' }}
         </v-toolbar-title>
         <v-spacer />
         <v-btn icon="mdi-close" @click="dialog = false" />
@@ -92,6 +92,9 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
         </v-alert>
 
         <p class="mb-2"><strong>Message:</strong> {{ selectedSnack.error.message }}</p>
+        <p v-if="selectedSnack.error.response?.data" class="mb-2">
+          <strong>Axios:</strong> {{ selectedSnack.error.response?.data }}
+        </p>
 
         <v-expansion-panels v-if="selectedSnack.error.stack">
           <v-expansion-panel>

@@ -9,8 +9,10 @@ import { MONTHS } from '@/scripts/constants.ts'
 import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 const snackbarStore = useSnackbarsStore()
+const authStore = useAuthStore()
 const dialogs = useDialogStore()
 const router = useRouter()
 const albumStore = useAlbumStore()
@@ -155,6 +157,18 @@ async function deleteAlbum(albumId: string) {
   requestIdleCallback(() => loadAlbums())
 }
 
+async function leaveAlbum(albumId: string) {
+  await albumStore.fetchAlbumMedia(albumId)
+  const albumInfo = albumStore.albumMedia.get(albumId)
+  if (!albumInfo) return
+  const collaborators = albumInfo.album?.collaborators
+  if (!collaborators) return
+  const currentUserCollaborator = collaborators.find((c) => c.userId === authStore.user?.id)
+  if (!currentUserCollaborator) return
+  await albumStore.removeCollaborator(albumId, currentUserCollaborator.id, true)
+  requestIdleCallback(() => loadAlbums())
+}
+
 onMounted(() => {
   loadAlbums()
 })
@@ -256,7 +270,7 @@ onUnmounted(() => {
               border-radius="20px"
               :strength="0.7"
             />
-            <v-menu location="bottom end">
+            <v-menu location="bottom end" v-if="album.ownerId === authStore.user?.id">
               <template v-slot:activator="{ props }">
                 <v-btn
                   v-bind="props"
@@ -274,6 +288,27 @@ onUnmounted(() => {
                 </v-list-item>
                 <v-list-item @click="deleteAlbum(album.id)">
                   <v-list-item-title>Delete album</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+            <v-menu v-else location="bottom end">
+              <template v-slot:activator="{ props }">
+                <v-avatar
+                  v-tooltip="{
+                    location: 'top',
+                    text: 'Shared album',
+                  }"
+                  size="35"
+                  v-bind="props"
+                  @click.stop.prevent
+                  class="album-shared-avatar"
+                  color="primary"
+                  ><v-icon icon="mdi-share" size="23"></v-icon
+                ></v-avatar>
+              </template>
+              <v-list density="compact">
+                <v-list-item @click="leaveAlbum(album.id)">
+                  <v-list-item-title>Leave shared album</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>
@@ -353,6 +388,13 @@ onUnmounted(() => {
   position: relative;
   height: 200px;
   width: 200px;
+}
+
+.album-shared-avatar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
 }
 
 .album-options-btn {
