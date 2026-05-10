@@ -21,10 +21,19 @@ const selectionStore = useSelectionStore()
 const albumStore = useAlbumStore()
 
 async function setProfilePic() {
-  console.log('setProfilePic', selectionStore.selection.size)
   if (selectionStore.selection.size !== 1) return
   const mediaItemId = [...selectionStore.selection][0]
   await profileStore.setProfilePic(mediaItemId)
+}
+
+async function setAlbumCover(albumId: string) {
+  if (selectionStore.selection.size !== 1) return
+  const mediaItemId = [...selectionStore.selection][0]
+  await albumStore.updateAlbumDetails(albumId, { thumbnailId: mediaItemId })
+  requestIdleCallback(() => {
+    albumStore.fetchAlbumMedia(albumId, false)
+    albumStore.fetchUserAlbums()
+  })
 }
 </script>
 
@@ -66,15 +75,21 @@ async function setProfilePic() {
           <v-btn v-bind="props" icon="mdi-dots-horizontal" variant="plain" density="compact" />
         </template>
         <v-list density="compact">
-          <v-list-item
-            v-if="context && context.album"
-            @click="albumStore.removeFromAlbum(context.album, [...selectionStore.selection])"
-          >
-            <v-list-item-title>Remove from album</v-list-item-title>
-          </v-list-item>
           <v-list-item v-if="selectionStore.selection.size === 1" @click="setProfilePic">
             <v-list-item-title>Set as profile picture</v-list-item-title>
           </v-list-item>
+          <template v-if="context && context.album">
+            <v-divider/>
+            <v-list-subheader>Album</v-list-subheader>
+            <v-list-item
+              @click="albumStore.removeFromAlbum(context.album, [...selectionStore.selection])"
+            >
+              <v-list-item-title>Remove from album</v-list-item-title>
+            </v-list-item>
+            <v-list-item v-if="selectionStore.selection.size === 1" @click="setAlbumCover(context.album)">
+              <v-list-item-title>Set as album cover</v-list-item-title>
+            </v-list-item>
+          </template>
         </v-list>
       </v-menu>
     </div>
