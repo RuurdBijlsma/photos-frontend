@@ -4,6 +4,7 @@ import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import type { TimelineContext } from '@/scripts/types/timeline/layout.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import { useProfileStore } from '@/scripts/stores/profileStore.ts'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 withDefaults(
   defineProps<{
@@ -19,6 +20,7 @@ withDefaults(
 const profileStore = useProfileStore()
 const selectionStore = useSelectionStore()
 const albumStore = useAlbumStore()
+const authStore = useAuthStore()
 
 async function setProfilePic() {
   if (selectionStore.selection.size !== 1) return
@@ -79,14 +81,17 @@ async function setAlbumCover(albumId: string) {
             <v-list-item-title>Set as profile picture</v-list-item-title>
           </v-list-item>
           <template v-if="context && context.album">
-            <v-divider/>
+            <v-divider />
             <v-list-subheader>Album</v-list-subheader>
             <v-list-item
-              @click="albumStore.removeFromAlbum(context.album, [...selectionStore.selection])"
+              @click="albumStore.removeFromAlbum(context.album.id, [...selectionStore.selection])"
             >
               <v-list-item-title>Remove from album</v-list-item-title>
             </v-list-item>
-            <v-list-item v-if="selectionStore.selection.size === 1" @click="setAlbumCover(context.album)">
+            <v-list-item
+              v-if="selectionStore.selection.size === 1 && context.album.ownerId === authStore.user?.id"
+              @click="setAlbumCover(context.album.id)"
+            >
               <v-list-item-title>Set as album cover</v-list-item-title>
             </v-list-item>
           </template>

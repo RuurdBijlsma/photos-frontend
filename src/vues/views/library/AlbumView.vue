@@ -364,7 +364,7 @@ watch(collabMenuOpen, () => {
       :timeline-items="displayedItems"
       :view-link="`/album/${id}/view/`"
       v-if="id"
-      :context="{ album: id }"
+      :context="{ album: album ?? undefined }"
       :is-manual-order-mode="isManualOrderMode"
       @reorder="onReorder"
     >

@@ -183,8 +183,10 @@
 * Als je full screen foto bekijkt, manier maken om de top balk te hiden (als je muis niet beweegt ofzo)
 * ✅ make indication that album is shared on /albums page
 * filters on front page (small ui button)
-  * similar to search page but not so random, and shows all results
-  * face filter
-  * location filter
-  * video/photo type filter
+    * similar to search page but not so random, and shows all results
+    * face filter
+    * location filter
+    * video/photo type filter
 * ✅ avatar doesnt work on album page
+* ✅ when not album owner, you get options for removing item from album & set as album cover, should this be shown? If so
+  change backend authorization for this.
