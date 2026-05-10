@@ -482,6 +482,7 @@ watch(collabMenuOpen, () => {
                 <user-avatar
                   v-bind="collaborator.userId !== album.ownerId && isOwner ? props : undefined"
                   :name="collaborator.name"
+                  :avatar-id="collaborator.avatarId"
                   class="collaborator-avatar"
                   v-tooltip:top="
                     `${collaborator.name}${collaborator.userId === album.ownerId ? ' (Owner)' : ''}`

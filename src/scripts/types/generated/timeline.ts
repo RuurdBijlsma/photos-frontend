@@ -94,6 +94,7 @@ export interface CollaboratorSummary {
   userId: number
   name: string
   role: string
+  avatarId?: string | undefined
 }
 
 export interface AlbumInfo {
@@ -888,7 +889,7 @@ export const OrderedMediaResponse: MessageFns<OrderedMediaResponse> = {
 }
 
 function createBaseCollaboratorSummary(): CollaboratorSummary {
-  return { id: 0, userId: 0, name: '', role: '' }
+  return { id: 0, userId: 0, name: '', role: '', avatarId: undefined }
 }
 
 export const CollaboratorSummary: MessageFns<CollaboratorSummary> = {
@@ -904,6 +905,9 @@ export const CollaboratorSummary: MessageFns<CollaboratorSummary> = {
     }
     if (message.role !== '') {
       writer.uint32(34).string(message.role)
+    }
+    if (message.avatarId !== undefined) {
+      writer.uint32(42).string(message.avatarId)
     }
     return writer
   },
@@ -947,6 +951,14 @@ export const CollaboratorSummary: MessageFns<CollaboratorSummary> = {
           message.role = reader.string()
           continue
         }
+        case 5: {
+          if (tag !== 42) {
+            break
+          }
+
+          message.avatarId = reader.string()
+          continue
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break
@@ -966,6 +978,11 @@ export const CollaboratorSummary: MessageFns<CollaboratorSummary> = {
           : 0,
       name: isSet(object.name) ? globalThis.String(object.name) : '',
       role: isSet(object.role) ? globalThis.String(object.role) : '',
+      avatarId: isSet(object.avatarId)
+        ? globalThis.String(object.avatarId)
+        : isSet(object.avatar_id)
+          ? globalThis.String(object.avatar_id)
+          : undefined,
     }
   },
 
@@ -983,6 +1000,9 @@ export const CollaboratorSummary: MessageFns<CollaboratorSummary> = {
     if (message.role !== '') {
       obj.role = message.role
     }
+    if (message.avatarId !== undefined) {
+      obj.avatarId = message.avatarId
+    }
     return obj
   },
 
@@ -997,6 +1017,7 @@ export const CollaboratorSummary: MessageFns<CollaboratorSummary> = {
     message.userId = object.userId ?? 0
     message.name = object.name ?? ''
     message.role = object.role ?? ''
+    message.avatarId = object.avatarId ?? undefined
     return message
   },
 }

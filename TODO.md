@@ -187,3 +187,4 @@
   * face filter
   * location filter
   * video/photo type filter
+* ✅ avatar doesnt work on album page

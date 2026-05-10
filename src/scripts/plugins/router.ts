@@ -144,6 +144,10 @@ export function registerNavigationGuard() {
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
 
+    if (isAuthenticated) {
+      requestIdleCallback(()=>authStore.onAuthenticated())
+    }
+
     // --- "Onboarding Needed" Redirect Logic ---
     const needsOnboarding =
       isAdmin && (authStore.user?.mediaFolder === null || authStore.user?.mediaFolder === undefined)

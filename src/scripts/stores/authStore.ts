@@ -3,10 +3,13 @@ import { defineStore } from 'pinia'
 import authService from '@/scripts/services/authService.ts'
 import type { CreateUser, LoginUser, Tokens, User } from '@/scripts/types/api/auth.ts'
 import { useRouter } from 'vue-router'
+import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 
 type AuthStatus = 'idle' | 'loading' | 'error' | 'success'
 
 export const useAuthStore = defineStore('auth', () => {
+  const systemStore = useSystemStore()
+
   // --- STATE ---
   const user: Ref<User | null> = ref(
     localStorage.getItem('authUser') === null
@@ -75,6 +78,10 @@ export const useAuthStore = defineStore('auth', () => {
       await logout()
       throw error
     }
+  }
+
+  async function onAuthenticated() {
+    await systemStore.fetchStats()
   }
 
   /**
@@ -161,5 +168,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     fetchCurrentUser,
     refreshTokens,
+    onAuthenticated,
   }
 })
