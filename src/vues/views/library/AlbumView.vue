@@ -278,6 +278,7 @@ function startImportPoll() {
   importPollInterval = setInterval(() => {
     if (id.value) {
       albumStore.fetchAlbumMedia(id.value, false)
+      albumStore.fetchUserAlbums()
     }
   }, 5000)
 }

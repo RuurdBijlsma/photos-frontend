@@ -87,6 +87,12 @@ const router = createRouter({
             },
           ],
         },
+        {
+          path: '/import-album/:token',
+          name: 'import-album',
+          meta: { requiresAuth: true },
+          component: () => import('@/vues/views/main/ImportAlbumView.vue'),
+        },
       ],
     },
     {
@@ -100,12 +106,6 @@ const router = createRouter({
       name: 'register',
       meta: { guest: true },
       component: () => import('@/vues/views/auth/RegisterView.vue'),
-    },
-    {
-      path: '/import-album/:token',
-      name: 'import-album',
-      meta: { requiresAuth: true },
-      component: () => import('@/vues/views/main/ImportAlbumView.vue'),
     },
     {
       path: '/onboarding',

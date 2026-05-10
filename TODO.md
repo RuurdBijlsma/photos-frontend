@@ -190,3 +190,6 @@
 * ✅ avatar doesnt work on album page
 * ✅ when not album owner, you get options for removing item from album & set as album cover, should this be shown? If so
   change backend authorization for this.
+* on s2s album import, make sure description is set to None, and pick an album thumbnail
+* render empty album UI better
+* show something for albums without thumbnail in the /albums page
