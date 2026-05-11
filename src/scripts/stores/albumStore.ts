@@ -25,10 +25,10 @@ export const useAlbumStore = defineStore('album', () => {
   })
 
   async function fetchUserAlbums() {
-    try{
+    try {
       const { data } = await albumService.getUserAlbums()
       userAlbums.value = data
-    }catch(e){
+    } catch (e) {
       snackbarStore.error("Can't fetch user albums", e)
     }
   }
@@ -130,7 +130,7 @@ export const useAlbumStore = defineStore('album', () => {
       await albumService.removeCollaborator(albumId, collaboratorId)
       if (isSelfRemove) {
         requestIdleCallback(() => fetchUserAlbums())
-        snackbarStore.success("Successfully removed yourself from album")
+        snackbarStore.success('Successfully removed yourself from album')
         await router.push('/albums')
       } else {
         requestIdleCallback(() => fetchAlbumMedia(albumId, false))
@@ -151,6 +151,6 @@ export const useAlbumStore = defineStore('album', () => {
     reorderMedia,
     deleteAlbum,
     renameAlbum,
-    removeCollaborator
+    removeCollaborator,
   }
 })

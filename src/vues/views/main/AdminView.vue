@@ -15,7 +15,6 @@ const authStore = useAuthStore()
 const userFolder = computed(() => folderStore.viewedFolder.join('/'))
 const invalidFolderSelected = computed(() => userFolder.value === authStore.user?.mediaFolder)
 
-
 async function generateInvite() {
   if (invalidFolderSelected.value) return
   const invite = await authService.generateInvite(userFolder.value)

@@ -89,7 +89,9 @@ async function setAlbumCover(albumId: string) {
               <v-list-item-title>Remove from album</v-list-item-title>
             </v-list-item>
             <v-list-item
-              v-if="selectionStore.selection.size === 1 && context.album.ownerId === authStore.user?.id"
+              v-if="
+                selectionStore.selection.size === 1 && context.album.ownerId === authStore.user?.id
+              "
               @click="setAlbumCover(context.album.id)"
             >
               <v-list-item-title>Set as album cover</v-list-item-title>

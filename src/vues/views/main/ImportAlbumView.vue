@@ -5,6 +5,7 @@ import albumService from '@/scripts/services/albumService.ts'
 import type { AlbumSummary } from '@/scripts/types/api/album.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import { isAxiosError } from 'axios'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 
 const route = useRoute()
@@ -30,9 +31,9 @@ async function fetchSummary() {
     summary.value = data
     localName.value = data.name
     localDescription.value = data.description || ''
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('Failed to check invite', e)
-    if (e.response?.status === 401 || e.response?.status === 404) {
+    if (isAxiosError(e) && (e.response?.status === 401 || e.response?.status === 404)) {
       error.value = 'This invitation has expired or is invalid.'
     } else {
       error.value = 'Failed to load album preview. Please try again later.'

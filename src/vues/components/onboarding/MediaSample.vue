@@ -74,7 +74,7 @@ const cardCaption = computed(() => {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
-  margin-top:10px;
+  margin-top: 10px;
 }
 
 .preview-skeleton,

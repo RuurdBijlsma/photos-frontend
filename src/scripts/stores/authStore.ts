@@ -153,7 +153,9 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Redirect to the login page only if the current route requires authentication.
     if (redirect) {
-      const requiresAuth = router.currentRoute.value.matched.some((record) => record.meta.requiresAuth)
+      const requiresAuth = router.currentRoute.value.matched.some(
+        (record) => record.meta.requiresAuth,
+      )
       if (requiresAuth) {
         await router.push({ name: 'login' })
       }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { isAxiosError } from 'axios'
 import { type Snack, useSnackbarsStore } from '@/scripts/stores/snackbarStore'
 
 const store = useSnackbarsStore()
@@ -92,7 +93,10 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
         </v-alert>
 
         <p class="mb-2"><strong>Message:</strong> {{ selectedSnack.error.message }}</p>
-        <p v-if="selectedSnack.error.response?.data" class="mb-2">
+        <p
+          v-if="isAxiosError(selectedSnack.error) && selectedSnack.error.response?.data"
+          class="mb-2"
+        >
           <strong>Axios:</strong> {{ selectedSnack.error.response?.data }}
         </p>
 
