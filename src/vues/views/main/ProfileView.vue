@@ -166,10 +166,10 @@ const statCards = computed(() => [
       </section>
 
       <!-- Stats Section -->
-      <section>
+      <section class="profile-stats">
         <v-row>
           <v-col v-for="stat in statCards" :key="stat.title" cols="12" sm="6" md="3">
-            <v-card class="stat-card" elevation="2">
+            <v-card class="stat-card" variant="flat">
               <div class="stat-card-content">
                 <v-avatar :color="stat.color" variant="tonal" class="stat-icon" rounded="lg">
                   <v-icon :icon="stat.icon" />
@@ -224,7 +224,7 @@ const statCards = computed(() => [
               color="transparent"
               @click="showExplanation = true"
             >
-              <v-icon class="avatar-edit-icon" size="40">mdi-pencil</v-icon>
+              <v-icon class="avatar-edit-icon" size="40" color="white">mdi-pencil</v-icon>
             </v-btn>
           </div>
 
