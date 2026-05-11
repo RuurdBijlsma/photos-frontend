@@ -95,6 +95,8 @@ const formattedTooltipLabel = computed(() => {
 })
 const showScrollDetails = ref(false)
 const isScrollingFast = ref(false)
+const isEmpty = computed(() => timelineStore.monthRatios.length === 0)
+const isOnboarding = computed(() => route.query.onboarding === 'true')
 const visibleYearLabels = computed(() => {
   const years = scrollLabels.value.years
   const YEAR_LABEL_HEIGHT = 20
@@ -730,7 +732,30 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
       <teleport to="body">
         <router-view />
       </teleport>
-      <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
+
+      <!-- Empty state -->
+      <transition name="empty-fade">
+        <div v-if="isEmpty" class="empty-state">
+          <template v-if="isOnboarding">
+            <v-icon color="surface-variant" size="200" icon="mdi-image-sync-outline" />
+            <h2 class="empty-title">Loading your photos&hellip;</h2>
+            <p class="empty-subtitle">Your library is being built. This may take a moment...</p>
+            <v-progress-circular indeterminate color="primary" size="50" class="mt-5" />
+          </template>
+          <template v-else>
+            <v-icon color="surface-variant" size="200" icon="mdi-image-off-outline" />
+            <h2 class="empty-title">No photos yet</h2>
+            <p class="empty-subtitle">Once you add photos to your library they'll appear here.</p>
+          </template>
+        </div>
+      </transition>
+
+      <div
+        class="scroll-container"
+        ref="scrollContainer"
+        @scroll.passive="onScroll"
+        v-show="!isEmpty"
+      >
         <div
           :style="{
             height: `${rowVirtualizer.getTotalSize()}px`,
@@ -768,7 +793,7 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
       @mousedown="handleMouseDown"
       @mousemove="handleTooltipMove"
       @mouseleave="tooltipDate = null"
-      v-if="//todo implement me"
+      v-if="scrollHeight > containerSize.height"
     >
       <div class="scroll-track"></div>
       <div
@@ -994,5 +1019,36 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
   height: 4px;
   border-radius: 50%;
   background-color: rgba(var(--v-theme-secondary), 0.2);
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: rgba(var(--v-theme-on-surface), 0.9);
+  letter-spacing: -0.01em;
+}
+
+.empty-subtitle {
+  margin: 0;
+  font-size: 0.92rem;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  max-width: 340px;
+  line-height: 1.55;
 }
 </style>
