@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { type RouteLocationNormalizedLoadedGeneric, useRoute, useRouter } from 'vue-router'
-import CheckDrivesTab from '@/vues/views/onboarding/CheckDrivesTab.vue'
-import PickFolderTab from '@/vues/views/onboarding/PickFolderTab.vue'
-import SkippedFilesTab from '@/vues/views/onboarding/SkippedFilesTab.vue'
+import CheckDrivesTab from '@/vues/views/onboarding/tabs/CheckDrivesTab.vue'
+import PickFolderTab from '@/vues/views/onboarding/tabs/PickFolderTab.vue'
+import SkippedFilesTab from '@/vues/views/onboarding/tabs/SkippedFilesTab.vue'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
-import ConfirmOnboardingTab from '@/vues/views/onboarding/ConfirmOnboardingTab.vue'
+import ConfirmOnboardingTab from '@/vues/views/onboarding/tabs/ConfirmOnboardingTab.vue'
 import { useOnboardingStore } from '@/scripts/stores/onboardingStore.ts'
 import FocusLayout from '@/vues/layouts/FocusLayout.vue'
 import OnboardingLayout from '@/vues/layouts/OnboardingLayout.vue'
@@ -21,7 +21,7 @@ async function startProcessing() {
   try {
     await onboardingStore.startProcessing()
     console.log('Pushing ', { name: 'timeline' })
-    await router.push({ name: 'timeline' })
+    await router.push({ name: 'timeline', query: { onboarding: 'true' } })
   } finally {
     isLoading.value = false
   }

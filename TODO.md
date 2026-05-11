@@ -154,15 +154,12 @@
   change backend authorization for this.
 * ✅ on s2s album import, make sure description is set to None, and pick an album thumbnail
 * ✅ show something for albums without thumbnail in the /albums page
+* ✅ [bug]: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
+  out of sync (ratios & photos).
 * on login redirect to where you were
-* standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
 * make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
   music
-* [bug]: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
-  out of sync (ratios & photos).
-* make api.ts abstraction for protobuf endpoints.
-* bad performance on firefox
 * make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
 * view-option (like gmail), split view: if you single click a photo it opens in a right half of the window pane. Only
   works with enough screen width (desktop).
@@ -184,7 +181,8 @@
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* niet "People" tab laten zien als je nog geen faces hebt
+* ✅ niet "People" tab laten zien als je nog geen faces hebt
+* ✅ render empty album UI better
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
 * Als je full screen foto bekijkt, manier maken om de top balk te hiden (als je muis niet beweegt ofzo)
 * filters on front page (small ui button)
@@ -192,4 +190,3 @@
     * face filter
     * location filter
     * video/photo type filter
-* render empty album UI better

@@ -111,7 +111,7 @@ const router = createRouter({
       path: '/onboarding',
       name: 'onboarding',
       meta: { requiresAuth: true, requiresAdmin: true },
-      component: () => import('@/vues/views/OnboardingView.vue'),
+      component: () => import('@/vues/views/onboarding/OnboardingView.vue'),
     },
     {
       path: '/:pathMatch(.*)*',
@@ -122,6 +122,7 @@ const router = createRouter({
 })
 
 let userRefreshed = false
+let onAuthHandled = false
 
 export function registerNavigationGuard() {
   const snackbarsStore = useSnackbarsStore()
@@ -150,8 +151,11 @@ export function registerNavigationGuard() {
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
 
-    if (isAuthenticated) {
+    if (isAuthenticated && !onAuthHandled) {
+      onAuthHandled = true
       requestIdleCallback(() => authStore.onAuthenticated())
+    } else if (!isAuthenticated) {
+      onAuthHandled = false
     }
 
     // --- "Onboarding Needed" Redirect Logic ---

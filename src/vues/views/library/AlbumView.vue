@@ -293,7 +293,7 @@ onBeforeUnmount(() => {
 watch(
   () => route.query.importing,
   (importing) => {
-    if (importing === '1' || importing === 'true') {
+    if (importing === 'true') {
       startImportPoll()
     } else {
       clearImportPoll()
@@ -304,7 +304,7 @@ watch(
 
 let lastItemsCount = 0
 watch(items, () => {
-  const importing = route.query.importing === '1' || route.query.importing === 'true'
+  const importing = route.query.importing === 'true'
   // When items count hasn't changed for 5 seconds, while not being 0 -> stop refreshing
   if (items.value.length !== 0 && items.value.length === lastItemsCount && importing) {
     router.replace({ query: {} })

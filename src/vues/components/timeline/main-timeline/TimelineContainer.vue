@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineItem, TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
@@ -523,6 +523,41 @@ function scrollToDate(date: Date) {
   }
 }
 
+async function refreshItems() {
+  // Abort any in-flight month preload so it doesn't race with the fresh fetch
+  abortMonthPreload()
+  allMonthsPreloaded = false
+
+  // Clear timeline store caches
+  timelineStore.monthRatios = []
+  timelineStore.monthItems = new Map()
+
+  // Clear view photo ids
+  viewPhotoStore.ids = []
+
+  // Re-initialize timeline data and view photo ids in parallel
+  await Promise.all([timelineStore.initialize(), fetchViewPhotoIds()])
+}
+
+let refreshInterval: number | null = null
+function clearImportPoll() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+    refreshInterval = null
+  }
+}
+
+function startImportPoll() {
+  clearImportPoll()
+  refreshInterval = setInterval(() => {
+    refreshItems()
+  }, 5000)
+}
+
+onBeforeUnmount(() => {
+  clearImportPoll()
+})
+
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
     const contentRect = entries[0].contentRect
@@ -572,6 +607,18 @@ function lockResize() {
 function onDatePick(date: Date | null) {
   if (date) scrollToDate(date)
 }
+
+watch(
+  () => route.query.onboarding,
+  (onboarding) => {
+    if (onboarding === 'true') {
+      startImportPoll()
+    } else {
+      clearImportPoll()
+    }
+  },
+  { immediate: true },
+)
 
 watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize]) => {
   const now = performance.now()
