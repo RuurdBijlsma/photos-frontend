@@ -494,13 +494,6 @@ watch(collabMenuOpen, () => {
             </v-menu>
           </div>
           <p v-if="formattedDates" class="album-dates">{{ formattedDates }}</p>
-          <v-skeleton-loader
-            v-else
-            height="13%"
-            type="text"
-            width="30%"
-            :style="{ transform: `translateX(-18px)` }"
-          />
           <div class="description-area" v-if="album">
             <v-btn
               v-if="albumDescription === null && isOwner"
@@ -631,11 +624,29 @@ watch(collabMenuOpen, () => {
           />
         </div>
       </div>
+      <div class="empty-album" v-if="displayedItems.length === 0">
+        <v-icon color="on-surface-variant" size="200" icon="mdi-image-album"></v-icon>
+        <h2>This album is empty</h2>
+        <template v-if="route.query.importing === 'true'">
+          <p>Importing media from remote server...</p>
+          <v-progress-circular class="mt-5" indeterminate size="50" />
+        </template>
+      </div>
     </simple-timeline>
   </div>
 </template>
 
 <style scoped>
+.empty-album {
+  height: 700px;
+  width: 100%;
+  display: flex;
+  place-items: center;
+  place-content: center;
+  flex-direction: column;
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+
 .album-container {
   display: flex;
   flex-direction: column;
