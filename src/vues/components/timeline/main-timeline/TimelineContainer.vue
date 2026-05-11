@@ -96,6 +96,20 @@ const formattedTooltipLabel = computed(() => {
 const showScrollDetails = ref(false)
 const isScrollingFast = ref(false)
 const isEmpty = computed(() => timelineStore.monthRatios.length === 0)
+const showEmptyState = ref(false)
+let emptyTimer: number | null = null
+watch(
+  isEmpty,
+  (empty) => {
+    if (emptyTimer) clearTimeout(emptyTimer)
+    if (empty) {
+      emptyTimer = window.setTimeout(() => (showEmptyState.value = true), 250)
+    } else {
+      showEmptyState.value = false
+    }
+  },
+  { immediate: true },
+)
 const isOnboarding = computed(() => route.query.onboarding === 'true')
 const visibleYearLabels = computed(() => {
   const years = scrollLabels.value.years
@@ -734,8 +748,8 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
       </teleport>
 
       <!-- Empty state -->
-      <transition name="empty-fade">
-        <div v-if="isEmpty" class="empty-state">
+      <v-scale-transition>
+        <div v-if="showEmptyState" class="empty-state">
           <template v-if="isOnboarding">
             <v-icon color="surface-variant" size="200" icon="mdi-image-sync-outline" />
             <h2 class="empty-title">Loading your photos&hellip;</h2>
@@ -748,7 +762,7 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
             <p class="empty-subtitle">Once you add photos to your library they'll appear here.</p>
           </template>
         </div>
-      </transition>
+      </v-scale-transition>
 
       <div
         class="scroll-container"

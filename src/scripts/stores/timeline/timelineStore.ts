@@ -47,7 +47,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     try {
       if (!ratiosPromise) ratiosPromise = timelineService.getTimelineRatios()
       const response = await ratiosPromise
-      // monthRatios.value = response.months
+      monthRatios.value = response.months
     } catch (e) {
       snackbarStore.error('Failed to fetch timeline layout.', e)
     } finally {
@@ -65,7 +65,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     try {
       const response = await timelineService.getMediaByMonths(monthIds)
       for (const { monthId, items } of response.months) {
-        // monthItems.value.set(monthId, items)
+        monthItems.value.set(monthId, items)
       }
       triggerRef(monthItems)
     } catch (e) {
