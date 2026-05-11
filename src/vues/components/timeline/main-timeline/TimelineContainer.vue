@@ -524,38 +524,31 @@ function scrollToDate(date: Date) {
 }
 
 async function refreshItems() {
-  // Abort any in-flight month preload so it doesn't race with the fresh fetch
   abortMonthPreload()
   allMonthsPreloaded = false
-
-  // Clear timeline store caches
-  timelineStore.monthRatios = []
-  timelineStore.monthItems = new Map()
-
-  // Clear view photo ids
-  viewPhotoStore.ids = []
-
-  // Re-initialize timeline data and view photo ids in parallel
-  await Promise.all([timelineStore.initialize(), fetchViewPhotoIds()])
+  // Fetch fresh ratios and view-photo ids in parallel.
+  await Promise.all([timelineStore.fetchMonthRatios(), fetchViewPhotoIds()])
+  const monthsToFetch = timelineStore.monthRatios.map((r) => r.monthId)
+  await timelineStore.fetchMediaByMonth(monthsToFetch, false)
 }
 
 let refreshInterval: number | null = null
-function clearImportPoll() {
+function clearRefreshPoll() {
   if (refreshInterval) {
     clearInterval(refreshInterval)
     refreshInterval = null
   }
 }
 
-function startImportPoll() {
-  clearImportPoll()
+function startRefreshPoll() {
+  clearRefreshPoll()
   refreshInterval = setInterval(() => {
     refreshItems()
-  }, 5000)
+  }, 10000)
 }
 
 onBeforeUnmount(() => {
-  clearImportPoll()
+  clearRefreshPoll()
 })
 
 useResizeObserver(scrollContainerEl, (entries) => {
@@ -612,9 +605,9 @@ watch(
   () => route.query.onboarding,
   (onboarding) => {
     if (onboarding === 'true') {
-      startImportPoll()
+      startRefreshPoll()
     } else {
-      clearImportPoll()
+      clearRefreshPoll()
     }
   },
   { immediate: true },
@@ -775,6 +768,7 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
       @mousedown="handleMouseDown"
       @mousemove="handleTooltipMove"
       @mouseleave="tooltipDate = null"
+      v-if="//todo implement me"
     >
       <div class="scroll-track"></div>
       <div
