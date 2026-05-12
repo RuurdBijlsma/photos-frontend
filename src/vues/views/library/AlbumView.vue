@@ -264,6 +264,25 @@ async function crossServerInvite() {
   }
 }
 
+async function publicize() {
+  const confirmed = await dialogs.confirm({
+    title: 'Make album public?',
+    description:
+      'Anyone with the link will be able to view this album, including all photos and videos it contains.',
+    confirmText: 'Make public',
+    icon: 'mdi-earth',
+  })
+  if (!confirmed || !album.value) return
+  await albumStore.updateAlbumDetails(album.value.id, { isPublic: true })
+  snackbars.success('Album is now available to anyone via link')
+}
+
+async function privatize() {
+  if (!album.value) return
+  await albumStore.updateAlbumDetails(album.value.id, { isPublic: false })
+  snackbars.success('Album is hidden')
+}
+
 let importPollInterval: number | null = null
 
 function clearImportPoll() {
@@ -569,7 +588,7 @@ watch(collabMenuOpen, () => {
                 <v-btn
                   v-bind="props"
                   v-tooltip:top="'Add collaborator'"
-                  icon="mdi-plus"
+                  icon="mdi-share"
                   variant="tonal"
                   color="primary"
                   size="40"
@@ -592,6 +611,28 @@ watch(collabMenuOpen, () => {
                 </template>
                 <v-list-item prepend-icon="mdi-share" @click="crossServerInvite">
                   <v-list-item-title>Share with other server</v-list-item-title>
+                </v-list-item>
+                <v-list-item
+                  prepend-icon="mdi-earth"
+                  @click="privatize"
+                  v-if="album.isPublic"
+                  v-tooltip="{
+                    location: 'top',
+                    text: 'Allow access to anyone that has the link to this album',
+                  }"
+                >
+                  <v-list-item-title>Make album private</v-list-item-title>
+                </v-list-item>
+                <v-list-item
+                  prepend-icon="mdi-earth"
+                  @click="publicize"
+                  v-else
+                  v-tooltip="{
+                    location: 'top',
+                    text: 'Prevent access via link, only specifically authorized people will have access',
+                  }"
+                >
+                  <v-list-item-title>Make publicly available</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>

@@ -12,7 +12,7 @@ import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import VirtualRow from '@/vues/components/timeline/main-timeline/VirtualRow.vue'
 import SelectionOverlay from '@/vues/components/timeline/timeline-components/SelectionOverlay.vue'
 import DateOverlay from '@/vues/components/timeline/timeline-components/DateOverlay.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import timelineService from '@/scripts/services/timelineService.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
@@ -22,6 +22,7 @@ const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
 const snackbarStore = useSnackbarsStore()
 const route = useRoute()
+const router = useRouter()
 
 const IDEAL_ROW_HEIGHT = 320
 const MAX_SIZE_MULTIPLIER = 1.5
@@ -617,6 +618,11 @@ function onDatePick(date: Date | null) {
   if (date) scrollToDate(date)
 }
 
+let stopRefreshTimeout: null | number = null
+onBeforeUnmount(() => {
+  if (stopRefreshTimeout !== null) clearTimeout(stopRefreshTimeout)
+})
+
 watch(
   () => route.query.onboarding,
   (onboarding) => {
@@ -627,6 +633,28 @@ watch(
     }
   },
   { immediate: true },
+)
+
+let lastRatiosCount = 0
+watch(
+  () => timelineStore.monthRatios,
+  () => {
+    const importing = route.query.importing === 'true'
+    if (!importing) return
+    // When items count hasn't changed for 5 seconds, while not being 0 -> stop refreshing after 5 minutes
+    if (
+      timelineStore.monthRatios.length !== 0 &&
+      timelineStore.monthRatios.length === lastRatiosCount
+    ) {
+      stopRefreshTimeout = setTimeout(
+        () => {
+          router.replace({ query: {} })
+        },
+        1000 * 60 * 5,
+      )
+    }
+    lastRatiosCount = timelineStore.monthRatios.length
+  },
 )
 
 watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize]) => {

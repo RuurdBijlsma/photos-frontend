@@ -86,7 +86,10 @@ export const useAlbumStore = defineStore('album', () => {
   async function updateAlbumDetails(albumId: string, albumDetails: UpdateAlbumRequest) {
     try {
       await albumService.updateAlbum(albumId, albumDetails)
-      requestIdleCallback(() => fetchUserAlbums())
+      requestIdleCallback(() => {
+        fetchAlbumMedia(albumId, false)
+        fetchUserAlbums()
+      })
     } catch (e) {
       snackbarStore.error(`Failed to update album.`, e as Error)
     }
