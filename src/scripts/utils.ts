@@ -1,4 +1,4 @@
-import { THUMBNAIL_SIZES, VIDEO_SIZES } from '@/scripts/constants.ts'
+import { THUMBNAIL_SIZES, VIDEO_SIZES, WEATHER_ICONS } from '@/scripts/constants.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 
 export function prettyBytes(bytes: number, decimals = 2): string {
@@ -104,4 +104,18 @@ export function isLikelyJwt(token: string): boolean {
   } catch {
     return false
   }
+}
+
+export function getWeatherIcon(condition: string, isDaytime: boolean): string {
+  const icon = WEATHER_ICONS[condition]
+
+  if (!icon) {
+    return 'cloudy_day_night.svg'
+  }
+
+  if (typeof icon === 'string') {
+    return icon
+  }
+
+  return isDaytime ? icon.day : icon.night
 }

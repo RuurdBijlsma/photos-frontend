@@ -12,6 +12,7 @@ import { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import type { PhotoViewerType } from '@/scripts/types/viewerType'
 import { useEventListener } from '@vueuse/core'
+import MediaInfoPanel from '@/vues/components/viewer/MediaInfoPanel.vue'
 
 const mediaItemStore = useMediaItemStore()
 const timelineStore = useTimelineStore()
@@ -26,12 +27,14 @@ const router = useRouter()
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
 const hideSeconds = ref(7)
+const infoMenuOpen = ref(false)
 const showUI = computed(() => hideSeconds.value > 0)
 const hideTimer = setInterval(() => {
   hideSeconds.value--
+  if (infoMenuOpen.value) {
+    hideSeconds.value = 5
+  }
 }, 1000)
-
-watch(showUI, () => console.log('SHOWUI', showUI.value))
 
 useEventListener(document, 'mousemove', () => {
   hideSeconds.value = 5
@@ -239,13 +242,31 @@ watch(
               width: 140,
             }"
           />
-          <v-btn
-            color="white"
-            rounded="xl"
-            icon="mdi-information-outline"
-            variant="plain"
-            v-tooltip="{ text: 'Extra info', location: 'bottom', attach: true, width: 140 }"
-          />
+          <v-menu
+            v-if="fullImage"
+            :close-on-content-click="false"
+            :attach="true"
+            v-model="infoMenuOpen"
+            location="bottom center"
+          >
+            <template v-slot:activator="{ props }">
+              <v-btn
+                v-bind="props"
+                color="white"
+                rounded="xl"
+                icon="mdi-information-outline"
+                variant="plain"
+                v-tooltip="{
+                  text: 'Extra info',
+                  location: 'bottom',
+                  attach: true,
+                  width: 140,
+                  disabled: infoMenuOpen,
+                }"
+              />
+            </template>
+            <media-info-panel :media-item="fullImage"></media-info-panel>
+          </v-menu>
           <v-btn
             color="white"
             rounded="xl"

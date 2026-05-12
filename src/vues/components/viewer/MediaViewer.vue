@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { PhotoViewerType } from '@/scripts/types/viewerType.ts'
-import PhotoViewer from '@/vues/components/viewer/PhotoViewer.vue'
-import VideoViewer from '@/vues/components/viewer/VideoViewer.vue'
-import PanoViewer from '@/vues/components/viewer/PanoViewer.vue'
+import PhotoViewer from '@/vues/components/viewer/viewers/PhotoViewer.vue'
+import VideoViewer from '@/vues/components/viewer/viewers/VideoViewer.vue'
+import PanoViewer from '@/vues/components/viewer/viewers/PanoViewer.vue'
 
 defineProps<{
   viewType: PhotoViewerType
