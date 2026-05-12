@@ -55,4 +55,8 @@ const fullImage = computed(() => mediaItemStore.mediaItems.get(props.mediaItemId
   height: 100%;
   margin: 0;
 }
+
+.video-viewer video:focus{
+  outline: none;
+}
 </style>

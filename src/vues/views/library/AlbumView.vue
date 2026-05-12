@@ -72,7 +72,34 @@ const thumbnailId = computed(() => {
   if (album.value !== null) return album.value?.thumbnailId ?? null
   return minimalAlbumInfo.value?.thumbnailId ?? null
 })
-
+const sortModeIcon = computed(() => {
+  if (!album.value) return null
+  const sortMode = album.value.sortMode as AlbumSort
+  if (sortMode === 'AddedDesc') {
+    return 'mdi-sort-clock-descending-outline'
+  } else if (sortMode === 'AddedAsc') {
+    return 'mdi-sort-clock-ascending-outline'
+  } else if (sortMode === 'DateAsc') {
+    return 'mdi-sort-calendar-ascending'
+  } else if (sortMode === 'DateDesc') {
+    return 'mdi-sort-calendar-descending'
+  }
+  return null
+})
+const sortModeText = computed(() => {
+  if (!album.value) return null
+  const sortMode = album.value.sortMode as AlbumSort
+  if (sortMode === 'AddedDesc') {
+    return 'Date added (new to old)'
+  } else if (sortMode === 'AddedAsc') {
+    return 'Date added (old to new)'
+  } else if (sortMode === 'DateAsc') {
+    return 'Capture date (old to new)'
+  } else if (sortMode === 'DateDesc') {
+    return 'Capture date (new to old)'
+  }
+  return null
+})
 const formattedDates = computed(() => {
   const firstDate = album.value?.firstDate ?? null
   const lastDate = album.value?.lastDate ?? null
@@ -512,7 +539,30 @@ watch(collabMenuOpen, () => {
               </v-list>
             </v-menu>
           </div>
-          <p v-if="formattedDates" class="album-dates">{{ formattedDates }}</p>
+          <p v-if="formattedDates" class="album-dates">
+            <v-icon
+              v-tooltip="{
+                location: 'top',
+                text: sortModeText,
+              }"
+              size="20"
+              v-if="sortModeIcon"
+              :icon="sortModeIcon"
+            />
+            <span v-if="sortModeIcon">•</span>
+            <v-icon
+              v-tooltip="{
+                location: 'top',
+                text: album?.isPublic ? 'Publicly available' : 'Private',
+              }"
+              size="20"
+              :icon="album?.isPublic ? `mdi-earth` : `mdi-lock`"
+            />
+            <span>•</span>
+            <span>
+              {{ formattedDates }}
+            </span>
+          </p>
           <div class="description-area" v-if="album">
             <v-btn
               v-if="albumDescription === null && isOwner"
@@ -609,19 +659,16 @@ watch(collabMenuOpen, () => {
                   </v-list-item>
                   <v-divider class="mt-2 mb-1" />
                 </template>
-                <v-list-item prepend-icon="mdi-share" @click="crossServerInvite">
-                  <v-list-item-title>Share with other server</v-list-item-title>
-                </v-list-item>
                 <v-list-item
-                  prepend-icon="mdi-earth"
+                  prepend-icon="mdi-lock"
                   @click="privatize"
                   v-if="album.isPublic"
                   v-tooltip="{
                     location: 'top',
-                    text: 'Allow access to anyone that has the link to this album',
+                    text: 'Only invited people will be able to access this album.',
                   }"
                 >
-                  <v-list-item-title>Make album private</v-list-item-title>
+                  <v-list-item-title>Make private</v-list-item-title>
                 </v-list-item>
                 <v-list-item
                   prepend-icon="mdi-earth"
@@ -629,10 +676,20 @@ watch(collabMenuOpen, () => {
                   v-else
                   v-tooltip="{
                     location: 'top',
-                    text: 'Prevent access via link, only specifically authorized people will have access',
+                    text: 'Anyone with the link will be able to view this album.',
                   }"
                 >
-                  <v-list-item-title>Make publicly available</v-list-item-title>
+                  <v-list-item-title>Make public</v-list-item-title>
+                </v-list-item>
+                <v-list-item
+                  prepend-icon="mdi-cloud-upload"
+                  @click="crossServerInvite"
+                  v-tooltip="{
+                    location: 'top',
+                    text: 'Export this album to another server.',
+                  }"
+                >
+                  <v-list-item-title>Share with other server</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>
@@ -758,11 +815,14 @@ watch(collabMenuOpen, () => {
 }
 
 .album-dates {
+  gap: 10px;
   font-weight: 400;
   font-size: 15px;
   opacity: 0.7;
   margin: 0;
   margin-top: 3px;
+  display: flex;
+  align-items: center;
 }
 
 .description-add-button {
