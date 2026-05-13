@@ -178,4 +178,5 @@ export interface FullMediaItem {
   media_features: MediaFeatures
   camera_settings: CameraSettings
   panorama: Panorama
+  user_caption?: string,
 }

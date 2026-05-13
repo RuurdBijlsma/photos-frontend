@@ -12,12 +12,13 @@ const handleAction = async (actionItem: DialogAction) => {
 
 <template>
   <v-dialog
+    :attach="store.current?.options.attach"
     :model-value="store.visible"
     @update:model-value="(val) => !val && store.handleCancel()"
     :persistent="store.current?.options.persistent"
     max-width="460"
   >
-    <v-card v-if="store.current" rounded="xl" color="surface-container">
+    <v-card v-if="store.current" rounded="xl" color="surface-container" class="dialog-card">
       <v-card-title class="d-flex align-center bg-surface-variant text-h6 py-3 px-4">
         <v-icon v-if="store.current.options.icon" :icon="store.current.options.icon" class="mr-3" />
         <span>{{ store.current.options.title }}</span>

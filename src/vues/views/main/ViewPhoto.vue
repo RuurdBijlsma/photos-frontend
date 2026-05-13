@@ -243,7 +243,6 @@ watch(
             }"
           />
           <v-menu
-            v-if="fullImage"
             :close-on-content-click="false"
             :attach="true"
             v-model="infoMenuOpen"
@@ -251,6 +250,7 @@ watch(
           >
             <template v-slot:activator="{ props }">
               <v-btn
+                :loading="fullImage === undefined"
                 v-bind="props"
                 color="white"
                 rounded="xl"
@@ -345,7 +345,7 @@ watch(
   height: 100%;
   top: 0;
   left: 0;
-  z-index: 2400;
+  z-index: 1400;
 }
 
 .view-container {
@@ -354,7 +354,7 @@ watch(
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 2400;
+  z-index: 1400;
 }
 
 .hide-ui {
@@ -367,7 +367,7 @@ watch(
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 3000;
+  z-index: 1500;
 }
 
 .top-bar {
@@ -376,7 +376,7 @@ watch(
   left: 0;
   width: 100%;
   display: flex;
-  z-index: 3001;
+  z-index: 1501;
   justify-content: space-between;
 }
 
@@ -474,7 +474,7 @@ watch(
   justify-content: flex-end;
   align-items: center;
   padding: 20px;
-  z-index: 3002;
+  z-index: 1502;
 }
 
 .prev-area {
@@ -490,6 +490,6 @@ watch(
   justify-content: flex-start;
   align-items: center;
   padding: 20px;
-  z-index: 3002;
+  z-index: 1502;
 }
 </style>

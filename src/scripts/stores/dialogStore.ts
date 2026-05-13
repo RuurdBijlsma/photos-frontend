@@ -19,6 +19,7 @@ export interface DialogOptions {
   persistent?: boolean
   color?: string
   actions?: DialogAction[]
+  attach?: boolean
 }
 
 interface DialogRequest {
