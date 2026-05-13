@@ -67,7 +67,13 @@ const timeLabel = computed(() => {
       </template>
 
       <v-card border rounded="lg">
-        <v-date-picker :model-value="modelValue" @update:model-value="onDateInput" hide-header />
+        <v-date-picker
+          bg-color="surface-container"
+          color="primary"
+          :model-value="modelValue"
+          @update:model-value="onDateInput"
+          hide-header
+        />
         <v-divider />
         <v-card-actions class="justify-end">
           <v-btn variant="text" color="primary" @click="dateMenu = false">OK</v-btn>
@@ -90,11 +96,12 @@ const timeLabel = computed(() => {
 
       <v-card border rounded="lg">
         <v-time-picker
+          bg-color="surface-container"
+          color="primary"
           :model-value="timeLabel"
+          use-seconds
           @update:model-value="onTimeInput"
           format="24hr"
-          flat
-          full-width
         />
         <v-divider />
         <v-card-actions class="justify-end">
@@ -104,9 +111,10 @@ const timeLabel = computed(() => {
     </v-menu>
 
     <v-icon
+      v-if="!disabled"
       icon="mdi-calendar-edit"
       size="small"
-      :color="disabled ? 'inherit' : 'primary'"
+      color="primary"
       class="ml-2"
       style="opacity: 0.6"
     />
@@ -134,5 +142,10 @@ const timeLabel = computed(() => {
   border-color: transparent;
   box-shadow: none;
   pointer-events: none;
+}
+
+:deep(.v-time-picker-clock),
+:deep(.v-time-picker-controls__time__field .v-field) {
+  background-color: rgba(var(--v-theme-primary), 0.1);
 }
 </style>

@@ -11,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits(['closeDialog'])
 
 const adjustedDate = ref(new Date(props.mediaItem.taken_at_local))
+const originalDate = new Date(props.mediaItem.taken_at_local)
 
 const timezoneDisplay = computed(() => {
   const tz = props.mediaItem.time?.timezone_name
@@ -44,7 +45,7 @@ function save() {
 
       <div class="time-row mb-3 mt-4">
         <span class="dt-label text-on-surface-variant">Original:</span>
-        <date-time-picker disabled v-model="adjustedDate" />
+        <date-time-picker disabled v-model="originalDate" />
       </div>
 
       <div class="time-row mb-2">
