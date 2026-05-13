@@ -10,26 +10,13 @@ const props = defineProps<{
 
 const emit = defineEmits(['closeDialog'])
 
-// State for the picker
 const adjustedDate = ref(new Date(props.mediaItem.taken_at_local))
 
-// Timezone Logic
 const timezoneDisplay = computed(() => {
   const tz = props.mediaItem.time?.timezone_name
-  if (!tz) return 'an unknown timezone'
+  if (!tz) return 'the local timezone'
   return /^[+-]\d{2}:\d{2}$/.test(tz) ? `UTC${tz}` : tz
 })
-
-// Formatters
-const formatDate = (date: Date) => {
-  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
-}
-
-const formatTime = (date: Date) => {
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
-}
-
-const originalDate = new Date(props.mediaItem.taken_at_local)
 
 function revert() {
   adjustedDate.value = new Date(props.mediaItem.taken_at_local)
@@ -55,18 +42,13 @@ function save() {
         All times are listed in {{ timezoneDisplay }}
       </p>
 
-      <!-- Original (Read Only) -->
       <div class="time-row mb-3 mt-4">
         <span class="dt-label text-on-surface-variant">Original:</span>
-        <div class="display-box original">
-          {{ formatDate(originalDate) }}, {{ formatTime(originalDate) }}
-        </div>
+        <date-time-picker disabled v-model="adjustedDate" />
       </div>
 
-      <!-- Adjusted (Clickable to Edit) -->
       <div class="time-row mb-2">
         <span class="dt-label text-on-surface-variant">Adjusted:</span>
-
         <date-time-picker v-model="adjustedDate" />
       </div>
 
@@ -94,26 +76,6 @@ function save() {
   align-items: center;
   width: 100%;
   max-width: 380px;
-}
-
-.display-box {
-  flex-grow: 1;
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-}
-
-.original {
-  background-color: rgba(var(--v-theme-on-surface), 0.05);
-  color: rgba(var(--v-theme-on-surface), 0.4);
-  font-family:
-    Roboto Mono,
-    Menlo,
-    Consolas,
-    monospace;
 }
 
 .text-smallish {
