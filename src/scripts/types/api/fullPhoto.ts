@@ -160,6 +160,7 @@ export interface FullMediaItem {
   id: string
   user_id: number
   hash: string
+  filename: string,
   relative_path: string
   created_at: string
   updated_at: string
@@ -178,5 +179,5 @@ export interface FullMediaItem {
   media_features: MediaFeatures
   camera_settings: CameraSettings
   panorama: Panorama
-  user_caption?: string,
+  user_caption?: string
 }

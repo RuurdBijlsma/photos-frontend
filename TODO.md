@@ -190,3 +190,5 @@
     * face filter
     * location filter
     * video/photo type filter
+* eigen theme per photo is te chaotisch
+* misschien wil ik wel light theme in de foto viewer!

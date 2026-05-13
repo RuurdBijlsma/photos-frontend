@@ -5,11 +5,11 @@ import mediaItemService from '@/scripts/services/mediaItemService.ts'
 withDefaults(
   defineProps<{
     mediaItemId: string
-    height: number
+    height?: number
+    width?: number
+    cover?: boolean
   }>(),
-  {
-    height: 480,
-  },
+  {},
 )
 
 const useOnDemandThumb = ref(new Map<string | null, boolean>())
@@ -17,8 +17,11 @@ const useOnDemandThumb = ref(new Map<string | null, boolean>())
 
 <template>
   <v-img
+    :height="height"
+    :width="width"
+    :cover="cover"
     :src="
-      mediaItemService.getPhotoThumbnail(mediaItemId, height, useOnDemandThumb.get(mediaItemId))
+      mediaItemService.getPhotoThumbnail(mediaItemId, height??480, useOnDemandThumb.get(mediaItemId))
     "
     @error="useOnDemandThumb.set(mediaItemId, true)"
   />

@@ -2,12 +2,43 @@
 import BaseMap from '@/vues/components/map/BaseMap.vue'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
+import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { computed } from 'vue'
+import { DAYS, MONTHS } from '@/scripts/constants.ts'
+import MediaWeatherInfo from '@/vues/components/viewer/MediaWeatherInfo.vue'
+import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
+import { makeLocationString } from '@/scripts/utils.ts'
+import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
 
 const props = defineProps<{
   mediaItem?: FullMediaItem
 }>()
 
 const dialogs = useDialogStore()
+const settings = useSettingStore()
+
+const takenAtDate = computed(() => {
+  if (!props.mediaItem?.taken_at_local) return null
+  return new Date(props.mediaItem?.taken_at_local)
+})
+
+const takenAtDateMyTz = computed(() => {
+  if (!props.mediaItem?.taken_at_utc) return null
+  return new Date(props.mediaItem?.taken_at_utc)
+})
+
+function dateComponents(date: Date) {
+  const day = DAYS[date.getDay()]
+  const dateString = `${date.getDate()}-${MONTHS[date.getMonth()].substring(0, 3)}-${date.getFullYear().toString().substring(2)}`
+  const time = `${date.getHours()}:${date.getMinutes()}`
+
+  return { day, dateString, time }
+}
+
+function fullDateString(date: Date) {
+  const components = dateComponents(date)
+  return `${components.day} • ${components.dateString} • ${components.time}`
+}
 
 async function editCaption() {
   const oldCaption = props.mediaItem?.user_caption ?? ''
@@ -20,10 +51,14 @@ async function editCaption() {
   if (!newCaption) return
   // todo update server with new caption and refresh media item
 }
+
+async function saveDateTime() {
+  alert('Save datetime')
+}
 </script>
 
 <template>
-  <div class="info-panel">
+  <div class="info-panel" :class="{ 'backdrop-blur': settings.useBackdropBlur }">
     <h2 class="info-title">Info</h2>
     <div class="info-loading" v-if="mediaItem === undefined">
       <v-progress-circular indeterminate size="50" />
@@ -31,23 +66,93 @@ async function editCaption() {
     </div>
     <template v-else>
       <div class="caption">
-        <h3 class="caption-title">Caption</h3>
         <div class="user-caption">
           <p v-if="mediaItem.user_caption">{{ mediaItem.user_caption }}</p>
           <p class="no-caption" v-else>No caption</p>
-          <v-btn variant="plain" @click="editCaption" density="compact" rounded color="primary">
+          <v-btn
+            variant="plain"
+            @click="editCaption"
+            density="compact"
+            rounded
+            color="primary"
+            class="edit-button"
+          >
             Edit
           </v-btn>
         </div>
       </div>
-      <base-map
-        class="base-map"
-        v-if="mediaItem?.gps"
-        height="300px"
-        width="380px"
-        :center="{ lat: mediaItem.gps.latitude, lon: mediaItem.gps.longitude }"
-        :zoom="9"
-      />
+      <v-divider class="mt-2 mb-2" />
+      <div class="date-time-weather-filename">
+        <div class="date-time-container">
+          <p
+            v-tooltip="{
+              disabled: takenAtDateMyTz === null,
+              text: 'In your timezone • ' + fullDateString(takenAtDateMyTz ?? new Date()),
+              location: 'bottom',
+              attach: true,
+            }"
+            v-if="takenAtDate"
+            class="date-time"
+          >
+            <span>{{ dateComponents(takenAtDate).day }}</span>
+            <span>•</span>
+            <span>{{ dateComponents(takenAtDate).dateString }}</span>
+            <span>•</span>
+            <span>{{ dateComponents(takenAtDate).time }}</span>
+          </p>
+          <v-dialog max-width="420" persistent>
+            <template v-slot:activator="{ props: activatorProps }">
+              <v-btn
+                variant="plain"
+                density="compact"
+                rounded
+                color="primary"
+                class="edit-button"
+                v-bind="activatorProps"
+              >
+                Edit
+              </v-btn>
+            </template>
+
+            <template v-slot:default="{ isActive }">
+              <edit-date-time-card :media-item="mediaItem" @close-dialog="isActive.value = false" />
+            </template>
+          </v-dialog>
+        </div>
+        <media-weather-info
+          :weather-info="mediaItem?.weather"
+          v-if="
+            mediaItem?.weather && (mediaItem.weather.temperature || mediaItem.weather.condition)
+          "
+        />
+        <p class="filename">
+          <v-icon icon="mdi-cloud-check-outline" class="mr-3" /><span>{{
+            mediaItem?.filename.split('.')[0]
+          }}</span>
+        </p>
+      </div>
+      <div class="capture-info"></div>
+      <div class="map-info" v-if="mediaItem?.gps">
+        <base-map
+          class="base-map"
+          height="300px"
+          width="380px"
+          :center="{ lat: mediaItem.gps.latitude, lon: mediaItem.gps.longitude }"
+          :zoom="9"
+        />
+        <a
+          class="map-buttons"
+          v-ripple
+          :href="`https://www.google.com/maps/place/${mediaItem.gps.latitude},${mediaItem.gps.longitude}`"
+          target="_blank"
+          referrerpolicy="no-referrer"
+        >
+          <span v-if="mediaItem.gps.location">{{
+            makeLocationString(mediaItem.gps.location, 3)
+          }}</span>
+          <v-icon size="15" class="ml-2 map-button-icon" icon="mdi-arrow-top-right" />
+        </a>
+      </div>
     </template>
 
     <!--
@@ -82,13 +187,18 @@ copy general style from search filters v-menu. See SearchView.vue.
 
 <style scoped>
 .info-panel {
-  margin-top:5px;
+  margin-top: 5px;
   width: 400px;
-  height: 700px;
   border-radius: 30px;
   font-size: 15px;
-  backdrop-filter: blur(30px) saturate(150%) brightness(90%) contrast(90%);
-  background-color: rgba(20, 20, 20, 0.5);
+  background-color: rgba(var(--v-theme-background), 0.5);
+  color: rgb(var(--v-theme-on-background));
+  position: relative;
+}
+
+.backdrop-blur {
+  backdrop-filter: blur(15px) saturate(150%) brightness(90%) contrast(110%);
+  background-color: rgba(var(--v-theme-background), 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -97,6 +207,7 @@ copy general style from search filters v-menu. See SearchView.vue.
   padding-top: 10px;
   font-weight: 400;
   font-size: 20px;
+  opacity: 0.9;
 }
 
 .info-loading {
@@ -119,25 +230,69 @@ copy general style from search filters v-menu. See SearchView.vue.
   padding: 5px 30px;
 }
 
-.caption-title {
-  font-size: 15px;
-  margin: 0;
-  opacity: 0.9;
-}
-
 .user-caption {
   display: flex;
   align-items: center;
   font-size: 13px;
+  justify-content: space-between;
 }
 
 .no-caption {
   opacity: 0.7;
 }
 
-.base-map {
-  box-shadow: 0 0 40px 0 rgba(255, 255, 255, 0.2);
-  border-radius: 30px;
+.edit-button {
+  font-size: 14px;
+}
+
+.date-time-weather-filename {
+  padding: 5px 30px;
+}
+
+.date-time-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.date-time {
+  display: flex;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.filename {
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+}
+
+.map-info {
+  border-radius: 20px;
   margin: 10px;
+  overflow: hidden;
+}
+
+.base-map {
+}
+
+.map-buttons {
+  background-color: rgba(var(--v-theme-on-surface), 0.9);
+  color: rgba(var(--v-theme-surface-variant), 1);
+  padding: 7px 20px;
+  user-select: none;
+  font-weight: 500;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.map-button-icon {
+  font-weight: lighter;
+  opacity: 0.8;
 }
 </style>

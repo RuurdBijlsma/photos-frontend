@@ -1,5 +1,6 @@
 import { THUMBNAIL_SIZES, VIDEO_SIZES, WEATHER_ICONS } from '@/scripts/constants.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import type { Location } from '@/scripts/types/api/fullPhoto.ts'
 
 export function prettyBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return '0 B'
@@ -118,4 +119,23 @@ export function getWeatherIcon(condition: string, isDaytime: boolean): string {
   }
 
   return isDaytime ? icon.day : icon.night
+}
+
+export function makeLocationString(location: Location, components = 2) {
+  let finalParts
+  if (components === 3 && location.name && location.admin1 && location.country_name) {
+    finalParts = [location.name, location.admin1, location.country_name]
+  } else if (location.name && location.admin1) {
+    finalParts = [location.name, location.admin1]
+  } else {
+    const prioritizedParts = [
+      location.name,
+      location.admin2,
+      location.admin1,
+      location.country_name,
+    ]
+    finalParts = prioritizedParts.filter((part) => part).slice(0, components)
+  }
+  const result = finalParts.join(' - ')
+  return result ? result : ''
 }

@@ -13,6 +13,7 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import type { PhotoViewerType } from '@/scripts/types/viewerType'
 import { useEventListener } from '@vueuse/core'
 import MediaInfoPanel from '@/vues/components/viewer/MediaInfoPanel.vue'
+import { makeLocationString } from '@/scripts/utils.ts'
 
 const mediaItemStore = useMediaItemStore()
 const timelineStore = useTimelineStore()
@@ -93,19 +94,7 @@ const timestampString = computed(() => {
 const locationString = computed(() => {
   if (!fullImage.value?.gps?.location) return ''
   const location = fullImage.value.gps.location
-  let finalParts
-  if (location.name && location.admin1) {
-    finalParts = [location.name, location.admin1]
-  } else {
-    const prioritizedParts = [
-      location.name,
-      location.admin2,
-      location.admin1,
-      location.country_name,
-    ]
-    finalParts = prioritizedParts.filter((part) => part).slice(0, 2)
-  }
-  const result = finalParts.join(' - ')
+  const result = makeLocationString(location)
   return result ? result + ' · ' : ''
 })
 
@@ -182,172 +171,159 @@ watch(
 </script>
 
 <template>
-  <v-theme-provider class="theme-prov" theme="darkView">
-    <div
-      :class="{ 'backdrop-blur': settings.useBackdropBlur, 'hide-ui': !showUI }"
-      class="view-container"
-      :style="{
-        backgroundColor: settings.useImageGlow ? 'rgb(var(--v-theme-background))' : 'black',
-      }"
-    >
-      <media-viewer v-if="id" :view-type="viewerType" :media-item-id="id" class="photo-viewer" />
-      <div class="top-bar">
-        <div class="left-buttons">
-          <v-btn
-            :to="parentLocation"
-            color="white"
-            rounded="xl"
-            icon="mdi-close"
-            variant="plain"
-            v-tooltip="{ text: 'Close viewer', location: 'bottom', attach: true, width: 140 }"
-          />
-          <v-btn
-            color="white"
-            rounded="xl"
-            icon="mdi-view-gallery-outline"
-            variant="plain"
-            v-tooltip="{ text: 'Toggle gallery', location: 'bottom', attach: true, width: 140 }"
-          />
-        </div>
-        <div class="top-main-text">
-          <h3>{{ timestampString }}</h3>
-          <p>
-            <span
-              v-tooltip="{
-                text: fullImage?.gps?.location?.country_name,
-                disabled: fullImage?.gps?.location?.country_name === undefined,
-                location: 'bottom',
-                attach: true,
-                width: 140,
-              }"
-              >{{ locationString }}</span
-            >{{ currentIndex + 1 }} of
-            {{
-              viewPhotoStore.ids.length === 0 ? '...' : viewPhotoStore.ids.length.toLocaleString()
-            }}
-          </p>
-        </div>
-        <div class="right-buttons">
-          <v-btn
-            v-if="selectionStore.selection.size > 0"
-            :color="isSelected ? 'secondary' : 'white'"
-            rounded="xl"
-            :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
-            variant="plain"
-            @click="toggleSelected"
+  <div
+    :class="{ 'backdrop-blur': settings.useBackdropBlur, 'hide-ui': !showUI }"
+    class="view-container"
+    :style="{
+      backgroundColor: settings.useImageGlow ? 'rgb(var(--v-theme-background))' : 'black',
+    }"
+  >
+    <media-viewer v-if="id" :view-type="viewerType" :media-item-id="id" class="photo-viewer" />
+    <div class="top-bar">
+      <div class="left-buttons">
+        <v-btn
+          :to="parentLocation"
+          color="white"
+          rounded="xl"
+          icon="mdi-close"
+          variant="plain"
+          v-tooltip="{ text: 'Close viewer', location: 'bottom', attach: true, width: 140 }"
+        />
+        <v-btn
+          color="white"
+          rounded="xl"
+          icon="mdi-view-gallery-outline"
+          variant="plain"
+          v-tooltip="{ text: 'Toggle gallery', location: 'bottom', attach: true, width: 140 }"
+        />
+      </div>
+      <div class="top-main-text">
+        <h3>{{ timestampString }}</h3>
+        <p>
+          <span
             v-tooltip="{
-              text: isSelected ? 'Remove from selection' : 'Add to selection',
+              text: fullImage?.gps?.location?.country_name,
+              disabled: fullImage?.gps?.location?.country_name === undefined,
               location: 'bottom',
               attach: true,
               width: 140,
             }"
-          />
-          <v-menu
-            :close-on-content-click="false"
-            :attach="true"
-            v-model="infoMenuOpen"
-            location="bottom center"
-          >
-            <template v-slot:activator="{ props }">
-              <v-btn
-                :loading="fullImage === undefined"
-                v-bind="props"
-                color="white"
-                rounded="xl"
-                icon="mdi-information-outline"
-                variant="plain"
-                v-tooltip="{
-                  text: 'Extra info',
-                  location: 'bottom',
-                  attach: true,
-                  width: 140,
-                  disabled: infoMenuOpen,
-                }"
-              />
-            </template>
-            <media-info-panel :media-item="fullImage"></media-info-panel>
-          </v-menu>
-          <v-btn
-            color="white"
-            rounded="xl"
-            icon="mdi-share-variant-outline"
-            variant="plain"
-            v-tooltip="{ text: 'Share', location: 'bottom', attach: true, width: 140 }"
-          />
-          <v-btn
-            color="white"
-            rounded="xl"
-            icon="mdi-heart-outline"
-            variant="plain"
-            v-tooltip="{ text: 'Favourite', location: 'bottom', attach: true, width: 140 }"
-          />
-          <v-btn
-            color="white"
-            rounded="xl"
-            icon="mdi-cloud-download-outline"
-            variant="plain"
-            v-tooltip="{ text: 'Download', location: 'bottom', attach: true, width: 140 }"
-          />
-          <v-btn
-            color="white"
-            rounded="xl"
-            icon="mdi-trash-can-outline"
-            variant="plain"
-            v-tooltip="{ text: 'Move to bin', location: 'bottom', attach: true, width: 140 }"
-          />
-          <v-btn
-            color="white"
-            rounded="xl"
-            icon="mdi-dots-horizontal"
-            variant="plain"
-            v-tooltip="{ text: 'More options', location: 'bottom', attach: true, width: 140 }"
-          />
-        </div>
+            >{{ locationString }}</span
+          >{{ currentIndex + 1 }} of
+          {{ viewPhotoStore.ids.length === 0 ? '...' : viewPhotoStore.ids.length.toLocaleString() }}
+        </p>
       </div>
-      <div
-        @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}`, query: route.query })"
-        v-if="prevId !== null"
-        class="prev-area"
-        @mouseenter="showLeftButton = true"
-        @mouseleave="showLeftButton = false"
-      >
+      <div class="right-buttons">
         <v-btn
-          :style="{ opacity: showLeftButton ? 1 : 0 }"
-          icon="mdi-chevron-left"
-          variant="elevated"
+          v-if="selectionStore.selection.size > 0"
+          :color="isSelected ? 'secondary' : 'white'"
           rounded="xl"
-          size="70"
-        ></v-btn>
-      </div>
-      <div
-        @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}`, query: route.query })"
-        v-if="nextId !== null"
-        class="next-area"
-        @mouseenter="showRightButton = true"
-        @mouseleave="showRightButton = false"
-      >
+          :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
+          variant="plain"
+          @click="toggleSelected"
+          v-tooltip="{
+            text: isSelected ? 'Remove from selection' : 'Add to selection',
+            location: 'bottom',
+            attach: true,
+            width: 140,
+          }"
+        />
+        <v-menu
+          :close-on-content-click="false"
+          :attach="'.view-container'"
+          v-model="infoMenuOpen"
+          location="bottom center"
+        >
+          <template v-slot:activator="{ props }">
+            <v-btn
+              :loading="fullImage === undefined"
+              v-bind="props"
+              color="white"
+              rounded="xl"
+              icon="mdi-information-outline"
+              variant="plain"
+              v-tooltip="{
+                text: 'Extra info',
+                location: 'bottom',
+                attach: true,
+                width: 140,
+                disabled: infoMenuOpen,
+              }"
+            />
+          </template>
+          <media-info-panel :media-item="fullImage"></media-info-panel>
+        </v-menu>
         <v-btn
-          :style="{ opacity: showRightButton ? 1 : 0 }"
-          icon="mdi-chevron-right"
-          variant="elevated"
+          color="white"
           rounded="xl"
-          size="70"
-        ></v-btn>
+          icon="mdi-share-variant-outline"
+          variant="plain"
+          v-tooltip="{ text: 'Share', location: 'bottom', attach: true, width: 140 }"
+        />
+        <v-btn
+          color="white"
+          rounded="xl"
+          icon="mdi-heart-outline"
+          variant="plain"
+          v-tooltip="{ text: 'Favourite', location: 'bottom', attach: true, width: 140 }"
+        />
+        <v-btn
+          color="white"
+          rounded="xl"
+          icon="mdi-cloud-download-outline"
+          variant="plain"
+          v-tooltip="{ text: 'Download', location: 'bottom', attach: true, width: 140 }"
+        />
+        <v-btn
+          color="white"
+          rounded="xl"
+          icon="mdi-trash-can-outline"
+          variant="plain"
+          v-tooltip="{ text: 'Move to bin', location: 'bottom', attach: true, width: 140 }"
+        />
+        <v-btn
+          color="white"
+          rounded="xl"
+          icon="mdi-dots-horizontal"
+          variant="plain"
+          v-tooltip="{ text: 'More options', location: 'bottom', attach: true, width: 140 }"
+        />
       </div>
     </div>
-  </v-theme-provider>
+    <div
+      @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}`, query: route.query })"
+      v-if="prevId !== null"
+      class="prev-area"
+      @mouseenter="showLeftButton = true"
+      @mouseleave="showLeftButton = false"
+    >
+      <v-btn
+        :style="{ opacity: showLeftButton ? 1 : 0 }"
+        icon="mdi-chevron-left"
+        variant="elevated"
+        rounded="xl"
+        size="70"
+      ></v-btn>
+    </div>
+    <div
+      @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}`, query: route.query })"
+      v-if="nextId !== null"
+      class="next-area"
+      @mouseenter="showRightButton = true"
+      @mouseleave="showRightButton = false"
+    >
+      <v-btn
+        :style="{ opacity: showRightButton ? 1 : 0 }"
+        icon="mdi-chevron-right"
+        variant="elevated"
+        rounded="xl"
+        size="70"
+      ></v-btn>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.theme-prov {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  z-index: 1400;
-}
-
 .view-container {
   position: absolute;
   top: 0;
@@ -387,7 +363,7 @@ watch(
   padding: 0 30px;
   border-radius: 30px;
   margin: 10px;
-  background-color: rgba(20, 20, 20, 0.8);
+  background-color: rgba(var(--v-theme-surface-container-lowest), 0.8);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
   transition:
     background-color 0.15s,
@@ -405,7 +381,7 @@ watch(
   padding: 10px 50px;
   margin: 10px;
   border-radius: 30px;
-  background-color: rgba(20, 20, 20, 0.8);
+  background-color: rgba(var(--v-theme-surface-container-lowest), 0.8);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
   transition:
     background-color 0.15s,
@@ -434,7 +410,7 @@ watch(
   padding: 0 30px;
   margin: 10px;
   border-radius: 30px;
-  background-color: rgba(20, 20, 20, 0.8);
+  background-color: rgba(var(--v-theme-surface-container-lowest), 0.8);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
   transition:
     background-color 0.15s,
@@ -445,14 +421,14 @@ watch(
 .backdrop-blur .left-buttons,
 .backdrop-blur .top-main-text {
   backdrop-filter: blur(30px) saturate(150%) brightness(90%) contrast(90%);
-  background-color: rgba(20, 20, 20, 0.5);
+  background-color: rgba(var(--v-theme-surface-container-lowest), 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .backdrop-blur .right-buttons:hover,
 .backdrop-blur .left-buttons:hover,
 .backdrop-blur .top-main-text:hover {
-  background-color: rgba(20, 20, 20, 0.8);
+  background-color: rgba(var(--v-theme-surface-container-lowest), 0.7);
 }
 
 .hide-ui .right-buttons,
