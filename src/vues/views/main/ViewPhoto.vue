@@ -27,6 +27,7 @@ const router = useRouter()
 
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
+const persistentInfo = ref(false)
 const hideSeconds = ref(7)
 const infoMenuOpen = ref(false)
 const showUI = computed(() => hideSeconds.value > 0)
@@ -230,7 +231,7 @@ watch(
         />
         <v-menu
           :close-on-content-click="false"
-          :attach="'.view-container'"
+          :persistent="persistentInfo"
           v-model="infoMenuOpen"
           location="bottom center"
         >
@@ -251,7 +252,11 @@ watch(
               }"
             />
           </template>
-          <media-info-panel :media-item="fullImage"></media-info-panel>
+          <media-info-panel
+            :media-item="fullImage"
+            @open-date-time="persistentInfo = true"
+            @close-date-time="persistentInfo = false"
+          />
         </v-menu>
         <v-btn
           color="white"

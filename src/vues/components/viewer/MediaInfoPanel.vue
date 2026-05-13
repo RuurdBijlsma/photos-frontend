@@ -3,10 +3,9 @@ import BaseMap from '@/vues/components/map/BaseMap.vue'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { DAYS, MONTHS } from '@/scripts/constants.ts'
 import MediaWeatherInfo from '@/vues/components/viewer/MediaWeatherInfo.vue'
-import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import { makeLocationString } from '@/scripts/utils.ts'
 import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
 
@@ -14,8 +13,12 @@ const props = defineProps<{
   mediaItem?: FullMediaItem
 }>()
 
+const emit = defineEmits(['closeDateTime', 'openDateTime'])
+
 const dialogs = useDialogStore()
 const settings = useSettingStore()
+
+const dateTimeDialogOpen = ref(false)
 
 const takenAtDate = computed(() => {
   if (!props.mediaItem?.taken_at_local) return null
@@ -55,6 +58,14 @@ async function editCaption() {
 async function saveDateTime() {
   alert('Save datetime')
 }
+
+watch(dateTimeDialogOpen, () => {
+  if (dateTimeDialogOpen.value) {
+    emit('openDateTime')
+  } else {
+    emit('closeDateTime')
+  }
+})
 </script>
 
 <template>
@@ -100,7 +111,7 @@ async function saveDateTime() {
             <span>•</span>
             <span>{{ dateComponents(takenAtDate).time }}</span>
           </p>
-          <v-dialog max-width="420" persistent>
+          <v-dialog max-width="420" persistent v-model="dateTimeDialogOpen">
             <template v-slot:activator="{ props: activatorProps }">
               <v-btn
                 variant="plain"

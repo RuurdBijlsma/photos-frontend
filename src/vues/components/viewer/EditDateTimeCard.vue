@@ -11,7 +11,6 @@ const props = defineProps<{
 const emit = defineEmits(['closeDialog'])
 
 // State for the picker
-const menu = ref(false)
 const adjustedDate = ref(new Date(props.mediaItem.taken_at_local))
 
 // Timezone Logic
@@ -58,7 +57,7 @@ function save() {
 
       <!-- Original (Read Only) -->
       <div class="time-row mb-3 mt-4">
-        <span class="label text-on-surface-variant">Original:</span>
+        <span class="dt-label text-on-surface-variant">Original:</span>
         <div class="display-box original">
           {{ formatDate(originalDate) }}, {{ formatTime(originalDate) }}
         </div>
@@ -66,9 +65,9 @@ function save() {
 
       <!-- Adjusted (Clickable to Edit) -->
       <div class="time-row mb-2">
-        <span class="label text-on-surface-variant">Adjusted:</span>
+        <span class="dt-label text-on-surface-variant">Adjusted:</span>
 
-        <date-time-picker :model-date="adjustedDate"></date-time-picker>
+        <date-time-picker v-model="adjustedDate" />
       </div>
 
       <v-btn variant="plain" color="primary" rounded="pill" @click="revert">
@@ -97,12 +96,6 @@ function save() {
   max-width: 380px;
 }
 
-.label {
-  width: 85px;
-  font-size: 15px;
-  font-weight: 600;
-}
-
 .display-box {
   flex-grow: 1;
   padding: 10px 16px;
@@ -126,5 +119,11 @@ function save() {
 .text-smallish {
   font-size: 14px;
   font-weight: 500;
+}
+.dt-label {
+  font-weight: 500;
+  font-size: 14px;
+  margin-right: 10px;
+  width: 75px;
 }
 </style>
