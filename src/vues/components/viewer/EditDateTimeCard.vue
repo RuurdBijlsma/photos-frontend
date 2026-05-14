@@ -13,7 +13,7 @@ const emit = defineEmits(['closeDialog'])
 const mediaItemStore = useMediaItemStore()
 
 const adjustedDate = ref(new Date(props.mediaItem.taken_at_local))
-const originalDate = new Date(props.mediaItem.taken_at_local)
+const originalDate = new Date(props.mediaItem.og_taken_at_local)
 
 const timezoneDisplay = computed(() => {
   const tz = props.mediaItem.time?.timezone_name
@@ -22,15 +22,19 @@ const timezoneDisplay = computed(() => {
 })
 
 function revert() {
-  adjustedDate.value = new Date(props.mediaItem.taken_at_local)
+  adjustedDate.value = new Date(props.mediaItem.og_taken_at_local)
 }
 
-function save() {
-  // Logic to update the server would go here
-  console.log('Saving ISO:', adjustedDate.value.toISOString())
+async function save() {
   if (!props.mediaItem) return
-  mediaItemStore.updateMediaItem(props.mediaItem.id, {
-    takenAtLocal: adjustedDate.value.toISOString(),
+  const adjustedDateString =
+    adjustedDate.value
+      .toLocaleString('sv-SE', {
+        hour12: false,
+      })
+      .replace(' ', 'T') + '.000Z'
+  await mediaItemStore.updateMediaItem(props.mediaItem.id, {
+    takenAtLocal: adjustedDateString,
   })
   emit('closeDialog')
 }

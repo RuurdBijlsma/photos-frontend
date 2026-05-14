@@ -170,6 +170,8 @@ export interface FullMediaItem {
   duration_ms?: number
   taken_at_local: string
   taken_at_utc?: string
+  og_taken_at_local: string
+  og_taken_at_utc?: string
   use_panorama_viewer: boolean
   has_thumbnails: boolean
   visual_analyses: VisualAnalysis[]
