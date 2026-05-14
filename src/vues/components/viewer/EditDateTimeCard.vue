@@ -3,12 +3,14 @@ import { ref, computed } from 'vue'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
 import DateTimePicker from '@/vues/components/viewer/DateTimePicker.vue'
+import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 
 const props = defineProps<{
   mediaItem: FullMediaItem
 }>()
 
 const emit = defineEmits(['closeDialog'])
+const mediaItemStore = useMediaItemStore()
 
 const adjustedDate = ref(new Date(props.mediaItem.taken_at_local))
 const originalDate = new Date(props.mediaItem.taken_at_local)
@@ -26,6 +28,10 @@ function revert() {
 function save() {
   // Logic to update the server would go here
   console.log('Saving ISO:', adjustedDate.value.toISOString())
+  if (!props.mediaItem) return
+  mediaItemStore.updateMediaItem(props.mediaItem.id, {
+    takenAtLocal: adjustedDate.value.toISOString(),
+  })
   emit('closeDialog')
 }
 </script>

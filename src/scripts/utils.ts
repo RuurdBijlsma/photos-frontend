@@ -136,6 +136,7 @@ export function makeLocationString(location: Location, components = 2) {
     ]
     finalParts = prioritizedParts.filter((part) => part).slice(0, components)
   }
+  finalParts = [...new Set(finalParts)]
   const result = finalParts.join(' - ')
   return result ? result : ''
 }

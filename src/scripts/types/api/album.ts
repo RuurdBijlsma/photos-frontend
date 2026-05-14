@@ -51,9 +51,9 @@ export interface CreateAlbumRequest {
 
 export interface UpdateAlbumRequest {
   name?: string
-  description?: string
   isPublic?: boolean
-  thumbnailId?: string
+  description?: string | null
+  thumbnailId?: string | null
 }
 
 export interface AddMediaToAlbumRequest {

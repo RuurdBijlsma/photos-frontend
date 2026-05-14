@@ -165,9 +165,7 @@ function blurTextArea() {
 
 function removeDescription() {
   if (!id.value) return
-  albumService.removeAlbumDescription(id.value).then(() => {
-    requestIdleCallback(() => albumStore.fetchUserAlbums())
-  })
+  albumStore.updateAlbumDetails(id.value, { description: null })
   albumDescription.value = null
 }
 

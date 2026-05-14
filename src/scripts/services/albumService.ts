@@ -36,10 +36,6 @@ const albumService = {
     return apiClient.put<Album>(`/album/${albumId}`, payload)
   },
 
-  removeAlbumDescription(albumId: string): Promise<AxiosResponse> {
-    return apiClient.delete(`/album/${albumId}/description`)
-  },
-
   async getSortedMedia(albumId: string, sortMode: AlbumSort): Promise<OrderedMediaResponse> {
     const response = await apiClient.get(`/album/${albumId}/media/sorted`, {
       params: { sortMode },
