@@ -14,6 +14,7 @@ import type { PhotoViewerType } from '@/scripts/types/viewerType'
 import { useEventListener } from '@vueuse/core'
 import MediaInfoPanel from '@/vues/components/viewer/MediaInfoPanel.vue'
 import { makeLocationString } from '@/scripts/utils.ts'
+import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 
 const mediaItemStore = useMediaItemStore()
 const timelineStore = useTimelineStore()
@@ -21,6 +22,7 @@ const themeStore = useThemeStore()
 const settings = useSettingStore()
 const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
+const dialogs = useDialogStore()
 const vuetifyTheme = useTheme()
 const route = useRoute()
 const router = useRouter()
@@ -143,6 +145,8 @@ function toggleSelected() {
 }
 
 function handleKeyDown(e: KeyboardEvent) {
+  console.log(dialogs.customVisible, dialogs.anyVisible, dialogs.visible)
+  if (dialogs.anyVisible) return
   if (e.key === 'ArrowLeft' && prevId.value) {
     e.preventDefault()
     router.replace({ path: `${viewPhotoStore.viewLink}${prevId.value}`, query: route.query })

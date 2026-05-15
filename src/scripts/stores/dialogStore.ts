@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 export type DialogType = 'alert' | 'confirm' | 'prompt'
 
@@ -34,6 +34,8 @@ export const useDialogStore = defineStore('dialog', () => {
   const current = ref<DialogRequest | null>(null)
   const visible = ref(false)
   const inputValue = ref('')
+  const customVisible = ref(false)
+  const anyVisible = computed(() => customVisible.value || visible.value)
 
   // Track the result internally so we can resolve after the transition
   let pendingResult: any = null // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -108,6 +110,8 @@ export const useDialogStore = defineStore('dialog', () => {
 
   return {
     visible,
+    customVisible,
+    anyVisible,
     inputValue,
     current,
     alert,

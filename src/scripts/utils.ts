@@ -140,3 +140,16 @@ export function makeLocationString(location: Location, components = 2) {
   const result = finalParts.join(' - ')
   return result ? result : ''
 }
+
+export function formatNaiveDate(date: Date): string {
+  const pad = (n: number): string => n.toString().padStart(2, '0')
+
+  return (
+    `${date.getFullYear()}-` +
+    `${pad(date.getMonth() + 1)}-` +
+    `${pad(date.getDate())}T` +
+    `${pad(date.getHours())}:` +
+    `${pad(date.getMinutes())}:` +
+    `${pad(date.getSeconds())}`
+  )
+}

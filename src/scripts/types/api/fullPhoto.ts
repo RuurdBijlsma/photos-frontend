@@ -81,8 +81,6 @@ export interface VisualAnalysis {
 }
 
 export interface TimeDetails {
-  timezone_name?: string
-  timezone_offset_seconds?: number
   timezone_source?: string
   source_details: string
   source_confidence: string
@@ -160,7 +158,7 @@ export interface FullMediaItem {
   id: string
   user_id: number
   hash: string
-  filename: string,
+  filename: string
   relative_path: string
   created_at: string
   updated_at: string
@@ -171,7 +169,9 @@ export interface FullMediaItem {
   taken_at_local: string
   taken_at_utc?: string
   og_taken_at_local: string
-  og_taken_at_utc?: string
+  timezone_name?: string
+  timezone_offset_seconds?: number
+  og_timezone_offset_seconds?: number
   use_panorama_viewer: boolean
   has_thumbnails: boolean
   visual_analyses: VisualAnalysis[]

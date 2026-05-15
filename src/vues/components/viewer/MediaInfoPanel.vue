@@ -55,14 +55,12 @@ async function editCaption() {
   // todo update server with new caption and refresh media item
 }
 
-async function saveDateTime() {
-  alert('Save datetime')
-}
-
 watch(dateTimeDialogOpen, () => {
   if (dateTimeDialogOpen.value) {
+    dialogs.customVisible = true
     emit('openDateTime')
   } else {
+    dialogs.customVisible = false
     emit('closeDateTime')
   }
 })

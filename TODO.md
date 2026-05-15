@@ -183,6 +183,8 @@
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * ✅ niet "People" tab laten zien als je nog geen faces hebt
 * ✅ render empty album UI better
+* ✅ if timezone offset seconds is different from og_timezone_offset_seconds, then don't display timezone_name anywhere in UI, since it's no longer valid. Isntead just show the offset (with the make offset string function)
+* ✅ make sure the frontend sends the datetime like "2023-05-15T10:00:00"
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
 * Als je full screen foto bekijkt, manier maken om de top balk te hiden (als je muis niet beweegt ofzo)
 * filters on front page (small ui button)
@@ -192,3 +194,4 @@
     * video/photo type filter
 * eigen theme per photo is te chaotisch
 * misschien wil ik wel light theme in de foto viewer!
+* [BUG] 1e load nadat je recreate_db doet, dan laad de grid niet nadat je inlogt!
