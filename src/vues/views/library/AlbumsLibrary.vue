@@ -1,16 +1,22 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import GlowImage from '@/vues/components/ui/GlowImage.vue'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import type { Album, AlbumSortField, SortDirection } from '@/scripts/types/api/album'
 import albumService from '@/scripts/services/albumService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRouter } from 'vue-router'
 import { MONTHS } from '@/scripts/constants.ts'
+import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
+import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
+import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 const snackbarStore = useSnackbarsStore()
+const authStore = useAuthStore()
+const dialogs = useDialogStore()
 const router = useRouter()
+const albumStore = useAlbumStore()
+
 const loading = ref(false)
 const showSkeleton = ref(false)
 let skeletonTimeout: ReturnType<typeof setTimeout> | null = null
@@ -56,7 +62,6 @@ const sortDirectionIcon = computed(() => {
       ? 'mdi-sort-clock-ascending-outline'
       : 'mdi-sort-clock-descending-outline'
   }
-  // Default to Calendar/latestPhoto
   return currentSortDirection.value === 'asc'
     ? 'mdi-sort-calendar-ascending'
     : 'mdi-sort-calendar-descending'
@@ -108,15 +113,14 @@ function toggleDirection() {
   loadAlbums()
 }
 
-function makeNewAlbum() {
-  snackbarStore.alert({
+async function makeNewAlbum() {
+  await dialogs.alert({
     title: 'Create album',
     description: 'Create an album by selecting some photos and clicking "Add to album"',
     icon: 'mdi-image-album',
     actions: [
       {
         name: 'Go to photos',
-        color: 'primary',
         action: () => {
           router.push({ path: '/' })
         },
@@ -141,6 +145,28 @@ function getAlbumTimeSpan(album: Album) {
     return `${month1} - ${month2} ${year1}`
   }
   return `${year1} - ${year2}`
+}
+
+async function renameAlbum(album: Album) {
+  await albumStore.renameAlbum(album.id, album.name)
+  requestIdleCallback(() => loadAlbums())
+}
+
+async function deleteAlbum(albumId: string) {
+  await albumStore.deleteAlbum(albumId)
+  requestIdleCallback(() => loadAlbums())
+}
+
+async function leaveAlbum(albumId: string) {
+  await albumStore.fetchAlbumMedia(albumId)
+  const albumInfo = albumStore.albumMedia.get(albumId)
+  if (!albumInfo) return
+  const collaborators = albumInfo.album?.collaborators
+  if (!collaborators) return
+  const currentUserCollaborator = collaborators.find((c) => c.userId === authStore.user?.id)
+  if (!currentUserCollaborator) return
+  await albumStore.removeCollaborator(albumId, currentUserCollaborator.id, true)
+  requestIdleCallback(() => loadAlbums())
 }
 
 onMounted(() => {
@@ -234,13 +260,58 @@ onUnmounted(() => {
           :to="`/album/${album.id}`"
           class="album-card"
         >
-          <glow-image
-            :src="mediaItemService.getPhotoThumbnail(album.thumbnailId, 720, false)"
-            :height="200"
-            :width="200"
-            border-radius="20px"
-            :strength="0.7"
-          />
+          <div class="album-image">
+            <glow-thumbnail
+              class="album-glow-image"
+              :media-item-id="album.thumbnailId"
+              :height="200"
+              :width="200"
+              border-radius="20px"
+              :strength="0.7"
+            />
+            <v-menu location="bottom end" v-if="album.ownerId === authStore.user?.id">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  class="album-options-btn"
+                  icon="mdi-dots-horizontal"
+                  variant="flat"
+                  density="comfortable"
+                  color="primary"
+                  @click.stop.prevent
+                />
+              </template>
+              <v-list density="compact">
+                <v-list-item @click="renameAlbum(album)">
+                  <v-list-item-title>Rename album</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="deleteAlbum(album.id)">
+                  <v-list-item-title>Delete album</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+            <v-menu v-else location="bottom end">
+              <template v-slot:activator="{ props }">
+                <v-avatar
+                  v-tooltip="{
+                    location: 'top',
+                    text: 'Shared album',
+                  }"
+                  size="35"
+                  v-bind="props"
+                  @click.stop.prevent
+                  class="album-shared-avatar"
+                  color="primary"
+                  ><v-icon icon="mdi-share" size="23"></v-icon
+                ></v-avatar>
+              </template>
+              <v-list density="compact">
+                <v-list-item @click="leaveAlbum(album.id)">
+                  <v-list-item-title>Leave shared album</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
 
           <div class="album-info">
             <h3
@@ -293,6 +364,7 @@ onUnmounted(() => {
 }
 
 .header-left h1 {
+  margin: 0;
   font-size: 2.5rem;
   font-weight: 600;
   line-height: 1.2;
@@ -311,6 +383,39 @@ onUnmounted(() => {
   justify-items: center;
 }
 
+.album-image {
+  position: relative;
+  height: 200px;
+  width: 200px;
+}
+
+.album-shared-avatar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+}
+
+.album-options-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  opacity: 0;
+}
+
+.album-image:hover .album-options-btn {
+  opacity: 1;
+}
+
+.album-glow-image {
+  top: 0;
+  left: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
 .album-card {
   text-decoration: none;
   color: inherit;
@@ -318,31 +423,7 @@ onUnmounted(() => {
 }
 
 .album-card:hover {
-  transform: translateY(-5px) scale(1.05);
-}
-
-.image-wrapper {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-}
-
-.album-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.album-card:hover .album-overlay {
-  opacity: 1;
+  transform: translateY(-5px) scale(1.01);
 }
 
 .album-info {
@@ -355,11 +436,13 @@ onUnmounted(() => {
   font-weight: 600;
   margin-bottom: 2px;
   max-width: 195px;
+  margin-top: 0;
 }
 
 .album-meta {
   font-size: 0.85rem;
   opacity: 0.6;
+  margin-top: 0;
 }
 
 .empty-state {

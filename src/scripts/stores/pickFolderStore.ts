@@ -7,6 +7,7 @@ import type {
   UnsupportedFilesResponse,
 } from '@/scripts/types/api/onboarding.ts'
 import { useDebounceFn } from '@vueuse/core'
+import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 export const usePickFolderStore = defineStore('pickFolder', () => {
   let N_SAMPLES = 8
@@ -114,7 +115,7 @@ export const usePickFolderStore = defineStore('pickFolder', () => {
 
   async function mediaBlobUrl(relative_path: string): Promise<string | null> {
     try {
-      const response = await onboardingService.getFullMediaFile(relative_path)
+      const response = await mediaItemService.downloadMediaFile(relative_path)
       return URL.createObjectURL(response.data)
     } catch (error) {
       snackbarStore.error(`Failed to get full file url: ${relative_path}`, error)

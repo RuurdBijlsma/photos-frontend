@@ -2,7 +2,7 @@
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import NavDrawer from '@/vues/components/layout/NavDrawer.vue'
-import SearchBar from '@/vues/components/ui/SearchBar.vue'
+import AppBar from '@/vues/components/layout/AppBar.vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
@@ -24,26 +24,7 @@ backgroundStore.initialize()
   </div>
 
   <v-layout>
-    <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
-      <h1 class="appbar-title"><span>Ruurd</span> Photos</h1>
-      <v-spacer />
-      <search-bar />
-      <v-spacer />
-      <div class="header-buttons">
-        <v-btn variant="plain" rounded>
-          <v-icon icon="mdi-upload"></v-icon>
-          Upload
-        </v-btn>
-        <v-btn icon variant="plain">
-          <v-icon icon="mdi-cog"></v-icon>
-        </v-btn>
-        <v-btn icon>
-          <v-avatar>
-            <v-img src="img/avatar.jpg"></v-img>
-          </v-avatar>
-        </v-btn>
-      </div>
-    </v-app-bar>
+    <app-bar />
 
     <nav-drawer />
 
@@ -85,23 +66,6 @@ backgroundStore.initialize()
   );
   backdrop-filter: saturate(150%) brightness(70%) blur(25px) contrast(100%);
   z-index: 1;
-}
-
-.appbar-title {
-  font-weight: 600;
-  font-size: 20px;
-  margin-left: 50px;
-  opacity: 0.8;
-}
-
-.appbar-title > span {
-  font-weight: 400;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 20px;
-  align-items: center;
 }
 
 .layout-body {

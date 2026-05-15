@@ -77,12 +77,14 @@ const monthItems = computed(() => timelineStore.monthItems.get(props.item.monthI
 .row-date-header h2 {
   font-size: 24px;
   font-weight: 600;
+  margin: 0;
 }
 
 .row-date-header h3 {
   font-size: 18px;
   font-weight: 400;
   opacity: 0.7;
+  margin: 0;
   margin-left: 20px;
   padding-bottom: 1px;
 }

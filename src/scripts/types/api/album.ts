@@ -4,6 +4,7 @@ import type { TimelineItem } from '@/scripts/types/generated/timeline'
 export type AlbumRole = 'Owner' | 'Contributor' | 'Viewer'
 export type SortDirection = 'asc' | 'desc'
 export type AlbumSortField = 'updatedAt' | 'latestPhoto' | 'name'
+export type AlbumSort = 'DateAsc' | 'DateDesc' | 'AddedAsc' | 'AddedDesc' | 'None'
 
 // Entities
 export interface Album {
@@ -18,6 +19,7 @@ export interface Album {
   mediaCount: number
   latestMediaItemTimestamp: string | null // ISO Date string
   earliestMediaItemTimestamp: string | null // ISO Date string
+  sortMode: AlbumSort
 }
 
 export interface AlbumCollaborator {
@@ -26,12 +28,6 @@ export interface AlbumCollaborator {
   userId: number
   role: AlbumRole
   addedAt: string // ISO Date string
-}
-
-export interface CollaboratorSummary {
-  id: number
-  name: string
-  role: AlbumRole
 }
 
 export interface AlbumMediaItemSummary {
@@ -45,19 +41,6 @@ export interface AlbumSummary {
   relativePaths: string[]
 }
 
-// Responses
-export interface AlbumDetailsResponse {
-  id: string
-  name: string
-  description?: string
-  thumbnailId?: string
-  isPublic: boolean
-  ownerId: number
-  createdAt: string // ISO Date string
-  mediaItems: AlbumMediaItemSummary[]
-  collaborators: CollaboratorSummary[]
-}
-
 // Request Payloads
 export interface CreateAlbumRequest {
   name: string
@@ -68,9 +51,9 @@ export interface CreateAlbumRequest {
 
 export interface UpdateAlbumRequest {
   name?: string
-  description?: string
   isPublic?: boolean
-  thumbnailId?: string
+  description?: string | null
+  thumbnailId?: string | null
 }
 
 export interface AddMediaToAlbumRequest {
@@ -78,7 +61,7 @@ export interface AddMediaToAlbumRequest {
 }
 
 export interface AddCollaboratorRequest {
-  userEmail: string
+  userId: number
   role: AlbumRole
 }
 

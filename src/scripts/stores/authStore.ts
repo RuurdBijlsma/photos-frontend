@@ -3,10 +3,13 @@ import { defineStore } from 'pinia'
 import authService from '@/scripts/services/authService.ts'
 import type { CreateUser, LoginUser, Tokens, User } from '@/scripts/types/api/auth.ts'
 import { useRouter } from 'vue-router'
+import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 
 type AuthStatus = 'idle' | 'loading' | 'error' | 'success'
 
 export const useAuthStore = defineStore('auth', () => {
+  const systemStore = useSystemStore()
+
   // --- STATE ---
   const user: Ref<User | null> = ref(
     localStorage.getItem('authUser') === null
@@ -77,6 +80,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function onAuthenticated() {
+    await systemStore.fetchStats()
+  }
+
   /**
    * Fetches the current user's data using the access token.
    */
@@ -123,7 +130,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Logs the user out, clears all auth state, and redirects.
    */
-  async function logout() {
+  async function logout(redirect = true) {
     if (refreshToken.value) {
       try {
         await authService.logout({ refreshToken: refreshToken.value })
@@ -144,8 +151,15 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('expiry')
     localStorage.removeItem('authUser')
 
-    // Redirect to the login page to ensure the user isn't stuck on a protected route.
-    await router.push({ name: 'login' })
+    // Redirect to the login page only if the current route requires authentication.
+    if (redirect) {
+      const requiresAuth = router.currentRoute.value.matched.some(
+        (record) => record.meta.requiresAuth,
+      )
+      if (requiresAuth) {
+        await router.push({ name: 'login' })
+      }
+    }
   }
 
   // --- RETURN ---
@@ -161,5 +175,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     fetchCurrentUser,
     refreshTokens,
+    onAuthenticated,
   }
 })

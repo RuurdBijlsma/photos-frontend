@@ -28,6 +28,11 @@ const router = createRouter({
           ],
         },
         {
+          path: 'people',
+          name: 'people',
+          component: () => import('@/vues/views/library/PeopleView.vue'),
+        },
+        {
           path: 'explore',
           name: 'explore',
           component: () => import('@/vues/views/main/ExploreView.vue'),
@@ -41,6 +46,22 @@ const router = createRouter({
           path: 'albums',
           name: 'albums',
           component: () => import('@/vues/views/library/AlbumsLibrary.vue'),
+        },
+        {
+          path: 'settings',
+          name: 'settings',
+          component: () => import('@/vues/views/main/SettingsView.vue'),
+        },
+        {
+          path: 'admin',
+          name: 'admin',
+          meta: { requiresAdmin: true },
+          component: () => import('@/vues/views/main/AdminView.vue'),
+        },
+        {
+          path: 'user/:userId/:name',
+          name: 'profile',
+          component: () => import('@/vues/views/main/ProfileView.vue'),
         },
         {
           path: 'album/:albumId',
@@ -66,6 +87,12 @@ const router = createRouter({
             },
           ],
         },
+        {
+          path: '/import-album/:token',
+          name: 'import-album',
+          meta: { requiresAuth: true },
+          component: () => import('@/vues/views/main/ImportAlbumView.vue'),
+        },
       ],
     },
     {
@@ -84,7 +111,7 @@ const router = createRouter({
       path: '/onboarding',
       name: 'onboarding',
       meta: { requiresAuth: true, requiresAdmin: true },
-      component: () => import('@/vues/views/OnboardingView.vue'),
+      component: () => import('@/vues/views/onboarding/OnboardingView.vue'),
     },
     {
       path: '/:pathMatch(.*)*',
@@ -93,6 +120,9 @@ const router = createRouter({
     },
   ],
 })
+
+let userRefreshed = false
+let onAuthHandled = false
 
 export function registerNavigationGuard() {
   const snackbarsStore = useSnackbarsStore()
@@ -112,11 +142,21 @@ export function registerNavigationGuard() {
         // No need to proceed further, just go to login.
         return next({ name: 'login' })
       }
+    } else if (authStore.accessToken && authStore.user && !userRefreshed) {
+      userRefreshed = true
+      requestIdleCallback(() => authStore.fetchCurrentUser())
     }
 
     // --- Get Fresh Auth State ---
     const isAuthenticated = authStore.isAuthenticated
     const isAdmin = authStore.isAdmin
+
+    if (isAuthenticated && !onAuthHandled) {
+      onAuthHandled = true
+      requestIdleCallback(() => authStore.onAuthenticated())
+    } else if (!isAuthenticated) {
+      onAuthHandled = false
+    }
 
     // --- "Onboarding Needed" Redirect Logic ---
     const needsOnboarding =

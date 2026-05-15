@@ -3,6 +3,7 @@ import type { SimpleTimelineItem, TimelineItem } from '@/scripts/types/generated
 import { toHms } from '@/scripts/utils.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import { useRoute } from 'vue-router'
+import type { LocationQuery } from 'vue-router'
 import { computed, nextTick, ref } from 'vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
@@ -14,6 +15,7 @@ const props = withDefaults(
     thumbnailSize: number
     isScrollingFast: boolean
     viewLink?: string
+    query?: LocationQuery
   }>(),
   {
     viewLink: '',
@@ -106,17 +108,20 @@ function selectItem(e: PointerEvent) {
         </div>
         <router-link
           class="fullscreen"
-          :to="{ path: `${viewLink}${id}`, query: route.query }"
+          :to="{ path: `${viewLink}${id}`, query: props.query ?? route.query }"
           title="View in fullscreen"
           @click.stop
         >
-          <v-icon color="white" class="fullscreen-icon" size="20" icon="mdi-fullscreen" />
+          <v-icon color="white" class="fullscreen-icon" size="21" icon="mdi-fullscreen" />
         </router-link>
         <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
       </div>
 
       <template v-else>
-        <router-link class="view-link" :to="{ path: `${viewLink}${id}`, query: route.query }">
+        <router-link
+          class="view-link"
+          :to="{ path: `${viewLink}${id}`, query: props.query ?? route.query }"
+        >
           <div class="video-events" @mouseenter="mouseEnter" @mouseleave="mouseLeave" />
         </router-link>
         <div class="checkbox" @click.prevent="selectItem">
@@ -126,9 +131,7 @@ function selectItem(e: PointerEvent) {
 
       <div class="video-info" v-if="isVideo">
         <span>{{ toHms(durationMs / 1000) }}</span>
-        <div class="video-icon">
-          <v-icon color="white" class="is-video-icon" size="15" icon="mdi-play" />
-        </div>
+        <v-icon color="white" size="16" icon="mdi-play" />
       </div>
     </template>
   </div>
@@ -176,7 +179,7 @@ function selectItem(e: PointerEvent) {
 }
 
 .virtual-scroll-item.selected .checkbox-selecting {
-  background-color: rgba(var(--v-theme-background), 0.3);
+  background-color: rgb(var(--v-theme-surface-container-highest));
 }
 
 .check-item-selecting {
@@ -206,7 +209,7 @@ function selectItem(e: PointerEvent) {
   align-items: center;
   transition: scale 0.2s ease-in-out;
   text-decoration: none;
-  background-color: rgb(var(--v-theme-surface));
+  background-color: rgb(var(--v-theme-surface-container-highest));
 }
 
 .fullscreen:hover {
@@ -222,7 +225,7 @@ function selectItem(e: PointerEvent) {
 }
 
 .fullscreen-icon {
-  color: rgb(var(--v-theme-on-secondary));
+  color: rgb(var(--v-theme-primary));
 }
 
 .checkbox {
@@ -266,27 +269,20 @@ function selectItem(e: PointerEvent) {
 
 .video-info {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   display: flex;
-  gap: 10px;
   align-items: center;
-  pointer-events: none;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 6px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
 }
 
 .video-info span {
-  font-weight: 500;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.video-icon {
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  display: flex;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
-  justify-content: center;
-  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
 }
 </style>

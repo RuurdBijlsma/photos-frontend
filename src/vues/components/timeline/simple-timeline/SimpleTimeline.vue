@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
-import type { SimpleLayoutRow } from '@/scripts/types/timeline/layout.ts'
+import type { SimpleLayoutRow, TimelineContext } from '@/scripts/types/timeline/layout.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
@@ -10,14 +10,68 @@ import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import SelectionOverlay from '@/vues/components/timeline/timeline-components/SelectionOverlay.vue'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import ReorderGridRow from '@/vues/components/timeline/simple-timeline/ReorderGridRow.vue'
 
-const props = defineProps<{
-  timelineItems: SimpleTimelineItem[]
-  viewLink: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    timelineItems: SimpleTimelineItem[]
+    viewLink: string
+    loadingMore?: boolean
+    context?: TimelineContext
+    isManualOrderMode?: boolean
+  }>(),
+  {
+    context: () => ({}),
+    isManualOrderMode: false,
+  },
+)
+
+watch(
+  () => props.timelineItems,
+  () => console.log('Total timeline items', props.timelineItems.length),
+)
+
+const emit = defineEmits(['loadMore', 'reorder'])
 
 const viewPhotoStore = useViewPhotoStore()
 const selectionStore = useSelectionStore()
+
+const localItemsOrder = ref<SimpleTimelineItem[]>([])
+let scrollInterval: number | null = null
+
+watch(
+  () => props.timelineItems,
+  (newItems) => {
+    if (!props.isManualOrderMode) {
+      localItemsOrder.value = [...newItems]
+    }
+  },
+  { immediate: true },
+)
+
+function onReorder({
+  sourceId,
+  targetId,
+  position,
+}: {
+  sourceId: string
+  targetId: string
+  position: 'before' | 'after'
+}) {
+  const items = [...localItemsOrder.value]
+  const sourceIndex = items.findIndex((i) => i.id === sourceId)
+  if (sourceIndex === -1) return
+  const [movedItem] = items.splice(sourceIndex, 1)
+
+  let targetIndex = items.findIndex((i) => i.id === targetId)
+  if (targetIndex === -1) return
+
+  if (position === 'after') targetIndex++
+  items.splice(targetIndex, 0, movedItem!)
+
+  localItemsOrder.value = items
+  emit('reorder', items)
+}
 
 const IDEAL_ROW_HEIGHT = 330
 const MAX_SIZE_MULTIPLIER = 1.5
@@ -113,6 +167,14 @@ function calculateLayout(timelineItems: SimpleTimelineItem[], containerWidth: nu
     offsetTop += Math.round(rowHeight) + ITEM_GAP
   }
 
+  // Add indices to items for reordering logic
+  let currentIndex = 0
+  for (const row of layoutRows) {
+    for (const item of row.items as (SimpleTimelineItem & { index: number })[]) {
+      item.index = currentIndex++
+    }
+  }
+
   return {
     rows: layoutRows,
     totalHeight: offsetTop,
@@ -172,6 +234,10 @@ const onScroll = useThrottleFn((e: Event) => {
   contentHeight.value = target.scrollHeight
   scrollTop.value = target.scrollTop
   handleFastScroll(target.scrollTop)
+
+  if (scrollTop.value + containerHeight.value > contentHeight.value - 1000) {
+    emit('loadMore')
+  }
 }, 16)
 
 watch(isScrollingFast, () => console.log('isScrollingFast', isScrollingFast.value))
@@ -186,8 +252,62 @@ function scrollToTop() {
   }
 }
 
+function handleDragOver(e: DragEvent) {
+  if (!props.isManualOrderMode || !scrollContainerEl.value) return
+  const rect = scrollContainerEl.value.getBoundingClientRect()
+  const viewportHeight = window.innerHeight
+  const threshold = 120
+
+  // Calculate effective boundaries within the viewport
+  const containerTop = rect.top
+  const containerBottom = Math.min(rect.bottom, viewportHeight)
+  const mouseY = e.clientY
+
+  if (scrollInterval) {
+    cancelAnimationFrame(scrollInterval)
+    scrollInterval = null
+  }
+
+  let speed = 0
+  if (mouseY < containerTop + threshold) {
+    // Scroll up
+    const dist = containerTop + threshold - mouseY
+    speed = -Math.max(2, dist / 4)
+  } else if (mouseY > containerBottom - threshold) {
+    // Scroll down
+    const dist = mouseY - (containerBottom - threshold)
+    speed = Math.max(2, dist / 4)
+  }
+
+  if (speed !== 0) {
+    const maxSpeed = 35
+    const finalSpeed = Math.sign(speed) * Math.min(Math.abs(speed), maxSpeed)
+    scrollInterval = requestAnimationFrame(function scroll() {
+      if (scrollContainerEl.value) {
+        scrollContainerEl.value.scrollTop += finalSpeed
+        scrollInterval = requestAnimationFrame(scroll)
+      }
+    })
+  }
+}
+
+function handleDragEnd() {
+  if (scrollInterval) cancelAnimationFrame(scrollInterval)
+  scrollInterval = null
+}
+
+useEventListener(window, 'dragend', handleDragEnd)
+useEventListener(window, 'drop', handleDragEnd)
+useEventListener(window, 'blur', handleDragEnd)
+useEventListener(document, 'visibilitychange', () => {
+  if (document.hidden) handleDragEnd()
+})
+
 defineExpose({
   scrollToTop,
+  setOrder(items: SimpleTimelineItem[]) {
+    localItemsOrder.value = [...items]
+  },
 })
 
 useResizeObserver(scrollContainerEl, (entries) => {
@@ -208,8 +328,8 @@ useResizeObserver(customSlotEl, (entries) => {
   }
 })
 
-watch([() => props.timelineItems, containerWidth], () => {
-  const { rows, totalHeight } = calculateLayout(props.timelineItems, containerWidth.value)
+watch([localItemsOrder, containerWidth], () => {
+  const { rows, totalHeight } = calculateLayout(localItemsOrder.value, containerWidth.value)
   gridLayout.value = rows
   contentHeight.value = totalHeight + customSlotHeight.value
   nextTick(() => rowVirtualizer.value.measure())
@@ -239,12 +359,19 @@ useEventListener(window, 'mouseup', () => {
 <template>
   <div class="simple-timeline">
     <main-layout-container>
-      <selection-overlay />
+      <selection-overlay v-if="context" :context="context" />
       <teleport to="body">
         <router-view />
       </teleport>
 
-      <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
+      <div
+        class="scroll-container"
+        ref="scrollContainer"
+        @scroll.passive="onScroll"
+        @dragover="handleDragOver"
+        @dragend="handleDragEnd"
+        @drop="handleDragEnd"
+      >
         <div ref="customSlot">
           <slot></slot>
         </div>
@@ -267,8 +394,15 @@ useEventListener(window, 'mouseup', () => {
               transform: `translateY(${virtualRow.start}px)`,
             }"
           >
+            <reorder-grid-row
+              v-if="isManualOrderMode && gridLayout[virtualRow.index]"
+              :item="gridLayout[virtualRow.index]!"
+              :container-width="containerWidth"
+              :item-gap="ITEM_GAP"
+              @reorder="onReorder"
+            />
             <virtual-simple-row
-              v-if="gridLayout[virtualRow.index]"
+              v-else-if="gridLayout[virtualRow.index]"
               :item="gridLayout[virtualRow.index]!"
               :container-width="containerWidth"
               :item-gap="ITEM_GAP"
@@ -276,7 +410,11 @@ useEventListener(window, 'mouseup', () => {
               :view-link="viewLink"
             />
           </div>
+          <div v-if="loadingMore" class="loading-more">
+            <v-progress-circular indeterminate color="primary" size="32" />
+          </div>
         </div>
+        <div v-if="isManualOrderMode" class="reorder-bottom-spacer" />
       </div>
     </main-layout-container>
 
@@ -353,5 +491,17 @@ useEventListener(window, 'mouseup', () => {
   will-change: transform;
   transform: translateZ(0);
   pointer-events: none;
+}
+
+.loading-more {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+  width: 100%;
+}
+
+.reorder-bottom-spacer {
+  height: 75px;
+  width: 100%;
 }
 </style>

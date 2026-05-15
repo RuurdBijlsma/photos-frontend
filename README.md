@@ -1,19 +1,22 @@
 # Photos Frontend
 
-The web interface for **Ruurd Photos**, a self-hosted Google Photos alternative. Built with Vue 3, Vuetify, and TypeScript.
+The web interface for **Ruurd Photos**, a self-hosted Google Photos alternative. Built with Vue 3, Vuetify, and
+TypeScript.
 
 ## Features
 
-*   **Timeline View:** High-performance virtual scrolling for photo grids organized by date.
-*   **Map View:** Geospatial visualization of your media library.
-*   **Onboarding Wizard:** UI for setting up the server, picking storage folders, and scanning drives.
-*   **Media Viewer:** Full-screen photo and video playback.
-*   **Responsive Design:** Optimized for desktop and mobile web via Vuetify.
+* **Timeline View:** High-performance virtual scrolling for photo grids organized by date.
+* **Map View:** Geospatial visualization of your media library.
+* **Onboarding Wizard:** UI for setting up the server, picking storage folders, and scanning drives.
+* **Media Viewer:** Full-screen photo and video playback.
+* **Responsive Design:** Optimized for desktop and mobile web via Vuetify.
 
 ## Prerequisites
 
-*   **Node.js**: Version `^20.19.0` or `>=22.12.0` (as required by the build engine).
-*   **[Ruurd Photos Backend](https://github.com/RuurdBijlsma/photos-backend)**: The frontend requires the API to be running.
+* **[Ruurd Photos Backend](https://github.com/RuurdBijlsma/photos-backend)**: The frontend requires the API to be
+  running.
+* Node
+* npm
 
 ## Installation
 
@@ -78,17 +81,21 @@ npm run proto:gen
 
 ### 4. Linting & Formatting
 
-*   **Lint:** `npm run lint`
-*   **Format:** `npm run lint:format`
+* **Lint:** `npm run lint`
+* **Format:** `npm run lint:format`
 
 ---
 
 ## Tech Stack
 
-*   **Framework:** Vue 3 (Composition API)
-*   **Build Tool:** Vite
-*   **UI Library:** Vuetify
-*   **State Management:** Pinia
-*   **Routing:** Vue Router
-*   **Language:** TypeScript
-*   **Data Serialization:** Protocol Buffers
+* **Framework:** Vue 3 (Composition API)
+* **Build Tool:** Vite
+* **UI Library:** Vuetify
+* **State Management:** Pinia
+* **Routing:** Vue Router
+* **Language:** TypeScript
+* **Data Serialization:** Protocol Buffers
+
+# Demo dataset
+
+https://unsplash.com/data/lite/latest

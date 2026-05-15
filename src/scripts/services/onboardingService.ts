@@ -62,18 +62,6 @@ const onboardingService = {
   },
 
   /**
-   * Downloads a full media file from the server as a Blob.
-   * @param relative_path The relative path of the media file to download.
-   * @returns A promise that resolves to the Axios response containing the file as a Blob.
-   */
-  getFullMediaFile(relative_path: string): Promise<AxiosResponse<Blob>> {
-    return apiClient.get<Blob>('/photos/download', {
-      params: { path: relative_path },
-      responseType: 'blob',
-    })
-  },
-
-  /**
    * Start processing photos and videos for the admin account.
    * @param data Data containing user folder
    * @returns Void axios promise.

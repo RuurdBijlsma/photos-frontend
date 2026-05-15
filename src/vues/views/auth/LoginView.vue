@@ -25,9 +25,10 @@ const rules = {
   min: (v: string) => v.length >= 6 || `Min 6 characters`,
 }
 
+const isDev = localStorage.isDev === 'true'
 const showPassword = ref(false)
-const email = ref('ruurd@example.com')
-const password = ref('kibbeling')
+const email = ref('')
+const password = ref('')
 const isSubmitted = ref(false)
 const errorMessage: Ref<string | undefined> = ref(undefined)
 const isLoading = ref(false)
@@ -62,6 +63,35 @@ async function login() {
         <div :class="{ rotating: isLoading }" class="big-image"></div>
       </div>
       <div class="right-pane">
+        <div class="dev-buttons mb-5" v-if="isDev">
+          <v-btn
+            variant="tonal"
+            rounded
+            color="primary"
+            @click="
+              () => {
+                email = 'ruurd@example.com'
+                password = 'kibbeling'
+                login()
+              }
+            "
+            >Login Ruurd</v-btn
+          >
+          <v-btn
+            variant="tonal"
+            class="ml-3"
+            rounded
+            color="primary"
+            @click="
+              () => {
+                email = 'other@example.com'
+                password = 'kibbeling'
+                login()
+              }
+            "
+            >Login OtherUser</v-btn
+          >
+        </div>
         <v-form class="login-form" @submit.prevent="login()" ref="form">
           <v-text-field
             class="text-input"

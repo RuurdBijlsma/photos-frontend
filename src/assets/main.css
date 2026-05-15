@@ -1,3 +1,5 @@
+@import url('vuetify/styles');
+
 :root {
   --font-size-big: 24px;
   --font-size-normal: 16px;
@@ -53,4 +55,19 @@ body {
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
   background-color: rgba(var(--v-theme-primary), 0.8);
+}
+
+.font-mono {
+  font-family: 'Roboto Mono', monospace;
+}
+
+.lower-opacity {
+  opacity: 0.7;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 5px 0;
 }

@@ -1,8 +1,16 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+interface Props {
+  fitToContent?: boolean
+}
+
+withDefaults(defineProps<Props>(), {
+  fitToContent: false,
+})
+</script>
 
 <template>
-  <div class="outer-container">
-    <div class="inner-container">
+  <div class="outer-container" :class="{ 'fit-content': fitToContent }">
+    <div class="inner-container" :class="{ 'fit-content': fitToContent }">
       <slot></slot>
     </div>
   </div>
@@ -27,6 +35,18 @@
   height: 100%;
 }
 
+.outer-container.fit-content {
+  flex: none;
+  height: fit-content;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  border-bottom-left-radius: 60px;
+  border-bottom-right-radius: 60px;
+  margin-bottom: 40px;
+}
+
 .v-theme--light .outer-container {
   backdrop-filter: brightness(150%) saturate(250%) blur(50px) contrast(100%) !important;
 }
@@ -45,6 +65,14 @@
 
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.inner-container.fit-content {
+  flex: none;
+  height: auto;
+  border-radius: 50px;
+  overflow-y: visible;
+  margin-bottom: 10px;
 }
 
 .inner-container::-webkit-scrollbar {

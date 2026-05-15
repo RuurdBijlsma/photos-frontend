@@ -1,20 +1,55 @@
 import type { Theme } from '@/scripts/types/themeColor.ts'
 
-export interface Location {
-  name: string | null
-  admin1: string | null
-  admin2: string | null
-  country_code: string
-  country_name: string
+export interface QualityScore {
+  exposure: number
+  contrast: number
+  sharpness: number
+  color_accuracy: number
+  composition: number
+  subject_clarity: number
+  visual_impact: number
+  creativity: number
+  color_harmony: number
+  storytelling: number
+  style_suitability: number
+  weighted_score: number
+  measured_blurriness: number
+  measured_noisiness: number
+  measured_exposure: number
+  measured_weighted_score: number
 }
 
-export interface OcrBox {
-  text: string
-  position_x: number
-  position_y: number
-  width: number
-  height: number
-  confidence: number
+export interface ClassificationData {
+  caption: string
+  main_subject: string
+  setting: string
+  search_term: string
+  contains_pets: boolean
+  contains_vehicle: boolean
+  contains_landmarks: boolean
+  contains_people: boolean
+  contains_animals: boolean
+  contains_text: boolean
+  is_indoor: boolean
+  is_food: boolean
+  is_drink: boolean
+  is_event: boolean
+  is_document: boolean
+  is_landscape: boolean
+  is_cityscape: boolean
+  is_activity: boolean
+  ocr_text?: string
+  animal_type?: string
+  food_name?: string
+  drink_name?: string
+  vehicle_type?: string
+  event_type?: string
+  landmark_name?: string
+  document_type?: string
+  people_count?: number
+  people_mood?: string
+  photo_type?: string
+  activity_description?: string
 }
 
 export interface Face {
@@ -25,177 +60,126 @@ export interface Face {
   confidence: number
   age: number
   sex: string
-  mouth_left_x: number
-  mouth_left_y: number
-  mouth_right_x: number
-  mouth_right_y: number
-  nose_tip_x: number
-  nose_tip_y: number
-  eye_left_x: number
-  eye_left_y: number
-  eye_right_x: number
-  eye_right_y: number
-}
-
-export interface DetectedObject {
-  position_x: number
-  position_y: number
-  width: number
-  height: number
-  confidence: number
-  label: string
-}
-
-export interface QualityData {
-  blurriness: number
-  noisiness: number
-  exposure: number
-  quality_score: number
 }
 
 export interface ColorData {
   themes: Theme[]
-  prominent_colors: string[] | null
+  prominent_colors?: string[]
   average_hue: number
   average_saturation: number
   average_lightness: number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  histogram: { [key: string]: any } | null
-}
-
-export interface CaptionData {
-  default_caption: string | null
-  main_subject: string | null
-  contains_pets: boolean
-  contains_vehicle: boolean
-  contains_landmarks: boolean
-  contains_people: boolean
-  contains_animals: boolean
-  is_indoor: boolean
-  is_food_or_drink: boolean
-  is_event: boolean
-  is_document: boolean
-  is_landscape: boolean
-  is_cityscape: boolean
-  is_activity: boolean
-  setting: string | null
-  pet_type: string | null
-  animal_type: string | null
-  food_or_drink_type: string | null
-  vehicle_type: string | null
-  event_type: string | null
-  landmark_name: string | null
-  document_type: string | null
-  people_count: number | null
-  people_mood: string | null
-  photo_type: string | null
-  activity_description: string | null
-}
-
-export interface TimeDetails {
-  timezone_name: string | null
-  timezone_offset_seconds: number | null
-  source: string | null
-  source_details: string | null
-  source_confidence: string | null
-}
-
-export interface Weather {
-  temperature: number | null
-  dew_point: number | null
-  relative_humidity: number | null
-  precipitation: number | null
-  snow: number | null
-  wind_direction: number | null
-  wind_speed: number | null
-  peak_wind_gust: number | null
-  pressure: number | null
-  sunshine_minutes: number | null
-  condition: string | null
-  sunrise: string | null
-  sunset: string | null
-  dawn: string | null
-  dusk: string | null
-  is_daytime: boolean | null
-}
-
-export interface Details {
-  mime_type: string
-  size_bytes: number
-  is_motion_photo: boolean
-  motion_photo_presentation_timestamp: number | null
-  is_hdr: boolean
-  is_burst: boolean
-  burst_id: string | null
-  capture_fps: number | null
-  video_fps: number | null
-  is_nightsight: boolean
-  is_timelapse: boolean
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  exif: { [key: string]: any }
-}
-
-export interface CaptureDetails {
-  iso: number | null
-  exposure_time: number | null
-  aperture: number | null
-  focal_length: number | null
-  camera_make: string | null
-  camera_model: string | null
-}
-
-export interface Panorama {
-  is_photosphere: boolean
-  projection_type: string | null
-  horizontal_fov_deg: number | null
-  vertical_fov_deg: number | null
-  center_yaw_deg: number | null
-  center_pitch_deg: number | null
-}
-
-export interface OcrData {
-  has_legible_text: boolean
-  ocr_text: string | null
-  boxes: OcrBox[]
+  histogram?: { [key: string]: any }
 }
 
 export interface VisualAnalysis {
   created_at: string
-  ocr_data: OcrData[]
   faces: Face[]
-  detected_objects: DetectedObject[]
-  quality: QualityData | null
-  colors: ColorData | null
-  caption: CaptionData | null
+  colors?: ColorData
+  quality?: QualityScore
+  classification?: ClassificationData
+}
+
+export interface TimeDetails {
+  timezone_source?: string
+  source_details: string
+  source_confidence: string
+}
+
+export interface MediaFeatures {
+  mime_type: string
+  size_bytes: number
+  is_motion_photo: boolean
+  motion_photo_presentation_timestamp?: number
+  is_hdr: boolean
+  is_burst: boolean
+  burst_id?: string
+  capture_fps?: number
+  video_fps?: number
+  is_nightsight: boolean
+  is_timelapse: boolean
+  exif: { [key: string]: unknown }
+}
+
+export interface CameraSettings {
+  iso?: number
+  exposure_time?: number
+  aperture?: number
+  focal_length?: number
+  camera_make?: string
+  camera_model?: string
+}
+
+export interface Panorama {
+  is_photosphere: boolean
+  projection_type?: string
+  horizontal_fov_deg?: number
+  vertical_fov_deg?: number
+  center_yaw_deg?: number
+  center_pitch_deg?: number
+}
+
+export interface Location {
+  name: string | null
+  admin1: string | null
+  admin2: string | null
+  country_code: string
+  country_name: string
 }
 
 export interface Gps {
   latitude: number
   longitude: number
-  altitude: number | null
-  image_direction: number | null
-  location: Location | null
+  altitude?: number
+  image_direction?: number
+  location?: Location
+}
+
+export interface Weather {
+  temperature?: number
+  dew_point?: number
+  relative_humidity?: number
+  precipitation?: number
+  snow?: number
+  wind_direction?: number
+  wind_speed?: number
+  peak_wind_gust?: number
+  pressure?: number
+  sunshine_minutes?: number
+  condition?: string
+  sunrise?: string
+  sunset?: string
+  dawn?: string
+  dusk?: string
+  is_daytime?: boolean
 }
 
 export interface FullMediaItem {
   id: string
+  user_id: number
   hash: string
+  filename: string
   relative_path: string
   created_at: string
   updated_at: string
   width: number
   height: number
   is_video: boolean
-  duration_ms: number | null
+  duration_ms?: number
   taken_at_local: string
-  taken_at_utc: string | null
+  taken_at_utc?: string
+  og_taken_at_local: string
+  timezone_name?: string
+  timezone_offset_seconds?: number
+  og_timezone_offset_seconds?: number
   use_panorama_viewer: boolean
   has_thumbnails: boolean
   visual_analyses: VisualAnalysis[]
-  gps: Gps | null
-  time_details: TimeDetails | null
-  weather: Weather | null
-  details: Details | null
-  capture_details: CaptureDetails | null
-  panorama: Panorama | null
+  gps?: Gps
+  time: TimeDetails
+  weather?: Weather
+  media_features: MediaFeatures
+  camera_settings: CameraSettings
+  panorama: Panorama
+  user_caption?: string
 }

@@ -1,17 +1,42 @@
 <script setup lang="ts">
 import AddToAlbumButton from '@/vues/components/timeline/timeline-components/AddToAlbumButton.vue'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import type { TimelineContext } from '@/scripts/types/timeline/layout.ts'
+import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
+import { useProfileStore } from '@/scripts/stores/profileStore.ts'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 withDefaults(
   defineProps<{
     excludeAlbumIds?: string[]
+    context?: TimelineContext
   }>(),
   {
     excludeAlbumIds: () => [],
+    context: () => ({}),
   },
 )
 
+const profileStore = useProfileStore()
 const selectionStore = useSelectionStore()
+const albumStore = useAlbumStore()
+const authStore = useAuthStore()
+
+async function setProfilePic() {
+  if (selectionStore.selection.size !== 1) return
+  const mediaItemId = [...selectionStore.selection][0]
+  await profileStore.setProfilePic(mediaItemId)
+}
+
+async function setAlbumCover(albumId: string) {
+  if (selectionStore.selection.size !== 1) return
+  const mediaItemId = [...selectionStore.selection][0]
+  await albumStore.updateAlbumDetails(albumId, { thumbnailId: mediaItemId })
+  requestIdleCallback(() => {
+    albumStore.fetchAlbumMedia(albumId, false)
+    albumStore.fetchUserAlbums()
+  })
+}
 </script>
 
 <template>
@@ -46,12 +71,34 @@ const selectionStore = useSelectionStore()
         density="compact"
         v-tooltip:top="'Move to bin'"
       />
-      <v-btn
-        icon="mdi-dots-horizontal"
-        variant="plain"
-        density="compact"
-        v-tooltip:top="'More options'"
-      />
+
+      <v-menu>
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon="mdi-dots-horizontal" variant="plain" density="compact" />
+        </template>
+        <v-list density="compact">
+          <v-list-item v-if="selectionStore.selection.size === 1" @click="setProfilePic">
+            <v-list-item-title>Set as profile picture</v-list-item-title>
+          </v-list-item>
+          <template v-if="context && context.album">
+            <v-divider />
+            <v-list-subheader>Album</v-list-subheader>
+            <v-list-item
+              @click="albumStore.removeFromAlbum(context.album.id, [...selectionStore.selection])"
+            >
+              <v-list-item-title>Remove from album</v-list-item-title>
+            </v-list-item>
+            <v-list-item
+              v-if="
+                selectionStore.selection.size === 1 && context.album.ownerId === authStore.user?.id
+              "
+              @click="setAlbumCover(context.album.id)"
+            >
+              <v-list-item-title>Set as album cover</v-list-item-title>
+            </v-list-item>
+          </template>
+        </v-list>
+      </v-menu>
     </div>
   </v-slide-y-reverse-transition>
 </template>

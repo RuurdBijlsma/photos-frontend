@@ -85,15 +85,81 @@
 * ✅ als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.
 * ✅ als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is
   nu stuk, en mogelijk conflict met scrollSession, misschien kan ik de view photo date en scroll session unifyen?)
+* ✅ albums in search suggestions includen
+* ✅ if you focus the searchbar and nothing is typed, show historic searches
+* ✅ dont smooth scroll when returning from /view photo when the item it should scroll to is still fully in browser view.
+* ✅ [BUG] after login, photo grid isnt loaded
+* ✅ make loading indicator for search
+* ✅ if you reload with ?query=asdf, make sure the search-bar is filled with that query on load.
+* ✅ show more results on search page
+* ✅ make proper search page
+* ✅ search suggestions while typing (llm data required)
+* ✅ show `Search "Greece"` in de search bar as placeholder
+* ✅ filters kan wel een v-menu zijn met de filters UI erin
+* ✅ search: is text field is empty, make sure null is sent
+* ✅ search: filterDateRange moet obj zijn, niet een array of 2 items
+* ✅ search: hij execute search 2x
+* ✅ search: haal epilepsie aanval weg als je filter aanpast (misschien pas loading laten zien als t langer dan 500ms
+  duurt, of als er 0 results zijn en loading true is.
+* ✅ search: alleen month dots in date slider waar de months ook bestaan in de backend (pas backend aan)
+* ✅ search: if startdate is earliest point, send null, if enddate is latest point, send null
+* ✅ more interesting filters to search page (advanced search collapsable section)
+    * ✅ face? maybe for later
+    * ✅ location? country? could be autofilling select input thing
+    * ✅ negative query?
+* ✅ make search sortable by relevancy or date
+* ✅ stomme nav bar start te hoog en animeert naar beneden on page load
+* ✅ search: filters in url query zetten
+* ✅ search: filter v-menu kan wel blurry bg krijgen, is leuk
+* ✅ search: clean up UI for date range. If last date range is selected, show something like "Showing items
+  from March 2019 until present", if start date range is set to first available month, then show: "Showing items until
+  March 2019 or something", where march 2019 is the end filter in this case.
+* ✅ add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if
+  all
+  the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
+* ✅ misschien filter chips in de search pagina, rechts van Search for "photo", dan -> (Date: Jan 2018 - Dec 2026") (
+  Photos) (Berber) (Albania, Greece or Morocco (of met vlaggetjes+tooltip?)), (Exclude: "orange")
+* ✅ vuetify naar 4.0 geupdate:
+    * ✅ Search for "kotor" <- die balk heeft random meer padding en is nu te hoog
+    * ✅ De v-menu v-card van de filters op searchview heeft geen min width meer lijkt het
+    * ✅ ik denk ook de verticale padding op de /albums page
+    * ✅ teveel padding op month dividers in frontpage timeline
+    * ✅ top balk in /view/{id} is lelijk geworden in t midden
+    * ✅ album page meta info is niet meer goed, ook ergens teveel verticale padding
+    * ✅ als je date range selecteerd shift de layout
+    * ✅ migration guide: https://vuetifyjs.com/en/getting-started/upgrade-guide/#multi-step-migration
+    * ✅ vergelijk met vuetify 3 zodat ik niet mooie ui kwijt raak
+* ✅ max-width op album thumbnail zetten ofzo, anders verpest panorama t. Misschien max ratio op 16/9 zetten?
+* ✅ als je helemaal bovenin de timeline op homepage bent, en gaat dan naar andere page, en komt dan terug, dan scrollt
+  ie
+  naar de 1e foto, en verdwijnt de "January" header text omdat ie er voorbij scrollt stiekem
+* ✅ [BUG] kruisje linksboven op viewphoto is stuk op album page
+* ✅ foto openen lijkt langzamer dan eerst. het is nu klik -> zwart scherm -> image laad
+* ✅ als je op de date overlay klikt moet er een kalender komen om naar een exacte date te scrollen bijv 7 juni 2022
+* ✅ misschien image thumbnail loading fallback naar on-demand abstracten? Zodat het overal werkt. Nu zie je soms geen
+  img als de avif er nog niet is
+* ✅ add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
+* ✅ als een album geen thumbnail heeft ziet t er niet uit op /albums (oh dat komt omdat ie nog niet ingested is, en niet
+  ondemand gebruikt denk ik)
+* ✅ album page: add sort (also sort by added on date)
+* ✅ "Are you sure knop" bij "select all" en "deselect all" als je selectie meer dan X fotos is
+* ✅ album
+    * ✅ remove photo from album
+    * ✅ set photo as album cover
+    * ✅ delete entire album (on /albums and on /album/{id})
+* ✅ [BUG] view big picture when selecting is wrong (wrong BG?)
+* ✅ make indication that album is shared on /albums page
+* ✅ avatar doesnt work on album page
+* ✅ when not album owner, you get options for removing item from album & set as album cover, should this be shown? If so
+  change backend authorization for this.
+* ✅ on s2s album import, make sure description is set to None, and pick an album thumbnail
+* ✅ show something for albums without thumbnail in the /albums page
+* ✅ [bug]: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
+  out of sync (ratios & photos).
 * on login redirect to where you were
-* standardize font sizes everywhere
 * improve messaging when you load the website and the server is off
 * make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
   music
-* [bug]: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
-  out of sync (ratios & photos).
-* make api.ts abstraction for protobuf endpoints.
-* bad performance on firefox
 * make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
 * view-option (like gmail), split view: if you single click a photo it opens in a right half of the window pane. Only
   works with enough screen width (desktop).
@@ -108,26 +174,24 @@
 * setting: usebackdropblur doesnt apply everywhere.
 * preload 1440p thumbnail on grid item hover
 * re-establish ws connection if auth failed and it's refreshed automatically afterwards
-* stomme nav bar start te hoog en animeert naar beneden on page load
 * add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
 * ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
 * idea to fix desync timeline bug:
     * bug: timeline ids/ratios/by month might by out of sync because theyre separate requests
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
-    * it doesnt prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* add snackbar when on-demand thumbnails are used, that it's slowe because the thumbnails havent been processed yet.
-* album page: add sort (also sort by added on date)
-* make proper search page
-* ✅ dont smooth scroll when returning from /view photo when the item it should scroll to is still fully in browser view.
-* ✅ [BUG] after login, photo grid isnt loaded
-* ✅ make loading indicator for search
-* ✅ if you reload with ?query=asdf, make sure the search-bar is filled with that query on load.
-* show more results on search page
-* search suggestions while typing (llm data required)
-* make search sortable by relevancy or date
-* add date range filter on search page (jan 2016 - now) (2 sided slider with min/max being first/last photo date, if all the way to the end, it should show "Until Jan 2023" or "From Dec 2018", otherwise "Jun 2019 - Dec 2021")
-* more interesting filters to search page (advanced search collapsable section)
-  * face? maybe for later
-  * location? country? could be autofilling select input thing
-  * negative query?
+    * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
+* ✅ niet "People" tab laten zien als je nog geen faces hebt
+* ✅ render empty album UI better
+* ✅ if timezone offset seconds is different from og_timezone_offset_seconds, then don't display timezone_name anywhere in UI, since it's no longer valid. Isntead just show the offset (with the make offset string function)
+* ✅ make sure the frontend sends the datetime like "2023-05-15T10:00:00"
+* [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
+* Als je full screen foto bekijkt, manier maken om de top balk te hiden (als je muis niet beweegt ofzo)
+* filters on front page (small ui button)
+    * similar to search page but not so random, and shows all results
+    * face filter
+    * location filter
+    * video/photo type filter
+* eigen theme per photo is te chaotisch
+* misschien wil ik wel light theme in de foto viewer!
+* [BUG] 1e load nadat je recreate_db doet, dan laad de grid niet nadat je inlogt!

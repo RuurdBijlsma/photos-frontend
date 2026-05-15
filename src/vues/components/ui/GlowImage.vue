@@ -4,6 +4,7 @@ withDefaults(
     src: string
     height?: number
     width?: number
+    maxWidth?: number
     borderRadius?: string
     strength?: number
   }>(),
@@ -20,13 +21,25 @@ const emit = defineEmits(['error'])
     <img
       :height="height"
       :width="width"
+      :style="{
+        maxWidth: maxWidth === undefined ? undefined : maxWidth + 'px',
+      }"
       @error="(e) => emit('error', e)"
       aria-hidden="true"
       alt="Album thumbnail"
       class="image-bg"
       :src="src"
     />
-    <img :height="height" :width="width" alt="Album thumbnail" class="image-first" :src="src" />
+    <img
+      :height="height"
+      :width="width"
+      :style="{
+        maxWidth: maxWidth === undefined ? undefined : maxWidth + 'px',
+      }"
+      alt="Album thumbnail"
+      class="image-first"
+      :src="src"
+    />
   </div>
 </template>
 

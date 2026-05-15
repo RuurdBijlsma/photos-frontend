@@ -9,14 +9,18 @@ export interface Tokens {
 }
 
 // Maps to the User schema
-export interface User {
+export interface BaseUser {
   id: number
   createdAt: string // ISO date string
   updatedAt: string // ISO date string
-  email: string
   name: string
   role: UserRole
-  mediaFolder?: string | null
+  mediaFolder: string | null
+  avatarId: string | null
+}
+
+export interface User extends BaseUser {
+  email: string
 }
 
 // Maps to request body schemas for type safety in our service calls
@@ -29,8 +33,15 @@ export interface CreateUser {
   email: string
   name: string
   password: string
+  token?: string
 }
 
 export interface RefreshTokenPayload {
   refreshToken: string
+}
+
+export interface UserInvite {
+  token: string
+  expires_at: Date
+  created_at: Date
 }

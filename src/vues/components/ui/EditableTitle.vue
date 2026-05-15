@@ -68,7 +68,7 @@ onMounted(() => {
   font-weight: 500;
   font-size: 50px;
   line-height: 1.2;
-  color: inherit;
+  color: rgb(var(--v-theme-on-background));
   width: 100%;
   display: block;
   padding: 5px 15px;

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
-import type { TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
+import type { TimelineItem, TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { getThumbnailHeight, requestIdleCallbackAsync } from '@/scripts/utils.ts'
 import type { LayoutRow, LayoutRowItem } from '@/scripts/types/timeline/layout.ts'
@@ -12,16 +12,19 @@ import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import VirtualRow from '@/vues/components/timeline/main-timeline/VirtualRow.vue'
 import SelectionOverlay from '@/vues/components/timeline/timeline-components/SelectionOverlay.vue'
 import DateOverlay from '@/vues/components/timeline/timeline-components/DateOverlay.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import timelineService from '@/scripts/services/timelineService.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
+import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
+const snackbarStore = useSnackbarsStore()
 const route = useRoute()
+const router = useRouter()
 
-const IDEAL_ROW_HEIGHT = 240
+const IDEAL_ROW_HEIGHT = 320
 const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 2
 const ROW_HEADER_HEIGHT = 76
@@ -93,6 +96,22 @@ const formattedTooltipLabel = computed(() => {
 })
 const showScrollDetails = ref(false)
 const isScrollingFast = ref(false)
+const isEmpty = computed(() => timelineStore.monthRatios.length === 0)
+const showEmptyState = ref(false)
+let emptyTimer: number | null = null
+watch(
+  isEmpty,
+  (empty) => {
+    if (emptyTimer) clearTimeout(emptyTimer)
+    if (empty) {
+      emptyTimer = window.setTimeout(() => (showEmptyState.value = true), 250)
+    } else {
+      showEmptyState.value = false
+    }
+  },
+  { immediate: true },
+)
+const isOnboarding = computed(() => route.query.onboarding === 'true')
 const visibleYearLabels = computed(() => {
   const years = scrollLabels.value.years
   const YEAR_LABEL_HEIGHT = 20
@@ -338,10 +357,34 @@ async function preLoadAllMonths(
         console.log('Fetched all media by month', timelineStore.monthItems.keys())
         allMonthsPreloaded = true
         selectionStore.allIds = timelineStore.mediaItemIds
+        if (!notifiedAboutThumbnails) requestIdleCallback(notifySlowThumbnails)
       }
       break
     }
   }
+}
+
+let notifiedAboutThumbnails = false
+function notifySlowThumbnails() {
+  notifiedAboutThumbnails = true
+  let unloadedCount = 0
+  for (const [, groupItems] of timelineStore.monthItems) {
+    for (const item of groupItems) {
+      if (!item.hasThumbnails) {
+        unloadedCount++
+      }
+    }
+  }
+  if (unloadedCount > 0 && !timelineStore.thumbnailSnackSent) {
+    timelineStore.thumbnailSnackSent = true
+    snackbarStore.enqueue({
+      message: `Your photos are still being prepared. Browsing may be slower and thumbnails may load gradually until processing is complete. [${unloadedCount} remaining]`,
+      color: 'white',
+      icon: 'mdi-information',
+      timeout: -1,
+    })
+  }
+  console.log('All AVIF thumbnails are available')
 }
 
 function abortMonthPreload() {
@@ -417,10 +460,15 @@ function findRowIndexByMediaId(mediaId: string): number {
   return -1
 }
 
-function offsetScrollToMediaId(index: number, behavior: 'auto' | 'smooth' = 'auto') {
-  const offsetTop = gridLayout.value[index]?.offsetTop
-  if (offsetTop && scrollContainerEl.value) {
-    scrollContainerEl.value.scrollTo({ top: offsetTop, behavior: behavior })
+function offsetScrollToMediaId(
+  index: number,
+  behavior: 'auto' | 'smooth' = 'auto',
+  offset?: number,
+) {
+  let offsetTop = gridLayout.value[index]?.offsetTop
+  if (offsetTop !== undefined && scrollContainerEl.value) {
+    if (offsetTop < 100) offsetTop = 0
+    scrollContainerEl.value.scrollTo({ top: offsetTop + (offset ?? 0), behavior: behavior })
   }
 }
 
@@ -428,6 +476,7 @@ interface ScrollOptions {
   type: 'offset' | 'virtual'
   behavior: 'auto' | 'smooth'
   align: 'start' | 'center' | 'end' | 'auto'
+  offset?: number
 }
 
 function scrollToMediaId(
@@ -447,6 +496,77 @@ function scrollToMediaId(
     }
   }
 }
+
+function findNearestMediaItem(date: Date) {
+  const targetTime = date.getTime()
+  let bestItem: TimelineItem | null = null
+  let minDiff = Infinity
+
+  for (const item of timelineStore.mediaItems) {
+    const itemTime = new Date(item.timestamp).getTime()
+    const diff = Math.abs(itemTime - targetTime)
+    if (diff < minDiff) {
+      minDiff = diff
+      bestItem = item
+    }
+  }
+  return bestItem ? { item: bestItem, diff: minDiff } : null
+}
+
+function scrollToDate(date: Date) {
+  const year = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  const targetDayStr = `${year}-${month}-${day}`
+  const targetYearMonth = `${year}-${month}`
+
+  // Try to find the first item on that specific day
+  const firstOnDay = timelineStore.mediaItems.find((item) =>
+    item.timestamp.startsWith(targetDayStr),
+  )
+
+  if (firstOnDay) {
+    scrollToMediaId(firstOnDay.id, { type: 'offset', align: 'start', behavior: 'smooth' })
+  } else {
+    const nearest = findNearestMediaItem(date)
+    const monthIndex = gridLayout.value.findIndex((row) => row.monthId.startsWith(targetYearMonth))
+
+    // If the closest item we have is in the same month, or we don't even have that month in the grid
+    if (nearest && (nearest.item.timestamp.startsWith(targetYearMonth) || monthIndex === -1)) {
+      scrollToMediaId(nearest.item.id, { type: 'offset', align: 'start', behavior: 'smooth' })
+    } else if (monthIndex !== -1) {
+      offsetScrollToMediaId(monthIndex, 'smooth')
+    }
+  }
+}
+
+async function refreshItems() {
+  abortMonthPreload()
+  allMonthsPreloaded = false
+  // Fetch fresh ratios and view-photo ids in parallel.
+  await Promise.all([timelineStore.fetchMonthRatios(), fetchViewPhotoIds()])
+  const monthsToFetch = timelineStore.monthRatios.map((r) => r.monthId)
+  await timelineStore.fetchMediaByMonth(monthsToFetch, false)
+}
+
+let refreshInterval: number | null = null
+function clearRefreshPoll() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+    refreshInterval = null
+  }
+}
+
+function startRefreshPoll() {
+  clearRefreshPoll()
+  refreshInterval = setInterval(() => {
+    refreshItems()
+  }, 10000)
+}
+
+onBeforeUnmount(() => {
+  clearRefreshPoll()
+})
 
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
@@ -494,6 +614,49 @@ function lockResize() {
   resizeRafId = requestAnimationFrame(lockResize)
 }
 
+function onDatePick(date: Date | null) {
+  if (date) scrollToDate(date)
+}
+
+let stopRefreshTimeout: null | number = null
+onBeforeUnmount(() => {
+  if (stopRefreshTimeout !== null) clearTimeout(stopRefreshTimeout)
+})
+
+watch(
+  () => route.query.onboarding,
+  (onboarding) => {
+    if (onboarding === 'true') {
+      startRefreshPoll()
+    } else {
+      clearRefreshPoll()
+    }
+  },
+  { immediate: true },
+)
+
+let lastRatiosCount = 0
+watch(
+  () => timelineStore.monthRatios,
+  () => {
+    const importing = route.query.importing === 'true'
+    if (!importing) return
+    // When items count hasn't changed for 5 seconds, while not being 0 -> stop refreshing after 5 minutes
+    if (
+      timelineStore.monthRatios.length !== 0 &&
+      timelineStore.monthRatios.length === lastRatiosCount
+    ) {
+      stopRefreshTimeout = setTimeout(
+        () => {
+          router.replace({ query: {} })
+        },
+        1000 * 60 * 5,
+      )
+    }
+    lastRatiosCount = timelineStore.monthRatios.length
+  },
+)
+
 watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize]) => {
   const now = performance.now()
   const { rows, scrollYears, scrollMonths, totalHeight } = calculateLayout(
@@ -523,10 +686,14 @@ watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize
     resetResizeAnchorDb()
   } else {
     if (timelineStore.mediaIdInView) {
-      console.warn('TIMELINE STORE HAS MEDIA_ITEM_IN_VIEW', timelineStore.mediaIdInView)
+      console.info('Restoring scroll position to media item:', timelineStore.mediaIdInView)
       const mediaItemInViewId = timelineStore.mediaIdInView
       nextTick(() => {
-        scrollToMediaId(mediaItemInViewId, { type: 'offset', align: 'start', behavior: 'auto' })
+        scrollToMediaId(mediaItemInViewId, {
+          type: 'offset',
+          align: 'start',
+          behavior: 'auto',
+        })
       })
     }
   }
@@ -603,11 +770,34 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
   <div class="timeline-container">
     <main-layout-container>
       <selection-overlay />
-      <date-overlay :date="overlayDate" />
+      <date-overlay :date="overlayDate" @date-picked="onDatePick" />
       <teleport to="body">
         <router-view />
       </teleport>
-      <div class="scroll-container" ref="scrollContainer" @scroll.passive="onScroll">
+
+      <!-- Empty state -->
+      <v-scale-transition>
+        <div v-if="showEmptyState" class="empty-state">
+          <template v-if="isOnboarding">
+            <v-icon color="surface-variant" size="200" icon="mdi-image-sync-outline" />
+            <h2 class="empty-title">Loading your photos&hellip;</h2>
+            <p class="empty-subtitle">Your library is being built. This may take a moment...</p>
+            <v-progress-circular indeterminate color="primary" size="50" class="mt-5" />
+          </template>
+          <template v-else>
+            <v-icon color="surface-variant" size="200" icon="mdi-image-off-outline" />
+            <h2 class="empty-title">No photos yet</h2>
+            <p class="empty-subtitle">Once you add photos to your library they'll appear here.</p>
+          </template>
+        </div>
+      </v-scale-transition>
+
+      <div
+        class="scroll-container"
+        ref="scrollContainer"
+        @scroll.passive="onScroll"
+        v-show="!isEmpty"
+      >
         <div
           :style="{
             height: `${rowVirtualizer.getTotalSize()}px`,
@@ -645,6 +835,7 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
       @mousedown="handleMouseDown"
       @mousemove="handleTooltipMove"
       @mouseleave="tooltipDate = null"
+      v-if="scrollHeight > containerSize.height"
     >
       <div class="scroll-track"></div>
       <div
@@ -870,5 +1061,36 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
   height: 4px;
   border-radius: 50%;
   background-color: rgba(var(--v-theme-secondary), 0.2);
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: rgba(var(--v-theme-on-surface), 0.9);
+  letter-spacing: -0.01em;
+}
+
+.empty-subtitle {
+  margin: 0;
+  font-size: 0.92rem;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  max-width: 340px;
+  line-height: 1.55;
 }
 </style>
