@@ -58,7 +58,8 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function refreshTokens(): Promise<Tokens> {
     if (!refreshToken.value) {
-      await logout()
+      console.warn('[no refresh token available] call logout()')
+      await logout(false)
       throw new Error('No refresh token available.')
     }
     try {
@@ -75,6 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
       return response.data
     } catch (error) {
       // If refresh fails, log the user out completely
+      console.warn('[refresh errored] call logout()', error)
       await logout()
       throw error
     }
@@ -157,6 +159,7 @@ export const useAuthStore = defineStore('auth', () => {
         (record) => record.meta.requiresAuth,
       )
       if (requiresAuth) {
+        console.warn('[logout function] redirect to /login')
         await router.push({ name: 'login' })
       }
     }

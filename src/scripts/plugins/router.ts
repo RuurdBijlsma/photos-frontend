@@ -66,6 +66,7 @@ const router = createRouter({
         {
           path: 'album/:albumId',
           name: 'album-view',
+          meta: { requiresAuth: false },
           component: () => import('@/vues/views/library/AlbumView.vue'),
           children: [
             {
@@ -140,6 +141,7 @@ export function registerNavigationGuard() {
         console.error('Session restore failed:', error)
         await authStore.logout()
         // No need to proceed further, just go to login.
+        console.warn('[router -> 1] redirect to /login')
         return { name: 'login' }
       }
     } else if (authStore.accessToken && authStore.user && !userRefreshed) {
@@ -176,7 +178,12 @@ export function registerNavigationGuard() {
         return true
       } else {
         snackbarsStore.error("You don't have permission to access this page.")
-        return isAuthenticated ? { name: 'timeline' } : { name: 'login' }
+        if (isAuthenticated) {
+          return { name: 'timeline' }
+        } else {
+          console.warn('[router -> 2] redirect to /login')
+          return { name: 'login' }
+        }
       }
     }
 
@@ -185,6 +192,7 @@ export function registerNavigationGuard() {
       if (isAuthenticated) {
         return true
       } else {
+        console.warn('[router meta requires auth] redirect to /login')
         return { name: 'login' }
       }
     }
