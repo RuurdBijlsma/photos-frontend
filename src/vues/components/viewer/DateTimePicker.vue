@@ -24,7 +24,7 @@ function onDateInput(newDate: unknown) {
 /**
  * Merge new Time (HMS) into the current modelValue (preserving Date)
  */
-function onTimeInput(timeString: string) {
+function onTimeInput(timeString: string | null) {
   if (!timeString) return
   const [hours, minutes, seconds] = timeString.split(':').map(Number)
   const updated = new Date(props.modelValue)

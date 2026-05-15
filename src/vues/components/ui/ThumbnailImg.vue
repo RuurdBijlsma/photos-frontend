@@ -21,7 +21,11 @@ const useOnDemandThumb = ref(new Map<string | null, boolean>())
     :width="width"
     :cover="cover"
     :src="
-      mediaItemService.getPhotoThumbnail(mediaItemId, height??480, useOnDemandThumb.get(mediaItemId))
+      mediaItemService.getPhotoThumbnail(
+        mediaItemId,
+        height ?? 480,
+        useOnDemandThumb.get(mediaItemId),
+      )
     "
     @error="useOnDemandThumb.set(mediaItemId, true)"
   />

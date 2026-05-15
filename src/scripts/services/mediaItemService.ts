@@ -7,7 +7,7 @@ import type { Album } from '@/scripts/types/api/album.ts'
 import type { UpdateMediaItemRequest } from '@/scripts/types/api/mediaItem.ts'
 
 const mediaItemService = {
-  update(id: string, payload: UpdateMediaItemRequest){
+  update(id: string, payload: UpdateMediaItemRequest) {
     return apiClient.put<Album>(`/photos/${id}/item`, payload)
   },
 
