@@ -4,7 +4,6 @@ import {
   useRouter,
   onBeforeRouteLeave,
   onBeforeRouteUpdate,
-  type NavigationGuardNext,
 } from 'vue-router'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
@@ -218,7 +217,7 @@ async function fetchSortedPreview(mode: AlbumSort) {
   simpleTimeline.value?.setOrder(localItems.value)
 }
 
-async function confirmRouteLeave(next: NavigationGuardNext) {
+async function confirmRouteLeave() {
   if (isManualOrderMode.value) {
     const confirmed = await dialogs.confirm({
       title: 'Leave reorder mode?',
@@ -228,12 +227,12 @@ async function confirmRouteLeave(next: NavigationGuardNext) {
     })
     if (confirmed) {
       isManualOrderMode.value = false
-      next()
+      return true
     } else {
-      next(false)
+      return false
     }
   } else {
-    next()
+    return true
   }
 }
 
@@ -327,8 +326,8 @@ function startImportPoll() {
   }, 5000)
 }
 
-onBeforeRouteLeave(async (to, from, next) => confirmRouteLeave(next))
-onBeforeRouteUpdate(async (to, from, next) => confirmRouteLeave(next))
+onBeforeRouteLeave(confirmRouteLeave)
+onBeforeRouteUpdate(confirmRouteLeave)
 
 onBeforeUnmount(() => {
   clearImportPoll()

@@ -127,7 +127,7 @@ let onAuthHandled = false
 export function registerNavigationGuard() {
   const snackbarsStore = useSnackbarsStore()
 
-  router.beforeEach(async (to, from, next) => {
+  router.beforeEach(async (to) => {
     const authStore = useAuthStore()
 
     // --- Authentication Initialization ---
@@ -140,7 +140,7 @@ export function registerNavigationGuard() {
         console.error('Session restore failed:', error)
         await authStore.logout()
         // No need to proceed further, just go to login.
-        return next({ name: 'login' })
+        return { name: 'login' }
       }
     } else if (authStore.accessToken && authStore.user && !userRefreshed) {
       userRefreshed = true
@@ -163,38 +163,38 @@ export function registerNavigationGuard() {
       isAdmin && (authStore.user?.mediaFolder === null || authStore.user?.mediaFolder === undefined)
     console.log({ needsOnboarding, isAdmin, mf: authStore.user?.mediaFolder })
     if (needsOnboarding && to.name !== 'onboarding') {
-      return next({ name: 'onboarding' })
+      return { name: 'onboarding' }
     }
     // If onboarding is needed, and we are already going to the onboarding page, allow it.
     if (needsOnboarding && to.name === 'onboarding') {
-      return next()
+      return true
     }
 
     // --- Admin Route Logic ---
     if (to.meta.requiresAdmin) {
       if (isAuthenticated && isAdmin) {
-        return next()
+        return true
       } else {
         snackbarsStore.error("You don't have permission to access this page.")
-        return next(isAuthenticated ? { name: 'timeline' } : { name: 'login' })
+        return isAuthenticated ? { name: 'timeline' } : { name: 'login' }
       }
     }
 
     // --- Authenticated Route Logic ---
     if (to.meta.requiresAuth) {
       if (isAuthenticated) {
-        return next()
+        return true
       } else {
-        return next({ name: 'login' })
+        return { name: 'login' }
       }
     }
 
     // --- Guest Route Logic (for pages like Login and Register) ---
     if (to.meta.guest) {
       if (isAuthenticated) {
-        return next({ name: 'timeline' })
+        return { name: 'timeline' }
       } else {
-        return next()
+        return true
       }
     }
 
@@ -205,7 +205,7 @@ export function registerNavigationGuard() {
     }
 
     // --- Fallback for public routes ---
-    return next()
+    return true
   })
 }
 
