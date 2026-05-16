@@ -30,10 +30,11 @@ const showLeftButton = ref(false)
 const persistentInfo = ref(false)
 const hideSeconds = ref(7)
 const infoMenuOpen = ref(false)
+const optionsOpen = ref(false)
 const showUI = computed(() => hideSeconds.value > 0)
 const hideTimer = setInterval(() => {
   hideSeconds.value--
-  if (infoMenuOpen.value) {
+  if (infoMenuOpen.value || optionsOpen.value) {
     hideSeconds.value = 5
   }
 }, 1000)
@@ -304,13 +305,25 @@ watch(
             variant="plain"
             v-tooltip="{ text: 'Move to bin', location: 'bottom', attach: true, width: 140 }"
           />
-          <v-btn
-            color="white"
-            rounded="xl"
-            icon="mdi-dots-horizontal"
-            variant="plain"
-            v-tooltip="{ text: 'More options', location: 'bottom', attach: true, width: 140 }"
-          />
+          <v-menu v-model="optionsOpen">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                color="white"
+                rounded="xl"
+                icon="mdi-dots-horizontal"
+                variant="plain"
+                v-bind="props"
+              />
+            </template>
+            <v-list>
+              <v-list-item
+                v-if="route.name !== 'view-photo-timeline'"
+                title="View in timeline"
+                to="/"
+                exact
+              />
+            </v-list>
+          </v-menu>
         </template>
       </div>
     </div>

@@ -29,7 +29,7 @@ backgroundStore.initialize()
     <app-bar />
 
     <nav-drawer v-if="authStore.isAuthenticated" />
-    <v-navigation-drawer :width="40" class="logged-out-spacer" v-else></v-navigation-drawer>
+    <v-navigation-drawer :width="40" floating color="transparent" v-else></v-navigation-drawer>
 
     <v-main class="layout-body">
       <router-view class="router-view" />
@@ -69,10 +69,6 @@ backgroundStore.initialize()
   );
   backdrop-filter: saturate(150%) brightness(70%) blur(25px) contrast(100%);
   z-index: 1;
-}
-
-.logged-out-spacer {
-  opacity: 0;
 }
 
 .layout-body {
