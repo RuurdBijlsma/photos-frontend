@@ -8,15 +8,18 @@ import { DAYS, MONTHS } from '@/scripts/constants.ts'
 import MediaWeatherInfo from '@/vues/components/viewer/MediaWeatherInfo.vue'
 import { makeLocationString } from '@/scripts/utils.ts'
 import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
 
 const props = defineProps<{
-  mediaItem?: FullMediaItem
+  mediaItem?: FullMediaItem | SharedMediaItem
 }>()
 
 const emit = defineEmits(['closeDateTime', 'openDateTime'])
 
 const dialogs = useDialogStore()
 const settings = useSettingStore()
+const authStore = useAuthStore()
 
 const dateTimeDialogOpen = ref(false)
 
@@ -79,6 +82,7 @@ watch(dateTimeDialogOpen, () => {
           <p v-if="mediaItem.user_caption">{{ mediaItem.user_caption }}</p>
           <p class="no-caption" v-else>No caption</p>
           <v-btn
+            v-if="authStore.isAuthenticated"
             variant="plain"
             @click="editCaption"
             density="compact"
@@ -117,6 +121,7 @@ watch(dateTimeDialogOpen, () => {
                 rounded
                 color="primary"
                 class="edit-button"
+                v-if="authStore.isAuthenticated"
                 v-bind="activatorProps"
               >
                 Edit
@@ -124,7 +129,11 @@ watch(dateTimeDialogOpen, () => {
             </template>
 
             <template v-slot:default="{ isActive }">
-              <edit-date-time-card :media-item="mediaItem" @close-dialog="isActive.value = false" />
+              <edit-date-time-card
+                v-if="'user_id' in mediaItem"
+                :media-item="mediaItem"
+                @close-dialog="isActive.value = false"
+              />
             </template>
           </v-dialog>
         </div>

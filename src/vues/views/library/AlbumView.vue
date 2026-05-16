@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import {
-  useRoute,
-  useRouter,
-  onBeforeRouteLeave,
-  onBeforeRouteUpdate,
-} from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import type { AlbumSort } from '@/scripts/types/api/album.ts'
@@ -33,6 +28,7 @@ const snackbars = useSnackbarsStore()
 const dialogs = useDialogStore()
 const authStore = useAuthStore()
 
+const isInitialLoad = ref(true)
 const isManualOrderMode = ref(false)
 const collabMenuOpen = ref(false)
 const localItems = ref<SimpleTimelineItem[]>([])
@@ -302,9 +298,15 @@ async function publicize() {
 }
 
 async function privatize() {
-  if (!album.value) return
+  const confirmed = await dialogs.confirm({
+    title: 'Make album private?',
+    description: 'It will no longer be publicly accessible via the URL.',
+    confirmText: 'Make private',
+    icon: 'mdi-lock',
+  })
+  if (!confirmed || !album.value) return
   await albumStore.updateAlbumDetails(album.value.id, { isPublic: false })
-  snackbars.success('Album is hidden')
+  snackbars.success('Album is private')
 }
 
 let importPollInterval: number | null = null
@@ -331,6 +333,12 @@ onBeforeRouteUpdate(confirmRouteLeave)
 
 onBeforeUnmount(() => {
   clearImportPoll()
+})
+
+watch(albumResponse, () => {
+  if (albumResponse.value !== null) {
+    isInitialLoad.value = false
+  }
 })
 
 watch(
@@ -504,16 +512,15 @@ watch(collabMenuOpen, () => {
               :autofocus="route.query?.create === '1'"
               v-model="albumTitle"
             />
-            <h1 class="non-owner-title" v-else-if="albumTitle !== null && !isOwner">
+            <h1
+              class="non-owner-title"
+              v-else-if="albumTitle !== null && !isOwner && authStore.isAuthenticated"
+            >
               {{ albumTitle }}
             </h1>
-            <v-skeleton-loader
-              v-else-if="albumTitle === null"
-              type="heading"
-              width="50%"
-              height="17%"
-              :style="{ transform: `translateX(-18px)` }"
-            />
+            <h1 class="non-owner-title" v-else-if="!authStore.isAuthenticated">
+              {{ album?.name }}
+            </h1>
             <v-menu location="bottom end" v-if="!isManualOrderMode && isOwner">
               <template v-slot:activator="{ props }">
                 <v-btn
@@ -537,25 +544,45 @@ watch(collabMenuOpen, () => {
             </v-menu>
           </div>
           <p v-if="formattedDates" class="album-dates">
-            <v-icon
-              v-tooltip="{
-                location: 'top',
-                text: sortModeText,
-              }"
-              size="20"
-              v-if="sortModeIcon"
-              :icon="sortModeIcon"
-            />
-            <span v-if="sortModeIcon">•</span>
-            <v-icon
-              v-tooltip="{
-                location: 'top',
-                text: album?.isPublic ? 'Publicly available' : 'Private',
-              }"
-              size="20"
-              :icon="album?.isPublic ? `mdi-earth` : `mdi-lock`"
-            />
-            <span>•</span>
+            <template v-if="sortModeIcon">
+              <v-btn
+                density="compact"
+                v-if="authStore.isAuthenticated"
+                icon
+                @click="manualOrderMode()"
+                v-tooltip="{
+                  location: 'top',
+                  text: sortModeText,
+                }"
+              >
+                <v-icon size="20" :icon="sortModeIcon" />
+              </v-btn>
+              <v-icon
+                v-else
+                size="20"
+                class="mt-1 mb-1"
+                :icon="sortModeIcon"
+                v-tooltip="{
+                  location: 'top',
+                  text: sortModeText,
+                }"
+              />
+              <span>•</span>
+            </template>
+            <template v-if="authStore.isAuthenticated">
+              <v-btn
+                density="compact"
+                icon
+                @click="album?.isPublic ? privatize() : publicize()"
+                v-tooltip="{
+                  location: 'top',
+                  text: album?.isPublic ? 'Publicly available' : 'Private',
+                }"
+              >
+                <v-icon size="20" :icon="album?.isPublic ? `mdi-earth` : `mdi-lock`" />
+              </v-btn>
+              <span>•</span>
+            </template>
             <span>
               {{ formattedDates }}
             </span>
@@ -602,13 +629,6 @@ watch(collabMenuOpen, () => {
               ></v-btn>
             </div>
           </div>
-          <v-skeleton-loader
-            v-else
-            type="subtitle"
-            height="13%"
-            width="37%"
-            :style="{ transform: `translateX(-18px)` }"
-          />
           <div class="album-collaborators" v-if="album">
             <v-menu v-for="collaborator in album.collaborators" :key="collaborator.id">
               <template v-slot:activator="{ props }">
@@ -711,15 +731,9 @@ watch(collabMenuOpen, () => {
               </v-list>
             </v-menu>
           </div>
-          <v-skeleton-loader
-            v-else
-            height="10%"
-            type="avatar,avatar"
-            :style="{ transform: `translateX(-60px) scale(0.88)` }"
-          />
         </div>
       </div>
-      <div class="empty-album" v-if="displayedItems.length === 0">
+      <div class="empty-album" v-if="displayedItems.length === 0 && !isInitialLoad">
         <v-icon color="on-surface-variant" size="200" icon="mdi-image-album"></v-icon>
         <h2>This album is empty</h2>
         <template v-if="route.query.importing === 'true'">
@@ -812,12 +826,11 @@ watch(collabMenuOpen, () => {
 }
 
 .album-dates {
-  gap: 10px;
+  gap: 5px;
   font-weight: 400;
   font-size: 15px;
   opacity: 0.7;
   margin: 0;
-  margin-top: 3px;
   display: flex;
   align-items: center;
 }
@@ -828,7 +841,7 @@ watch(collabMenuOpen, () => {
   text-transform: capitalize;
   font-weight: 400;
   opacity: 0.5;
-  margin-top: 8px;
+  margin-top: 4px;
   margin-bottom: 5px;
 }
 

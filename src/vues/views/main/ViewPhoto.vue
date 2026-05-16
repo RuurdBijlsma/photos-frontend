@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
 import { computed, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useThemeStore } from '@/scripts/stores/themeStore.ts'
-import { useTheme } from 'vuetify/framework'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
@@ -15,17 +13,17 @@ import { useEventListener } from '@vueuse/core'
 import MediaInfoPanel from '@/vues/components/viewer/MediaInfoPanel.vue'
 import { makeLocationString } from '@/scripts/utils.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 const mediaItemStore = useMediaItemStore()
 const timelineStore = useTimelineStore()
-const themeStore = useThemeStore()
 const settings = useSettingStore()
 const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
 const dialogs = useDialogStore()
-const vuetifyTheme = useTheme()
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
@@ -50,6 +48,7 @@ const id = computed(() => {
   console.warn('WEIRD ID IN ROUTE DETECTED')
   return null
 })
+const albumId = computed(() => route.params.albumId as string | undefined)
 
 const isSelected = computed(() =>
   id.value === null ? false : selectionStore.selection.has(id.value),
@@ -103,7 +102,8 @@ const locationString = computed(() => {
 
 const fullImage = computed(() => {
   if (!id.value) return undefined
-  return mediaItemStore.mediaItems.get(id.value)
+  if (authStore.isAuthenticated) return mediaItemStore.mediaItems.get(id.value)
+  else return mediaItemStore.sharedMediaItems.get(id.value)
 })
 
 const timelineItem = computed<TimelineItem | undefined>(() => {
@@ -127,16 +127,13 @@ const viewerType = computed<PhotoViewerType>(() => {
 async function initialize() {
   const loadingId = id.value
   if (loadingId === null) return router.push(parentLocation.value)
-  await mediaItemStore.fetchMediaItem(loadingId)
-  if (id.value !== loadingId) return
-  console.log('FULL MEDIA ITEM', mediaItemStore.mediaItems.get(loadingId))
-  const imageTheme = fullImage.value?.visual_analyses[0]?.colors?.themes?.[0]
-  if (!imageTheme) return
-  const vTheme = themeStore.themeFromJson(imageTheme)
-  if (vuetifyTheme.themes.value.darkView && vTheme?.dark.colors) {
-    //@ts-expect-error Error
-    vuetifyTheme.themes.value.darkView.colors = vTheme?.dark.colors
+  if (authStore.isAuthenticated) {
+    await mediaItemStore.fetchMediaItem(loadingId)
+  } else if (albumId.value) {
+    await mediaItemStore.fetchSharedMediaItem(albumId.value, loadingId)
   }
+  if (id.value !== loadingId) return
+  console.log('SHARED MEDIA ITEM', fullImage.value)
 }
 
 function toggleSelected() {
@@ -164,8 +161,24 @@ onBeforeUnmount(() => clearInterval(hideTimer))
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeyDown))
 // Pre-fetch
-watch(prevId, () => prevId.value && mediaItemStore.fetchMediaItem(prevId.value))
-watch(nextId, () => nextId.value && mediaItemStore.fetchMediaItem(nextId.value))
+watch(prevId, () => {
+  if (prevId.value) {
+    if (authStore.isAuthenticated) {
+      return mediaItemStore.fetchMediaItem(prevId.value)
+    } else if (albumId.value) {
+      return mediaItemStore.fetchSharedMediaItem(albumId.value, prevId.value)
+    }
+  }
+})
+watch(nextId, () => {
+  if (nextId.value) {
+    if (authStore.isAuthenticated) {
+      return mediaItemStore.fetchMediaItem(nextId.value)
+    } else if (albumId.value) {
+      return mediaItemStore.fetchSharedMediaItem(albumId.value, nextId.value)
+    }
+  }
+})
 watch(
   id,
   () => {
@@ -262,41 +275,43 @@ watch(
             @close-date-time="persistentInfo = false"
           />
         </v-menu>
-        <v-btn
-          color="white"
-          rounded="xl"
-          icon="mdi-share-variant-outline"
-          variant="plain"
-          v-tooltip="{ text: 'Share', location: 'bottom', attach: true, width: 140 }"
-        />
-        <v-btn
-          color="white"
-          rounded="xl"
-          icon="mdi-heart-outline"
-          variant="plain"
-          v-tooltip="{ text: 'Favourite', location: 'bottom', attach: true, width: 140 }"
-        />
-        <v-btn
-          color="white"
-          rounded="xl"
-          icon="mdi-cloud-download-outline"
-          variant="plain"
-          v-tooltip="{ text: 'Download', location: 'bottom', attach: true, width: 140 }"
-        />
-        <v-btn
-          color="white"
-          rounded="xl"
-          icon="mdi-trash-can-outline"
-          variant="plain"
-          v-tooltip="{ text: 'Move to bin', location: 'bottom', attach: true, width: 140 }"
-        />
-        <v-btn
-          color="white"
-          rounded="xl"
-          icon="mdi-dots-horizontal"
-          variant="plain"
-          v-tooltip="{ text: 'More options', location: 'bottom', attach: true, width: 140 }"
-        />
+        <template v-if="authStore.isAuthenticated">
+          <v-btn
+            color="white"
+            rounded="xl"
+            icon="mdi-share-variant-outline"
+            variant="plain"
+            v-tooltip="{ text: 'Share', location: 'bottom', attach: true, width: 140 }"
+          />
+          <v-btn
+            color="white"
+            rounded="xl"
+            icon="mdi-heart-outline"
+            variant="plain"
+            v-tooltip="{ text: 'Favourite', location: 'bottom', attach: true, width: 140 }"
+          />
+          <v-btn
+            color="white"
+            rounded="xl"
+            icon="mdi-cloud-download-outline"
+            variant="plain"
+            v-tooltip="{ text: 'Download', location: 'bottom', attach: true, width: 140 }"
+          />
+          <v-btn
+            color="white"
+            rounded="xl"
+            icon="mdi-trash-can-outline"
+            variant="plain"
+            v-tooltip="{ text: 'Move to bin', location: 'bottom', attach: true, width: 140 }"
+          />
+          <v-btn
+            color="white"
+            rounded="xl"
+            icon="mdi-dots-horizontal"
+            variant="plain"
+            v-tooltip="{ text: 'More options', location: 'bottom', attach: true, width: 140 }"
+          />
+        </template>
       </div>
     </div>
     <div

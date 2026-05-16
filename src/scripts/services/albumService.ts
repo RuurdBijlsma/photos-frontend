@@ -11,6 +11,7 @@ import type {
   AlbumSummary,
   CheckInviteRequest,
   CreateAlbumRequest,
+  SharedMediaItem,
   SortDirection,
   UpdateAlbumRequest,
 } from '@/scripts/types/api/album'
@@ -112,6 +113,13 @@ const albumService = {
     })
     const buffer = new Uint8Array(response.data)
     return FullAlbumMediaResponse.decode(buffer)
+  },
+
+  getSharedMediaItem(
+    albumId: string,
+    mediaItemId: string,
+  ): Promise<AxiosResponse<SharedMediaItem>> {
+    return apiClient.get<SharedMediaItem>(`/album/${albumId}/item/${mediaItemId}`)
   },
 }
 
