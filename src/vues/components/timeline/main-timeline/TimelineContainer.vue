@@ -13,14 +13,11 @@ import VirtualRow from '@/vues/components/timeline/main-timeline/VirtualRow.vue'
 import SelectionOverlay from '@/vues/components/timeline/timeline-components/SelectionOverlay.vue'
 import DateOverlay from '@/vues/components/timeline/timeline-components/DateOverlay.vue'
 import { useRoute, useRouter } from 'vue-router'
-import timelineService from '@/scripts/services/timelineService.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
-import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
-const snackbarStore = useSnackbarsStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -49,6 +46,7 @@ const scrollContainerEl = useTemplateRef('scrollContainer')
 const scrollTrackEl = useTemplateRef('scrollTrack')
 const gridLayout = shallowRef<LayoutRow[]>([])
 const scrollHeight = ref(0)
+const gridLayoutCalculated = computed(() => gridLayout.value.length > 0)
 const virtualizerOptions = computed(() => ({
   count: gridLayout.value.length,
   getScrollElement: () => scrollContainerEl.value,
@@ -98,19 +96,6 @@ const showScrollDetails = ref(false)
 const isScrollingFast = ref(false)
 const isEmpty = computed(() => timelineStore.monthRatios.length === 0)
 const showEmptyState = ref(false)
-let emptyTimer: number | null = null
-watch(
-  isEmpty,
-  (empty) => {
-    if (emptyTimer) clearTimeout(emptyTimer)
-    if (empty) {
-      emptyTimer = window.setTimeout(() => (showEmptyState.value = true), 250)
-    } else {
-      showEmptyState.value = false
-    }
-  },
-  { immediate: true },
-)
 const isOnboarding = computed(() => route.query.onboarding === 'true')
 const visibleYearLabels = computed(() => {
   const years = scrollLabels.value.years
@@ -158,8 +143,6 @@ const overlayDate = computed(() => {
   return new Date(selectionStore.hoverDate)
 })
 
-let monthPreloadAbortSignal = { aborted: false }
-let allMonthsPreloaded = false
 let isScrollDragging = false
 
 interface YearScrollLabel {
@@ -309,90 +292,6 @@ const onScroll = useThrottleFn((e: Event) => {
   currentScrollTop.value = target.scrollTop
 }, 33)
 
-async function preLoadAllMonths(
-  monthRatios: TimelineMonthRatios[],
-  date: Date,
-  abortSignal: { aborted: boolean },
-) {
-  const currentMonthIndex = monthRatios.findIndex(
-    ({ monthId }) => monthId === date.toISOString().substring(0, 10),
-  )
-  let i = 0
-  let monthIdsToFetch: string[] = []
-  let countToFetch = 0
-  const BATCH_SIZE = 500
-
-  if (currentMonthIndex !== -1) {
-    monthIdsToFetch.push(monthRatios[currentMonthIndex]!.monthId)
-    countToFetch += monthRatios[currentMonthIndex]!.count
-  }
-
-  while (true) {
-    i++
-    const beforeIndex = currentMonthIndex - i
-    const afterIndex = currentMonthIndex + i
-    const fetchMonthRatios: TimelineMonthRatios[] = []
-
-    if (beforeIndex >= 0) fetchMonthRatios.push(monthRatios[beforeIndex]!)
-    if (afterIndex < monthRatios.length) fetchMonthRatios.push(monthRatios[afterIndex]!)
-
-    for (const { monthId, count } of fetchMonthRatios) {
-      monthIdsToFetch.push(monthId)
-      countToFetch += count
-    }
-
-    if (
-      countToFetch > BATCH_SIZE ||
-      (fetchMonthRatios.length === 0 && monthIdsToFetch.length > 0)
-    ) {
-      await requestIdleCallbackAsync(() => timelineStore.fetchMediaByMonth(monthIdsToFetch))
-      countToFetch = 0
-      monthIdsToFetch = []
-    }
-
-    if (fetchMonthRatios.length === 0 || abortSignal.aborted) {
-      if (abortSignal.aborted) {
-        console.warn('ABORTED prefetch')
-      } else {
-        console.log('Fetched all media by month', timelineStore.monthItems.keys())
-        allMonthsPreloaded = true
-        selectionStore.allIds = timelineStore.mediaItemIds
-        if (!notifiedAboutThumbnails) requestIdleCallback(notifySlowThumbnails)
-      }
-      break
-    }
-  }
-}
-
-let notifiedAboutThumbnails = false
-function notifySlowThumbnails() {
-  notifiedAboutThumbnails = true
-  let unloadedCount = 0
-  for (const [, groupItems] of timelineStore.monthItems) {
-    for (const item of groupItems) {
-      if (!item.hasThumbnails) {
-        unloadedCount++
-      }
-    }
-  }
-  if (unloadedCount > 0 && !timelineStore.thumbnailSnackSent) {
-    timelineStore.thumbnailSnackSent = true
-    snackbarStore.enqueue({
-      message: `Your photos are still being prepared. Browsing may be slower and thumbnails may load gradually until processing is complete. [${unloadedCount} remaining]`,
-      color: 'white',
-      icon: 'mdi-information',
-      timeout: -1,
-    })
-  }
-  console.log('All AVIF thumbnails are available')
-}
-
-function abortMonthPreload() {
-  monthPreloadAbortSignal.aborted = true
-  monthPreloadAbortSignal = { aborted: false }
-  return monthPreloadAbortSignal
-}
-
 function updateScrollPosition(clientY: number) {
   if (!scrollTrackEl.value || !scrollContainerEl.value || !isScrollDragging) return
   const trackRect = scrollTrackEl.value.getBoundingClientRect()
@@ -429,18 +328,13 @@ function handleMouseDown(e: MouseEvent) {
   updateScrollPosition(e.clientY)
 }
 
-async function fetchViewPhotoIds() {
-  const response = await timelineService.getTimelineIds()
-  viewPhotoStore.ids = response.data
-}
-
 async function initializeViewPhoto() {
   viewPhotoStore.viewLink = '/view/'
 
   if (route.name!.toString().startsWith('view-photo')) {
-    await fetchViewPhotoIds()
+    await timelineStore.setViewPhotoStoreIds()
   } else {
-    await requestIdleCallbackAsync(fetchViewPhotoIds)
+    await requestIdleCallbackAsync(timelineStore.setViewPhotoStoreIds)
   }
 }
 initializeViewPhoto()
@@ -468,6 +362,7 @@ function offsetScrollToMediaId(
   let offsetTop = gridLayout.value[index]?.offsetTop
   if (offsetTop !== undefined && scrollContainerEl.value) {
     if (offsetTop < 100) offsetTop = 0
+    console.log({ offset })
     scrollContainerEl.value.scrollTo({ top: offsetTop + (offset ?? 0), behavior: behavior })
   }
 }
@@ -492,7 +387,7 @@ function scrollToMediaId(
     if (options.type === 'virtual') {
       rowVirtualizer.value.scrollToIndex(index, options)
     } else {
-      offsetScrollToMediaId(index, options.behavior)
+      offsetScrollToMediaId(index, options.behavior, options.offset)
     }
   }
 }
@@ -540,15 +435,6 @@ function scrollToDate(date: Date) {
   }
 }
 
-async function refreshItems() {
-  abortMonthPreload()
-  allMonthsPreloaded = false
-  // Fetch fresh ratios and view-photo ids in parallel.
-  await Promise.all([timelineStore.fetchMonthRatios(), fetchViewPhotoIds()])
-  const monthsToFetch = timelineStore.monthRatios.map((r) => r.monthId)
-  await timelineStore.fetchMediaByMonth(monthsToFetch, false)
-}
-
 let refreshInterval: number | null = null
 function clearRefreshPoll() {
   if (refreshInterval) {
@@ -560,7 +446,7 @@ function clearRefreshPoll() {
 function startRefreshPoll() {
   clearRefreshPoll()
   refreshInterval = setInterval(() => {
-    refreshItems()
+    timelineStore.refresh()
   }, 10000)
 }
 
@@ -685,7 +571,8 @@ watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize
     }
     resetResizeAnchorDb()
   } else {
-    if (timelineStore.mediaIdInView) {
+    console.warn(route.query.highlight === undefined)
+    if (timelineStore.mediaIdInView && route.query.highlight === undefined) {
       console.info('Restoring scroll position to media item:', timelineStore.mediaIdInView)
       const mediaItemInViewId = timelineStore.mediaIdInView
       nextTick(() => {
@@ -710,7 +597,12 @@ watch(
     const date = monthInView.value
     if (!date) return
     console.log('monthInView', date.toISOString().substring(0, 7))
-    if (!allMonthsPreloaded) preLoadAllMonths(timelineStore.monthRatios, date, abortMonthPreload())
+    if (!timelineStore.allMonthsPreloaded)
+      timelineStore.preLoadAllMonths(
+        timelineStore.monthRatios,
+        date,
+        timelineStore.abortMonthPreload(),
+      )
   },
   { immediate: true },
 )
@@ -762,6 +654,56 @@ watch(mediaItemInView, () => {
     timelineStore.mediaIdInView = mediaItemInView.value.id
   }
 })
+
+let emptyTimer: number | null = null
+watch(
+  isEmpty,
+  (empty) => {
+    if (emptyTimer) clearTimeout(emptyTimer)
+    if (empty) {
+      emptyTimer = window.setTimeout(() => (showEmptyState.value = true), 250)
+    } else {
+      showEmptyState.value = false
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  [() => route.query.highlight, gridLayoutCalculated, () => timelineStore.allMonthsPreloaded],
+  () => {
+    if (
+      route.query.highlight &&
+      typeof route.query.highlight === 'string' &&
+      gridLayoutCalculated.value &&
+      timelineStore.allMonthsPreloaded
+    ) {
+      const mediaItemId = route.query.highlight
+      timelineStore.mediaIdInView = mediaItemId
+      console.log('Scrolling to HIGHLIGHT', mediaItemId)
+      nextTick(() => {
+        scrollToMediaId(mediaItemId, {
+          type: 'virtual',
+          align: 'center',
+          behavior: 'auto',
+        })
+      })
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => timelineStore.pendingGoToTop,
+  () => {
+    if (!timelineStore.pendingGoToTop) return
+    timelineStore.pendingGoToTop = false
+    if (scrollContainerEl.value) {
+      scrollContainerEl.value.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  },
+  { immediate: true },
+)
 
 if (!timelineStore.isInitialized) timelineStore.initialize()
 </script>

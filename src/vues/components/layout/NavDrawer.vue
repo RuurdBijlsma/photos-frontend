@@ -5,8 +5,10 @@ import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 import { useEventListener } from '@vueuse/core'
+import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 
 const albumStore = useAlbumStore()
+const timelineStore = useTimelineStore()
 const systemStore = useSystemStore()
 const route = useRoute()
 
@@ -74,6 +76,7 @@ watch(collapseDrawer, () =>
         title="Photos"
         to="/"
         :active="route.path === '/'"
+        @click="route.path === '/' ? timelineStore.scrollToTop() : undefined"
       />
       <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
       <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
@@ -170,6 +173,7 @@ watch(collapseDrawer, () =>
     <div v-else class="collapsed-list">
       <v-btn
         icon="mdi-image-outline"
+        @click="route.path === '/' ? timelineStore.scrollToTop() : undefined"
         :variant="route.path === '/' ? 'tonal' : 'plain'"
         :color="route.path === '/' ? 'primary-darken-1' : undefined"
         to="/"

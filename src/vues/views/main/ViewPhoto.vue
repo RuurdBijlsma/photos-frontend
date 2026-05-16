@@ -319,7 +319,7 @@ watch(
               <v-list-item
                 v-if="route.name !== 'view-photo-timeline'"
                 title="View in timeline"
-                to="/"
+                :to="`/?highlight=${id}`"
                 exact
               />
             </v-list>
