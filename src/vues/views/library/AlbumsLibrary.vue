@@ -259,6 +259,7 @@ onUnmounted(() => {
           :key="album.id"
           :to="`/album/${album.id}`"
           class="album-card"
+          @mouseenter="albumStore.fetchAlbumMedia(album.id)"
         >
           <div class="album-image">
             <glow-thumbnail

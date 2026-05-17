@@ -129,6 +129,7 @@ peopleStore.fetchPeople()
               @dragleave="dragOverId = null"
               @dragover.prevent
               @drop.prevent="onDrop(person, $event)"
+              @mouseenter="peopleStore.fetchPersonMedia(person.id, true, false)"
             >
               <glow-image
                 :src="peopleStore.getPhotoThumb(person, theme.current.value.dark)"
@@ -226,7 +227,8 @@ peopleStore.fetchPeople()
   text-decoration: none;
   transition:
     background-color 150ms ease,
-    transform 150ms ease;
+    transform 150ms ease,
+    opacity 150ms ease;
 }
 
 .person-card:hover {
