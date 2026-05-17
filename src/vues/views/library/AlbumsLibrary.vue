@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import type { Album, AlbumSortField, SortDirection } from '@/scripts/types/api/album'
 import albumService from '@/scripts/services/albumService.ts'
@@ -10,6 +10,7 @@ import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import { useStorage } from '@vueuse/core'
 
 const snackbarStore = useSnackbarsStore()
 const authStore = useAuthStore()
@@ -22,21 +23,8 @@ const showSkeleton = ref(false)
 let skeletonTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Sorting State
-const currentSortField = ref<AlbumSortField>(
-  localStorage.getItem('albumLibrarySortField') === null
-    ? 'latestPhoto'
-    : localStorage.albumLibrarySortField,
-)
-const currentSortDirection = ref<SortDirection>(
-  localStorage.getItem('albumLibrarySortDirection') === null
-    ? 'desc'
-    : localStorage.albumLibrarySortDirection,
-)
-watch(currentSortField, () => (localStorage.albumLibrarySortField = currentSortField.value))
-watch(
-  currentSortDirection,
-  () => (localStorage.albumLibrarySortDirection = currentSortDirection.value),
-)
+const currentSortField = useStorage<AlbumSortField>('albumLibrarySortField', 'latestPhoto')
+const currentSortDirection = useStorage<SortDirection>('albumLibrarySortDirection', 'desc')
 const userAlbums = ref<Album[]>([])
 
 // Separated Field Options
@@ -259,6 +247,7 @@ onUnmounted(() => {
           :key="album.id"
           :to="`/album/${album.id}`"
           class="album-card"
+          @mouseenter="albumStore.fetchAlbumMedia(album.id)"
         >
           <div class="album-image">
             <glow-thumbnail
@@ -372,8 +361,8 @@ onUnmounted(() => {
 
 .album-count {
   font-size: 0.9rem;
-  opacity: 0.6;
   font-weight: 400;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 
 .album-grid {

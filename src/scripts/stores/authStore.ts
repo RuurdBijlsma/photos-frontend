@@ -1,9 +1,11 @@
-import { computed, ref, type Ref, watch } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import authService from '@/scripts/services/authService.ts'
 import type { CreateUser, LoginUser, Tokens, User } from '@/scripts/types/api/auth.ts'
 import { useRouter } from 'vue-router'
 import { useSystemStore } from '@/scripts/stores/systemStore.ts'
+import { useStorage } from '@vueuse/core'
+import { useObjStorage } from '@/scripts/utils.ts'
 
 type AuthStatus = 'idle' | 'loading' | 'error' | 'success'
 
@@ -11,26 +13,12 @@ export const useAuthStore = defineStore('auth', () => {
   const systemStore = useSystemStore()
 
   // --- STATE ---
-  const user: Ref<User | null> = ref(
-    localStorage.getItem('authUser') === null
-      ? null
-      : JSON.parse(localStorage.getItem('authUser')!),
-  )
-  const accessToken: Ref<string | null> = ref(localStorage.getItem('accessToken') || null)
-  const refreshToken: Ref<string | null> = ref(localStorage.getItem('refreshToken') || null)
-  const expiry: Ref<number | null> = ref(
-    localStorage.getItem('expiry') ? Number(localStorage.getItem('expiry')) : null,
-  )
+  const user = useObjStorage<User | null>('authUser', null)
+  const accessToken = useStorage<string | null>('accessToken', null)
+  const refreshToken = useStorage<string | null>('refreshToken', null)
+  const expiry = useStorage<number | null>('expiry', null)
   const status: Ref<AuthStatus> = ref('idle')
   const router = useRouter()
-
-  watch(user, (newUser) => {
-    if (newUser) {
-      localStorage.setItem('authUser', JSON.stringify(newUser))
-    } else {
-      localStorage.removeItem('authUser')
-    }
-  })
 
   // --- GETTERS ---
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
@@ -45,10 +33,6 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken.value = newAccessToken
     refreshToken.value = newRefreshToken
     expiry.value = newExpiry
-
-    localStorage.setItem('accessToken', newAccessToken)
-    localStorage.setItem('refreshToken', newRefreshToken)
-    localStorage.setItem('expiry', newExpiry.toString())
   }
 
   /**
@@ -58,7 +42,8 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function refreshTokens(): Promise<Tokens> {
     if (!refreshToken.value) {
-      await logout()
+      console.warn('[no refresh token available] call logout()')
+      await logout(false)
       throw new Error('No refresh token available.')
     }
     try {
@@ -75,6 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
       return response.data
     } catch (error) {
       // If refresh fails, log the user out completely
+      console.warn('[refresh errored] call logout()', error)
       await logout()
       throw error
     }
@@ -145,18 +131,13 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken.value = null
     expiry.value = null
 
-    // Clear all related items from localStorage
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('expiry')
-    localStorage.removeItem('authUser')
-
     // Redirect to the login page only if the current route requires authentication.
     if (redirect) {
       const requiresAuth = router.currentRoute.value.matched.some(
         (record) => record.meta.requiresAuth,
       )
       if (requiresAuth) {
+        console.warn('[logout function] redirect to /login')
         await router.push({ name: 'login' })
       }
     }

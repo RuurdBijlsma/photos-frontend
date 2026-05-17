@@ -8,7 +8,8 @@ import searchService from '@/scripts/services/searchService.ts'
 import type { SearchFilterRanges } from '@/scripts/types/api/search.ts'
 import { useDebounceFn } from '@vueuse/core'
 import { MONTHS } from '@/scripts/constants.ts'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
+import peopleService from '@/scripts/services/peopleService.ts'
+import { useObjStorage } from '@/scripts/utils.ts'
 
 const snackStore = useSnackbarsStore()
 const route = useRoute()
@@ -25,12 +26,7 @@ const offset = ref(0)
 const hasMore = ref(true)
 const loadingMore = ref(false)
 
-const filterRanges = ref<SearchFilterRanges | null>(
-  localStorage.getItem('searchFilterRanges') === null
-    ? null
-    : JSON.parse(localStorage['searchFilterRanges']),
-)
-watch(filterRanges, () => (localStorage['searchFilterRanges'] = JSON.stringify(filterRanges.value)))
+const filterRanges = useObjStorage<SearchFilterRanges | null>('searchFilterRanges', null)
 const showFilters = ref(false)
 
 // URL Source of Truth
@@ -522,7 +518,7 @@ watch(
                           <v-avatar>
                             <v-img
                               v-if="item.name"
-                              :src="mediaItemService.getFaceThumbnail(item.personId)"
+                              :src="peopleService.getPersonThumbnail(item.personId)"
                               style="object-fit: cover"
                               :alt="item.name"
                             />

@@ -1,4 +1,11 @@
 import type { TimelineItem } from '@/scripts/types/generated/timeline'
+import type {
+  CameraSettings,
+  Panorama,
+  TimeDetails,
+  VisualAnalysis,
+  Weather,
+} from '@/scripts/types/api/fullPhoto.ts'
 
 // Enums
 export type AlbumRole = 'Owner' | 'Contributor' | 'Viewer'
@@ -73,4 +80,41 @@ export interface AcceptInviteRequest {
   token: string
   name: string
   description?: string
+}
+
+export interface SharedMediaFeatures {
+  mime_type: string
+  size_bytes: number
+  is_motion_photo: boolean
+  motion_photo_presentation_timestamp: number | null
+  is_hdr: boolean
+  is_burst: boolean
+  burst_id: string | null
+  capture_fps: number | null
+  video_fps: number | null
+  is_nightsight: boolean
+  is_timelapse: boolean
+}
+
+export interface SharedMediaItem {
+  id: string
+  filename: string
+  width: number
+  height: number
+  is_video: boolean
+  duration_ms: number | null
+  taken_at_local: string // NaiveDateTime
+  taken_at_utc: string | null // DateTime<Utc>
+  timezone_name: string | null
+  timezone_offset_seconds: number | null
+  use_panorama_viewer: boolean
+  has_thumbnails: boolean
+  visual_analyses: VisualAnalysis[]
+  time: TimeDetails
+  weather: Weather | null
+  media_features: SharedMediaFeatures
+  camera_settings: CameraSettings
+  panorama: Panorama
+  user_caption: string | null
+  gps: null
 }

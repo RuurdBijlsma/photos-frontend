@@ -15,9 +15,9 @@ async function logout() {
   <v-app-bar density="comfortable" :height="70" class="header" color="transparent" elevation="0">
     <h1 class="appbar-title"><span>Ruurd</span> Photos</h1>
     <v-spacer />
-    <search-bar />
+    <search-bar v-if="authStore.isAuthenticated" />
     <v-spacer />
-    <div class="header-buttons">
+    <div v-if="authStore.isAuthenticated" class="header-buttons">
       <v-btn variant="plain" rounded>
         <v-icon icon="mdi-upload"></v-icon>
         Upload
@@ -69,6 +69,11 @@ async function logout() {
           </v-list>
         </div>
       </v-menu>
+    </div>
+    <div v-else class="header-buttons">
+      <v-btn to="/login" variant="tonal" rounded prepend-icon="mdi-login" class="mr-3">
+        Login
+      </v-btn>
     </div>
   </v-app-bar>
 </template>

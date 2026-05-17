@@ -9,6 +9,7 @@ import userService from '@/scripts/services/userService.ts'
 import type { UserProfile } from '@/scripts/types/api/user.ts'
 import { useDate } from 'vuetify'
 import { usePeopleStore } from '@/scripts/stores/peopleStore.ts'
+import peopleService from '@/scripts/services/peopleService.ts'
 
 const authStore = useAuthStore()
 const snackbars = useSnackbarsStore()
@@ -81,19 +82,23 @@ function formatDate(dateStr: string) {
   return date.format(new Date(dateStr), 'monthAndYear')
 }
 
-let peopleIdsTried: number[] = []
+let peopleIdsTried: string[] = []
 
 async function autoSetProfilePic() {
   await peopleStore.fetchPeople()
   if (peopleStore.people.length === 0) return
   const ids = peopleStore.people.map((p) => p.id).filter((pid) => !peopleIdsTried.includes(pid))
-  const id = ids[0]
-  peopleIdsTried.push(id)
+  const personId = ids[0]
+  peopleIdsTried.push(personId)
   if (ids.length === 1) {
     peopleIdsTried = []
   }
-  const person = peopleStore.people.find((p) => p.id === id)
-  if (person?.thumbnailId) editAvatar.value = person?.thumbnailId
+  try {
+    const { data } = await peopleService.getMediaItemId(personId)
+    editAvatar.value = data
+  } catch {
+    snackbars.warning("Couldn't get profile picture")
+  }
 }
 
 watch(

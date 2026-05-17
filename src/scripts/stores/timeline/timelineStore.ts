@@ -7,10 +7,18 @@ import {
 } from '@/scripts/types/generated/timeline.ts'
 import timelineService from '@/scripts/services/timelineService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import { requestIdleCallbackAsync } from '@/scripts/utils.ts'
+import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
+import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 
 export const useTimelineStore = defineStore('timeline', () => {
   const snackbarStore = useSnackbarsStore()
+  const selectionStore = useSelectionStore()
+  const viewPhotoStore = useViewPhotoStore()
+
   const thumbnailSnackSent = ref(false)
+  const pendingGoToTop = ref(false)
+  const allMonthsPreloaded = ref(false)
 
   const mediaIdInView = ref<string | null>(null)
   const isInitialized = ref(false)
@@ -18,6 +26,7 @@ export const useTimelineStore = defineStore('timeline', () => {
   const monthItems = shallowRef(new Map<string, TimelineItem[]>())
   const mediaItems = shallowRef<TimelineItem[]>([])
   const mediaItemsMap = shallowRef(new Map<string, TimelineItem>())
+
   watch(monthItems, () => {
     const resultArr: TimelineItem[] = []
     const resultMap: Map<string, TimelineItem> = new Map()
@@ -75,6 +84,112 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
   }
 
+  async function setViewPhotoStoreIds() {
+    const response = await timelineService.getTimelineIds()
+    viewPhotoStore.ids = response.data
+  }
+
+  let notifiedAboutThumbnails = false
+  function notifySlowThumbnails() {
+    notifiedAboutThumbnails = true
+    let unloadedCount = 0
+    let totalCount = 0
+    for (const [, groupItems] of monthItems.value) {
+      for (const item of groupItems) {
+        totalCount++
+        if (!item.hasThumbnails) {
+          unloadedCount++
+        }
+      }
+    }
+    // If more than 1% is not yet loaded, notify about slow thumbnails
+    if (unloadedCount / totalCount > 0.01) {
+      snackbarStore.enqueue({
+        message: `Your photos are still being prepared. Browsing may be slower and thumbnails may load gradually until processing is complete. [${unloadedCount} remaining]`,
+        color: 'white',
+        icon: 'mdi-information',
+        timeout: -1,
+      })
+    } else if (unloadedCount > 0) {
+      console.warn(
+        `Some thumbnails aren't ingested yet: [${unloadedCount} / ${totalCount}] unloaded`,
+      )
+    } else if (unloadedCount === 0) {
+      console.log('All AVIF thumbnails are available')
+    }
+  }
+
+  let monthPreloadAbortSignal = { aborted: false }
+  function abortMonthPreload() {
+    monthPreloadAbortSignal.aborted = true
+    monthPreloadAbortSignal = { aborted: false }
+    return monthPreloadAbortSignal
+  }
+
+  async function preLoadAllMonths(
+    monthRatios: TimelineMonthRatios[],
+    date: Date,
+    abortSignal: { aborted: boolean },
+  ) {
+    const currentMonthIndex = monthRatios.findIndex(
+      ({ monthId }) => monthId === date.toISOString().substring(0, 10),
+    )
+    let i = 0
+    let monthIdsToFetch: string[] = []
+    let countToFetch = 0
+    const BATCH_SIZE = 500
+
+    if (currentMonthIndex !== -1) {
+      monthIdsToFetch.push(monthRatios[currentMonthIndex]!.monthId)
+      countToFetch += monthRatios[currentMonthIndex]!.count
+    }
+
+    while (true) {
+      i++
+      const beforeIndex = currentMonthIndex - i
+      const afterIndex = currentMonthIndex + i
+      const fetchMonthRatios: TimelineMonthRatios[] = []
+
+      if (beforeIndex >= 0) fetchMonthRatios.push(monthRatios[beforeIndex]!)
+      if (afterIndex < monthRatios.length) fetchMonthRatios.push(monthRatios[afterIndex]!)
+
+      for (const { monthId, count } of fetchMonthRatios) {
+        monthIdsToFetch.push(monthId)
+        countToFetch += count
+      }
+
+      if (
+        countToFetch > BATCH_SIZE ||
+        (fetchMonthRatios.length === 0 && monthIdsToFetch.length > 0)
+      ) {
+        await requestIdleCallbackAsync(() => fetchMediaByMonth(monthIdsToFetch))
+        countToFetch = 0
+        monthIdsToFetch = []
+      }
+
+      if (fetchMonthRatios.length === 0 || abortSignal.aborted) {
+        if (abortSignal.aborted) {
+          console.warn('ABORTED prefetch')
+        } else {
+          console.log('Fetched all media by month', monthItems.value.keys())
+          allMonthsPreloaded.value = true
+          selectionStore.allIds = mediaItemIds.value
+          if (!notifiedAboutThumbnails) requestIdleCallback(notifySlowThumbnails)
+        }
+        break
+      }
+    }
+  }
+
+  async function refresh() {
+    abortMonthPreload()
+    allMonthsPreloaded.value = false
+    // Fetch fresh ratios and view-photo ids in parallel.
+    await Promise.all([fetchMonthRatios(), setViewPhotoStoreIds()])
+    const monthsToFetch = monthRatios.value.map((r) => r.monthId)
+    await fetchMediaByMonth(monthsToFetch, false)
+  }
+
   async function initialize() {
     isInitialized.value = true
     await fetchMonthRatios()
@@ -88,6 +203,10 @@ export const useTimelineStore = defineStore('timeline', () => {
     if (monthsToFetch.length > 0) await fetchMediaByMonth(monthsToFetch)
   }
 
+  function scrollToTop() {
+    pendingGoToTop.value = true
+  }
+
   return {
     monthRatios,
     monthItems,
@@ -98,9 +217,14 @@ export const useTimelineStore = defineStore('timeline', () => {
     isInitialized,
     mediaIdInView,
     thumbnailSnackSent,
+    pendingGoToTop,
+    allMonthsPreloaded,
 
-    fetchMonthRatios,
-    fetchMediaByMonth,
     initialize,
+    scrollToTop,
+    setViewPhotoStoreIds,
+    refresh,
+    abortMonthPreload,
+    preLoadAllMonths,
   }
 })

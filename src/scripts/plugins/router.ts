@@ -33,6 +33,18 @@ const router = createRouter({
           component: () => import('@/vues/views/library/PeopleView.vue'),
         },
         {
+          path: 'person/:personId',
+          name: 'person-view',
+          component: () => import('@/vues/views/library/PersonView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-person',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
           path: 'explore',
           name: 'explore',
           component: () => import('@/vues/views/main/ExploreView.vue'),
@@ -66,6 +78,7 @@ const router = createRouter({
         {
           path: 'album/:albumId',
           name: 'album-view',
+          meta: { requiresAuth: false },
           component: () => import('@/vues/views/library/AlbumView.vue'),
           children: [
             {
@@ -127,7 +140,7 @@ let onAuthHandled = false
 export function registerNavigationGuard() {
   const snackbarsStore = useSnackbarsStore()
 
-  router.beforeEach(async (to, from, next) => {
+  router.beforeEach(async (to) => {
     const authStore = useAuthStore()
 
     // --- Authentication Initialization ---
@@ -140,7 +153,8 @@ export function registerNavigationGuard() {
         console.error('Session restore failed:', error)
         await authStore.logout()
         // No need to proceed further, just go to login.
-        return next({ name: 'login' })
+        console.warn('[router -> 1] redirect to /login')
+        return { name: 'login' }
       }
     } else if (authStore.accessToken && authStore.user && !userRefreshed) {
       userRefreshed = true
@@ -163,38 +177,44 @@ export function registerNavigationGuard() {
       isAdmin && (authStore.user?.mediaFolder === null || authStore.user?.mediaFolder === undefined)
     console.log({ needsOnboarding, isAdmin, mf: authStore.user?.mediaFolder })
     if (needsOnboarding && to.name !== 'onboarding') {
-      return next({ name: 'onboarding' })
+      return { name: 'onboarding' }
     }
     // If onboarding is needed, and we are already going to the onboarding page, allow it.
     if (needsOnboarding && to.name === 'onboarding') {
-      return next()
+      return true
     }
 
     // --- Admin Route Logic ---
     if (to.meta.requiresAdmin) {
       if (isAuthenticated && isAdmin) {
-        return next()
+        return true
       } else {
         snackbarsStore.error("You don't have permission to access this page.")
-        return next(isAuthenticated ? { name: 'timeline' } : { name: 'login' })
+        if (isAuthenticated) {
+          return { name: 'timeline' }
+        } else {
+          console.warn('[router -> 2] redirect to /login')
+          return { name: 'login' }
+        }
       }
     }
 
     // --- Authenticated Route Logic ---
     if (to.meta.requiresAuth) {
       if (isAuthenticated) {
-        return next()
+        return true
       } else {
-        return next({ name: 'login' })
+        console.warn('[router meta requires auth] redirect to /login')
+        return { name: 'login' }
       }
     }
 
     // --- Guest Route Logic (for pages like Login and Register) ---
     if (to.meta.guest) {
       if (isAuthenticated) {
-        return next({ name: 'timeline' })
+        return { name: 'timeline' }
       } else {
-        return next()
+        return true
       }
     }
 
@@ -205,7 +225,7 @@ export function registerNavigationGuard() {
     }
 
     // --- Fallback for public routes ---
-    return next()
+    return true
   })
 }
 

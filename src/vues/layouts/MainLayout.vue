@@ -3,10 +3,12 @@ import { useBackgroundStore } from '@/scripts/stores/backgroundStore'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import NavDrawer from '@/vues/components/layout/NavDrawer.vue'
 import AppBar from '@/vues/components/layout/AppBar.vue'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
 const settings = useSettingStore()
+const authStore = useAuthStore()
 
 // Initialize the stores.
 backgroundStore.initialize()
@@ -26,7 +28,8 @@ backgroundStore.initialize()
   <v-layout>
     <app-bar />
 
-    <nav-drawer />
+    <nav-drawer v-if="authStore.isAuthenticated" />
+    <v-navigation-drawer :width="40" floating color="transparent" v-else></v-navigation-drawer>
 
     <v-main class="layout-body">
       <router-view class="router-view" />

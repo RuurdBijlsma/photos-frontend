@@ -7,10 +7,12 @@ import { type SimpleTimelineItem, SuggestionType } from '@/scripts/types/generat
 import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vue'
 import searchService from '@/scripts/services/searchService.ts'
 import { isLikelyJwt } from '@/scripts/utils.ts'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 const router = useRouter()
 const route = useRoute()
 const snackStore = useSnackbarsStore()
+const authStore = useAuthStore()
 const searchInputEl = useTemplateRef('searchInput')
 const searchContainer = useTemplateRef('searchContainer')
 
@@ -245,6 +247,7 @@ function handleFocusOut(event: FocusEvent) {
 }
 
 async function loadNextPlaceholder() {
+  if (!authStore.isAuthenticated) return
   try {
     const { data } = await searchService.randomSuggestion()
     if (data) localStorage[SUGGESTION_PLACEHOLDER_KEY] = JSON.stringify(data)

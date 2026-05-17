@@ -156,6 +156,13 @@
 * ✅ show something for albums without thumbnail in the /albums page
 * ✅ [bug]: ratios.pb is refetched when you go from explore to photos, but the photos arent refreshed, so it can go
   out of sync (ratios & photos).
+* ✅ niet "People" tab laten zien als je nog geen faces hebt
+* ✅ render empty album UI better
+* ✅ if timezone offset seconds is different from og_timezone_offset_seconds, then don't display timezone_name anywhere
+  in UI, since it's no longer valid. Isntead just show the offset (with the make offset string function)
+* ✅ make sure the frontend sends the datetime like "2023-05-15T10:00:00"
+* ✅ eigen theme per photo is te chaotisch
+* ✅ Als je full screen foto bekijkt, manier maken om de top balk te hiden (als je muis niet beweegt ofzo)
 * on login redirect to where you were
 * improve messaging when you load the website and the server is off
 * make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
@@ -181,17 +188,17 @@
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
-* ✅ niet "People" tab laten zien als je nog geen faces hebt
-* ✅ render empty album UI better
-* ✅ if timezone offset seconds is different from og_timezone_offset_seconds, then don't display timezone_name anywhere in UI, since it's no longer valid. Isntead just show the offset (with the make offset string function)
-* ✅ make sure the frontend sends the datetime like "2023-05-15T10:00:00"
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
-* Als je full screen foto bekijkt, manier maken om de top balk te hiden (als je muis niet beweegt ofzo)
 * filters on front page (small ui button)
     * similar to search page but not so random, and shows all results
     * face filter
     * location filter
     * video/photo type filter
-* eigen theme per photo is te chaotisch
 * misschien wil ik wel light theme in de foto viewer!
 * [BUG] 1e load nadat je recreate_db doet, dan laad de grid niet nadat je inlogt!
+* when viewing a photo outside of 'timeline' context, add v-menu option to view this photo in 'timeline' context
+* ✅ when logged out person is viewing album (with public url), it shouldnt show the nav bar (left), and not the search
+  bar, and the user thing top right should be a login button, and remove the upload button in top bar
+* In viewPhoto, in info v-menu, it should show which albums it's in
+* maak /people styling gelijk aan /albums (vooral fonts en titel placement)
+* in search, make person filter optionally AND instead of OR
