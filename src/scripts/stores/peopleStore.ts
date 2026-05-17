@@ -56,6 +56,16 @@ export const usePeopleStore = defineStore('people', () => {
   async function updatePerson(personId: string, payload: UpdatePersonRequest) {
     try {
       await peopleService.update(personId, payload)
+      const person = people.value.find((p) => p.id === personId)
+      if (person && 'name' in payload) {
+        person.name = payload.name ?? undefined
+        triggerRef(people)
+      }
+      const response = personMedia.value.get(personId)
+      if (response?.person && 'name' in payload) {
+        response.person.name = payload.name ?? undefined
+        triggerRef(personMedia)
+      }
       requestIdleCallback(() => {
         fetchPeople()
         fetchPersonMedia(personId, false)
@@ -69,22 +79,13 @@ export const usePeopleStore = defineStore('people', () => {
   }
 
   async function mergePerson(personId: string, targetPersonId: string) {
-    const target = people.value.find((p) => p.id === targetPersonId)
-    const confirmed = await dialogs.confirm({
-      title: 'Merge people?',
-      description: `This will merge this face cluster into ${target?.name ?? 'the selected person'}.`,
-      confirmText: 'Merge',
-      icon: 'mdi-account-multiple-plus',
-    })
-    if (!confirmed) return false
-
     try {
       await peopleService.merge(personId, { targetPersonId })
-      personMedia.value.delete(personId)
-      triggerRef(personMedia)
-      requestIdleCallback(() => fetchPeople())
+      requestIdleCallback(() => {
+        fetchPeople()
+        fetchPersonMedia(personId, false)
+      })
       snackbarStore.success('People merged')
-      await router.replace(`/person/${targetPersonId}`)
       return true
     } catch (e) {
       snackbarStore.error("Can't merge people", e)
@@ -105,9 +106,10 @@ export const usePeopleStore = defineStore('people', () => {
 
     try {
       await peopleService.unmerge(personId)
-      personMedia.value.delete(personId)
-      triggerRef(personMedia)
-      requestIdleCallback(() => fetchPeople())
+      requestIdleCallback(() => {
+        fetchPeople()
+        fetchPersonMedia(personId, false)
+      })
       snackbarStore.success('Face clusters unmerged')
       await router.replace('/people')
       return true
@@ -118,9 +120,7 @@ export const usePeopleStore = defineStore('people', () => {
   }
 
   function getPhotoThumb(person: PersonInfo, isDark: boolean) {
-    const clusterId =
-      person.faceThumbId ??
-      person.faceClusterIds[Math.floor(Math.random() * person.faceClusterIds.length)]
+    const clusterId = person.faceThumbId ?? person.faceClusterIds[0]
     const url = peopleService.getFaceThumbnail(clusterId)
     if (url === '') {
       return isDark ? `/img/person-no-thumb-dark.png` : `/img/person-no-thumb.png`

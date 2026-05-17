@@ -7,16 +7,17 @@ import { useTheme } from 'vuetify/framework'
 const theme = useTheme()
 const peopleStore = usePeopleStore()
 
-const sortedPeople = computed(() => {
-  return [...peopleStore.people].sort((a, b) => {
-    const aName = a.name?.trim()
-    const bName = b.name?.trim()
-    if (aName && bName) return aName.localeCompare(bName)
-    if (aName) return -1
-    if (bName) return 1
-    return b.photoCount - a.photoCount
-  })
-})
+const namedPeople = computed(() =>
+  peopleStore.people
+    .filter((person) => person.name?.trim())
+    .sort((a, b) => b.photoCount - a.photoCount),
+)
+const unnamedPeople = computed(() =>
+  peopleStore.people
+    .filter((person) => !person.name?.trim())
+    .sort((a, b) => b.photoCount - a.photoCount),
+)
+const totalPeopleCount = computed(() => peopleStore.people.length)
 
 function photoCountText(count: number) {
   return `${count.toLocaleString()} photo${count === 1 ? '' : 's'}`
@@ -30,28 +31,57 @@ peopleStore.fetchPeople()
     <div class="people-header">
       <h1>People</h1>
       <p>
-        {{ sortedPeople.length.toLocaleString() }} person{{ sortedPeople.length === 1 ? '' : 's' }}
+        {{ totalPeopleCount.toLocaleString() }} person{{ totalPeopleCount === 1 ? '' : 's' }}
       </p>
     </div>
 
-    <div class="people-grid" v-if="sortedPeople.length > 0">
-      <router-link
-        v-for="person in sortedPeople"
-        :key="person.id"
-        :to="`/person/${person.id}`"
-        class="person-card"
-      >
-        <v-avatar class="person-avatar" size="116">
-          <img :src="peopleStore.getPhotoThumb(person, theme.current.value.dark)" alt="" />
-        </v-avatar>
-        <div class="person-copy">
-          <p class="person-name" :class="{ unnamed: !person.name }">
-            {{ person.name || 'Unnamed' }}
-          </p>
-          <p class="person-count">{{ photoCountText(person.photoCount) }}</p>
+    <template v-if="totalPeopleCount > 0">
+      <section class="people-section" v-if="namedPeople.length > 0">
+        <div class="section-header">
+          <h2>Named</h2>
+          <p>{{ namedPeople.length.toLocaleString() }}</p>
         </div>
-      </router-link>
-    </div>
+        <div class="people-grid">
+          <router-link
+            v-for="person in namedPeople"
+            :key="person.id"
+            :to="`/person/${person.id}`"
+            class="person-card"
+          >
+            <v-avatar class="person-avatar" size="116">
+              <img :src="peopleStore.getPhotoThumb(person, theme.current.value.dark)" alt="" />
+            </v-avatar>
+            <div class="person-copy">
+              <p class="person-name">{{ person.name }}</p>
+              <p class="person-count">{{ photoCountText(person.photoCount) }}</p>
+            </div>
+          </router-link>
+        </div>
+      </section>
+
+      <section class="people-section" v-if="unnamedPeople.length > 0">
+        <div class="section-header">
+          <h2>Unnamed</h2>
+          <p>{{ unnamedPeople.length.toLocaleString() }}</p>
+        </div>
+        <div class="people-grid">
+          <router-link
+            v-for="person in unnamedPeople"
+            :key="person.id"
+            :to="`/person/${person.id}`"
+            class="person-card"
+          >
+            <v-avatar class="person-avatar" size="116">
+              <img :src="peopleStore.getPhotoThumb(person, theme.current.value.dark)" alt="" />
+            </v-avatar>
+            <div class="person-copy">
+              <p class="person-name unnamed">Unnamed</p>
+              <p class="person-count">{{ photoCountText(person.photoCount) }}</p>
+            </div>
+          </router-link>
+        </div>
+      </section>
+    </template>
 
     <div class="empty-people" v-else>
       <v-icon color="on-surface-variant" size="140" icon="mdi-account-search-outline" />
@@ -82,11 +112,32 @@ peopleStore.fetchPeople()
   color: rgb(var(--v-theme-on-surface-variant));
 }
 
+.people-section {
+  margin-bottom: 42px;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.section-header h2 {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.section-header p {
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin: 0;
+}
+
 .people-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 22px;
-  padding-bottom: 40px;
 }
 
 .person-card {
