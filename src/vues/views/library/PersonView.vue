@@ -3,10 +3,10 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTheme } from 'vuetify/framework'
 import { usePeopleStore } from '@/scripts/stores/peopleStore.ts'
-import type { PersonInfo } from '@/scripts/types/generated/timeline.ts'
 // eslint-disable-next-line
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import peopleService from '@/scripts/services/peopleService.ts'
+import PersonNameDialog from '@/vues/components/ui/PersonNameDialog.vue'
 
 const theme = useTheme()
 const route = useRoute()
@@ -16,11 +16,10 @@ const simpleTimeline = useTemplateRef('simpleTimeline')
 const isInitialLoad = ref(true)
 const fetched = ref(false)
 const nameDialogVisible = ref(false)
-const mergeDialogVisible = ref(false)
-const draftName = ref<string | PersonInfo | null>('')
-const pendingMergeTarget = ref<PersonInfo | null>(null)
-const isSavingName = ref(false)
-const isMerging = ref(false)
+
+function openNameDialog() {
+  nameDialogVisible.value = true
+}
 
 const personId = computed(() => {
   const rawId = route.params.personId
@@ -33,94 +32,9 @@ const personResponse = computed(() => {
 })
 const person = computed(() => personResponse.value?.person ?? null)
 const items = computed(() => personResponse.value?.items ?? [])
-const namedPeople = computed(() => {
-  return peopleStore.people
-    .filter((person) => person.id !== personId.value && person.name?.trim())
-    .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
-})
 
 function photoCountText(count: number) {
   return `${count.toLocaleString()} photo${count === 1 ? '' : 's'}`
-}
-
-function openNameDialog() {
-  draftName.value = person.value?.name ?? ''
-  pendingMergeTarget.value = null
-  nameDialogVisible.value = true
-}
-
-function closeNameDialog() {
-  nameDialogVisible.value = false
-  pendingMergeTarget.value = null
-  draftName.value = person.value?.name ?? ''
-}
-
-function getDraftName() {
-  if (typeof draftName.value === 'string') return draftName.value.trim()
-  return draftName.value?.name?.trim() ?? ''
-}
-
-function suggestionItemProps(props: Record<string, unknown>) {
-  const itemProps = { ...props }
-  delete itemProps.title
-  delete itemProps.subtitle
-  return itemProps
-}
-
-async function submitNameDialog() {
-  if (!personId.value || !person.value || isSavingName.value) return
-
-  const trimmedName = getDraftName()
-  const currentName = person.value.name ?? ''
-  const target = namedPeople.value.find(
-    (person) => person.name?.trim().toLocaleLowerCase() === trimmedName.toLocaleLowerCase(),
-  )
-
-  const nextName = trimmedName.length > 0 ? trimmedName : null
-  if ((nextName ?? '') === currentName) {
-    closeNameDialog()
-    return
-  }
-
-  isSavingName.value = true
-  const updated = await peopleStore.updatePerson(personId.value, { name: nextName })
-  isSavingName.value = false
-
-  if (target && trimmedName.length > 0) {
-    pendingMergeTarget.value = target
-    nameDialogVisible.value = false
-    mergeDialogVisible.value = true
-    return
-  }
-  if (updated) closeNameDialog()
-}
-
-async function cancelMerge() {
-  if (!personId.value || !person.value || isSavingName.value) return
-  const trimmedName = getDraftName()
-  const currentName = person.value.name ?? ''
-  const nextName = trimmedName.length > 0 ? trimmedName : null
-
-  if ((nextName ?? '') !== currentName) {
-    isSavingName.value = true
-    const updated = await peopleStore.updatePerson(personId.value, { name: nextName })
-    isSavingName.value = false
-    if (!updated) return
-  }
-
-  mergeDialogVisible.value = false
-  pendingMergeTarget.value = null
-}
-
-async function confirmMerge() {
-  if (!personId.value || !pendingMergeTarget.value || isMerging.value) return
-  isMerging.value = true
-  const merged = await peopleStore.mergePerson(personId.value, pendingMergeTarget.value.id)
-  isMerging.value = false
-  if (merged) {
-    mergeDialogVisible.value = false
-    pendingMergeTarget.value = null
-  }
 }
 
 async function unmerge() {
@@ -239,107 +153,11 @@ watch(personResponse, () => {
       </div>
     </simple-timeline>
 
-    <v-dialog v-model="nameDialogVisible" max-width="520">
-      <v-card rounded="xl" color="surface-container" class="name-dialog">
-        <v-card-title class="dialog-title">
-          <v-icon icon="mdi-account-edit" class="dialog-title-icon" />
-          <span>Edit person name</span>
-          <v-spacer />
-          <v-btn icon="mdi-close" variant="text" density="comfortable" @click="closeNameDialog" />
-        </v-card-title>
-
-        <v-card-text class="dialog-content">
-          <v-combobox
-            v-model="draftName"
-            :items="namedPeople"
-            item-title="name"
-            item-value="name"
-            label="Name"
-            placeholder="Unnamed"
-            name="person-name-edit"
-            autocomplete="off"
-            autofocus
-            clearable
-            color="primary"
-            variant="outlined"
-            hide-details
-            @keydown.enter.prevent="submitNameDialog"
-          >
-            <template v-slot:item="{ props, item }">
-              <v-list-item v-bind="suggestionItemProps(props)" class="person-suggestion">
-                <template v-slot:prepend>
-                  <v-avatar size="36">
-                    <img :src="peopleStore.getPhotoThumb(item, theme.current.value.dark)" alt="" />
-                  </v-avatar>
-                </template>
-                <v-list-item-title>{{ item.name }}</v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ photoCountText(item.photoCount) }}
-                </v-list-item-subtitle>
-              </v-list-item>
-            </template>
-          </v-combobox>
-        </v-card-text>
-
-        <v-divider />
-
-        <v-card-actions class="dialog-actions">
-          <v-spacer />
-          <v-btn variant="text" rounded="lg" @click="closeNameDialog">Cancel</v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            rounded="lg"
-            :loading="isSavingName"
-            @click="submitNameDialog"
-          >
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog v-model="mergeDialogVisible" max-width="460" persistent>
-      <v-card rounded="xl" color="surface-container" v-if="pendingMergeTarget">
-        <v-card-title class="dialog-title">
-          <v-icon icon="mdi-account-multiple-plus" class="dialog-title-icon" />
-          <span>Merge people?</span>
-        </v-card-title>
-
-        <v-card-text class="dialog-content merge-dialog-body">
-          <v-avatar size="82">
-            <img
-              :src="peopleStore.getPhotoThumb(pendingMergeTarget, theme.current.value.dark)"
-              alt=""
-            />
-          </v-avatar>
-          <div>
-            <p>
-              Do you want to merge this person with
-              <strong>{{ pendingMergeTarget.name }}</strong
-              >?
-            </p>
-            <p class="merge-subtitle">{{ photoCountText(pendingMergeTarget.photoCount) }}</p>
-          </div>
-        </v-card-text>
-
-        <v-divider />
-
-        <v-card-actions class="dialog-actions">
-          <v-spacer />
-          <v-btn variant="text" rounded="lg" @click="cancelMerge">No</v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            rounded="lg"
-            :loading="isMerging"
-            @click="confirmMerge"
-          >
-            Yes, merge
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <person-name-dialog
+      v-model="nameDialogVisible"
+      :person="person"
+      @saved="peopleStore.fetchPeople"
+    />
   </div>
 </template>
 
@@ -370,11 +188,11 @@ watch(personResponse, () => {
   text-align: center;
 }
 
-.center-loading h2{
+.center-loading h2 {
   font-weight: 500;
   color: rgb(var(--v-theme-on-surface-variant));
   font-size: 20px;
-  margin-top:10px;
+  margin-top: 10px;
 }
 
 .person-header-left {

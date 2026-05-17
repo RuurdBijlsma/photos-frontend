@@ -6,12 +6,16 @@ import { useTheme } from 'vuetify/framework'
 import GlowImage from '@/vues/components/ui/GlowImage.vue'
 import type { PersonInfo } from '@/scripts/types/generated/timeline.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
+import PersonNameDialog from '@/vues/components/ui/PersonNameDialog.vue'
 
 const theme = useTheme()
 const peopleStore = usePeopleStore()
 const dialogs = useDialogStore()
 const draggedPersonId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
+// Rename functionality
+const nameDialogVisible = ref(false)
+const selectedPerson = ref<PersonInfo | null>(null)
 
 const namedPeople = computed(() =>
   peopleStore.people
@@ -32,6 +36,13 @@ const sections = computed(() =>
 )
 
 const totalPeopleCount = computed(() => peopleStore.people.length)
+
+function setName(e: PointerEvent, person: PersonInfo) {
+  e.preventDefault()
+  e.stopPropagation()
+  selectedPerson.value = person
+  nameDialogVisible.value = true
+}
 
 function photoCountText(count: number) {
   return `${count.toLocaleString()} photo${count === 1 ? '' : 's'}`
@@ -95,6 +106,7 @@ peopleStore.fetchPeople()
 
 <template>
   <main-layout-container>
+    <person-name-dialog v-model="nameDialogVisible" :person="selectedPerson" />
     <div class="library-container">
       <header class="library-header">
         <div class="header-left">
@@ -139,8 +151,16 @@ peopleStore.fetchPeople()
                 :strength="0.7"
               />
               <div class="person-copy">
-                <p class="person-name" :class="{ unnamed: !person.name?.trim() }">
-                  {{ person.name?.trim() || 'Unnamed' }}
+                <p
+                  v-if="!person.name?.trim()"
+                  class="person-name unnamed"
+                  v-ripple
+                  @click="(e) => setName(e, person)"
+                >
+                  Unnamed
+                </p>
+                <p class="person-name" v-else>
+                  {{ person.name?.trim() }}
                 </p>
                 <p class="person-count">{{ photoCountText(person.photoCount) }}</p>
               </div>
@@ -231,7 +251,8 @@ peopleStore.fetchPeople()
     opacity 150ms ease;
 }
 
-.person-card:hover {
+/* Only apply the card hover effect IF the unnamed text is NOT being hovered */
+.person-card:hover:not(:has(.unnamed:hover)) {
   background-color: rgba(var(--v-theme-on-background), 0.06);
   transform: translateY(-2px);
 }
@@ -275,6 +296,12 @@ peopleStore.fetchPeople()
   color: rgb(var(--v-theme-on-surface-variant));
   font-style: italic;
   font-weight: 400;
+  border-radius: 8px;
+  transition: background-color 0.1s;
+}
+
+.person-name.unnamed:hover {
+  background-color: rgba(var(--v-theme-on-surface-variant), 0.1);
 }
 
 .person-count {
