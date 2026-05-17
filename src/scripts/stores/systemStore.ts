@@ -22,6 +22,7 @@ export const useSystemStore = defineStore('system', () => {
   async function fetchStats() {
     try {
       const { data } = await systemService.getStats()
+      console.log('system stats', data)
       stats.value = data
     } catch (e) {
       snackbarStore.error('Could not fetch system stats', e)

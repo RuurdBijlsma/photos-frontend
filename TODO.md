@@ -199,3 +199,5 @@
 * when viewing a photo outside of 'timeline' context, add v-menu option to view this photo in 'timeline' context
 * ✅ when logged out person is viewing album (with public url), it shouldnt show the nav bar (left), and not the search
   bar, and the user thing top right should be a login button, and remove the upload button in top bar
+* In viewPhoto, in info v-menu, it should show which albums it's in
+* maak /people styling gelijk aan /albums (vooral fonts en titel placement)

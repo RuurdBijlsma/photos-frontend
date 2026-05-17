@@ -44,7 +44,7 @@ function startResize() {
 }
 
 requestIdleCallback(() => albumStore.fetchUserAlbums())
-useEventListener(document, 'mouseup', (e) => {
+useEventListener(document, 'mouseup', () => {
   isResizing = false
 })
 useEventListener(document, 'mousemove', (e) => {

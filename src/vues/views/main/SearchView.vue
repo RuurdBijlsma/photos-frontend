@@ -8,7 +8,7 @@ import searchService from '@/scripts/services/searchService.ts'
 import type { SearchFilterRanges } from '@/scripts/types/api/search.ts'
 import { useDebounceFn } from '@vueuse/core'
 import { MONTHS } from '@/scripts/constants.ts'
-import mediaItemService from '@/scripts/services/mediaItemService.ts'
+import peopleService from '@/scripts/services/peopleService.ts'
 
 const snackStore = useSnackbarsStore()
 const route = useRoute()
@@ -522,7 +522,7 @@ watch(
                           <v-avatar>
                             <v-img
                               v-if="item.name"
-                              :src="mediaItemService.getFaceThumbnail(item.personId)"
+                              :src="peopleService.getPersonThumbnail(item.personId)"
                               style="object-fit: cover"
                               :alt="item.name"
                             />

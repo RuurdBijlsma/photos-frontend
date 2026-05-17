@@ -93,21 +93,28 @@ export const useTimelineStore = defineStore('timeline', () => {
   function notifySlowThumbnails() {
     notifiedAboutThumbnails = true
     let unloadedCount = 0
+    let totalCount = 0
     for (const [, groupItems] of monthItems.value) {
       for (const item of groupItems) {
+        totalCount++
         if (!item.hasThumbnails) {
           unloadedCount++
         }
       }
     }
-    if (unloadedCount > 0) {
+    // If more than 1% is not yet loaded, notify about slow thumbnails
+    if (unloadedCount / totalCount > 0.01) {
       snackbarStore.enqueue({
         message: `Your photos are still being prepared. Browsing may be slower and thumbnails may load gradually until processing is complete. [${unloadedCount} remaining]`,
         color: 'white',
         icon: 'mdi-information',
         timeout: -1,
       })
-    } else {
+    } else if (unloadedCount > 0) {
+      console.warn(
+        `Some thumbnails aren't ingested yet: [${unloadedCount} / ${totalCount}] unloaded`,
+      )
+    } else if (unloadedCount === 0) {
       console.log('All AVIF thumbnails are available')
     }
   }

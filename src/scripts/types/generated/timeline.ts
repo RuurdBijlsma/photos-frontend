@@ -128,10 +128,11 @@ export interface SearchSuggestionsResponse {
 
 /** --- Person */
 export interface PersonInfo {
-  id: number
+  id: string
   name?: string | undefined
   photoCount: number
-  thumbnailId?: string | undefined
+  faceThumbId?: string | undefined
+  faceClusterIds: string[]
 }
 
 export interface ListPeopleResponse {
@@ -1513,13 +1514,13 @@ export const SearchSuggestionsResponse: MessageFns<SearchSuggestionsResponse> = 
 }
 
 function createBasePersonInfo(): PersonInfo {
-  return { id: 0, name: undefined, photoCount: 0, thumbnailId: undefined }
+  return { id: '', name: undefined, photoCount: 0, faceThumbId: undefined, faceClusterIds: [] }
 }
 
 export const PersonInfo: MessageFns<PersonInfo> = {
   encode(message: PersonInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== 0) {
-      writer.uint32(8).int64(message.id)
+    if (message.id !== '') {
+      writer.uint32(10).string(message.id)
     }
     if (message.name !== undefined) {
       writer.uint32(18).string(message.name)
@@ -1527,8 +1528,11 @@ export const PersonInfo: MessageFns<PersonInfo> = {
     if (message.photoCount !== 0) {
       writer.uint32(24).int32(message.photoCount)
     }
-    if (message.thumbnailId !== undefined) {
-      writer.uint32(34).string(message.thumbnailId)
+    if (message.faceThumbId !== undefined) {
+      writer.uint32(34).string(message.faceThumbId)
+    }
+    for (const v of message.faceClusterIds) {
+      writer.uint32(42).string(v!)
     }
     return writer
   },
@@ -1541,11 +1545,11 @@ export const PersonInfo: MessageFns<PersonInfo> = {
       const tag = reader.uint32()
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
             break
           }
 
-          message.id = longToNumber(reader.int64())
+          message.id = reader.string()
           continue
         }
         case 2: {
@@ -1569,7 +1573,15 @@ export const PersonInfo: MessageFns<PersonInfo> = {
             break
           }
 
-          message.thumbnailId = reader.string()
+          message.faceThumbId = reader.string()
+          continue
+        }
+        case 5: {
+          if (tag !== 42) {
+            break
+          }
+
+          message.faceClusterIds.push(reader.string())
           continue
         }
       }
@@ -1583,25 +1595,30 @@ export const PersonInfo: MessageFns<PersonInfo> = {
 
   fromJSON(object: any): PersonInfo {
     return {
-      id: isSet(object.id) ? globalThis.Number(object.id) : 0,
+      id: isSet(object.id) ? globalThis.String(object.id) : '',
       name: isSet(object.name) ? globalThis.String(object.name) : undefined,
       photoCount: isSet(object.photoCount)
         ? globalThis.Number(object.photoCount)
         : isSet(object.photo_count)
           ? globalThis.Number(object.photo_count)
           : 0,
-      thumbnailId: isSet(object.thumbnailId)
-        ? globalThis.String(object.thumbnailId)
-        : isSet(object.thumbnail_id)
-          ? globalThis.String(object.thumbnail_id)
+      faceThumbId: isSet(object.faceThumbId)
+        ? globalThis.String(object.faceThumbId)
+        : isSet(object.face_thumb_id)
+          ? globalThis.String(object.face_thumb_id)
           : undefined,
+      faceClusterIds: globalThis.Array.isArray(object?.faceClusterIds)
+        ? object.faceClusterIds.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.face_cluster_ids)
+          ? object.face_cluster_ids.map((e: any) => globalThis.String(e))
+          : [],
     }
   },
 
   toJSON(message: PersonInfo): unknown {
     const obj: any = {}
-    if (message.id !== 0) {
-      obj.id = Math.round(message.id)
+    if (message.id !== '') {
+      obj.id = message.id
     }
     if (message.name !== undefined) {
       obj.name = message.name
@@ -1609,8 +1626,11 @@ export const PersonInfo: MessageFns<PersonInfo> = {
     if (message.photoCount !== 0) {
       obj.photoCount = Math.round(message.photoCount)
     }
-    if (message.thumbnailId !== undefined) {
-      obj.thumbnailId = message.thumbnailId
+    if (message.faceThumbId !== undefined) {
+      obj.faceThumbId = message.faceThumbId
+    }
+    if (message.faceClusterIds?.length) {
+      obj.faceClusterIds = message.faceClusterIds
     }
     return obj
   },
@@ -1620,10 +1640,11 @@ export const PersonInfo: MessageFns<PersonInfo> = {
   },
   fromPartial<I extends Exact<DeepPartial<PersonInfo>, I>>(object: I): PersonInfo {
     const message = createBasePersonInfo()
-    message.id = object.id ?? 0
+    message.id = object.id ?? ''
     message.name = object.name ?? undefined
     message.photoCount = object.photoCount ?? 0
-    message.thumbnailId = object.thumbnailId ?? undefined
+    message.faceThumbId = object.faceThumbId ?? undefined
+    message.faceClusterIds = object.faceClusterIds?.map((e) => e) || []
     return message
   },
 }

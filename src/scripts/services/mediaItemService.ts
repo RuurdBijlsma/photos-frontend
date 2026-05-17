@@ -31,13 +31,6 @@ const mediaItemService = {
     return new URL(path, baseUrl).href
   },
 
-  getFaceThumbnail(personId: string | number | null | undefined): string {
-    if (personId === null || personId === undefined) return ''
-    const baseUrl = apiClient.defaults.baseURL
-    const path = `/thumbnails/people/${personId}.webp`
-    return new URL(path, baseUrl).href
-  },
-
   getRandomPhoto(): Promise<AxiosResponse<RandomPhotoResponse>> {
     return apiClient.get<RandomPhotoResponse>('/photos/random')
   },

@@ -33,6 +33,18 @@ const router = createRouter({
           component: () => import('@/vues/views/library/PeopleView.vue'),
         },
         {
+          path: 'person/:personId',
+          name: 'person-view',
+          component: () => import('@/vues/views/library/PersonView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-person',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
           path: 'explore',
           name: 'explore',
           component: () => import('@/vues/views/main/ExploreView.vue'),

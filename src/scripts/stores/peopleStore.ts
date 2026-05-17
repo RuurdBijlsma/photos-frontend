@@ -1,15 +1,21 @@
 import { defineStore } from 'pinia'
-import { shallowRef, watch } from 'vue'
-import type { PersonInfo } from '@/scripts/types/generated/timeline.ts'
+import { shallowRef, triggerRef, watch } from 'vue'
+import type { FullPersonMediaResponse, PersonInfo } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import peopleService from '@/scripts/services/peopleService.ts'
+import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
+import { useRouter } from 'vue-router'
 
 export const usePeopleStore = defineStore('people', () => {
   const snackbarStore = useSnackbarsStore()
+  const dialogs = useDialogStore()
+  const router = useRouter()
 
   const people = shallowRef<PersonInfo[]>(
     localStorage.getItem('userPeople') === null ? [] : JSON.parse(localStorage.userPeople),
   )
+  const personMedia = shallowRef(new Map<string, FullPersonMediaResponse>())
+  const personMediaPromises = new Map<string, Promise<FullPersonMediaResponse>>()
 
   watch(people, () => {
     localStorage.setItem('userPeople', JSON.stringify(people.value))
@@ -18,15 +24,128 @@ export const usePeopleStore = defineStore('people', () => {
   async function fetchPeople() {
     try {
       const response = await peopleService.list()
+      console.log('People list', response.people)
       people.value = response.people
     } catch (e) {
       snackbarStore.error("Can't fetch people", e)
     }
   }
 
+  async function fetchPersonMedia(personId: string, useCache = true) {
+    if (personMediaPromises.has(personId)) {
+      await personMediaPromises.get(personId)!
+      return
+    }
+    if (useCache && personMedia.value.has(personId)) return
+
+    try {
+      const promise = peopleService.get(personId)
+      personMediaPromises.set(personId, promise)
+      const response = await promise
+      personMediaPromises.delete(personId)
+
+      personMedia.value.set(personId, response)
+      triggerRef(personMedia)
+    } catch (e) {
+      personMediaPromises.delete(personId)
+      snackbarStore.error("Can't fetch person photos", e)
+    }
+  }
+
+  async function updatePersonName(personId: string, name: string | null) {
+    try {
+      await peopleService.update(personId, { name })
+      const person = people.value.find((p) => p.id === personId)
+      if (person) {
+        person.name = name ?? undefined
+        triggerRef(people)
+      }
+      const response = personMedia.value.get(personId)
+      if (response?.person) {
+        response.person.name = name ?? undefined
+        triggerRef(personMedia)
+      }
+      requestIdleCallback(() => {
+        fetchPeople()
+        fetchPersonMedia(personId, false)
+      })
+      snackbarStore.success(name ? 'Person name updated' : 'Person name removed')
+      return true
+    } catch (e) {
+      snackbarStore.error("Can't update person name", e)
+      return false
+    }
+  }
+
+  async function mergePerson(personId: string, targetPersonId: string) {
+    const target = people.value.find((p) => p.id === targetPersonId)
+    const confirmed = await dialogs.confirm({
+      title: 'Merge people?',
+      description: `This will merge this face cluster into ${target?.name ?? 'the selected person'}.`,
+      confirmText: 'Merge',
+      icon: 'mdi-account-multiple-plus',
+    })
+    if (!confirmed) return false
+
+    try {
+      await peopleService.merge(personId, { targetPersonId })
+      personMedia.value.delete(personId)
+      triggerRef(personMedia)
+      requestIdleCallback(() => fetchPeople())
+      snackbarStore.success('People merged')
+      await router.replace(`/person/${targetPersonId}`)
+      return true
+    } catch (e) {
+      snackbarStore.error("Can't merge people", e)
+      return false
+    }
+  }
+
+  async function unmergePerson(personId: string) {
+    const confirmed = await dialogs.confirm({
+      title: 'Unmerge face clusters?',
+      description:
+        'This will split this person into separate unnamed people and discard the current name.',
+      confirmText: 'Unmerge',
+      icon: 'mdi-account-multiple-remove',
+      color: 'warning',
+    })
+    if (!confirmed) return false
+
+    try {
+      await peopleService.unmerge(personId)
+      personMedia.value.delete(personId)
+      triggerRef(personMedia)
+      requestIdleCallback(() => fetchPeople())
+      snackbarStore.success('Face clusters unmerged')
+      await router.replace('/people')
+      return true
+    } catch (e) {
+      snackbarStore.error("Can't unmerge person", e)
+      return false
+    }
+  }
+
+  function getPhotoThumb(person: PersonInfo, isDark: boolean) {
+    const clusterId =
+      person.faceThumbId ??
+      person.faceClusterIds[Math.floor(Math.random() * person.faceClusterIds.length)]
+    const url = peopleService.getFaceThumbnail(clusterId)
+    if (url === '') {
+      return isDark ? `/img/person-no-thumb-dark.png` : `/img/person-no-thumb.png`
+    }
+    return url
+  }
+
   return {
     people,
+    personMedia,
 
     fetchPeople,
+    fetchPersonMedia,
+    updatePersonName,
+    mergePerson,
+    unmergePerson,
+    getPhotoThumb,
   }
 })
