@@ -23,6 +23,14 @@ const unnamedPeople = computed(() =>
     .filter((person) => !person.name?.trim())
     .sort((a, b) => b.photoCount - a.photoCount),
 )
+
+const sections = computed(() =>
+  [
+    { title: 'Named', items: namedPeople.value },
+    { title: 'Unnamed', items: unnamedPeople.value },
+  ].filter((section) => section.items.length > 0),
+)
+
 const totalPeopleCount = computed(() => peopleStore.people.length)
 
 function photoCountText(count: number) {
@@ -68,10 +76,7 @@ async function onDrop(dropPerson: PersonInfo, event: DragEvent) {
     if (!name?.trim()) return
     const updated = await peopleStore.updatePerson(dropPerson.id, { name: name.trim() })
     if (!updated) return
-    mergeTarget = {
-      ...dropPerson,
-      name: name.trim(),
-    }
+    mergeTarget = { ...dropPerson, name: name.trim() }
   }
 
   const confirmed = await dialogs.confirm({
@@ -101,52 +106,15 @@ peopleStore.fetchPeople()
       </header>
 
       <template v-if="totalPeopleCount > 0">
-        <section class="people-section" v-if="namedPeople.length > 0">
+        <section v-for="section in sections" :key="section.title" class="people-section">
           <div class="section-header">
-            <h2>Named</h2>
-            <p>{{ namedPeople.length.toLocaleString() }}</p>
+            <h2>{{ section.title }}</h2>
+            <p>{{ section.items.length.toLocaleString() }}</p>
           </div>
-          <div class="people-grid">
-            <router-link
-              v-for="person in namedPeople"
-              :key="person.id"
-              :to="`/person/${person.id}`"
-              class="person-card"
-              draggable="true"
-              @dragstart="onDragStart(person, $event)"
-              @dragend="onDragEnd"
-              :class="{
-                'drag-over-card': dragOverId === person.id && draggedPersonId !== person.id,
-                'is-dragging': draggedPersonId !== null,
-              }"
-              @dragenter="dragOverId = person.id"
-              @dragleave="dragOverId = null"
-              @dragover.prevent
-              @drop.prevent="onDrop(person, $event)"
-            >
-              <glow-image
-                :src="peopleStore.getPhotoThumb(person, theme.current.value.dark)"
-                :height="124"
-                :width="124"
-                border-radius="62px"
-                :strength="0.7"
-              />
-              <div class="person-copy">
-                <p class="person-name">{{ person.name }}</p>
-                <p class="person-count">{{ photoCountText(person.photoCount) }}</p>
-              </div>
-            </router-link>
-          </div>
-        </section>
 
-        <section class="people-section" v-if="unnamedPeople.length > 0">
-          <div class="section-header">
-            <h2>Unnamed</h2>
-            <p>{{ unnamedPeople.length.toLocaleString() }}</p>
-          </div>
           <div class="people-grid">
             <router-link
-              v-for="person in unnamedPeople"
+              v-for="person in section.items"
               :key="person.id"
               :to="`/person/${person.id}`"
               class="person-card"
@@ -170,7 +138,9 @@ peopleStore.fetchPeople()
                 :strength="0.7"
               />
               <div class="person-copy">
-                <p class="person-name unnamed">Unnamed</p>
+                <p class="person-name" :class="{ unnamed: !person.name?.trim() }">
+                  {{ person.name?.trim() || 'Unnamed' }}
+                </p>
                 <p class="person-count">{{ photoCountText(person.photoCount) }}</p>
               </div>
             </router-link>
