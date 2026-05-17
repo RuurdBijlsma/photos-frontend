@@ -6,7 +6,8 @@ import { useTheme } from 'vuetify/framework'
 import GlowImage from '@/vues/components/ui/GlowImage.vue'
 import type { PersonInfo } from '@/scripts/types/generated/timeline.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
-import PersonNameDialog from '@/vues/components/ui/PersonNameDialog.vue'
+import PersonNameDialog from '@/vues/components/rename-people/PersonNameDialog.vue'
+import MergePersonDialog from '@/vues/components/rename-people/MergePersonDialog.vue'
 
 const theme = useTheme()
 const peopleStore = usePeopleStore()
@@ -16,6 +17,11 @@ const dragOverId = ref<string | null>(null)
 // Rename functionality
 const nameDialogVisible = ref(false)
 const selectedPerson = ref<PersonInfo | null>(null)
+
+// Merge functionality
+const mergeDialogVisible = ref(false)
+const mergeDialogSource = ref<PersonInfo | null>(null)
+const mergeDialogTarget = ref<PersonInfo | null>(null)
 
 const namedPeople = computed(() =>
   peopleStore.people
@@ -68,37 +74,34 @@ async function onDrop(dropPerson: PersonInfo, event: DragEvent) {
   const sourcePerson = peopleStore.people.find((person) => person.id === sourceId)
   if (!sourcePerson) return
 
-  const sourceName = sourcePerson.name?.trim()
-  const dropName = dropPerson.name?.trim()
-  let mergeSourceId = sourcePerson.id
-  let mergeSource = sourcePerson
-  let mergeTarget = dropPerson
+  // The person being dropped ON is the one who remains (source)
+  // The person being dragged is the one who is deleted (target)
+  let mergeSource = dropPerson
+  let mergeTarget = sourcePerson
 
-  if (sourceName && !dropName) {
-    mergeSourceId = dropPerson.id
-    mergeSource = dropPerson
-    mergeTarget = sourcePerson
-  } else if (!sourceName && !dropName) {
+  const sourceName = mergeSource.name?.trim()
+  const targetName = mergeTarget.name?.trim()
+
+  if (!sourceName && !targetName) {
     const name = await dialogs.prompt({
       title: 'Name merged person',
       description: 'Give this person a name before merging these two groups.',
       confirmText: 'Merge',
     })
     if (!name?.trim()) return
-    const updated = await peopleStore.updatePerson(dropPerson.id, { name: name.trim() })
+    const updated = await peopleStore.updatePerson(mergeSource.id, { name: name.trim() })
     if (!updated) return
-    mergeTarget = { ...dropPerson, name: name.trim() }
+    mergeSource = { ...mergeSource, name: name.trim() }
   }
 
-  const confirmed = await dialogs.confirm({
-    title: 'Merge people?',
-    description: `Merge ${mergeSource.name?.trim() || 'this unnamed person'} into ${mergeTarget.name || 'this person'}?`,
-    confirmText: 'Merge',
-    icon: 'mdi-account-multiple-plus',
-  })
-  if (!confirmed) return
+  mergeDialogSource.value = mergeSource
+  mergeDialogTarget.value = mergeTarget
+  mergeDialogVisible.value = true
+}
 
-  await peopleStore.mergePerson(mergeSourceId, mergeTarget.id)
+function onMergeConfirmed() {
+  mergeDialogSource.value = null
+  mergeDialogTarget.value = null
 }
 
 peopleStore.fetchPeople()
@@ -107,6 +110,12 @@ peopleStore.fetchPeople()
 <template>
   <main-layout-container>
     <person-name-dialog v-model="nameDialogVisible" :person="selectedPerson" />
+    <merge-person-dialog
+      v-model="mergeDialogVisible"
+      :source-person="mergeDialogSource"
+      :target-person="mergeDialogTarget"
+      @confirmed="onMergeConfirmed"
+    />
     <div class="library-container">
       <header class="library-header">
         <div class="header-left">

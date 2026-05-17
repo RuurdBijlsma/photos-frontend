@@ -6,7 +6,7 @@ import { usePeopleStore } from '@/scripts/stores/peopleStore.ts'
 // eslint-disable-next-line
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import peopleService from '@/scripts/services/peopleService.ts'
-import PersonNameDialog from '@/vues/components/ui/PersonNameDialog.vue'
+import PersonNameDialog from '@/vues/components/rename-people/PersonNameDialog.vue'
 
 const theme = useTheme()
 const route = useRoute()
