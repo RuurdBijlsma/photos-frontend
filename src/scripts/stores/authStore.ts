@@ -1,10 +1,10 @@
-import { computed, ref, type Ref, watch } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import authService from '@/scripts/services/authService.ts'
 import type { CreateUser, LoginUser, Tokens, User } from '@/scripts/types/api/auth.ts'
 import { useRouter } from 'vue-router'
 import { useSystemStore } from '@/scripts/stores/systemStore.ts'
-import { StorageSerializers, useStorage } from '@vueuse/core'
+import { useStorage } from '@vueuse/core'
 import { useObjStorage } from '@/scripts/utils.ts'
 
 type AuthStatus = 'idle' | 'loading' | 'error' | 'success'

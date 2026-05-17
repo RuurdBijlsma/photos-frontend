@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import type { Album, AlbumSortField, SortDirection } from '@/scripts/types/api/album'
 import albumService from '@/scripts/services/albumService.ts'

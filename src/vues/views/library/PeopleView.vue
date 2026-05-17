@@ -76,8 +76,8 @@ async function onDrop(dropPerson: PersonInfo, event: DragEvent) {
 
   // The person being dropped ON is the one who remains (source)
   // The person being dragged is the one who is deleted (target)
-  let mergeSource = dropPerson
-  let mergeTarget = sourcePerson
+  const mergeSource = dropPerson
+  const mergeTarget = sourcePerson
 
   const sourceName = mergeSource.name?.trim()
   const targetName = mergeTarget.name?.trim()
@@ -91,7 +91,7 @@ async function onDrop(dropPerson: PersonInfo, event: DragEvent) {
     if (!name?.trim()) return
     const updated = await peopleStore.updatePerson(mergeSource.id, { name: name.trim() })
     if (!updated) return
-    
+
     await peopleStore.mergePerson(mergeSource.id, mergeTarget.id)
     return
   }

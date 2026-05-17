@@ -93,7 +93,7 @@ async function submitNameDialog() {
       mergeSource.value = target
       mergeTarget.value = props.person
     }
-    
+
     nameDialogVisible.value = false
     mergeDialogVisible.value = true
     return
@@ -158,10 +158,7 @@ async function onMergeConfirmed() {
               <v-list-item v-bind="suggestionItemProps(itemProps)" class="person-suggestion">
                 <template v-slot:prepend>
                   <v-avatar size="36">
-                    <img
-                      :src="peopleStore.getPhotoThumb(item, theme.current.value.dark)"
-                      alt=""
-                    />
+                    <img :src="peopleStore.getPhotoThumb(item, theme.current.value.dark)" alt="" />
                   </v-avatar>
                 </template>
                 <v-list-item-title>{{ item.name }}</v-list-item-title>

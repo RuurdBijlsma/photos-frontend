@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { shallowRef, triggerRef, watch } from 'vue'
+import { shallowRef, triggerRef } from 'vue'
 import type { Album, AlbumSort, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
 import albumService from '@/scripts/services/albumService.ts'
 import type { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'

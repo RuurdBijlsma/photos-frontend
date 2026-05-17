@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { shallowRef, triggerRef, watch } from 'vue'
+import { shallowRef, triggerRef } from 'vue'
 import type { FullPersonMediaResponse, PersonInfo } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import peopleService from '@/scripts/services/peopleService.ts'

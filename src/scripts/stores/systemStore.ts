@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
 import type { SystemStats } from '@/scripts/types/api/system.ts'
 import systemService from '@/scripts/services/systemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
