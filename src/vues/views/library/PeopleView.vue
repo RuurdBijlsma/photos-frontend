@@ -91,7 +91,9 @@ async function onDrop(dropPerson: PersonInfo, event: DragEvent) {
     if (!name?.trim()) return
     const updated = await peopleStore.updatePerson(mergeSource.id, { name: name.trim() })
     if (!updated) return
-    mergeSource = { ...mergeSource, name: name.trim() }
+    
+    await peopleStore.mergePerson(mergeSource.id, mergeTarget.id)
+    return
   }
 
   mergeDialogSource.value = mergeSource
