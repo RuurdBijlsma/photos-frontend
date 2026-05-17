@@ -75,7 +75,7 @@ async function saveName(name: string | null) {
 
   const nextName = trimmedName.length > 0 ? trimmedName : null
   if ((nextName ?? '') === currentName) return
-  const updated = await peopleStore.updatePersonName(personId.value, nextName)
+  const updated = await peopleStore.updatePerson(personId.value, { name: nextName })
   if (!updated) setLocalNameFromPerson()
 }
 

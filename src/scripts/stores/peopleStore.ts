@@ -5,6 +5,7 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import peopleService from '@/scripts/services/peopleService.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useRouter } from 'vue-router'
+import type { UpdatePersonRequest } from '@/scripts/types/api/people.ts'
 
 export const usePeopleStore = defineStore('people', () => {
   const snackbarStore = useSnackbarsStore()
@@ -52,27 +53,17 @@ export const usePeopleStore = defineStore('people', () => {
     }
   }
 
-  async function updatePersonName(personId: string, name: string | null) {
+  async function updatePerson(personId: string, payload: UpdatePersonRequest) {
     try {
-      await peopleService.update(personId, { name })
-      const person = people.value.find((p) => p.id === personId)
-      if (person) {
-        person.name = name ?? undefined
-        triggerRef(people)
-      }
-      const response = personMedia.value.get(personId)
-      if (response?.person) {
-        response.person.name = name ?? undefined
-        triggerRef(personMedia)
-      }
+      await peopleService.update(personId, payload)
       requestIdleCallback(() => {
         fetchPeople()
         fetchPersonMedia(personId, false)
       })
-      snackbarStore.success(name ? 'Person name updated' : 'Person name removed')
+      snackbarStore.success('Updated person')
       return true
     } catch (e) {
-      snackbarStore.error("Can't update person name", e)
+      snackbarStore.error("Can't update person", e)
       return false
     }
   }
@@ -143,7 +134,7 @@ export const usePeopleStore = defineStore('people', () => {
 
     fetchPeople,
     fetchPersonMedia,
-    updatePersonName,
+    updatePerson,
     mergePerson,
     unmergePerson,
     getPhotoThumb,
