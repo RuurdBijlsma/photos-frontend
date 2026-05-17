@@ -7,6 +7,7 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useRouter } from 'vue-router'
+import { useObjStorage } from '@/scripts/utils.ts'
 
 export const useAlbumStore = defineStore('album', () => {
   const snackbarStore = useSnackbarsStore()
@@ -14,15 +15,9 @@ export const useAlbumStore = defineStore('album', () => {
   const dialogs = useDialogStore()
   const router = useRouter()
 
-  const userAlbums = shallowRef<Album[]>(
-    localStorage.getItem('userAlbums') === null ? [] : JSON.parse(localStorage.userAlbums),
-  )
+  const userAlbums = useObjStorage<Album[]>('userAlbums', [])
   const albumMedia = shallowRef(new Map<string, FullAlbumMediaResponse>())
   const albumMediaPromises = new Map<string, Promise<FullAlbumMediaResponse>>()
-
-  watch(userAlbums, () => {
-    localStorage.setItem('userAlbums', JSON.stringify(userAlbums.value))
-  })
 
   async function fetchUserAlbums() {
     try {

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import { useSystemStore } from '@/scripts/stores/systemStore.ts'
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useStorage } from '@vueuse/core'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { usePeopleStore } from '@/scripts/stores/peopleStore.ts'
 import { useTheme } from 'vuetify/framework'
@@ -30,15 +30,9 @@ const faceIcons = [
 ]
 const faceIcon = faceIcons[Math.floor(Math.random() * faceIcons.length)]
 
-const albumsExpanded = ref(
-  localStorage.getItem('navExpandAlbums') === null ? true : localStorage.navExpandAlbums === 'true',
-)
-const peopleExpanded = ref(
-  localStorage.getItem('navExpandPeople') === null ? true : localStorage.navExpandPeople === 'true',
-)
-const collapseDrawer = ref(
-  localStorage.getItem('collapseDrawer') === null ? false : localStorage.collapseDrawer === 'true',
-)
+const albumsExpanded = useStorage('navExpandAlbums', true)
+const peopleExpanded = useStorage('navExpandPeople', true)
+const collapseDrawer = useStorage('collapseDrawer', false)
 
 const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
 const namedPeople = computed(() => peopleStore.people.filter((p) => p.name?.trim()))
@@ -62,16 +56,6 @@ useEventListener(document, 'mousemove', (e) => {
   if (!isResizing) return
   collapseDrawer.value = e.clientX < COLLAPSE_THRESHOLD
 })
-
-watch(albumsExpanded, () =>
-  localStorage.setItem('navExpandAlbums', JSON.stringify(albumsExpanded.value)),
-)
-watch(peopleExpanded, () =>
-  localStorage.setItem('navExpandPeople', JSON.stringify(peopleExpanded.value)),
-)
-watch(collapseDrawer, () =>
-  localStorage.setItem('collapseDrawer', JSON.stringify(collapseDrawer.value)),
-)
 </script>
 
 <template>
@@ -114,7 +98,11 @@ watch(collapseDrawer, () =>
         ></v-btn>
       </div>
 
-      <NavExpandableList v-if="userHasAlbums" :items="albumStore.userAlbums" :expanded="albumsExpanded">
+      <NavExpandableList
+        v-if="userHasAlbums"
+        :items="albumStore.userAlbums"
+        :expanded="albumsExpanded"
+      >
         <template #item="{ item: album }">
           <v-list-item
             :prepend-gap="10"

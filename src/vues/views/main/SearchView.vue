@@ -6,9 +6,10 @@ import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import searchService from '@/scripts/services/searchService.ts'
 import type { SearchFilterRanges } from '@/scripts/types/api/search.ts'
-import { useDebounceFn } from '@vueuse/core'
+import { StorageSerializers, useDebounceFn, useStorage } from '@vueuse/core'
 import { MONTHS } from '@/scripts/constants.ts'
 import peopleService from '@/scripts/services/peopleService.ts'
+import { useObjStorage } from '@/scripts/utils.ts'
 
 const snackStore = useSnackbarsStore()
 const route = useRoute()
@@ -25,12 +26,7 @@ const offset = ref(0)
 const hasMore = ref(true)
 const loadingMore = ref(false)
 
-const filterRanges = ref<SearchFilterRanges | null>(
-  localStorage.getItem('searchFilterRanges') === null
-    ? null
-    : JSON.parse(localStorage['searchFilterRanges']),
-)
-watch(filterRanges, () => (localStorage['searchFilterRanges'] = JSON.stringify(filterRanges.value)))
+const filterRanges = useObjStorage<SearchFilterRanges | null>('searchFilterRanges', null)
 const showFilters = ref(false)
 
 // URL Source of Truth

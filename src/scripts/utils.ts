@@ -1,6 +1,7 @@
 import { THUMBNAIL_SIZES, VIDEO_SIZES, WEATHER_ICONS } from '@/scripts/constants.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type { Location } from '@/scripts/types/api/fullPhoto.ts'
+import { type RemovableRef, StorageSerializers, useStorage } from '@vueuse/core'
 
 export function prettyBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return '0 B'
@@ -152,4 +153,14 @@ export function formatNaiveDate(date: Date): string {
     `${pad(date.getMinutes())}:` +
     `${pad(date.getSeconds())}`
   )
+}
+
+export function useObjStorage<T>(
+  key: string,
+  initialValue: T,
+  storage: Storage = localStorage,
+): RemovableRef<T> {
+  return useStorage<T>(key, initialValue, storage, {
+    serializer: StorageSerializers.object,
+  })
 }

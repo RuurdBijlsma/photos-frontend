@@ -6,21 +6,16 @@ import peopleService from '@/scripts/services/peopleService.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useRouter } from 'vue-router'
 import type { UpdatePersonRequest } from '@/scripts/types/api/people.ts'
+import { useObjStorage } from '@/scripts/utils.ts'
 
 export const usePeopleStore = defineStore('people', () => {
   const snackbarStore = useSnackbarsStore()
   const dialogs = useDialogStore()
   const router = useRouter()
 
-  const people = shallowRef<PersonInfo[]>(
-    localStorage.getItem('userPeople') === null ? [] : JSON.parse(localStorage.userPeople),
-  )
+  const people = useObjStorage<PersonInfo[]>('userPeople', [])
   const personMedia = shallowRef(new Map<string, FullPersonMediaResponse>())
   const personMediaPromises = new Map<string, Promise<FullPersonMediaResponse>>()
-
-  watch(people, () => {
-    localStorage.setItem('userPeople', JSON.stringify(people.value))
-  })
 
   async function fetchPeople() {
     try {
