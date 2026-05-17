@@ -14,6 +14,7 @@ const peopleStore = usePeopleStore()
 const simpleTimeline = useTemplateRef('simpleTimeline')
 
 const isInitialLoad = ref(true)
+const fetched = ref(false)
 const nameDialogVisible = ref(false)
 const mergeDialogVisible = ref(false)
 const draftName = ref<string | PersonInfo | null>('')
@@ -139,7 +140,7 @@ watch(
     simpleTimeline.value?.scrollToTop()
     if (!personId.value) return
     peopleStore.fetchPeople()
-    peopleStore.fetchPersonMedia(personId.value)
+    peopleStore.fetchPersonMedia(personId.value).then(() => (fetched.value = true))
   },
   { immediate: true },
 )
@@ -157,7 +158,7 @@ watch(personResponse, () => {
       :timeline-items="items"
       :view-link="`/person/${personId}/view/`"
     >
-      <div class="person-header">
+      <div class="person-header" v-if="fetched">
         <div class="person-header-left">
           <v-avatar class="person-avatar" size="176">
             <img
@@ -222,6 +223,14 @@ watch(personResponse, () => {
             />
           </div>
         </div>
+      </div>
+      <div v-else class="loading-header">
+        <v-lazy>
+          <div class="center-loading">
+            <v-progress-circular color="primary" indeterminate size="70" />
+            <h2>Loading...</h2>
+          </div>
+        </v-lazy>
       </div>
 
       <div class="empty-person" v-if="items.length === 0 && !isInitialLoad">
@@ -346,6 +355,26 @@ watch(personResponse, () => {
   display: flex;
   width: 100%;
   margin-bottom: 12px;
+}
+
+.loading-header {
+  height: 196px;
+  width: 100%;
+  margin-bottom: 12px;
+  display: flex;
+  place-content: center;
+  place-items: center;
+}
+
+.center-loading {
+  text-align: center;
+}
+
+.center-loading h2{
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface-variant));
+  font-size: 20px;
+  margin-top:10px;
 }
 
 .person-header-left {

@@ -372,8 +372,8 @@ onUnmounted(() => {
 
 .album-count {
   font-size: 0.9rem;
-  opacity: 0.6;
   font-weight: 400;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 
 .album-grid {

@@ -11,6 +11,7 @@ const theme = useTheme()
 const peopleStore = usePeopleStore()
 const dialogs = useDialogStore()
 const draggedPersonId = ref<string | null>(null)
+const dragOverId = ref<string | null>(null)
 
 const namedPeople = computed(() =>
   peopleStore.people
@@ -36,11 +37,13 @@ function onDragStart(person: PersonInfo, event: DragEvent) {
 
 function onDragEnd() {
   draggedPersonId.value = null
+  dragOverId.value = null
 }
 
 async function onDrop(dropPerson: PersonInfo, event: DragEvent) {
   const sourceId = event.dataTransfer?.getData('text/plain') || draggedPersonId.value
   draggedPersonId.value = null
+  dragOverId.value = null
   if (!sourceId || sourceId === dropPerson.id) return
 
   const sourcePerson = peopleStore.people.find((person) => person.id === sourceId)
@@ -112,6 +115,12 @@ peopleStore.fetchPeople()
               draggable="true"
               @dragstart="onDragStart(person, $event)"
               @dragend="onDragEnd"
+              :class="{
+                'drag-over-card': dragOverId === person.id && draggedPersonId !== person.id,
+                'is-dragging': draggedPersonId !== null,
+              }"
+              @dragenter="dragOverId = person.id"
+              @dragleave="dragOverId = null"
               @dragover.prevent
               @drop.prevent="onDrop(person, $event)"
             >
@@ -120,7 +129,7 @@ peopleStore.fetchPeople()
                 :height="124"
                 :width="124"
                 border-radius="62px"
-                :strength=".7"
+                :strength="0.7"
               />
               <div class="person-copy">
                 <p class="person-name">{{ person.name }}</p>
@@ -144,6 +153,12 @@ peopleStore.fetchPeople()
               draggable="true"
               @dragstart="onDragStart(person, $event)"
               @dragend="onDragEnd"
+              :class="{
+                'drag-over-card': dragOverId === person.id && draggedPersonId !== person.id,
+                'is-dragging': draggedPersonId !== null,
+              }"
+              @dragenter="dragOverId = person.id"
+              @dragleave="dragOverId = null"
               @dragover.prevent
               @drop.prevent="onDrop(person, $event)"
             >
@@ -251,6 +266,20 @@ peopleStore.fetchPeople()
 
 .person-card :deep(img) {
   pointer-events: none;
+}
+
+.person-card.drag-over-card.is-dragging {
+  outline: 2px solid rgb(var(--v-theme-primary)) !important;
+  background-color: rgba(var(--v-theme-primary), 0.1);
+  border-radius: 12px;
+}
+
+.person-card.is-dragging * {
+  pointer-events: none;
+}
+
+.person-card[draggable='true']:active {
+  opacity: 0.4;
 }
 
 .person-copy {

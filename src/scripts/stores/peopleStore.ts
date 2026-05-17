@@ -77,7 +77,6 @@ export const usePeopleStore = defineStore('people', () => {
       requestIdleCallback(() => {
         fetchPeople()
         fetchPersonMedia(personId, false, false)
-        fetchPersonMedia(targetPersonId, false, false)
       })
       return true
     } catch (e) {
@@ -89,8 +88,7 @@ export const usePeopleStore = defineStore('people', () => {
   async function unmergePerson(personId: string) {
     const confirmed = await dialogs.confirm({
       title: 'Separate merged people?',
-      description:
-        'This will split this person into separate groups.',
+      description: 'This will split this person into separate groups.',
       confirmText: 'Separate',
       icon: 'mdi-account-multiple-remove',
       color: 'warning',
