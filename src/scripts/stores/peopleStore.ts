@@ -32,7 +32,7 @@ export const usePeopleStore = defineStore('people', () => {
     }
   }
 
-  async function fetchPersonMedia(personId: string, useCache = true) {
+  async function fetchPersonMedia(personId: string, useCache = true, snack = true) {
     if (personMediaPromises.has(personId)) {
       await personMediaPromises.get(personId)!
       return
@@ -44,12 +44,11 @@ export const usePeopleStore = defineStore('people', () => {
       personMediaPromises.set(personId, promise)
       const response = await promise
       personMediaPromises.delete(personId)
-
       personMedia.value.set(personId, response)
       triggerRef(personMedia)
     } catch (e) {
       personMediaPromises.delete(personId)
-      snackbarStore.error("Can't fetch person photos", e)
+      if (snack) snackbarStore.error("Can't fetch person photos", e)
     }
   }
 
@@ -61,16 +60,10 @@ export const usePeopleStore = defineStore('people', () => {
         person.name = payload.name ?? undefined
         triggerRef(people)
       }
-      const response = personMedia.value.get(personId)
-      if (response?.person && 'name' in payload) {
-        response.person.name = payload.name ?? undefined
-        triggerRef(personMedia)
-      }
       requestIdleCallback(() => {
         fetchPeople()
         fetchPersonMedia(personId, false)
       })
-      snackbarStore.success('Updated person')
       return true
     } catch (e) {
       snackbarStore.error("Can't update person", e)
@@ -83,9 +76,9 @@ export const usePeopleStore = defineStore('people', () => {
       await peopleService.merge(personId, { targetPersonId })
       requestIdleCallback(() => {
         fetchPeople()
-        fetchPersonMedia(personId, false)
+        fetchPersonMedia(personId, false, false)
+        fetchPersonMedia(targetPersonId, false, false)
       })
-      snackbarStore.success('People merged')
       return true
     } catch (e) {
       snackbarStore.error("Can't merge people", e)
@@ -95,10 +88,10 @@ export const usePeopleStore = defineStore('people', () => {
 
   async function unmergePerson(personId: string) {
     const confirmed = await dialogs.confirm({
-      title: 'Unmerge face clusters?',
+      title: 'Separate merged people?',
       description:
-        'This will split this person into separate unnamed people and discard the current name.',
-      confirmText: 'Unmerge',
+        'This will split this person into separate groups.',
+      confirmText: 'Separate',
       icon: 'mdi-account-multiple-remove',
       color: 'warning',
     })
@@ -110,7 +103,6 @@ export const usePeopleStore = defineStore('people', () => {
         fetchPeople()
         fetchPersonMedia(personId, false)
       })
-      snackbarStore.success('Face clusters unmerged')
       await router.replace('/people')
       return true
     } catch (e) {

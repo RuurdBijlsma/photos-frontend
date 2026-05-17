@@ -42,10 +42,6 @@ function photoCountText(count: number) {
   return `${count.toLocaleString()} photo${count === 1 ? '' : 's'}`
 }
 
-function mergedClusterText(count: number) {
-  return `${count.toLocaleString()} face cluster${count === 1 ? '' : 's'}`
-}
-
 function openNameDialog() {
   draftName.value = person.value?.name ?? ''
   pendingMergeTarget.value = null
@@ -79,13 +75,6 @@ async function submitNameDialog() {
     (person) => person.name?.trim().toLocaleLowerCase() === trimmedName.toLocaleLowerCase(),
   )
 
-  if (target && trimmedName.length > 0) {
-    pendingMergeTarget.value = target
-    nameDialogVisible.value = false
-    mergeDialogVisible.value = true
-    return
-  }
-
   const nextName = trimmedName.length > 0 ? trimmedName : null
   if ((nextName ?? '') === currentName) {
     closeNameDialog()
@@ -95,6 +84,13 @@ async function submitNameDialog() {
   isSavingName.value = true
   const updated = await peopleStore.updatePerson(personId.value, { name: nextName })
   isSavingName.value = false
+
+  if (target && trimmedName.length > 0) {
+    pendingMergeTarget.value = target
+    nameDialogVisible.value = false
+    mergeDialogVisible.value = true
+    return
+  }
   if (updated) closeNameDialog()
 }
 
@@ -129,6 +125,11 @@ async function confirmMerge() {
 async function unmerge() {
   if (!personId.value) return
   await peopleStore.unmergePerson(personId.value)
+}
+
+async function setMainPhoto(clusterId: string) {
+  if (!personId.value || !person.value || person.value.faceThumbId === clusterId) return
+  await peopleStore.updatePerson(personId.value, { faceThumbId: clusterId })
 }
 
 watch(
@@ -169,31 +170,23 @@ watch(personResponse, () => {
         </div>
         <div class="person-header-right">
           <div class="person-title-row">
-            <h1 :class="{ unnamed: !person?.name }">{{ person?.name || 'Unnamed' }}</h1>
+            <h1
+              :class="{ unnamed: !person?.name, clickable: !person?.name }"
+              @click="!person?.name ? openNameDialog() : undefined"
+            >
+              {{ person?.name || 'Unnamed' }}
+            </h1>
             <v-btn
               icon="mdi-pencil"
               variant="tonal"
               color="primary"
               density="comfortable"
-              v-tooltip:top="'Edit name'"
+              v-tooltip:top="person?.name ? 'Edit name' : 'Set name'"
               @click="openNameDialog"
-            />
-            <v-btn
-              v-if="person && person.faceClusterIds.length > 1"
-              icon="mdi-account-multiple-remove"
-              variant="tonal"
-              color="warning"
-              density="comfortable"
-              v-tooltip:top="'Unmerge face clusters'"
-              @click="unmerge"
             />
           </div>
           <p class="person-meta" v-if="person">
             <span>{{ photoCountText(person.photoCount) }}</span>
-            <template v-if="person.faceClusterIds.length > 1">
-              <span>•</span>
-              <span>{{ mergedClusterText(person.faceClusterIds.length) }}</span>
-            </template>
           </p>
 
           <div class="subclusters" v-if="person && person.faceClusterIds.length > 1">
@@ -202,10 +195,31 @@ watch(personResponse, () => {
               :key="clusterId"
               size="42"
               class="subcluster-avatar"
-              v-tooltip:top="'Face cluster'"
+              :class="{ 'avatar-pointer': person.faceThumbId !== clusterId }"
+              v-tooltip="{
+                location: 'top',
+                text: 'Use as main photo',
+                disabled: person.faceThumbId === clusterId,
+              }"
+              v-ripple="person.faceThumbId !== clusterId"
+              @click="person.faceThumbId === clusterId ? undefined : setMainPhoto(clusterId)"
             >
-              <img :src="peopleService.getFaceThumbnail(clusterId)" alt="" />
+              <img
+                :style="{ pointerEvents: 'none' }"
+                :src="peopleService.getFaceThumbnail(clusterId)"
+                alt=""
+              />
             </v-avatar>
+            <v-btn
+              size="42"
+              v-if="person && person.faceClusterIds.length > 1"
+              icon="mdi-account-multiple-remove"
+              variant="tonal"
+              color="tertiary"
+              density="comfortable"
+              v-tooltip:top="'Separate merged people'"
+              @click="unmerge"
+            />
           </div>
         </div>
       </div>
@@ -331,7 +345,7 @@ watch(personResponse, () => {
 .person-header {
   display: flex;
   width: 100%;
-  padding: 24px 10px 34px;
+  margin-bottom: 12px;
 }
 
 .person-header-left {
@@ -354,13 +368,13 @@ watch(personResponse, () => {
 .person-header-right {
   min-width: 0;
   flex-grow: 1;
-  padding: 22px 10px 0 22px;
+  padding: 20px;
 }
 
 .person-title-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
 .person-title-row h1 {
@@ -378,11 +392,19 @@ watch(personResponse, () => {
   font-weight: 400;
 }
 
+.person-title-row h1.clickable {
+  cursor: pointer;
+}
+
+.person-title-row h1.clickable:hover {
+  color: rgb(var(--v-theme-primary));
+}
+
 .person-meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 3px 0 0;
+  margin: 8px 0 0;
   color: rgb(var(--v-theme-on-surface-variant));
 }
 
@@ -391,11 +413,16 @@ watch(personResponse, () => {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 18px;
+  align-items: center;
 }
 
 .subcluster-avatar {
   background-color: rgba(var(--v-theme-on-background), 0.08);
   box-shadow: 0 0 0 2px rgb(var(--v-theme-background));
+}
+
+.avatar-pointer {
+  cursor: pointer;
 }
 
 .dialog-title {
@@ -479,6 +506,8 @@ watch(personResponse, () => {
 
   .person-title-row {
     justify-content: center;
+    align-items: center;
+    flex-direction: column;
   }
 
   .person-title-row h1 {

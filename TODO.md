@@ -201,3 +201,4 @@
   bar, and the user thing top right should be a login button, and remove the upload button in top bar
 * In viewPhoto, in info v-menu, it should show which albums it's in
 * maak /people styling gelijk aan /albums (vooral fonts en titel placement)
+* in search, make person filter optionally AND instead of OR
