@@ -11,6 +11,7 @@ import { makeLocationString } from '@/scripts/utils.ts'
 import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
+import { useRoute } from 'vue-router'
 
 const props = defineProps<{
   mediaItem?: FullMediaItem | SharedMediaItem
@@ -22,6 +23,9 @@ const emit = defineEmits(['closeDateTime', 'openDateTime'])
 const dialogs = useDialogStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
+const route = useRoute()
+
+const currentAlbumId = computed(() => route.params.albumId as string | undefined)
 
 const showAlbums = computed(
   () => authStore.isAuthenticated && props.albums !== undefined && props.albums.length > 0,
@@ -162,6 +166,7 @@ watch(dateTimeDialogOpen, () => {
           :key="album.id"
           :to="`/album/${album.id}`"
           class="album-row"
+          :class="{ 'current-album': currentAlbumId === album.id }"
           v-ripple
         >
           <v-avatar size="30" rounded class="album-avatar" color="surface-container-high">
@@ -333,11 +338,11 @@ copy general style from search filters v-menu. See SearchView.vue.
 
 .section-label {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.45;
   margin: 0 8px 6px;
+  color: rgb(var(--v-theme-on-surface-variant));
+  user-select: none;
 }
 
 .album-row {
@@ -352,8 +357,16 @@ copy general style from search filters v-menu. See SearchView.vue.
   transition: background-color 0.15s ease;
 }
 
+.album-row.current-album {
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
+}
+
 .album-row:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.06);
+  background-color: rgba(var(--v-theme-on-surface), 0.15);
+}
+
+.album-row.current-album:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.2);
 }
 
 .album-row:active {
