@@ -15,5 +15,5 @@ export type SearchParams = {
   negativeQuery?: string
   countryCodes?: string
   faceNames?: string
-  all_faces_required?: boolean
+  allFacesRequired?: boolean
 }

@@ -37,8 +37,24 @@ const filterMediaType = computed({
 })
 const filterPeople = computed({
   get: () => (route.query.people ? (route.query.people as string).split(',') : []),
-  set: (val) => updateURL({ people: val?.length ? val.join(',') : undefined }),
+  set: (val) =>
+    updateURL({
+      people: val?.length ? val.join(',') : undefined,
+      peopleAnd: val && val.length >= 2 ? route.query.peopleAnd : undefined,
+    }),
 })
+const filterPeopleMatchAll = computed({
+  get: () => route.query.peopleAnd === '1',
+  set: (val) => updateURL({ peopleAnd: val ? '1' : undefined }),
+})
+
+function formatPeopleFilterLabel(names: string[], matchAll: boolean) {
+  if (names.length === 0) return ''
+  if (names.length === 1) return names[0]!
+  const joiner = matchAll ? ' and ' : ' or '
+  const last = names[names.length - 1]!
+  return `${names.slice(0, -1).join(', ')}${joiner}${last}`
+}
 const filterNegativeQuery = computed({
   get: () => (route.query.exclude as string) || null,
   set: (val) => updateURL({ exclude: val || undefined }),
@@ -197,7 +213,7 @@ async function executeSearch(isLoadMore = false) {
 
   try {
     const searchParams = {
-      query: query.value,
+      query: '',
       limit: SEARCH_LIMIT,
       offset: offset.value,
       startDate: filterDateRange.value.start,
@@ -206,6 +222,8 @@ async function executeSearch(isLoadMore = false) {
       mediaType: filterMediaType.value as 'all' | 'photo' | 'video',
       negativeQuery: filterNegativeQuery.value || undefined,
       faceNames: filterPeople.value.join(','),
+      allFacesRequired:
+        filterPeople.value.length >= 2 && filterPeopleMatchAll.value ? true : undefined,
       sortBy: sortDirection.value as 'date' | 'relevancy',
     }
     const key = JSON.stringify(searchParams)
@@ -330,8 +348,11 @@ const activeFilterChips = computed(() => {
     chips.push({
       id: 'people',
       type: 'People',
-      label: filterPeople.value.join(', ').replace(/, ([^,]*)$/, ' or $1'),
-      clear: () => (filterPeople.value = []),
+      label: formatPeopleFilterLabel(filterPeople.value, filterPeopleMatchAll.value),
+      clear: () => {
+        filterPeople.value = []
+        filterPeopleMatchAll.value = false
+      },
     })
   }
 
@@ -495,7 +516,16 @@ watch(
                 </div>
 
                 <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
-                  <p class="mt-2 mb-2 font-weight-medium">People</p>
+                  <p class="mt-2 font-weight-medium">People</p>
+                  <v-checkbox
+                    v-if="filterPeople.length >= 2"
+                    v-model="filterPeopleMatchAll"
+                    hide-details
+                    density="compact"
+                    class="and-checkbox"
+                    color="primary"
+                    label="Must include all selected people"
+                  />
                   <v-select
                     width="430"
                     rounded
@@ -735,6 +765,24 @@ watch(
 .small-filters > div {
   padding: 10px;
   padding-top: 0;
+}
+
+.and-checkbox {
+  font-size: 12px;
+  --v-input-control-height: 20px;
+}
+
+.and-checkbox :deep(.v-checkbox){
+  display: flex;
+  align-items: center;
+}
+
+.and-checkbox :deep(.v-label) {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin:0;
+  transform: translateY(1.5px);
 }
 
 .search-margin {
