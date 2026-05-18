@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BaseMap from '@/vues/components/map/BaseMap.vue'
-import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
+import type { FullMediaItem, MediaItemAlbumRef } from '@/scripts/types/api/fullPhoto.ts'
+import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { computed, ref, watch } from 'vue'
@@ -13,6 +14,7 @@ import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
 
 const props = defineProps<{
   mediaItem?: FullMediaItem | SharedMediaItem
+  albums?: MediaItemAlbumRef[]
 }>()
 
 const emit = defineEmits(['closeDateTime', 'openDateTime'])
@@ -20,6 +22,10 @@ const emit = defineEmits(['closeDateTime', 'openDateTime'])
 const dialogs = useDialogStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
+
+const showAlbums = computed(
+  () => authStore.isAuthenticated && props.albums !== undefined && props.albums.length > 0,
+)
 
 const dateTimeDialogOpen = ref(false)
 
@@ -149,6 +155,39 @@ watch(dateTimeDialogOpen, () => {
           }}</span>
         </p>
       </div>
+      <section v-if="showAlbums" class="albums-section">
+        <p class="section-label">Albums</p>
+        <router-link
+          v-for="album in albums"
+          :key="album.id"
+          :to="`/album/${album.id}`"
+          class="album-row"
+          v-ripple
+        >
+          <v-avatar size="30" rounded class="album-avatar" color="surface-container-high">
+            <thumbnail-img
+              v-if="album.thumbnail_id"
+              :media-item-id="album.thumbnail_id"
+              :height="144"
+              cover
+            />
+            <v-icon v-else icon="mdi-image-album" size="18" class="album-fallback-icon" />
+          </v-avatar>
+          <span class="album-text">
+            <span
+              class="album-name"
+              v-tooltip:bottom="{ text: album.name, disabled: album.name.length <= 28 }"
+            >
+              {{ album.name || 'Unnamed' }}
+            </span>
+            <span class="album-count">
+              {{ album.media_count.toLocaleString() }}
+              item{{ album.media_count === 1 ? '' : 's' }}
+            </span>
+          </span>
+          <v-icon icon="mdi-chevron-right" size="16" class="album-chevron" />
+        </router-link>
+      </section>
       <div class="capture-info"></div>
       <div class="map-info" v-if="mediaItem?.gps">
         <base-map
@@ -286,6 +325,75 @@ copy general style from search filters v-menu. See SearchView.vue.
   opacity: 0.7;
   display: flex;
   align-items: center;
+}
+
+.albums-section {
+  padding: 4px 22px 8px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  margin: 0 8px 6px;
+}
+
+.album-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  margin-bottom: 2px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.album-row:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.06);
+}
+
+.album-row:active {
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
+}
+
+.album-avatar {
+  flex-shrink: 0;
+}
+
+.album-fallback-icon {
+  opacity: 0.65;
+}
+
+.album-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.album-name {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-count {
+  font-size: 12px;
+  opacity: 0.55;
+  line-height: 1.2;
+}
+
+.album-chevron {
+  flex-shrink: 0;
+  opacity: 0.35;
 }
 
 .map-info {

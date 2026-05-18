@@ -107,6 +107,11 @@ const fullImage = computed(() => {
   else return mediaItemStore.sharedMediaItems.get(id.value)
 })
 
+const albumsForCurrentItem = computed(() => {
+  if (!id.value || !authStore.isAuthenticated) return undefined
+  return mediaItemStore.getAlbumsForMediaItem(id.value)
+})
+
 const timelineItem = computed<TimelineItem | undefined>(() => {
   if (!id.value) return undefined
   return timelineStore.mediaItemsMap.get(id.value)
@@ -272,6 +277,7 @@ watch(
           </template>
           <media-info-panel
             :media-item="fullImage"
+            :albums="albumsForCurrentItem"
             @open-date-time="persistentInfo = true"
             @close-date-time="persistentInfo = false"
           />
