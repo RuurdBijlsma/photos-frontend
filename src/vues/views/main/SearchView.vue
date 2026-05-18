@@ -165,6 +165,20 @@ const dateRangeText = computed(() => {
   return `Captured between ${startMonth} and ${endMonth}`
 })
 
+const hasFilters = computed(() => {
+  return (
+    filterCountries.value.length > 0 ||
+    filterPeople.value.length > 0 ||
+    filterNegativeQuery.value ||
+    route.query.start !== undefined ||
+    route.query.end !== undefined ||
+    filterMediaType.value !== 'all'
+  )
+})
+
+const isFilterOnlyBrowse = computed(() => !query.value && hasFilters.value)
+const isEmptySearch = computed(() => !query.value && !hasFilters.value)
+
 const debouncedPush = useDebounceFn((query: Record<string, string>) => {
   router.push({ query })
 }, 100)
@@ -193,7 +207,7 @@ const updateURL = (newParams: Record<string, string | undefined>) => {
 }
 
 async function executeSearch(isLoadMore = false) {
-  if (query.value === '') {
+  if (!query.value && !hasFilters.value) {
     results.value = []
     return
   }
@@ -224,7 +238,7 @@ async function executeSearch(isLoadMore = false) {
       faceNames: filterPeople.value.join(','),
       allFacesRequired:
         filterPeople.value.length >= 2 && filterPeopleMatchAll.value ? true : undefined,
-      sortBy: sortDirection.value as 'date' | 'relevancy',
+      sortBy: (isFilterOnlyBrowse.value ? 'date' : sortDirection.value) as 'date' | 'relevancy',
     }
     const key = JSON.stringify(searchParams)
     let items: SimpleTimelineItem[] = []
@@ -272,7 +286,7 @@ async function fetchFilterRanges() {
 
 onMounted(async () => {
   // Execute search immediately from URL state
-  if (query.value) {
+  if (query.value || hasFilters.value) {
     executeSearch()
   }
 
@@ -282,17 +296,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (loadingTimer) clearTimeout(loadingTimer)
-})
-
-const hasFilters = computed(() => {
-  return (
-    filterCountries.value.length > 0 ||
-    filterPeople.value.length > 0 ||
-    filterNegativeQuery.value ||
-    route.query.start !== undefined ||
-    route.query.end !== undefined ||
-    filterMediaType.value !== 'all'
-  )
 })
 
 const activeFilterChips = computed(() => {
@@ -349,10 +352,7 @@ const activeFilterChips = computed(() => {
       id: 'people',
       type: 'People',
       label: formatPeopleFilterLabel(filterPeople.value, filterPeopleMatchAll.value),
-      clear: () => {
-        filterPeople.value = []
-        filterPeopleMatchAll.value = false
-      },
+      clear: () => updateURL({ people: undefined, peopleAnd: undefined }),
     })
   }
 
@@ -376,8 +376,8 @@ const activeFilterChips = computed(() => {
     })
   }
 
-  // Exclude
-  if (filterNegativeQuery.value) {
+  // Exclude (requires a text query)
+  if (filterNegativeQuery.value && query.value) {
     chips.push({
       id: 'exclude',
       type: 'Exclude',
@@ -405,10 +405,13 @@ watch(
   >
     <div class="search-options">
       <h2 class="search-query-title">
-        <v-icon class="mr-5 search-query-icon" icon="mdi-magnify" />Search for “<span
-          class="search-query-highlight"
-          >{{ query }}</span
-        >”
+        <v-icon class="mr-5 search-query-icon" icon="mdi-magnify" />
+        <template v-if="query">
+          Search for “<span class="search-query-highlight">{{ query }}</span
+          >”
+        </template>
+        <template v-else-if="hasFilters">Filtered results</template>
+        <template v-else>Search</template>
       </h2>
       <v-spacer />
       <div class="advanced-search-button">
@@ -516,16 +519,7 @@ watch(
                 </div>
 
                 <div class="person-name" v-if="filterRanges && filterRanges.people.length > 0">
-                  <p class="mt-2 font-weight-medium">People</p>
-                  <v-checkbox
-                    v-if="filterPeople.length >= 2"
-                    v-model="filterPeopleMatchAll"
-                    hide-details
-                    density="compact"
-                    class="and-checkbox"
-                    color="primary"
-                    label="Must include all selected people"
-                  />
+                  <p class="mt-2 mb-2 font-weight-medium">People</p>
                   <v-select
                     width="430"
                     rounded
@@ -560,6 +554,15 @@ watch(
                       </v-list-item>
                     </template>
                   </v-select>
+                  <v-checkbox
+                    v-if="filterPeople.length >= 2"
+                    v-model="filterPeopleMatchAll"
+                    hide-details
+                    density="compact"
+                    color="primary"
+                    label="Must include all selected people"
+                    class="mt-1"
+                  />
                 </div>
 
                 <div class="country-code" v-if="filterRanges">
@@ -605,7 +608,7 @@ watch(
                   </v-select>
                 </div>
 
-                <div class="negative-query">
+                <div class="negative-query" v-if="query">
                   <p class="mt-2 mb-2 font-weight-medium">
                     Exclude
                     <v-icon
@@ -649,7 +652,23 @@ watch(
           }"
         ></v-btn>
       </div>
+      <v-btn
+        v-if="isFilterOnlyBrowse"
+        rounded="xl"
+        color="primary"
+        variant="tonal"
+        class="sort-button-group"
+        disabled
+        v-tooltip="{
+          location: 'top',
+          text: 'Sorted by capture date',
+        }"
+      >
+        <span>Date</span>
+        <v-icon end icon="mdi-sort-calendar-ascending"></v-icon>
+      </v-btn>
       <v-btn-toggle
+        v-else-if="!isEmptySearch"
         v-tooltip="{
           location: 'top',
           text: 'Sort',
@@ -674,6 +693,11 @@ watch(
       </v-btn-toggle>
     </div>
     <div class="search-margin"></div>
+    <div v-if="isEmptySearch && !showLoadingUI" class="search-empty-state">
+      <v-icon icon="mdi-magnify" size="100" class="mb-4 search-empty-icon" />
+      <h2>Start a search</h2>
+      <p>Enter a term in the search bar above, or use filters to browse your library.</p>
+    </div>
     <div class="loading-indicator" v-if="showLoadingUI">
       <h2 class="search-summary">
         Searching for "<span class="query-span">{{ query }}</span
@@ -767,24 +791,6 @@ watch(
   padding-top: 0;
 }
 
-.and-checkbox {
-  font-size: 12px;
-  --v-input-control-height: 20px;
-}
-
-.and-checkbox :deep(.v-checkbox){
-  display: flex;
-  align-items: center;
-}
-
-.and-checkbox :deep(.v-label) {
-  font-size: 13px;
-  font-weight: 400;
-  color: rgb(var(--v-theme-on-surface-variant));
-  margin:0;
-  transform: translateY(1.5px);
-}
-
 .search-margin {
   height: 10px;
 }
@@ -792,6 +798,31 @@ watch(
 .loading-indicator {
   padding: 20px 40px 30px;
   text-align: center;
+}
+
+.search-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px 120px;
+  text-align: center;
+}
+
+.search-empty-state h2 {
+  margin: 0;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.search-empty-state p {
+  margin: 12px 0 0;
+  max-width: 360px;
+  opacity: 0.6;
+}
+
+.search-empty-icon {
+  opacity: 0.2;
 }
 
 .clear-filters-button {

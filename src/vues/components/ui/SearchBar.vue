@@ -219,16 +219,22 @@ function handleKeyDown(e: KeyboardEvent) {
 }
 
 function handleSubmit(isManual = true) {
-  if (!query.value?.trim()) return
-  if (isManual) {
-    saveToHistory(query.value)
+  const trimmed = query.value?.trim() ?? ''
+  if (isManual && trimmed) {
+    saveToHistory(trimmed)
   }
   if (searchInputEl.value) {
     searchInputEl.value.blur()
   }
+  const nextQuery = { ...route.query }
+  if (trimmed) {
+    nextQuery.query = trimmed
+  } else {
+    delete nextQuery.query
+  }
   router.push({
     path: '/search',
-    query: { query: query.value },
+    query: nextQuery,
   })
 }
 
