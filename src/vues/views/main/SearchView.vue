@@ -213,7 +213,7 @@ async function executeSearch(isLoadMore = false) {
 
   try {
     const searchParams = {
-      query: '',
+      query: query.value,
       limit: SEARCH_LIMIT,
       offset: offset.value,
       startDate: filterDateRange.value.start,

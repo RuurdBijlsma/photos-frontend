@@ -195,4 +195,4 @@
     * video/photo type filter
 * misschien wil ik wel light theme in de foto viewer!
 * In viewPhoto, in info v-menu, it should show which albums it's in
-* in search, make person filter optionally AND instead of OR
+* ✅ in search, make person filter optionally AND instead of OR
