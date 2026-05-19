@@ -208,8 +208,9 @@ watch(dateTimeDialogOpen, () => {
           :zoom="9"
         />
         <v-theme-provider theme="dark">
-          <v-sheet class="map-buttons" v-ripple>
+          <v-sheet class="map-buttons">
             <a
+              v-ripple
               :href="`https://www.google.com/maps/place/${mediaItem.gps.latitude},${mediaItem.gps.longitude}`"
               target="_blank"
               referrerpolicy="no-referrer"
@@ -223,34 +224,6 @@ watch(dateTimeDialogOpen, () => {
         </v-theme-provider>
       </div>
     </template>
-
-    <!--
-UI ELEMENTS TO PUT HERE (see fullPhoto.ts for available fields):
-Caption - text input -> edit button that opens dialogs.prompt
-<v-divider/>
-Date: Sunday - Aug 12, 2018 - 17:29 -> edit button that opens custom dialog to adjust photo's datetime
-Weather (fields are nullable, often individually unavilable)
-* temperature
-* weather condition, shown with nice icon.
-* On click, show custom dialog with more info -> temp, dew point, relative humidity, precisipitation, snow, wind direction, speed, wind gust, pressure.
-context: temp is celcius, dew point is celcius, humidity is %, precipitation is mm per hour, snow is millimeters, wind is degrees, wind speed/gust is km/h, pressure is sea-level air pressure in hPa, weather condition is a condition code:
- for weather icons, use utils.ts getWeatherIcon(condition: string, isDaytime: boolean)
-
-Filename: Photo's filename
-
-<little card within the card>
-  * camera name - filetype
-  * resolution in MP - resolution in width x height * file size
-  * iso, lens adjusted zoom, exposure compensation, f-stop, shutter time
-  * if video -> fps
-</>little card within the card>
-
-map card showing where the photo is taken (see BaseMap.vue)
-location name (see location string computed prop on this component) (clickable, opens google maps at coordinate)
-
---- style
-copy general style from search filters v-menu. See SearchView.vue.
--->
   </div>
 </template>
 
@@ -260,7 +233,7 @@ copy general style from search filters v-menu. See SearchView.vue.
   width: 400px;
   border-radius: 30px;
   font-size: 15px;
-  background-color: rgba(var(--v-theme-background), 0.5);
+  background-color: rgba(var(--v-theme-background), 0.8);
   color: rgb(var(--v-theme-on-background));
   position: relative;
 }
@@ -271,7 +244,7 @@ copy general style from search filters v-menu. See SearchView.vue.
 
 .backdrop-blur {
   backdrop-filter: blur(15px) saturate(150%) brightness(90%) contrast(110%);
-  background-color: rgba(var(--v-theme-background), 0.5);
+  background-color: rgba(var(--v-theme-background), 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
