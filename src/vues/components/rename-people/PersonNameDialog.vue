@@ -112,9 +112,15 @@ async function onMergeConfirmed() {
   mergeSource.value = null
   mergeTarget.value = null
   emit('saved')
+  console.warn({
+    targetId,
+    rn: route.name,
+    rpp: route.params.personId,
+  })
 
   // If the user was viewing the person that just got deleted, redirect to the new person
-  if (targetId && route.name === 'person' && route.params.personId === targetId) {
+  if (targetId && route.name === 'person-view' && route.params.personId === targetId) {
+    console.warn('Y')
     await router.replace(`/person/${sourceId || ''}`)
   }
 }
