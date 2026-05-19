@@ -14,15 +14,17 @@ import MediaInfoPanel from '@/vues/components/viewer/MediaInfoPanel.vue'
 import { makeLocationString } from '@/scripts/utils.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import { useTheme } from 'vuetify/framework'
 
+const route = useRoute()
+const router = useRouter()
+const theme = useTheme()
 const mediaItemStore = useMediaItemStore()
 const timelineStore = useTimelineStore()
 const settings = useSettingStore()
 const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
 const dialogs = useDialogStore()
-const route = useRoute()
-const router = useRouter()
 const authStore = useAuthStore()
 
 const showRightButton = ref(false)
@@ -195,9 +197,11 @@ watch(
 </script>
 
 <template>
-  <div
-    :class="{ 'backdrop-blur': settings.useBackdropBlur, 'hide-ui': !showUI }"
+  <v-theme-provider
+    :theme="settings.darkPhotoViewer ? 'dark' : theme.current.value.dark ? 'dark' : 'light'"
+    with-background
     class="view-container"
+    :class="{ 'backdrop-blur': settings.useBackdropBlur, 'hide-ui': !showUI }"
     :style="{
       backgroundColor: settings.useImageGlow ? 'rgb(var(--v-theme-background))' : 'black',
     }"
@@ -207,14 +211,12 @@ watch(
       <div class="left-buttons">
         <v-btn
           :to="parentLocation"
-          color="white"
           rounded="xl"
           icon="mdi-close"
           variant="plain"
           v-tooltip="{ text: 'Close viewer', location: 'bottom', attach: true, width: 140 }"
         />
         <v-btn
-          color="white"
           rounded="xl"
           icon="mdi-view-gallery-outline"
           variant="plain"
@@ -240,7 +242,7 @@ watch(
       <div class="right-buttons">
         <v-btn
           v-if="selectionStore.selection.size > 0"
-          :color="isSelected ? 'secondary' : 'white'"
+          :color="isSelected ? 'secondary' : 'default'"
           rounded="xl"
           :icon="isSelected ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline'"
           variant="plain"
@@ -262,7 +264,6 @@ watch(
             <v-btn
               :loading="fullImage === undefined"
               v-bind="props"
-              color="white"
               rounded="xl"
               icon="mdi-information-outline"
               variant="plain"
@@ -284,28 +285,24 @@ watch(
         </v-menu>
         <template v-if="authStore.isAuthenticated">
           <v-btn
-            color="white"
             rounded="xl"
             icon="mdi-share-variant-outline"
             variant="plain"
             v-tooltip="{ text: 'Share', location: 'bottom', attach: true, width: 140 }"
           />
           <v-btn
-            color="white"
             rounded="xl"
             icon="mdi-heart-outline"
             variant="plain"
             v-tooltip="{ text: 'Favourite', location: 'bottom', attach: true, width: 140 }"
           />
           <v-btn
-            color="white"
             rounded="xl"
             icon="mdi-cloud-download-outline"
             variant="plain"
             v-tooltip="{ text: 'Download', location: 'bottom', attach: true, width: 140 }"
           />
           <v-btn
-            color="white"
             rounded="xl"
             icon="mdi-trash-can-outline"
             variant="plain"
@@ -313,13 +310,7 @@ watch(
           />
           <v-menu v-model="optionsOpen">
             <template v-slot:activator="{ props }">
-              <v-btn
-                color="white"
-                rounded="xl"
-                icon="mdi-dots-horizontal"
-                variant="plain"
-                v-bind="props"
-              />
+              <v-btn rounded="xl" icon="mdi-dots-horizontal" variant="plain" v-bind="props" />
             </template>
             <v-list>
               <v-list-item
@@ -363,7 +354,7 @@ watch(
         size="70"
       ></v-btn>
     </div>
-  </div>
+  </v-theme-provider>
 </template>
 
 <style scoped>
@@ -374,6 +365,8 @@ watch(
   width: 100%;
   height: 100%;
   z-index: 1400;
+  --bg: var(--v-theme-surface-container-lowest);
+  --fg: var(--v-theme-on-surface-container-lowest);
 }
 
 .hide-ui {
@@ -387,6 +380,7 @@ watch(
   top: 0;
   left: 0;
   z-index: 1500;
+  background-color: rgb(var(--bg));
 }
 
 .top-bar {
@@ -406,8 +400,8 @@ watch(
   padding: 0 30px;
   border-radius: 30px;
   margin: 10px;
-  background-color: rgba(var(--v-theme-surface-container-lowest), 0.8);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  background-color: rgba(var(--bg), 0.8);
+  box-shadow: 0 3px 12px rgba(var(--bg), 0.15);
   transition:
     background-color 0.15s,
     transform 0.5s;
@@ -424,8 +418,8 @@ watch(
   padding: 10px 50px;
   margin: 10px;
   border-radius: 30px;
-  background-color: rgba(var(--v-theme-surface-container-lowest), 0.8);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  background-color: rgba(var(--bg), 0.8);
+  box-shadow: 0 3px 12px rgba(var(--bg), 0.15);
   transition:
     background-color 0.15s,
     transform 0.2s;
@@ -436,13 +430,13 @@ watch(
   margin: 0;
   margin-bottom: 5px;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(var(--fg), 0.95);
 }
 
 .top-main-text p {
   margin: 0;
   font-weight: 300;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(var(--fg), 0.6);
   font-size: 13px;
 }
 
@@ -453,8 +447,8 @@ watch(
   padding: 0 30px;
   margin: 10px;
   border-radius: 30px;
-  background-color: rgba(var(--v-theme-surface-container-lowest), 0.8);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  background-color: rgba(var(--bg), 0.8);
+  box-shadow: 0 3px 12px rgba(var(--bg), 0.15);
   transition:
     background-color 0.15s,
     transform 0.5s;
@@ -464,14 +458,14 @@ watch(
 .backdrop-blur .left-buttons,
 .backdrop-blur .top-main-text {
   backdrop-filter: blur(30px) saturate(150%) brightness(90%) contrast(90%);
-  background-color: rgba(var(--v-theme-surface-container-lowest), 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(var(--bg), 0.5);
+  border: 1px solid rgba(var(--fg), 0.1);
 }
 
 .backdrop-blur .right-buttons:hover,
 .backdrop-blur .left-buttons:hover,
 .backdrop-blur .top-main-text:hover {
-  background-color: rgba(var(--v-theme-surface-container-lowest), 0.7);
+  background-color: rgba(var(--bg), 0.7);
 }
 
 .hide-ui .right-buttons,

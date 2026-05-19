@@ -12,6 +12,7 @@ import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
 import { useRoute } from 'vue-router'
+import { useTheme } from 'vuetify/framework'
 
 const props = defineProps<{
   mediaItem?: FullMediaItem | SharedMediaItem
@@ -20,6 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['closeDateTime', 'openDateTime'])
 
+const theme = useTheme()
 const dialogs = useDialogStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
@@ -80,7 +82,10 @@ watch(dateTimeDialogOpen, () => {
 </script>
 
 <template>
-  <div class="info-panel" :class="{ 'backdrop-blur': settings.useBackdropBlur }">
+  <div
+    class="info-panel"
+    :class="{ 'backdrop-blur': settings.useBackdropBlur, light: !theme.current.value.dark }"
+  >
     <h2 class="info-title">Info</h2>
     <div class="info-loading" v-if="mediaItem === undefined">
       <v-progress-circular indeterminate size="50" />
@@ -202,18 +207,20 @@ watch(dateTimeDialogOpen, () => {
           :center="{ lat: mediaItem.gps.latitude, lon: mediaItem.gps.longitude }"
           :zoom="9"
         />
-        <a
-          class="map-buttons"
-          v-ripple
-          :href="`https://www.google.com/maps/place/${mediaItem.gps.latitude},${mediaItem.gps.longitude}`"
-          target="_blank"
-          referrerpolicy="no-referrer"
-        >
-          <span v-if="mediaItem.gps.location">{{
-            makeLocationString(mediaItem.gps.location, 3)
-          }}</span>
-          <v-icon size="15" class="ml-2 map-button-icon" icon="mdi-arrow-top-right" />
-        </a>
+        <v-theme-provider theme="dark">
+          <v-sheet class="map-buttons" v-ripple>
+            <a
+              :href="`https://www.google.com/maps/place/${mediaItem.gps.latitude},${mediaItem.gps.longitude}`"
+              target="_blank"
+              referrerpolicy="no-referrer"
+            >
+              <span v-if="mediaItem.gps.location">{{
+                makeLocationString(mediaItem.gps.location, 3)
+              }}</span>
+              <v-icon size="15" class="ml-2 map-button-icon" icon="mdi-arrow-top-right" />
+            </a>
+          </v-sheet>
+        </v-theme-provider>
       </div>
     </template>
 
@@ -256,6 +263,10 @@ copy general style from search filters v-menu. See SearchView.vue.
   background-color: rgba(var(--v-theme-background), 0.5);
   color: rgb(var(--v-theme-on-background));
   position: relative;
+}
+
+.info-panel.light {
+  background-color: rgba(var(--v-theme-background), 0.8);
 }
 
 .backdrop-blur {
@@ -420,14 +431,17 @@ copy general style from search filters v-menu. See SearchView.vue.
 
 .map-buttons {
   background-color: rgba(var(--v-theme-on-surface), 0.9);
+}
+
+.map-buttons a {
   color: rgba(var(--v-theme-surface-variant), 1);
-  padding: 7px 20px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
   user-select: none;
   font-weight: 500;
   font-size: 13px;
-  display: flex;
-  align-items: center;
-  text-decoration: none;
+  padding: 7px 20px;
 }
 
 .map-button-icon {

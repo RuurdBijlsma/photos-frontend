@@ -171,6 +171,8 @@
   isInitialized nog true is door de buggy logout doordat de refresh token niet meer werkt. Dus niet in normale flow?
 * ✅ make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
   music
+* ✅ in search, make person filter optionally AND instead of OR
+* ✅ In viewPhoto, in info v-menu, it should show which albums it's in
 * on login redirect to where you were
 * improve messaging when you load the website and the server is off
 * make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
@@ -194,5 +196,3 @@
     * location filter
     * video/photo type filter
 * misschien wil ik wel light theme in de foto viewer!
-* In viewPhoto, in info v-menu, it should show which albums it's in
-* ✅ in search, make person filter optionally AND instead of OR

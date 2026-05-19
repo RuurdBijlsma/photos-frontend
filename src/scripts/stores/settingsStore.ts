@@ -8,6 +8,7 @@ export const useSettingStore = defineStore('settings', () => {
   const customThemeColor = useStorage('settingsCustomThemeColor', '#462de8')
   const timelineRowHeight = useStorage('settingsTimelineRowHeight', 240)
   const timelineUseDayLabels = useStorage('settingsTimelineUseDayLabels', true)
+  const darkPhotoViewer = useStorage('settingsDarkPhotoViewer', true)
 
   return {
     useImageGlow,
@@ -16,5 +17,6 @@ export const useSettingStore = defineStore('settings', () => {
     customThemeColor,
     timelineRowHeight,
     timelineUseDayLabels,
+    darkPhotoViewer,
   }
 })
