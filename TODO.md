@@ -173,6 +173,8 @@
   music
 * ✅ in search, make person filter optionally AND instead of OR
 * ✅ In viewPhoto, in info v-menu, it should show which albums it's in
+* ✅ filters on front page (small ui button) -> nee op search page is dit nu (zoeken zonder query)
+* ✅ misschien wil ik wel light theme in de foto viewer!
 * on login redirect to where you were
 * improve messaging when you load the website and the server is off
 * make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
@@ -190,9 +192,3 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
-* filters on front page (small ui button)
-    * similar to search page but not so random, and shows all results
-    * face filter
-    * location filter
-    * video/photo type filter
-* misschien wil ik wel light theme in de foto viewer!
