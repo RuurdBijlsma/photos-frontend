@@ -48,6 +48,10 @@ const previewPosition = ref({ left: '0px', top: '0px' })
 const MARKER_MAX_EDGE = 55
 const MARKER_MIN_EDGE = 35
 
+/** Lower radius = less aggressive clustering; higher maxZoom = individual pins sooner */
+const CLUSTER_MAX_ZOOM = 18
+const CLUSTER_RADIUS = 22
+
 /** ratio = width / height */
 function markerSizeFromRatio(ratio: number): { width: number; height: number } {
   const r = ratio > 0 && Number.isFinite(ratio) ? ratio : 1
@@ -157,7 +161,7 @@ onMounted(() => {
     emitViewportItems()
 
     if (!map.value) return
-    const zoomFloor = Math.min(16, Math.floor(map.value.getZoom()))
+    const zoomFloor = Math.min(CLUSTER_MAX_ZOOM, Math.floor(map.value.getZoom()))
     if (zoomFloor !== lastMarkerZoomFloor) {
       lastMarkerZoomFloor = zoomFloor
       flushMarkerRefresh()
@@ -234,8 +238,9 @@ function updateClusters() {
   if (!props.items) return
 
   const superclusterIndex = new Supercluster({
-    radius: 50,
-    maxZoom: 16,
+    radius: CLUSTER_RADIUS,
+    maxZoom: CLUSTER_MAX_ZOOM,
+    minPoints: 2,
   })
 
   const points = props.items
@@ -269,7 +274,7 @@ function updateVisibleMarkers() {
     bounds.getEast(),
     bounds.getNorth(),
   ]
-  const zoom = Math.min(16, Math.floor(map.value.getZoom()))
+  const zoom = Math.min(CLUSTER_MAX_ZOOM, Math.floor(map.value.getZoom()))
 
   const clusters = index.value.getClusters(bbox, zoom)
   const displayedKeys = new Set<string | number>()
