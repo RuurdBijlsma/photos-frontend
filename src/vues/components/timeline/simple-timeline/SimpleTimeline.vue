@@ -426,7 +426,7 @@ useEventListener(window, 'mouseup', () => {
       class="timeline-scroll"
       ref="scrollTrack"
       @mousedown="handleMouseDown"
-      v-show="showScrollbar && !bare"
+      v-show="showScrollbar"
     >
       <div class="scroll-track"></div>
       <div

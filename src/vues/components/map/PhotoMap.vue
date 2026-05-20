@@ -5,39 +5,97 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import Supercluster from 'supercluster'
 import type { MapPhotoItem, SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
+import MapPhotoPreview from '@/vues/components/map/MapPhotoPreview.vue'
+import { getThumbnailHeight } from '@/scripts/utils.ts'
 
 const props = withDefaults(
   defineProps<{
     items: MapPhotoItem[]
-    activePhotoId: string | null
+    selectedPhotoId: string | null
+    selectedClusterKey: string | null
+    hoverPhotoId: string | null
     center?: { lon: number; lat: number }
     zoom?: number
   }>(),
   {
-    center: () => ({ lon: 5.2913, lat: 52.1326 }), // Netherlands center
+    center: () => ({ lon: 5.2913, lat: 52.1326 }),
     zoom: 8,
   },
 )
 
 const emit = defineEmits<{
   (e: 'update:viewport-items', items: SimpleTimelineItem[]): void
-  (e: 'click:photo', id: string): void
+  (e: 'select:photo', id: string): void
+  (e: 'select:cluster', payload: { key: string; items: SimpleTimelineItem[] }): void
+  (e: 'deselect'): void
+  (e: 'open:photo', id: string): void
   (e: 'hover:photo', id: string | null): void
 }>()
 
 const mapContainer = ref<HTMLElement | null>(null)
 const map = shallowRef<null | maplibregl.Map>(null)
 
-// Supercluster index instance
 const index = shallowRef<Supercluster | null>(null)
-
-// Track active markers currently mounted on the map (key: string for point, number/string for cluster)
 const activeMarkers = new Map<string | number, maplibregl.Marker>()
 
-// Keep track of which element is currently highlighted
-let highlightedElement: HTMLElement | null = null
+const previewItem = ref<SimpleTimelineItem | null>(null)
+const previewCoords = ref<[number, number] | null>(null)
+const previewPosition = ref({ left: '0px', top: '0px' })
 
-// Initialize Map
+function setMarkerThumbnail(container: HTMLElement, item: SimpleTimelineItem, size: number) {
+  container.replaceChildren()
+  const img = document.createElement('img')
+  img.className = 'marker-thumb-img'
+  img.alt = ''
+  img.draggable = false
+  img.src = mediaItemService.getPhotoThumbnail(item.id, getThumbnailHeight(size), !item.hasThumbnails)
+  container.appendChild(img)
+}
+
+function updatePreviewPosition() {
+  if (!map.value || !previewCoords.value) return
+  const point = map.value.project(previewCoords.value)
+  previewPosition.value = {
+    left: `${point.x}px`,
+    top: `${point.y}px`,
+  }
+}
+
+function selectPhoto(id: string, coords: [number, number], item: SimpleTimelineItem) {
+  previewItem.value = item
+  previewCoords.value = coords
+  updatePreviewPosition()
+  emit('select:photo', id)
+}
+
+function clearPreview() {
+  previewItem.value = null
+  previewCoords.value = null
+}
+
+function getClusterItems(clusterId: number): SimpleTimelineItem[] {
+  if (!index.value) return []
+  const leaves = index.value.getLeaves(clusterId, Infinity)
+  return leaves
+    .map((leaf) => leaf.properties.item as SimpleTimelineItem | undefined)
+    .filter((x): x is SimpleTimelineItem => !!x)
+}
+
+function syncSelectionStyles() {
+  for (const [key, marker] of activeMarkers.entries()) {
+    const inner = marker.getElement().querySelector('.map-marker-inner') as HTMLElement | null
+    if (!inner) continue
+    const selected =
+      (typeof key === 'string' && props.selectedPhotoId === key) ||
+      props.selectedClusterKey === key
+    inner.classList.toggle('selected', selected)
+    inner.classList.toggle(
+      'highlighted',
+      typeof key === 'string' && props.hoverPhotoId === key && !selected,
+    )
+  }
+}
+
 onMounted(() => {
   if (!mapContainer.value) return
 
@@ -56,13 +114,22 @@ onMounted(() => {
     fitMapToItems()
   })
 
-  // Watch for movement
-  map.value.on('move', updateVisibleMarkers)
-  map.value.on('moveend', emitViewportItems)
+  map.value.on('move', updatePreviewPosition)
+  map.value.on('moveend', () => {
+    updateVisibleMarkers()
+    emitViewportItems()
+  })
+  map.value.on('zoomend', () => {
+    updateVisibleMarkers()
+    emitViewportItems()
+  })
+  map.value.on('click', () => {
+    clearPreview()
+    emit('deselect')
+  })
 })
 
 onUnmounted(() => {
-  // Clean up markers
   for (const marker of activeMarkers.values()) {
     marker.remove()
   }
@@ -73,7 +140,6 @@ onUnmounted(() => {
   }
 })
 
-// Build cluster index
 watch(
   () => props.items,
   () => {
@@ -81,6 +147,29 @@ watch(
     fitMapToItems()
   },
   { deep: false },
+)
+
+watch(
+  () => [props.selectedPhotoId, props.selectedClusterKey, props.hoverPhotoId],
+  () => {
+    syncSelectionStyles()
+    if (!props.selectedPhotoId) {
+      clearPreview()
+      return
+    }
+
+    if (previewItem.value?.id === props.selectedPhotoId) {
+      updatePreviewPosition()
+      return
+    }
+
+    const geo = props.items.find((item) => item.item?.id === props.selectedPhotoId)
+    if (geo?.item) {
+      previewItem.value = geo.item
+      previewCoords.value = [geo.longitude, geo.latitude]
+      updatePreviewPosition()
+    }
+  },
 )
 
 function fitMapToItems() {
@@ -93,7 +182,7 @@ function fitMapToItems() {
   if (coords.length === 0) return
 
   if (coords.length === 1) {
-    map.value.flyTo({ center: coords[0], zoom: 14, essential: true })
+    map.value.flyTo({ center: coords[0], zoom: 14, essential: true, duration: 500 })
     return
   }
 
@@ -134,7 +223,6 @@ function updateClusters() {
   emitViewportItems()
 }
 
-// Dynamically create/remove markers depending on bounds
 function updateVisibleMarkers() {
   if (!map.value || !index.value) return
 
@@ -145,12 +233,9 @@ function updateVisibleMarkers() {
     bounds.getEast(),
     bounds.getNorth(),
   ]
-  const zoom = Math.floor(map.value.getZoom())
+  const zoom = Math.min(16, Math.floor(map.value.getZoom()))
 
-  // Get clusters/features in viewport
   const clusters = index.value.getClusters(bbox, zoom)
-
-  // Track coordinates/IDs we are displaying in this frame
   const displayedKeys = new Set<string | number>()
 
   for (const cluster of clusters) {
@@ -160,66 +245,59 @@ function updateVisibleMarkers() {
 
     displayedKeys.add(key)
 
-    if (activeMarkers.has(key)) {
-      // Marker already exists on map; just ensure its position hasn't changed (supercluster positions can shift slightly)
-      // Usually positions are static in a frame, but let's double check
+    const existing = activeMarkers.get(key)
+    if (existing) {
+      existing.setLngLat(coords)
       continue
     }
 
-    // Create marker DOM element
-    const el = document.createElement('div')
-    el.className = 'map-marker'
+    const anchor = document.createElement('div')
+    anchor.className = isCluster ? 'map-marker-anchor is-cluster' : 'map-marker-anchor is-photo'
+    if (!isCluster) {
+      anchor.setAttribute('data-id', key as string)
+    } else {
+      anchor.setAttribute('data-cluster-key', key as string)
+    }
 
+    const el = document.createElement('div')
+    el.className = 'map-marker-inner'
     if (isCluster) {
       el.classList.add('cluster-marker')
+    } else {
+      el.classList.add('photo-marker')
+    }
+    anchor.appendChild(el)
 
-      // Fetch leaves to show the thumbnail of the first photo in the cluster
+    const thumbWrap = document.createElement('div')
+    thumbWrap.className = 'marker-thumb-wrap'
+    el.appendChild(thumbWrap)
+
+    if (isCluster) {
       const clusterId = cluster.id as number
       const leaves = index.value.getLeaves(clusterId, 1)
       const leafItem = leaves[0]?.properties.item as SimpleTimelineItem | undefined
       if (leafItem) {
-        const thumbUrl = mediaItemService.getPhotoThumbnail(
-          leafItem.id,
-          150,
-          !leafItem.hasThumbnails,
-        )
-        el.style.backgroundImage = `url(${thumbUrl})`
+        setMarkerThumbnail(thumbWrap, leafItem, 150)
       }
 
-      // Add badge for counts
       const badge = document.createElement('span')
       badge.className = 'cluster-badge'
       const count = cluster.properties.point_count
       badge.innerText = `+${count >= 1000 ? Math.round(count / 1000) + 'k' : count}`
       el.appendChild(badge)
 
-      // Clicking zooms in on cluster
       el.addEventListener('click', (e) => {
         e.stopPropagation()
-        if (!map.value || !index.value) return
-        const clusterId = cluster.id as number
-        const expansionZoom = index.value.getClusterExpansionZoom(clusterId)
-        map.value.flyTo({
-          center: coords,
-          zoom: Math.min(expansionZoom + 1, 18),
-          essential: true,
-        })
+        clearPreview()
+        const items = getClusterItems(clusterId)
+        emit('select:cluster', { key: key as string, items })
       })
     } else {
-      el.classList.add('photo-marker')
-      el.setAttribute('data-id', key as string)
-
       const photoItem = cluster.properties.item as SimpleTimelineItem | undefined
       if (photoItem) {
-        const thumbUrl = mediaItemService.getPhotoThumbnail(
-          photoItem.id,
-          150,
-          !photoItem.hasThumbnails,
-        )
-        el.style.backgroundImage = `url(${thumbUrl})`
+        setMarkerThumbnail(thumbWrap, photoItem, 150)
       }
 
-      // Hover handling
       el.addEventListener('mouseenter', () => {
         emit('hover:photo', key as string)
       })
@@ -227,22 +305,20 @@ function updateVisibleMarkers() {
         emit('hover:photo', null)
       })
 
-      // Click handling
       el.addEventListener('click', (e) => {
         e.stopPropagation()
-        emit('click:photo', key as string)
+        if (!photoItem) return
+        selectPhoto(key as string, coords, photoItem)
       })
     }
 
-    // Mount to map
-    const marker = new maplibregl.Marker({ element: el })
+    const marker = new maplibregl.Marker({ element: anchor, anchor: 'center' })
       .setLngLat(coords)
       .addTo(map.value)
 
     activeMarkers.set(key, marker)
   }
 
-  // Remove markers that are no longer in viewport
   for (const [key, marker] of activeMarkers.entries()) {
     if (!displayedKeys.has(key)) {
       marker.remove()
@@ -250,11 +326,9 @@ function updateVisibleMarkers() {
     }
   }
 
-  // Sync highlighting of activePhotoId
-  syncActiveHighlight()
+  syncSelectionStyles()
 }
 
-// Fetch all photos inside the viewport to update the sidebar grid
 function emitViewportItems() {
   if (!map.value || !props.items || props.items.length === 0) {
     emit('update:viewport-items', [])
@@ -267,14 +341,12 @@ function emitViewportItems() {
   const s = bounds.getSouth()
   const n = bounds.getNorth()
 
-  // Filter items in viewport
   const visible = props.items
     .filter((item) => {
       const lon = item.longitude
       const lat = item.latitude
       if (lon === 0 && lat === 0) return false
 
-      // Handle longitudinal boundary wrapping (anti-meridian cross)
       if (w > e) {
         return (lon >= w || lon <= e) && lat >= s && lat <= n
       }
@@ -285,88 +357,109 @@ function emitViewportItems() {
 
   emit('update:viewport-items', visible)
 }
-
-// Watch for hover changes from sidebar
-watch(
-  () => props.activePhotoId,
-  () => {
-    syncActiveHighlight()
-  },
-)
-
-function syncActiveHighlight() {
-  // Remove current highlight
-  if (highlightedElement) {
-    highlightedElement.classList.remove('highlighted')
-    highlightedElement = null
-  }
-
-  if (props.activePhotoId) {
-    const marker = activeMarkers.get(props.activePhotoId)
-    if (marker) {
-      const el = marker.getElement()
-      el.classList.add('highlighted')
-      highlightedElement = el
-    }
-  }
-}
 </script>
 
 <template>
-  <div ref="mapContainer" class="photo-map-wrapper"></div>
+  <v-theme-provider theme="light" with-background class="photo-map-theme">
+    <div class="photo-map-root">
+      <div ref="mapContainer" class="photo-map-wrapper"></div>
+
+      <div
+        v-if="previewItem && selectedPhotoId === previewItem.id"
+        class="map-preview-popup"
+        :style="previewPosition"
+        @click.stop
+        @mousedown.stop
+      >
+        <map-photo-preview :item="previewItem" @open="emit('open:photo', previewItem.id)" />
+      </div>
+    </div>
+  </v-theme-provider>
 </template>
 
 <style>
-/* Global styles for MapLibre custom elements to function properly inside parent scope */
+.photo-map-theme {
+  width: 100%;
+  height: 100%;
+}
+
+.photo-map-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .photo-map-wrapper {
   width: 100%;
   height: 100%;
 }
 
-.map-marker {
+/* MapLibre sets transform on this element — no flex/transform/position here */
+.map-marker-anchor {
+  cursor: pointer;
+}
+
+.map-marker-anchor.is-photo {
   width: 48px;
   height: 48px;
+}
+
+.map-marker-anchor.is-cluster {
+  width: 56px;
+  height: 56px;
+}
+
+.map-marker-inner {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   border: 3px solid white;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  cursor: pointer;
+  position: relative;
+  overflow: visible;
   transition:
     transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
     border-color 0.2s;
-  will-change: transform;
+}
+
+.marker-thumb-wrap {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.marker-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
 }
 
 .photo-marker:hover,
 .photo-marker.highlighted {
-  transform: scale(1.3);
+  transform: scale(1.2);
   border-color: rgb(var(--v-theme-primary));
-  z-index: 999;
 }
 
-.cluster-marker {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 3px solid white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  position: relative;
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.photo-marker.selected,
+.cluster-marker.selected {
+  transform: scale(1.2);
+  border-color: rgb(var(--v-theme-primary));
+  border-width: 4px;
 }
 
 .cluster-marker:hover {
-  transform: scale(1.15);
-  z-index: 999;
+  transform: scale(1.1);
 }
 
 .cluster-badge {
   position: absolute;
-  bottom: -6px;
-  right: -6px;
+  bottom: -5px;
+  right: -5px;
   background: rgb(var(--v-theme-primary));
-  color: white;
+  color: rgb(var(--v-theme-on-primary));
   border-radius: 12px;
   padding: 2px 6px;
   font-size: 11px;
@@ -374,5 +467,26 @@ function syncActiveHighlight() {
   border: 2px solid white;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+  z-index: 1;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.map-preview-popup {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, calc(-100% - 30px));
+  pointer-events: auto;
+}
+
+/* Invisible bridge from pin to popup for easier clicking */
+.map-preview-popup::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -36px;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 36px;
 }
 </style>
