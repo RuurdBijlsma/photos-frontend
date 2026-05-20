@@ -53,6 +53,7 @@ onMounted(() => {
 
   map.value.on('load', () => {
     updateClusters()
+    fitMapToItems()
   })
 
   // Watch for movement
@@ -77,9 +78,32 @@ watch(
   () => props.items,
   () => {
     updateClusters()
+    fitMapToItems()
   },
   { deep: false },
 )
+
+function fitMapToItems() {
+  if (!map.value || props.items.length === 0) return
+
+  const coords = props.items
+    .filter((item) => item.latitude !== 0 || item.longitude !== 0)
+    .map((item) => [item.longitude, item.latitude] as [number, number])
+
+  if (coords.length === 0) return
+
+  if (coords.length === 1) {
+    map.value.flyTo({ center: coords[0], zoom: 14, essential: true })
+    return
+  }
+
+  const bounds = coords.reduce(
+    (b, coord) => b.extend(coord),
+    new maplibregl.LngLatBounds(coords[0], coords[0]),
+  )
+
+  map.value.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 0 })
+}
 
 function updateClusters() {
   if (!props.items) return
@@ -150,7 +174,8 @@ function updateVisibleMarkers() {
       el.classList.add('cluster-marker')
 
       // Fetch leaves to show the thumbnail of the first photo in the cluster
-      const leaves = index.value.getLeaves(cluster.properties.cluster_id, 1)
+      const clusterId = cluster.id as number
+      const leaves = index.value.getLeaves(clusterId, 1)
       const leafItem = leaves[0]?.properties.item as SimpleTimelineItem | undefined
       if (leafItem) {
         const thumbUrl = mediaItemService.getPhotoThumbnail(
@@ -171,8 +196,9 @@ function updateVisibleMarkers() {
       // Clicking zooms in on cluster
       el.addEventListener('click', (e) => {
         e.stopPropagation()
-        if (!map.value || !index.value || !cluster.properties.cluster_id) return
-        const expansionZoom = index.value.getClusterExpansionZoom(cluster.properties.cluster_id)
+        if (!map.value || !index.value) return
+        const clusterId = cluster.id as number
+        const expansionZoom = index.value.getClusterExpansionZoom(clusterId)
         map.value.flyTo({
           center: coords,
           zoom: Math.min(expansionZoom + 1, 18),

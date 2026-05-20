@@ -19,10 +19,13 @@ const props = withDefaults(
     loadingMore?: boolean
     context?: TimelineContext
     isManualOrderMode?: boolean
+    /** Skip MainLayoutContainer wrapper (e.g. embedded map sidebar). */
+    bare?: boolean
   }>(),
   {
     context: () => ({}),
     isManualOrderMode: false,
+    bare: false,
   },
 )
 
@@ -357,10 +360,10 @@ useEventListener(window, 'mouseup', () => {
 </script>
 
 <template>
-  <div class="simple-timeline">
-    <main-layout-container>
+  <div class="simple-timeline" :class="{ bare }">
+    <component :is="bare ? 'div' : MainLayoutContainer" class="timeline-shell">
       <selection-overlay v-if="context" :context="context" />
-      <teleport to="body">
+      <teleport v-if="!bare" to="body">
         <router-view />
       </teleport>
 
@@ -416,14 +419,14 @@ useEventListener(window, 'mouseup', () => {
         </div>
         <div v-if="isManualOrderMode" class="reorder-bottom-spacer" />
       </div>
-    </main-layout-container>
+    </component>
 
     <!-- Scrollbar Track -->
     <div
       class="timeline-scroll"
       ref="scrollTrack"
       @mousedown="handleMouseDown"
-      v-show="showScrollbar"
+      v-show="showScrollbar && !bare"
     >
       <div class="scroll-track"></div>
       <div
@@ -443,6 +446,14 @@ useEventListener(window, 'mouseup', () => {
   height: 100%;
   display: flex;
   --item-gap: calc(v-bind(ITEM_GAP) * 1px);
+}
+
+.simple-timeline.bare .timeline-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .scroll-container {
