@@ -36,7 +36,7 @@ export function computeGeoMapView(items: MapPhotoItem[]): {
 
   const lngSpan = Math.max(maxLon - minLon, 0.02)
   const latSpan = Math.max(maxLat - minLat, 0.02)
-  const span = Math.max(lngSpan, latSpan)
+  const span = Math.max(lngSpan, latSpan) * 0.5
   const zoom = Math.min(14, Math.max(2, Math.log2(360 / span) - 0.75))
 
   return { center, zoom }

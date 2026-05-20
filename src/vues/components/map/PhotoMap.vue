@@ -141,15 +141,47 @@ onMounted(() => {
     updateClusters()
   })
 
-  map.value.on('move', updatePreviewPosition)
-  map.value.on('moveend', () => {
+  let markerRefreshTimer: ReturnType<typeof setTimeout> | null = null
+  let lastMarkerZoomFloor = -1
+
+  const flushMarkerRefresh = () => {
+    if (markerRefreshTimer !== null) {
+      clearTimeout(markerRefreshTimer)
+      markerRefreshTimer = null
+    }
     updateVisibleMarkers()
+  }
+
+  const onMapViewChange = () => {
+    updatePreviewPosition()
     emitViewportItems()
-  })
-  map.value.on('zoomend', () => {
-    updateVisibleMarkers()
+
+    if (!map.value) return
+    const zoomFloor = Math.min(16, Math.floor(map.value.getZoom()))
+    if (zoomFloor !== lastMarkerZoomFloor) {
+      lastMarkerZoomFloor = zoomFloor
+      flushMarkerRefresh()
+      return
+    }
+
+    if (markerRefreshTimer !== null) return
+    markerRefreshTimer = setTimeout(() => {
+      markerRefreshTimer = null
+      updateVisibleMarkers()
+    }, 80)
+  }
+
+  const onMapViewSettled = () => {
+    lastMarkerZoomFloor = -1
+    flushMarkerRefresh()
     emitViewportItems()
-  })
+    updatePreviewPosition()
+  }
+
+  map.value.on('move', onMapViewChange)
+  map.value.on('zoom', onMapViewChange)
+  map.value.on('moveend', onMapViewSettled)
+  map.value.on('zoomend', onMapViewSettled)
   map.value.on('click', () => {
     clearPreview()
     emit('deselect')
@@ -494,7 +526,7 @@ function emitViewportItems() {
 .cluster-marker.selected {
   transform: scale(1.1);
   border-color: #3f51b5;
-  border-width: 4px;
+  border-width: 3px;
 }
 
 .cluster-badge {

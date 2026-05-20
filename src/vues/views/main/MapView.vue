@@ -27,8 +27,19 @@ const mapPageRef = ref<HTMLElement | null>(null)
 const isResizing = ref(false)
 
 const MIN_SIDEBAR_WIDTH = 280
-const MAX_SIDEBAR_WIDTH = 720
+const MIN_MAP_WIDTH = 500
 const CLOSE_SIDEBAR_WIDTH = 120
+
+function maxSidebarWidth(pageWidth: number) {
+  return Math.max(MIN_SIDEBAR_WIDTH, pageWidth - MIN_MAP_WIDTH)
+}
+
+function clampSidebarWidth() {
+  if (!sidebarOpen.value || !mapPageRef.value) return
+  const max = maxSidebarWidth(mapPageRef.value.clientWidth)
+  if (sidebarWidth.value > max) sidebarWidth.value = max
+  if (sidebarWidth.value < MIN_SIDEBAR_WIDTH) sidebarWidth.value = MIN_SIDEBAR_WIDTH
+}
 
 const photoCount = computed(() => geoItems.value.length)
 const isClusterMode = computed(() => selectedClusterKey.value !== null)
@@ -48,8 +59,11 @@ onMounted(async () => {
     loadError.value = 'Could not load map photos.'
   } finally {
     loading.value = false
+    nextTick(() => clampSidebarWidth())
   }
 })
+
+useEventListener(window, 'resize', () => clampSidebarWidth())
 
 function onViewportItems(items: SimpleTimelineItem[]) {
   viewportItems.value = items
@@ -113,7 +127,7 @@ function onSplitterMouseDown(event: MouseEvent) {
   const onMove = (moveEvent: MouseEvent) => {
     const delta = startX - moveEvent.clientX
     const nextWidth = startWidth + delta
-    const maxAllowed = Math.min(MAX_SIDEBAR_WIDTH, pageWidth - 200)
+    const maxAllowed = maxSidebarWidth(pageWidth)
 
     if (nextWidth < CLOSE_SIDEBAR_WIDTH) {
       sidebarOpen.value = false
@@ -143,6 +157,10 @@ useEventListener(document, 'mouseup', () => {
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
   }
+})
+
+watch(sidebarOpen, (open) => {
+  if (open) nextTick(() => clampSidebarWidth())
 })
 
 watch([selectedPhotoId, () => sidebarItems.value], () => {
@@ -184,7 +202,8 @@ watch([selectedPhotoId, () => sidebarItems.value], () => {
           class="sidebar-reopen-fab"
           icon="mdi-dock-right"
           color="primary"
-          elevation="4"
+          variant="flat"
+          elevation="1"
           title="Show photos panel"
           @click="sidebarOpen = true"
         />
@@ -349,8 +368,8 @@ watch([selectedPhotoId, () => sidebarItems.value], () => {
 
 .sidebar-reopen-fab {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 30px;
+  right: 30px;
   z-index: 4;
 }
 

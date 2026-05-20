@@ -34,7 +34,7 @@ const thumbSrc = () =>
   display: block;
   position: relative;
   border: none;
-  padding: 5px;
+  padding: 1px;
   border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
@@ -50,7 +50,7 @@ const thumbSrc = () =>
 }
 
 .map-preview-media {
-  border-radius:15px;
+  border-radius:19px;
   display: block;
   max-width: min(400px, 50vw);
   max-height: min(400px, 50vh);
