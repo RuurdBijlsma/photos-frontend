@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useEventListener, useStorage } from '@vueuse/core'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import PhotoMap from '@/vues/components/map/PhotoMap.vue'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
+import { computeGeoMapView } from '@/scripts/map/geoMapView.ts'
 import type { MapPhotoItem, SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 const route = useRoute()
@@ -16,9 +18,17 @@ const hoverPhotoId = ref<string | null>(null)
 const selectedPhotoId = ref<string | null>(null)
 const selectedClusterKey = ref<string | null>(null)
 const clusterItems = ref<SimpleTimelineItem[]>([])
-const sidebarOpen = ref(true)
+const sidebarOpen = useStorage('mapSidebarOpen', true)
+const sidebarWidth = useStorage('mapSidebarWidth', 480)
 const loading = ref(true)
 const loadError = ref<string | null>(null)
+
+const mapPageRef = ref<HTMLElement | null>(null)
+const isResizing = ref(false)
+
+const MIN_SIDEBAR_WIDTH = 280
+const MAX_SIDEBAR_WIDTH = 720
+const CLOSE_SIDEBAR_WIDTH = 120
 
 const photoCount = computed(() => geoItems.value.length)
 const isClusterMode = computed(() => selectedClusterKey.value !== null)
@@ -26,6 +36,8 @@ const sidebarItems = computed(() =>
   isClusterMode.value ? clusterItems.value : viewportItems.value,
 )
 const sidebarCount = computed(() => sidebarItems.value.length)
+
+const initialMapView = computed(() => computeGeoMapView(geoItems.value))
 
 onMounted(async () => {
   try {
@@ -53,10 +65,14 @@ function onSelectPhoto(id: string) {
   clusterItems.value = []
 }
 
-function onSelectCluster(payload: { key: string; items: SimpleTimelineItem[] }) {
+function onSelectCluster(payload: {
+  key: string
+  items: SimpleTimelineItem[]
+  previewId?: string
+}) {
   selectedClusterKey.value = payload.key
   clusterItems.value = payload.items
-  selectedPhotoId.value = null
+  selectedPhotoId.value = payload.previewId ?? null
 }
 
 function onDeselect() {
@@ -87,9 +103,51 @@ function onSidebarMouseLeave() {
   hoverPhotoId.value = null
 }
 
+function onSplitterMouseDown(event: MouseEvent) {
+  event.preventDefault()
+  isResizing.value = true
+  const startX = event.clientX
+  const startWidth = sidebarWidth.value
+  const pageWidth = mapPageRef.value?.clientWidth ?? window.innerWidth
+
+  const onMove = (moveEvent: MouseEvent) => {
+    const delta = startX - moveEvent.clientX
+    const nextWidth = startWidth + delta
+    const maxAllowed = Math.min(MAX_SIDEBAR_WIDTH, pageWidth - 200)
+
+    if (nextWidth < CLOSE_SIDEBAR_WIDTH) {
+      sidebarOpen.value = false
+      return
+    }
+
+    sidebarWidth.value = Math.round(Math.min(maxAllowed, Math.max(MIN_SIDEBAR_WIDTH, nextWidth)))
+  }
+
+  const onUp = () => {
+    isResizing.value = false
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
+useEventListener(document, 'mouseup', () => {
+  if (isResizing.value) {
+    isResizing.value = false
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+})
+
 watch([selectedPhotoId, () => sidebarItems.value], () => {
   const id = selectedPhotoId.value
-  if (!id || !sidebarOpen.value || isClusterMode.value) return
+  if (!id || !sidebarOpen.value) return
   nextTick(() => {
     const el = document.querySelector(`.sidebar-timeline [data-id="${id}"]`)
     el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
@@ -98,16 +156,18 @@ watch([selectedPhotoId, () => sidebarItems.value], () => {
 </script>
 
 <template>
-  <main-layout-container class="map-view-root">
+  <main-layout-container class="map-view-root" :class="{ 'is-resizing': isResizing }">
     <teleport to="body">
       <router-view />
     </teleport>
 
-    <div class="map-page" v-if="!loading">
+    <div class="map-page" ref="mapPageRef" v-if="!loading">
       <div class="map-main">
         <photo-map
           class="map-canvas"
           :items="geoItems"
+          :initial-center="initialMapView.center"
+          :initial-zoom="initialMapView.zoom"
           :selected-photo-id="selectedPhotoId"
           :selected-cluster-key="selectedClusterKey"
           :hover-photo-id="hoverPhotoId"
@@ -130,7 +190,19 @@ watch([selectedPhotoId, () => sidebarItems.value], () => {
         />
       </div>
 
-      <aside v-show="sidebarOpen" class="map-sidebar" :class="{ 'cluster-mode': isClusterMode }">
+      <div
+        v-if="sidebarOpen"
+        class="map-splitter"
+        title="Drag to resize"
+        @mousedown="onSplitterMouseDown"
+      />
+
+      <aside
+        v-show="sidebarOpen"
+        class="map-sidebar"
+        :class="{ 'cluster-mode': isClusterMode }"
+        :style="{ width: `${sidebarWidth}px` }"
+      >
         <div class="sidebar-toolbar">
           <div class="sidebar-meta">
             <template v-if="isClusterMode">
@@ -212,6 +284,10 @@ watch([selectedPhotoId, () => sidebarItems.value], () => {
   height: 100%;
 }
 
+.map-view-root.is-resizing {
+  cursor: col-resize;
+}
+
 .map-page {
   display: flex;
   width: 100%;
@@ -231,13 +307,40 @@ watch([selectedPhotoId, () => sidebarItems.value], () => {
   height: 100%;
 }
 
+.map-splitter {
+  flex-shrink: 0;
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 2;
+  transition: background 0.15s;
+}
+
+.map-splitter::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  border-radius: 2px;
+  background: rgba(var(--v-theme-on-surface), 0.15);
+  transition: background 0.15s;
+}
+
+.map-splitter:hover::after,
+.map-view-root.is-resizing .map-splitter::after {
+  background-color: rgb(var(--v-theme-primary));
+}
+
 .map-sidebar {
-  width: 480px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
   background: rgba(var(--v-theme-surface), 0.55);
+  min-width: 0;
 }
 
 .map-sidebar.cluster-mode {
@@ -310,7 +413,7 @@ watch([selectedPhotoId, () => sidebarItems.value], () => {
   box-shadow: inset 3px 0 0 rgb(var(--v-theme-primary));
 }
 
-.simple-timeline-el{
+.simple-timeline-el {
   width: calc(100% + 50px);
 }
 

@@ -14,19 +14,22 @@ const props = withDefaults(
     selectedPhotoId: string | null
     selectedClusterKey: string | null
     hoverPhotoId: string | null
-    center?: { lon: number; lat: number }
-    zoom?: number
+    initialCenter: { lon: number; lat: number }
+    initialZoom: number
   }>(),
   {
-    center: () => ({ lon: 5.2913, lat: 52.1326 }),
-    zoom: 8,
+    initialCenter: () => ({ lon: 5.2913, lat: 52.1326 }),
+    initialZoom: 8,
   },
 )
 
 const emit = defineEmits<{
   (e: 'update:viewport-items', items: SimpleTimelineItem[]): void
   (e: 'select:photo', id: string): void
-  (e: 'select:cluster', payload: { key: string; items: SimpleTimelineItem[] }): void
+  (
+    e: 'select:cluster',
+    payload: { key: string; items: SimpleTimelineItem[]; previewId?: string },
+  ): void
   (e: 'deselect'): void
   (e: 'open:photo', id: string): void
   (e: 'hover:photo', id: string | null): void
@@ -42,13 +45,39 @@ const previewItem = ref<SimpleTimelineItem | null>(null)
 const previewCoords = ref<[number, number] | null>(null)
 const previewPosition = ref({ left: '0px', top: '0px' })
 
+const MARKER_MAX_EDGE = 55
+const MARKER_MIN_EDGE = 35
+
+/** ratio = width / height */
+function markerSizeFromRatio(ratio: number): { width: number; height: number } {
+  const r = ratio > 0 && Number.isFinite(ratio) ? ratio : 1
+  if (r >= 1) {
+    const width = MARKER_MAX_EDGE
+    const height = Math.round(width / r)
+    return { width, height: Math.max(MARKER_MIN_EDGE, height) }
+  }
+  const height = MARKER_MAX_EDGE
+  const width = Math.round(height * r)
+  return { width: Math.max(MARKER_MIN_EDGE, width), height }
+}
+
+function applyPhotoMarkerSize(anchor: HTMLElement, ratio: number) {
+  const { width, height } = markerSizeFromRatio(ratio)
+  anchor.style.width = `${width}px`
+  anchor.style.height = `${height}px`
+}
+
 function setMarkerThumbnail(container: HTMLElement, item: SimpleTimelineItem, size: number) {
   container.replaceChildren()
   const img = document.createElement('img')
   img.className = 'marker-thumb-img'
   img.alt = ''
   img.draggable = false
-  img.src = mediaItemService.getPhotoThumbnail(item.id, getThumbnailHeight(size), !item.hasThumbnails)
+  img.src = mediaItemService.getPhotoThumbnail(
+    item.id,
+    getThumbnailHeight(size),
+    !item.hasThumbnails,
+  )
   container.appendChild(img)
 }
 
@@ -86,8 +115,7 @@ function syncSelectionStyles() {
     const inner = marker.getElement().querySelector('.map-marker-inner') as HTMLElement | null
     if (!inner) continue
     const selected =
-      (typeof key === 'string' && props.selectedPhotoId === key) ||
-      props.selectedClusterKey === key
+      (typeof key === 'string' && props.selectedPhotoId === key) || props.selectedClusterKey === key
     inner.classList.toggle('selected', selected)
     inner.classList.toggle(
       'highlighted',
@@ -102,8 +130,8 @@ onMounted(() => {
   map.value = new maplibregl.Map({
     container: mapContainer.value,
     style: 'https://tiles.openfreemap.org/styles/liberty',
-    center: props.center,
-    zoom: props.zoom,
+    center: [props.initialCenter.lon, props.initialCenter.lat],
+    zoom: props.initialZoom,
     attributionControl: {
       compact: true,
     },
@@ -111,7 +139,6 @@ onMounted(() => {
 
   map.value.on('load', () => {
     updateClusters()
-    fitMapToItems()
   })
 
   map.value.on('move', updatePreviewPosition)
@@ -144,7 +171,6 @@ watch(
   () => props.items,
   () => {
     updateClusters()
-    fitMapToItems()
   },
   { deep: false },
 )
@@ -171,28 +197,6 @@ watch(
     }
   },
 )
-
-function fitMapToItems() {
-  if (!map.value || props.items.length === 0) return
-
-  const coords = props.items
-    .filter((item) => item.latitude !== 0 || item.longitude !== 0)
-    .map((item) => [item.longitude, item.latitude] as [number, number])
-
-  if (coords.length === 0) return
-
-  if (coords.length === 1) {
-    map.value.flyTo({ center: coords[0], zoom: 14, essential: true, duration: 500 })
-    return
-  }
-
-  const bounds = coords.reduce(
-    (b, coord) => b.extend(coord),
-    new maplibregl.LngLatBounds(coords[0], coords[0]),
-  )
-
-  map.value.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 0 })
-}
 
 function updateClusters() {
   if (!props.items) return
@@ -288,14 +292,32 @@ function updateVisibleMarkers() {
 
       el.addEventListener('click', (e) => {
         e.stopPropagation()
-        clearPreview()
         const items = getClusterItems(clusterId)
-        emit('select:cluster', { key: key as string, items })
+        if (leafItem) {
+          previewItem.value = leafItem
+          previewCoords.value = coords
+          updatePreviewPosition()
+        } else {
+          clearPreview()
+        }
+        emit('select:cluster', {
+          key: key as string,
+          items,
+          previewId: leafItem?.id,
+        })
       })
     } else {
       const photoItem = cluster.properties.item as SimpleTimelineItem | undefined
       if (photoItem) {
+        applyPhotoMarkerSize(anchor, photoItem.ratio)
         setMarkerThumbnail(thumbWrap, photoItem, 150)
+        if (photoItem.isVideo) {
+          el.classList.add('video-marker')
+        } else {
+          el.classList.add('image-marker')
+        }
+      } else {
+        applyPhotoMarkerSize(anchor, 1)
       }
 
       el.addEventListener('mouseenter', () => {
@@ -365,7 +387,7 @@ function emitViewportItems() {
       <div ref="mapContainer" class="photo-map-wrapper"></div>
 
       <div
-        v-if="previewItem && selectedPhotoId === previewItem.id"
+        v-if="previewItem && (selectedPhotoId === previewItem.id || selectedClusterKey !== null)"
         class="map-preview-popup"
         :style="previewPosition"
         @click.stop
@@ -399,11 +421,6 @@ function emitViewportItems() {
   cursor: pointer;
 }
 
-.map-marker-anchor.is-photo {
-  width: 48px;
-  height: 48px;
-}
-
 .map-marker-anchor.is-cluster {
   width: 56px;
   height: 56px;
@@ -412,21 +429,43 @@ function emitViewportItems() {
 .map-marker-inner {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  border: 3px solid white;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  border: 2px solid white;
   position: relative;
   overflow: visible;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   transition:
     transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-    border-color 0.2s;
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.map-marker-inner.photo-marker {
+  border-radius: 5px;
+}
+
+.map-marker-inner.photo-marker.image-marker {
+}
+
+.map-marker-inner.photo-marker.video-marker {
+  border-color: #ff9700;
+}
+
+.map-marker-inner.cluster-marker {
+  border-radius: 50%;
 }
 
 .marker-thumb-wrap {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
   overflow: hidden;
+}
+
+.photo-marker .marker-thumb-wrap {
+  border-radius: 3px;
+}
+
+.cluster-marker .marker-thumb-wrap {
+  border-radius: 50%;
 }
 
 .marker-thumb-img {
@@ -437,21 +476,25 @@ function emitViewportItems() {
   pointer-events: none;
 }
 
-.photo-marker:hover,
-.photo-marker.highlighted {
+.photo-marker.image-marker:hover,
+.photo-marker.image-marker.highlighted,
+.photo-marker.image-marker.selected {
   transform: scale(1.2);
-  border-color: rgb(var(--v-theme-primary));
+  border-color: #42a5f5;
 }
 
-.photo-marker.selected,
+.photo-marker.video-marker:hover,
+.photo-marker.video-marker.highlighted,
+.photo-marker.video-marker.selected {
+  transform: scale(1.2);
+  border-color: #ffa726;
+}
+
+.cluster-marker:hover,
 .cluster-marker.selected {
-  transform: scale(1.2);
-  border-color: rgb(var(--v-theme-primary));
-  border-width: 4px;
-}
-
-.cluster-marker:hover {
   transform: scale(1.1);
+  border-color: #3f51b5;
+  border-width: 4px;
 }
 
 .cluster-badge {
