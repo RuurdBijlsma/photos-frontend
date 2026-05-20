@@ -5,6 +5,7 @@ import type { MediaItemWithAlbums } from '@/scripts/types/api/fullPhoto.ts'
 import type { Theme } from '@/scripts/types/themeColor.ts'
 import type { Album } from '@/scripts/types/api/album.ts'
 import type { UpdateMediaItemRequest } from '@/scripts/types/api/mediaItem.ts'
+import { MapPhotosResponse } from '@/scripts/types/generated/timeline.ts'
 
 const mediaItemService = {
   update(id: string, payload: UpdateMediaItemRequest) {
@@ -61,6 +62,14 @@ const mediaItemService = {
     return apiClient.get<Blob>(`/photos/${id}/download`, {
       responseType: 'blob',
     })
+  },
+
+  async getGeoPhotos(): Promise<MapPhotosResponse> {
+    const response = await apiClient.get('/photos/geo', {
+      responseType: 'arraybuffer',
+    })
+    const buffer = new Uint8Array(response.data)
+    return MapPhotosResponse.decode(buffer)
   },
 }
 
