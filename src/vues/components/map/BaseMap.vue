@@ -2,7 +2,9 @@
 import { ref, onMounted, onUnmounted, shallowRef } from 'vue'
 import maplibregl, { type MapOptions } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+
 type MapOptionsWithoutContainer = Omit<MapOptions, 'container' | 'style'>
+
 const props = withDefaults(
   defineProps<{
     mapOptions: MapOptionsWithoutContainer
@@ -10,13 +12,15 @@ const props = withDefaults(
   {
     mapOptions: () => ({
       center: { lon: 0, lat: 0 },
-      zoom: 10,
+      zoom: 2,
       attributionControl: {
         compact: true,
       },
     }),
   },
 )
+
+const emit = defineEmits(['load'])
 
 const mapContainer = ref<HTMLElement | null>(null)
 const map = shallowRef<null | maplibregl.Map>(null)
@@ -28,17 +32,17 @@ onMounted(() => {
     container: mapContainer.value,
     style: 'https://tiles.openfreemap.org/styles/liberty',
   })
+
+  map.value.on('load', () => {
+    emit('load', map.value)
+  })
 })
 
 onUnmounted(() => {
-  if (map.value) {
-    map.value.remove()
-  }
+  if (map.value) map.value.remove()
 })
 </script>
 
 <template>
-  <div ref="mapContainer"></div>
+  <div ref="mapContainer" ></div>
 </template>
-
-<style scoped></style>
