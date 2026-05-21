@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { type Map } from 'maplibre-gl'
 import maplibregl from 'maplibre-gl'
 import BaseMap from '@/vues/components/map/BaseMap.vue'
@@ -7,8 +6,9 @@ import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import type { MapPhotosResponse } from '@/scripts/types/generated/timeline.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
+import { useThrottleFn } from '@vueuse/core'
 
-const markers = ref<Record<string, maplibregl.Marker>>({})
+const markers: Record<string, maplibregl.Marker> = {}
 let markersOnScreen: Record<string, maplibregl.Marker> = {}
 
 // Create the GeoJSON from photo items
@@ -53,6 +53,7 @@ const handleMapLoad = async (map: Map) => {
 
   // Function to update markers on screen
   const updateMarkers = () => {
+    console.log('Update markers', performance.now())
     // Check if source exists yet
     if (!map.getSource('photos')) return
     const newMarkers: Record<string, maplibregl.Marker> = {}
@@ -60,15 +61,18 @@ const handleMapLoad = async (map: Map) => {
     const features = map.querySourceFeatures('photos')
 
     for (const feature of features) {
-      if (!('coordinates' in feature.geometry)) return
+      if (!('coordinates' in feature.geometry)) continue
       const coords = feature.geometry.coordinates
       const props = feature.properties as CreateMarkerPhotoProps | CreateMarkerClusterProps
       const id = 'cluster' in props ? `cluster-${props.cluster_id}` : props.id
 
-      let marker = markers.value[id]
+      // skip duplicate features in the same viewport frame
+      if (newMarkers[id]) continue
+
+      let marker = markers[id]
       if (!marker) {
         const el = createMarkerElement(props)
-        marker = markers.value[id] = new maplibregl.Marker({ element: el }).setLngLat(
+        marker = markers[id] = new maplibregl.Marker({ element: el }).setLngLat(
           coords as [number, number],
         )
       }
@@ -87,15 +91,16 @@ const handleMapLoad = async (map: Map) => {
     markersOnScreen = newMarkers
   }
 
+  const throttledUpdateMarker = useThrottleFn(() => updateMarkers(), 500)
+
   // Listen to map events to update markers
-  map.on('move', updateMarkers)
-  map.on('moveend', updateMarkers)
+  map.on('move', throttledUpdateMarker)
+  map.on('moveend', throttledUpdateMarker)
 
   // 'data' fires when the source is loaded/updated
   map.on('data', (e: DataEvent) => {
-    console.log('data', e)
     if (e.sourceId !== 'photos' || !e.isSourceLoaded) return
-    updateMarkers()
+    throttledUpdateMarker()
   })
 
   // Initial call
@@ -117,7 +122,6 @@ type CreateMarkerProps = CreateMarkerPhotoProps | CreateMarkerClusterProps
 
 // Make HTML element for marker
 const createMarkerElement = (props: CreateMarkerProps) => {
-  console.log('createMarkerElement', props)
   const el = document.createElement('div')
   el.className = 'circle-marker'
 
