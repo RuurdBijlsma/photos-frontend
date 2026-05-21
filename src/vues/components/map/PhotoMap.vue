@@ -50,7 +50,7 @@ const MARKER_MIN_EDGE = 35
 
 /** Lower radius = less aggressive clustering; higher maxZoom = individual pins sooner */
 const CLUSTER_MAX_ZOOM = 18
-const CLUSTER_RADIUS = 22
+const CLUSTER_RADIUS = 50
 
 /** ratio = width / height */
 function markerSizeFromRatio(ratio: number): { width: number; height: number } {
