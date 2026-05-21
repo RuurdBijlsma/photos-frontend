@@ -192,3 +192,4 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
+* als je search naar locatie naam doet, map laten zien in SearchView

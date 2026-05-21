@@ -198,14 +198,19 @@ watch(dateTimeDialogOpen, () => {
           <v-icon icon="mdi-chevron-right" size="16" class="album-chevron" />
         </router-link>
       </section>
-      <div class="capture-info"></div>
+      <div class="capture-info">
+        <!--        todo! capture info-->
+      </div>
       <div class="map-info" v-if="mediaItem?.gps">
         <base-map
           class="base-map"
-          height="300px"
-          width="380px"
-          :center="{ lat: mediaItem.gps.latitude, lon: mediaItem.gps.longitude }"
-          :zoom="9"
+          :map-options="{
+            center: { lat: mediaItem.gps.latitude, lon: mediaItem.gps.longitude },
+            zoom: 9,
+            attributionControl: {
+              compact: true,
+            },
+          }"
         />
         <v-theme-provider theme="dark">
           <v-sheet class="map-buttons">
@@ -400,6 +405,8 @@ watch(dateTimeDialogOpen, () => {
 }
 
 .base-map {
+  width: 380px;
+  height: 300px;
 }
 
 .map-buttons {
