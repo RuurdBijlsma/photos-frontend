@@ -37,7 +37,9 @@ const handleMapLoad = async (map: Map) => {
     type: 'geojson',
     data: geoJson,
     cluster: true,
+    clusterMaxZoom: 17,
     clusterRadius: 40,
+    clusterProperties: {},
   })
 
   // Add an invisible layer to force MapLibre to index the features.
@@ -47,7 +49,8 @@ const handleMapLoad = async (map: Map) => {
     source: 'photos',
     paint: {
       'circle-opacity': 0,
-      'circle-radius': 0,
+      'circle-radius': 5,
+      'circle-color': '#ff0000',
     },
   })
 
@@ -57,7 +60,7 @@ const handleMapLoad = async (map: Map) => {
     // Check if source exists yet
     if (!map.getSource('photos')) return
     const newMarkers: Record<string, maplibregl.Marker> = {}
-    // querySourceFeatures only returns features in the current viewport
+    // querySourceFeatures returns features in loaded tiles
     const features = map.querySourceFeatures('photos')
 
     for (const feature of features) {
