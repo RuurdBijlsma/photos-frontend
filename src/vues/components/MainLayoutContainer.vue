@@ -1,16 +1,17 @@
 <script setup lang="ts">
-interface Props {
-  fitToContent?: boolean
-}
-
-withDefaults(defineProps<Props>(), {
-  fitToContent: false,
-})
+withDefaults(
+  defineProps<{
+    fitToContent?: boolean
+  }>(),
+  {
+    fitToContent: false,
+  },
+)
 </script>
 
 <template>
   <div class="outer-container" :class="{ 'fit-content': fitToContent }">
-    <div class="inner-container" :class="{ 'fit-content': fitToContent }">
+    <div class="inner-container">
       <slot></slot>
     </div>
   </div>
@@ -67,7 +68,7 @@ withDefaults(defineProps<Props>(), {
   scrollbar-width: none;
 }
 
-.inner-container.fit-content {
+.fit-content .inner-container {
   flex: none;
   height: auto;
   border-radius: 50px;

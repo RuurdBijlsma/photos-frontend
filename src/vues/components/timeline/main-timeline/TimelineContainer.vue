@@ -574,7 +574,6 @@ watch(
       }
       resetResizeAnchorDb()
     } else {
-      console.warn(route.query.highlight === undefined)
       if (timelineStore.mediaIdInView && route.query.highlight === undefined) {
         console.info('Restoring scroll position to media item:', timelineStore.mediaIdInView)
         const mediaItemInViewId = timelineStore.mediaIdInView

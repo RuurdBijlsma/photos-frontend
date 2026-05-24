@@ -53,6 +53,13 @@ const router = createRouter({
           path: 'map',
           name: 'map',
           component: () => import('@/vues/views/main/MapView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-map',
+              component: ViewPhoto,
+            },
+          ],
         },
         {
           path: 'albums',

@@ -11,12 +11,22 @@ import type {
   MapPhotosResponse,
   SimpleTimelineItem,
 } from '@/scripts/types/generated/timeline.ts'
+import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
+
+// TODO:
+// Close sidebar functionality
+// Resize sidebar by dragging gap between simpletimeline and map view (remember size with vueuse useStorage)
+// Select (click on) cluster -> show photos from that cluster in sidebar & open popup above marker showing the photo.
+// Select photo/video -> Show popup above marker showing the photo/video
+// Click popup -> open media item in ViewPhoto viewer
+// Popup should have a subtle button to close the popup (top right)
+// sidebar should reflect which media items are currently in viewport, unless a cluster is selected, then show items for that cluster, and a button to return back to "in-view" mode
 
 const markers: Record<string, maplibregl.Marker> = {}
 const clusterPreviewCache = new globalThis.Map<number, SimpleTimelineItem>()
 let updateRun = 0
 let initialized = false
-let mapPhotos: MapPhotosResponse | null = null
+const mapPhotos = ref<MapPhotosResponse | null>(null)
 let map: LibreMap | null = null
 
 type MapOptionsWithoutContainer = Omit<MapOptions, 'container' | 'style'>
@@ -86,24 +96,32 @@ function handleMapLoad(loadedMap: LibreMap) {
 }
 
 mediaItemService.listMapPhotos().then((loadedPhotos) => {
-  mapPhotos = loadedPhotos
+  mapPhotos.value = loadedPhotos
   mapOptions.value = getInitialMapOptions(loadedPhotos)
   initialize()
 })
 
 async function initialize() {
-  if (map === null || mapPhotos === null) return
+  if (map === null || mapPhotos.value === null) return
   if (initialized) return
   initialized = true
   const loadedMap = map
 
-  addPhotoSource(loadedMap, mapPhotos)
+  addPhotoSource(loadedMap, mapPhotos.value)
   addHelperLayers(loadedMap)
 
   const updateMarkers = () => syncVisibleMarkers(loadedMap)
   const throttledUpdate = useThrottleFn(updateMarkers, 50)
 
-  bindMarkerUpdateEvents(loadedMap, throttledUpdate)
+  loadedMap.on('zoomend', throttledUpdate)
+  loadedMap.on('move', throttledUpdate)
+  loadedMap.on('moveend', throttledUpdate)
+  loadedMap.on(
+    'data',
+    (e: maplibregl.MapDataEvent & { sourceId?: string; isSourceLoaded?: boolean }) => {
+      if (e.sourceId === 'photos' && e.isSourceLoaded) throttledUpdate()
+    },
+  )
   updateMarkers()
 }
 
@@ -161,18 +179,6 @@ function addHelperLayers(loadedMap: LibreMap) {
       'circle-opacity': 0, // Hidden but detectable
     },
   })
-}
-
-function bindMarkerUpdateEvents(loadedMap: LibreMap, updateMarkers: () => void) {
-  loadedMap.on('zoomend', updateMarkers)
-  loadedMap.on('move', updateMarkers)
-  loadedMap.on('moveend', updateMarkers)
-  loadedMap.on(
-    'data',
-    (e: maplibregl.MapDataEvent & { sourceId?: string; isSourceLoaded?: boolean }) => {
-      if (e.sourceId === 'photos' && e.isSourceLoaded) updateMarkers()
-    },
-  )
 }
 
 async function syncVisibleMarkers(loadedMap: LibreMap) {
@@ -333,26 +339,79 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main-layout-container>
-    <!-- Ensure the container has height -->
-    <v-theme-provider with-background class="map-wrapper" theme="light">
-      <base-map
-        v-if="mapOptions"
-        class="map-instance"
-        :map-options="mapOptions"
-        @load="handleMapLoad"
-      />
-      <div v-else class="map-loading">
-        <v-progress-circular indeterminate color="primary" />
+  <div class="outer-layout">
+    <main-layout-container class="map-layout">
+      <!-- Ensure the container has height -->
+      <v-theme-provider with-background class="map-wrapper" theme="light">
+        <base-map
+          v-if="mapOptions"
+          class="map-instance"
+          :map-options="mapOptions"
+          @load="handleMapLoad"
+        />
+        <div v-else class="map-loading">
+          <v-progress-circular indeterminate color="primary" />
+        </div>
+      </v-theme-provider>
+    </main-layout-container>
+    <simple-timeline
+      class="timeline"
+      v-if="mapPhotos"
+      :timeline-items="mapPhotos.items.map((p) => p.item).filter((p) => !!p)"
+      view-link="/map/view/"
+    >
+      <div class="timeline-header">
+        <h2>Photos in view</h2>
+        <v-spacer />
+        <v-btn
+          icon
+          density="compact"
+          color="primary"
+          variant="text"
+          v-tooltip="{
+            location: 'top',
+            text: 'Close sidebar',
+          }"
+        >
+          <v-icon size="18" icon="mdi-chevron-right" />
+        </v-btn>
       </div>
-    </v-theme-provider>
-  </main-layout-container>
+    </simple-timeline>
+  </div>
 </template>
 
 <style>
+.outer-layout {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  gap: 5px;
+}
+
+.map-layout {
+  width: calc(100% - 405px) !important;
+}
+
+.timeline {
+  width: 400px !important;
+}
+
+.timeline-header {
+  padding: 15px 20px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.timeline h2 {
+  font-weight: 500;
+  font-size: 20px;
+  color: rgba(var(--v-theme-on-surface-variant));
+}
+
 .map-wrapper {
   width: 100%;
-  height: 80vh;
+  height: 100%;
   position: relative;
 }
 
