@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, shallowRef } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import maplibregl, { type MapOptions } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -20,29 +20,33 @@ const props = withDefaults(
   },
 )
 
-const emit = defineEmits(['load'])
+const emit = defineEmits(['load', 'style.load'])
 
 const mapContainer = ref<HTMLElement | null>(null)
-const map = shallowRef<null | maplibregl.Map>(null)
+let map: null | maplibregl.Map = null
 
 onMounted(() => {
   if (!mapContainer.value) return
-  map.value = new maplibregl.Map({
+  map = new maplibregl.Map({
     ...props.mapOptions,
     container: mapContainer.value,
     style: 'https://tiles.openfreemap.org/styles/liberty',
   })
 
-  map.value.on('load', () => {
-    emit('load', map.value)
+  map.on('load', () => {
+    emit('load', map)
+  })
+
+  map.on('style.load', () => {
+    emit('style.load', map)
   })
 })
 
 onUnmounted(() => {
-  if (map.value) map.value.remove()
+  if (map) map.remove()
 })
 </script>
 
 <template>
-  <div ref="mapContainer" ></div>
+  <div ref="mapContainer"></div>
 </template>
