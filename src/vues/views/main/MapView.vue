@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onUnmounted, ref } from 'vue'
-import { type Map, type MapOptions } from 'maplibre-gl'
-import maplibregl from 'maplibre-gl'
+import maplibregl, { type Map as LibreMap, type MapOptions } from 'maplibre-gl'
 import BaseMap from '@/vues/components/map/BaseMap.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
@@ -16,8 +15,9 @@ import type {
 const markers: Record<string, maplibregl.Marker> = {}
 const clusterPreviewCache = new globalThis.Map<number, SimpleTimelineItem>()
 let updateRun = 0
+let initialized = false
 let mapPhotos: MapPhotosResponse | null = null
-let map: Map | null = null
+let map: LibreMap | null = null
 
 type MapOptionsWithoutContainer = Omit<MapOptions, 'container' | 'style'>
 
@@ -55,9 +55,12 @@ function getInitialMapOptions(photos: MapPhotosResponse): MapOptionsWithoutConta
     }
   }
 
-  const bounds = locations.reduce((photoBounds, item) => {
-    return photoBounds.extend([item.longitude, item.latitude])
-  }, new maplibregl.LngLatBounds(getLngLat(locations[0]), getLngLat(locations[0])))
+  const bounds = locations.reduce(
+    (photoBounds, item) => {
+      return photoBounds.extend([item.longitude, item.latitude])
+    },
+    new maplibregl.LngLatBounds(getLngLat(locations[0]), getLngLat(locations[0])),
+  )
 
   return {
     ...DEFAULT_MAP_OPTIONS,
@@ -73,7 +76,11 @@ function getLngLat(item: MapPhotoItem): [number, number] {
   return [item.longitude, item.latitude]
 }
 
-function handleMapLoad(loadedMap: Map) {
+function getFeatureCoordinates(feature: maplibregl.MapGeoJSONFeature): [number, number] {
+  return (feature.geometry as GeoJSON.Point).coordinates as [number, number]
+}
+
+function handleMapLoad(loadedMap: LibreMap) {
   map = loadedMap
   initialize()
 }
@@ -86,34 +93,54 @@ mediaItemService.listMapPhotos().then((loadedPhotos) => {
 
 async function initialize() {
   if (map === null || mapPhotos === null) return
+  if (initialized) return
+  initialized = true
+  const loadedMap = map
 
-  map.addSource('photos', {
+  addPhotoSource(loadedMap, mapPhotos)
+  addHelperLayers(loadedMap)
+
+  const updateMarkers = () => syncVisibleMarkers(loadedMap)
+  const throttledUpdate = useThrottleFn(updateMarkers, 50)
+
+  bindMarkerUpdateEvents(loadedMap, throttledUpdate)
+  updateMarkers()
+}
+
+function createPhotosGeoJson(photos: MapPhotosResponse): GeoJSON.FeatureCollection<GeoJSON.Point> {
+  return {
+    type: 'FeatureCollection',
+    features: getValidPhotoLocations(photos).map((p) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: getLngLat(p),
+      },
+      properties: {
+        id: p.item?.id,
+        hasThumbnails: p.item?.hasThumbnails,
+        isVideo: p.item?.isVideo,
+        durationMs: p.item?.durationMs,
+        ratio: p.item?.ratio,
+      },
+    })),
+  }
+}
+
+function addPhotoSource(loadedMap: LibreMap, photos: MapPhotosResponse) {
+  loadedMap.addSource('photos', {
     type: 'geojson',
-    data: {
-      type: 'FeatureCollection',
-      features: mapPhotos.items.map((p) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [p.longitude, p.latitude],
-        },
-        properties: {
-          id: p.item?.id,
-          hasThumbnails: p.item?.hasThumbnails,
-          isVideo: p.item?.isVideo,
-          durationMs: p.item?.durationMs,
-          ratio: p.item?.ratio,
-        },
-      })),
-    },
+    data: createPhotosGeoJson(photos),
     cluster: true,
     clusterMaxZoom: 14,
     clusterRadius: 50,
   })
+}
 
+function addHelperLayers(loadedMap: LibreMap) {
   // Invisible helper layers keep MapLibre's spatial index available while
   // viewport-scoped DOM markers render only what is on screen.
-  map.addLayer({
+  loadedMap.addLayer({
     id: 'cluster-helper',
     type: 'circle',
     source: 'photos',
@@ -124,7 +151,7 @@ async function initialize() {
     },
   })
 
-  map.addLayer({
+  loadedMap.addLayer({
     id: 'unclustered-point-helper',
     type: 'circle',
     source: 'photos',
@@ -134,89 +161,52 @@ async function initialize() {
       'circle-opacity': 0, // Hidden but detectable
     },
   })
+}
 
-  const updateMarkers = async () => {
-    if (map === null) return
-    const run = ++updateRun
-    const source = map.getSource('photos') as maplibregl.GeoJSONSource
-    const clusterFeatures = map.queryRenderedFeatures({ layers: ['cluster-helper'] })
-    const pointFeatures = map.queryRenderedFeatures({ layers: ['unclustered-point-helper'] })
-    const newMarkers: Record<string, maplibregl.Marker> = {}
+function bindMarkerUpdateEvents(loadedMap: LibreMap, updateMarkers: () => void) {
+  loadedMap.on('zoomend', updateMarkers)
+  loadedMap.on('move', updateMarkers)
+  loadedMap.on('moveend', updateMarkers)
+  loadedMap.on(
+    'data',
+    (e: maplibregl.MapDataEvent & { sourceId?: string; isSourceLoaded?: boolean }) => {
+      if (e.sourceId === 'photos' && e.isSourceLoaded) updateMarkers()
+    },
+  )
+}
 
-    for (const feature of clusterFeatures) {
-      const clusterId = Number(feature.properties.cluster_id)
-      const key = `cluster-${clusterId}`
-      const coords = (feature.geometry as any).coordinates
-      const count = Number(feature.properties.point_count)
-      let previewItem = clusterPreviewCache.get(clusterId)
+async function syncVisibleMarkers(loadedMap: LibreMap) {
+  const run = ++updateRun
+  const source = loadedMap.getSource('photos') as maplibregl.GeoJSONSource
+  const clusterFeatures = loadedMap.queryRenderedFeatures({ layers: ['cluster-helper'] })
+  const pointFeatures = loadedMap.queryRenderedFeatures({ layers: ['unclustered-point-helper'] })
+  const newMarkers: Record<string, maplibregl.Marker> = {}
 
-      if (!previewItem) {
-        const leaves = await source.getClusterLeaves(clusterId, 1, 0)
-        if (run !== updateRun) return
-        previewItem = getItemFromProperties(leaves[0]?.properties ?? undefined)
-        if (!previewItem) continue
-        clusterPreviewCache.set(clusterId, previewItem)
-      }
+  for (const feature of clusterFeatures) {
+    const clusterId = Number(feature.properties.cluster_id)
+    const count = Number(feature.properties.point_count)
+    const coords = getFeatureCoordinates(feature)
+    let previewItem = clusterPreviewCache.get(clusterId)
 
-      let marker = markers[key]
-      if (!marker) {
-        const el = createClusterMarkerElement(previewItem, count)
-        marker = markers[key] = new maplibregl.Marker({
-          element: el,
-          anchor: 'center',
-        }).setLngLat(coords)
-      } else {
-        marker.setLngLat(coords)
-        updateClusterMarkerElement(marker.getElement(), count)
-      }
-
-      newMarkers[key] = marker
-      if (!marker.getElement().parentElement) marker.addTo(map)
+    if (!previewItem) {
+      const leaves = await source.getClusterLeaves(clusterId, 1, 0)
+      if (run !== updateRun) return
+      previewItem = getItemFromProperties(leaves[0]?.properties ?? undefined)
+      if (!previewItem) continue
+      clusterPreviewCache.set(clusterId, previewItem)
     }
 
-    for (const feature of pointFeatures) {
-      const item = getItemFromProperties(feature.properties)
-      if (!item) continue
-
-      const key = `photo-${item.id}`
-      const coords = (feature.geometry as any).coordinates
-
-      if (newMarkers[key]) continue
-
-      let marker = markers[key]
-      if (!marker) {
-        const el = createPhotoMarkerElement(item)
-        marker = markers[key] = new maplibregl.Marker({
-          element: el,
-          anchor: 'center',
-        }).setLngLat(coords)
-      } else {
-        marker.setLngLat(coords)
-      }
-
-      newMarkers[key] = marker
-      if (!marker.getElement().parentElement) marker.addTo(map)
-    }
-
-    for (const key in markers) {
-      if (!newMarkers[key]) {
-        markers[key].remove()
-        delete markers[key]
-      }
-    }
+    addOrUpdateClusterMarker(loadedMap, clusterId, previewItem, count, coords, newMarkers)
   }
 
-  const throttledUpdate = useThrottleFn(updateMarkers, 50)
+  for (const feature of pointFeatures) {
+    const item = getItemFromProperties(feature.properties)
+    if (!item) continue
 
-  map.on('zoomend', throttledUpdate)
-  map.on('move', throttledUpdate)
-  map.on('moveend', throttledUpdate)
-  map.on('data', (e: maplibregl.MapDataEvent & { sourceId?: string; isSourceLoaded?: boolean }) => {
-    if (e.sourceId === 'photos' && e.isSourceLoaded) throttledUpdate()
-  })
+    addOrUpdatePhotoMarker(loadedMap, item, getFeatureCoordinates(feature), newMarkers)
+  }
 
-  // Initial call
-  updateMarkers()
+  removeHiddenMarkers(newMarkers)
 }
 
 const getItemFromProperties = (properties: maplibregl.GeoJSONFeature['properties'] | undefined) => {
@@ -263,6 +253,72 @@ const createClusterMarkerElement = (item: SimpleTimelineItem, count: number) => 
   el.append(visual)
   updateClusterMarkerElement(el, count)
   return el
+}
+
+function addOrUpdateClusterMarker(
+  loadedMap: LibreMap,
+  clusterId: number,
+  item: SimpleTimelineItem,
+  count: number,
+  coords: [number, number],
+  visibleMarkers: Record<string, maplibregl.Marker>,
+) {
+  const key = `cluster-${clusterId}`
+  return addOrUpdateMarker(
+    loadedMap,
+    key,
+    coords,
+    visibleMarkers,
+    () => createClusterMarkerElement(item, count),
+    (el) => updateClusterMarkerElement(el, count),
+  )
+}
+
+function addOrUpdatePhotoMarker(
+  loadedMap: LibreMap,
+  item: SimpleTimelineItem,
+  coords: [number, number],
+  visibleMarkers: Record<string, maplibregl.Marker>,
+) {
+  const key = `photo-${item.id}`
+  if (visibleMarkers[key]) return visibleMarkers[key]
+
+  return addOrUpdateMarker(loadedMap, key, coords, visibleMarkers, () =>
+    createPhotoMarkerElement(item),
+  )
+}
+
+function addOrUpdateMarker(
+  loadedMap: LibreMap,
+  key: string,
+  coords: [number, number],
+  visibleMarkers: Record<string, maplibregl.Marker>,
+  createElement: () => HTMLElement,
+  updateElement?: (el: HTMLElement) => void,
+) {
+  let marker = markers[key]
+  if (!marker) {
+    marker = markers[key] = new maplibregl.Marker({
+      element: createElement(),
+      anchor: 'center',
+    }).setLngLat(coords)
+  } else {
+    marker.setLngLat(coords)
+    updateElement?.(marker.getElement())
+  }
+
+  visibleMarkers[key] = marker
+  if (!marker.getElement().parentElement) marker.addTo(loadedMap)
+  return marker
+}
+
+function removeHiddenMarkers(visibleMarkers: Record<string, maplibregl.Marker>) {
+  for (const key in markers) {
+    if (!visibleMarkers[key]) {
+      markers[key].remove()
+      delete markers[key]
+    }
+  }
 }
 
 const updateClusterMarkerElement = (el: HTMLElement, count: number) => {

@@ -40,7 +40,7 @@ const filterPeople = computed({
   set: (val) =>
     updateURL({
       people: val?.length ? val.join(',') : undefined,
-      peopleAnd: val && val.length >= 2 ? route.query.peopleAnd : undefined,
+      peopleAnd: val && val.length >= 2 ? (route.query.peopleAnd as string) : undefined,
     }),
 })
 const filterPeopleMatchAll = computed({
