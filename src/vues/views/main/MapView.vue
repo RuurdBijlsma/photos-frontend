@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { onUnmounted, ref } from 'vue'
-import { type Map } from 'maplibre-gl'
+import { type Map, type MapOptions } from 'maplibre-gl'
 import maplibregl from 'maplibre-gl'
 import BaseMap from '@/vues/components/map/BaseMap.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
 import { useThrottleFn } from '@vueuse/core'
-import type { MapPhotosResponse, SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
+import type {
+  MapPhotoItem,
+  MapPhotosResponse,
+  SimpleTimelineItem,
+} from '@/scripts/types/generated/timeline.ts'
 
 const markers: Record<string, maplibregl.Marker> = {}
 const clusterPreviewCache = new globalThis.Map<number, SimpleTimelineItem>()
@@ -15,21 +19,58 @@ let updateRun = 0
 let mapPhotos: MapPhotosResponse | null = null
 let map: Map | null = null
 
-const center = ref({ lat: 40, lng: 0 })
-const zoom = ref(3)
+type MapOptionsWithoutContainer = Omit<MapOptions, 'container' | 'style'>
 
-function findInitialZoom(photos: MapPhotosResponse) {
-  let minLat = 100000,
-    minLon = 10000000
-  let maxLat = -10000,
-    maxLon = -1000000
-  for (const item of photos.items) {
-    if (item.latitude > maxLat) maxLat = item.latitude
-    if (item.longitude > maxLon) maxLon = item.longitude
-    if (item.latitude < minLat) minLat = item.latitude
-    if (item.longitude < minLon) minLon = item.latitude
+const mapOptions = ref<MapOptionsWithoutContainer | null>(null)
+const DEFAULT_MAP_OPTIONS = {
+  center: { lat: 40, lng: 0 },
+  zoom: 3,
+  attributionControl: {
+    compact: true,
+  },
+} satisfies MapOptionsWithoutContainer
+
+function getValidPhotoLocations(photos: MapPhotosResponse) {
+  return photos.items.filter(
+    (item) =>
+      Number.isFinite(item.latitude) &&
+      Number.isFinite(item.longitude) &&
+      item.latitude >= -90 &&
+      item.latitude <= 90 &&
+      item.longitude >= -180 &&
+      item.longitude <= 180,
+  )
+}
+
+function getInitialMapOptions(photos: MapPhotosResponse): MapOptionsWithoutContainer {
+  const locations = getValidPhotoLocations(photos)
+  if (locations.length === 0) return DEFAULT_MAP_OPTIONS
+
+  if (locations.length === 1) {
+    const [location] = locations
+    return {
+      ...DEFAULT_MAP_OPTIONS,
+      center: getLngLat(location),
+      zoom: 11,
+    }
   }
-  //   ... apply zoom/center
+
+  const bounds = locations.reduce((photoBounds, item) => {
+    return photoBounds.extend([item.longitude, item.latitude])
+  }, new maplibregl.LngLatBounds(getLngLat(locations[0]), getLngLat(locations[0])))
+
+  return {
+    ...DEFAULT_MAP_OPTIONS,
+    bounds,
+    fitBoundsOptions: {
+      padding: 80,
+      maxZoom: 14,
+    },
+  }
+}
+
+function getLngLat(item: MapPhotoItem): [number, number] {
+  return [item.longitude, item.latitude]
 }
 
 function handleMapLoad(loadedMap: Map) {
@@ -39,12 +80,13 @@ function handleMapLoad(loadedMap: Map) {
 
 mediaItemService.listMapPhotos().then((loadedPhotos) => {
   mapPhotos = loadedPhotos
-  findInitialZoom(mapPhotos)
+  mapOptions.value = getInitialMapOptions(loadedPhotos)
   initialize()
 })
 
 async function initialize() {
   if (map === null || mapPhotos === null) return
+
   map.addSource('photos', {
     type: 'geojson',
     data: {
@@ -239,16 +281,14 @@ onUnmounted(() => {
     <!-- Ensure the container has height -->
     <v-theme-provider with-background class="map-wrapper" theme="light">
       <base-map
+        v-if="mapOptions"
         class="map-instance"
-        :map-options="{
-          center,
-          zoom,
-          attributionControl: {
-            compact: true,
-          },
-        }"
+        :map-options="mapOptions"
         @load="handleMapLoad"
       />
+      <div v-else class="map-loading">
+        <v-progress-circular indeterminate color="primary" />
+      </div>
     </v-theme-provider>
   </main-layout-container>
 </template>
@@ -265,6 +305,13 @@ onUnmounted(() => {
 .map-instance > div {
   width: 100%;
   height: 100%;
+}
+
+.map-loading {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
 }
 
 .map-photo-marker,
