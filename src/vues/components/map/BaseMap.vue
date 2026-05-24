@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import maplibregl, { type MapOptions } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -45,6 +45,22 @@ onMounted(() => {
 onUnmounted(() => {
   if (map) map.remove()
 })
+
+watch(
+  () => props.mapOptions.center,
+  () => {
+    if (map === null || props.mapOptions.center === undefined) return
+    map.setCenter(props.mapOptions.center)
+  },
+)
+
+watch(
+  () => props.mapOptions.zoom,
+  () => {
+    if (map === null || props.mapOptions.zoom === undefined) return
+    map.setZoom(props.mapOptions.zoom)
+  },
+)
 </script>
 
 <template>

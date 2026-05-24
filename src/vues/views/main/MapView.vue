@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted } from 'vue'
+import { onUnmounted, ref } from 'vue'
 import { type Map } from 'maplibre-gl'
 import maplibregl from 'maplibre-gl'
 import BaseMap from '@/vues/components/map/BaseMap.vue'
@@ -7,15 +7,44 @@ import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
 import { useThrottleFn } from '@vueuse/core'
-import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
+import type { MapPhotosResponse, SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 
 const markers: Record<string, maplibregl.Marker> = {}
 const clusterPreviewCache = new globalThis.Map<number, SimpleTimelineItem>()
 let updateRun = 0
+let mapPhotos: MapPhotosResponse | null = null
+let map: Map | null = null
 
-const handleMapLoad = async (map: Map) => {
-  const mapPhotos = await mediaItemService.listMapPhotos()
+const center = ref({ lat: 40, lng: 0 })
+const zoom = ref(3)
 
+function findInitialZoom(photos: MapPhotosResponse) {
+  let minLat = 100000,
+    minLon = 10000000
+  let maxLat = -10000,
+    maxLon = -1000000
+  for (const item of photos.items) {
+    if (item.latitude > maxLat) maxLat = item.latitude
+    if (item.longitude > maxLon) maxLon = item.longitude
+    if (item.latitude < minLat) minLat = item.latitude
+    if (item.longitude < minLon) minLon = item.latitude
+  }
+  //   ... apply zoom/center
+}
+
+function handleMapLoad(loadedMap: Map) {
+  map = loadedMap
+  initialize()
+}
+
+mediaItemService.listMapPhotos().then((loadedPhotos) => {
+  mapPhotos = loadedPhotos
+  findInitialZoom(mapPhotos)
+  initialize()
+})
+
+async function initialize() {
+  if (map === null || mapPhotos === null) return
   map.addSource('photos', {
     type: 'geojson',
     data: {
@@ -65,6 +94,7 @@ const handleMapLoad = async (map: Map) => {
   })
 
   const updateMarkers = async () => {
+    if (map === null) return
     const run = ++updateRun
     const source = map.getSource('photos') as maplibregl.GeoJSONSource
     const clusterFeatures = map.queryRenderedFeatures({ layers: ['cluster-helper'] })
@@ -210,7 +240,13 @@ onUnmounted(() => {
     <v-theme-provider with-background class="map-wrapper" theme="light">
       <base-map
         class="map-instance"
-        :map-options="{ center: [0, 20], zoom: 2 }"
+        :map-options="{
+          center,
+          zoom,
+          attributionControl: {
+            compact: true,
+          },
+        }"
         @load="handleMapLoad"
       />
     </v-theme-provider>
