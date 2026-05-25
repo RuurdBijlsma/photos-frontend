@@ -578,7 +578,6 @@ onUnmounted(() => {
     :style="layoutStyle"
   >
     <main-layout-container class="map-layout">
-      <!-- Ensure the container has height -->
       <v-theme-provider with-background class="map-wrapper" theme="light">
         <base-map
           v-if="mapOptions"
@@ -612,6 +611,7 @@ onUnmounted(() => {
       @mousedown="startSidebarResize"
     />
     <simple-timeline
+      hide-drop-shadow
       class="timeline"
       v-if="mapPhotos"
       :timeline-items="timelineItems"
@@ -669,7 +669,6 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: minmax(400px, 1fr) 5px var(--map-sidebar-width);
   transition: grid-template-columns 0.22s ease;
-  overflow: hidden;
 }
 
 .outer-layout.sidebar-resizing {

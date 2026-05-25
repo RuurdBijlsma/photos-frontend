@@ -2,15 +2,17 @@
 withDefaults(
   defineProps<{
     fitToContent?: boolean
+    hideDropShadow?: boolean
   }>(),
   {
     fitToContent: false,
+    hideDropShadow: false,
   },
 )
 </script>
 
 <template>
-  <div class="outer-container" :class="{ 'fit-content': fitToContent }">
+  <div class="outer-container" :class="{ 'fit-content': fitToContent, 'hide-drop-shadow': hideDropShadow }">
     <div class="inner-container">
       <slot></slot>
     </div>
@@ -34,6 +36,10 @@ withDefaults(
   max-width: calc(100% - 50px);
   width: 100%;
   height: 100%;
+}
+
+.hide-drop-shadow.outer-container{
+  box-shadow: none !important;
 }
 
 .outer-container.fit-content {
