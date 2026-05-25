@@ -23,10 +23,13 @@ let map: LibreMap | null = null
 let popupMarker: maplibregl.Marker | null = null
 const router = useRouter()
 const outerLayoutEl = useTemplateRef('outerLayout')
+const photoIdToOrder = new Map<string, number>()
+
 const MIN_MAP_WIDTH = 400
 const MIN_SIDEBAR_WIDTH = 200
 const SIDEBAR_GAP = 5
 const CLOSE_DRAG_THRESHOLD = 50
+
 const sidebarOpen = useStorage('mapSidebarOpen', true)
 const sidebarWidth = useStorage('mapSidebarWidth', window.innerWidth / 3)
 const isResizingSidebar = ref(false)
@@ -50,7 +53,15 @@ const DEFAULT_MAP_OPTIONS = {
 const photoItems = computed(() => {
   return mapPhotos.value?.items.map((p) => p.item).filter((p) => !!p) ?? []
 })
-const timelineItems = computed(() => selectedClusterItems.value ?? visibleItems.value)
+const timelineItems = computed(() => {
+  const items = selectedClusterItems.value ?? visibleItems.value
+
+  return items.sort((a, b) => {
+    const orderA = photoIdToOrder.get(a.id) ?? 0
+    const orderB = photoIdToOrder.get(b.id) ?? 0
+    return orderA - orderB
+  })
+})
 const resolvedSidebarWidth = computed(() => {
   const maxWidth = getMaxSidebarWidth()
   return Math.round(Math.min(Math.max(sidebarWidth.value, MIN_SIDEBAR_WIDTH), maxWidth))
@@ -127,6 +138,11 @@ function handleMapLoad(loadedMap: LibreMap) {
 }
 
 mediaItemService.listMapPhotos().then((loadedPhotos) => {
+  loadedPhotos.items.forEach((p, index) => {
+    if (p.item?.id) {
+      photoIdToOrder.set(p.item.id, index)
+    }
+  })
   mapPhotos.value = loadedPhotos
   mapOptions.value = getInitialMapOptions(loadedPhotos)
   initialize()
@@ -182,7 +198,7 @@ function addPhotoSource(loadedMap: LibreMap, photos: MapPhotosResponse) {
     type: 'geojson',
     data: createPhotosGeoJson(photos),
     cluster: true,
-    clusterMaxZoom: 14,
+    clusterMaxZoom: 17, // Changing to 18 effectively keeps clustering through all zoom levels
     clusterRadius: 50,
   })
 }
