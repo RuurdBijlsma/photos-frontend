@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router'
 import { isAxiosError } from 'axios'
 import FocusLayout from '@/vues/layouts/FocusLayout.vue'
 import AppAlert from '@/vues/components/ui/AppAlert.vue'
+import { useStorage } from '@vueuse/core'
 
 const authStore = useAuthStore()
 const snackbarStore = useSnackbarsStore()
@@ -25,7 +26,7 @@ const rules = {
   min: (v: string) => v.length >= 6 || `Min 6 characters`,
 }
 
-const isDev = localStorage.isDev === 'true'
+const isDev = useStorage('isDev', true)
 const showPassword = ref(false)
 const email = ref('')
 const password = ref('')

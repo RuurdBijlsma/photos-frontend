@@ -1,33 +1,40 @@
 <script setup lang="ts">
-import { onUnmounted, ref } from 'vue'
+import { computed, nextTick, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import maplibregl, { type Map as LibreMap, type MapOptions } from 'maplibre-gl'
 import BaseMap from '@/vues/components/map/BaseMap.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
-import { getThumbnailHeight } from '@/scripts/utils.ts'
-import { useThrottleFn } from '@vueuse/core'
+import { getThumbnailHeight, getVideoHeight } from '@/scripts/utils.ts'
+import { useEventListener, useResizeObserver, useStorage, useThrottleFn } from '@vueuse/core'
 import type {
   MapPhotoItem,
   MapPhotosResponse,
   SimpleTimelineItem,
 } from '@/scripts/types/generated/timeline.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
-
-// TODO:
-// Close sidebar functionality
-// Resize sidebar by dragging gap between simpletimeline and map view (remember size with vueuse useStorage)
-// Select (click on) cluster -> show photos from that cluster in sidebar & open popup above marker showing the photo.
-// Select photo/video -> Show popup above marker showing the photo/video
-// Click popup -> open media item in ViewPhoto viewer
-// Popup should have a subtle button to close the popup (top right)
-// sidebar should reflect which media items are currently in viewport, unless a cluster is selected, then show items for that cluster, and a button to return back to "in-view" mode
+import { useRouter } from 'vue-router'
 
 const markers: Record<string, maplibregl.Marker> = {}
-const clusterPreviewCache = new globalThis.Map<number, SimpleTimelineItem>()
+const clusterPreviewCache = new Map<number, SimpleTimelineItem>()
 let updateRun = 0
 let initialized = false
 const mapPhotos = ref<MapPhotosResponse | null>(null)
 let map: LibreMap | null = null
+let popupMarker: maplibregl.Marker | null = null
+const router = useRouter()
+const outerLayoutEl = useTemplateRef('outerLayout')
+const MIN_MAP_WIDTH = 400
+const MIN_SIDEBAR_WIDTH = 200
+const SIDEBAR_GAP = 5
+const CLOSE_DRAG_THRESHOLD = 50
+const sidebarOpen = useStorage('mapSidebarOpen', true)
+const sidebarWidth = useStorage('mapSidebarWidth', window.innerWidth / 3)
+const isResizingSidebar = ref(false)
+const visibleItems = ref<SimpleTimelineItem[]>([])
+const selectedClusterItems = ref<SimpleTimelineItem[] | null>(null)
+const selectedMarkerKey = ref<string | null>(null)
+const selectedPopupItem = ref<SimpleTimelineItem | null>(null)
+const selectedLngLat = ref<[number, number] | null>(null)
 
 type MapOptionsWithoutContainer = Omit<MapOptions, 'container' | 'style'>
 
@@ -39,6 +46,30 @@ const DEFAULT_MAP_OPTIONS = {
     compact: true,
   },
 } satisfies MapOptionsWithoutContainer
+
+const photoItems = computed(() => {
+  return mapPhotos.value?.items.map((p) => p.item).filter((p) => !!p) ?? []
+})
+const timelineItems = computed(() => selectedClusterItems.value ?? visibleItems.value)
+const resolvedSidebarWidth = computed(() => {
+  const maxWidth = getMaxSidebarWidth()
+  return Math.round(Math.min(Math.max(sidebarWidth.value, MIN_SIDEBAR_WIDTH), maxWidth))
+})
+const layoutStyle = computed(() => ({
+  '--map-sidebar-width': sidebarOpen.value ? `${resolvedSidebarWidth.value}px` : '0px',
+}))
+
+function getMaxSidebarWidth() {
+  const layoutWidth = outerLayoutEl.value?.getBoundingClientRect().width ?? window.innerWidth
+  return Math.max(MIN_SIDEBAR_WIDTH, layoutWidth - MIN_MAP_WIDTH - SIDEBAR_GAP)
+}
+
+function requestMapResize() {
+  nextTick(() => {
+    map?.resize()
+    window.setTimeout(() => map?.resize(), 220)
+  })
+}
 
 function getValidPhotoLocations(photos: MapPhotosResponse) {
   return photos.items.filter(
@@ -122,6 +153,7 @@ async function initialize() {
       if (e.sourceId === 'photos' && e.isSourceLoaded) throttledUpdate()
     },
   )
+  loadedMap.on('click', clearMarkerSelection)
   updateMarkers()
 }
 
@@ -187,6 +219,7 @@ async function syncVisibleMarkers(loadedMap: LibreMap) {
   const clusterFeatures = loadedMap.queryRenderedFeatures({ layers: ['cluster-helper'] })
   const pointFeatures = loadedMap.queryRenderedFeatures({ layers: ['unclustered-point-helper'] })
   const newMarkers: Record<string, maplibregl.Marker> = {}
+  const visibleItemMap = new Map<string, SimpleTimelineItem>()
 
   for (const feature of clusterFeatures) {
     const clusterId = Number(feature.properties.cluster_id)
@@ -202,6 +235,12 @@ async function syncVisibleMarkers(loadedMap: LibreMap) {
       clusterPreviewCache.set(clusterId, previewItem)
     }
 
+    const leaves = await source.getClusterLeaves(clusterId, count, 0)
+    if (run !== updateRun) return
+    leaves
+      .map((leaf) => getItemFromProperties(leaf.properties))
+      .filter((item) => !!item)
+      .forEach((item) => visibleItemMap.set(item.id, item))
     addOrUpdateClusterMarker(loadedMap, clusterId, previewItem, count, coords, newMarkers)
   }
 
@@ -209,13 +248,18 @@ async function syncVisibleMarkers(loadedMap: LibreMap) {
     const item = getItemFromProperties(feature.properties)
     if (!item) continue
 
+    visibleItemMap.set(item.id, item)
     addOrUpdatePhotoMarker(loadedMap, item, getFeatureCoordinates(feature), newMarkers)
   }
 
+  visibleItems.value = [...visibleItemMap.values()]
   removeHiddenMarkers(newMarkers)
+  updateSelectedMarkerClasses()
 }
 
-const getItemFromProperties = (properties: maplibregl.GeoJSONFeature['properties'] | undefined) => {
+const getItemFromProperties = (
+  properties: maplibregl.GeoJSONFeature['properties'] | null | undefined,
+) => {
   if (!properties?.id) return undefined
   const ratio = Number(properties.ratio)
   return {
@@ -241,6 +285,7 @@ const createPhotoMarkerElement = (item: SimpleTimelineItem) => {
   const markerWidth = Math.sqrt(imageArea * item.ratio)
   const markerHeight = Math.sqrt(imageArea * (1 / item.ratio))
   el.className = 'map-photo-marker'
+  if (item.isVideo) el.classList.add('map-photo-marker-video')
   el.style.width = `${Math.round(markerWidth)}px`
   el.style.height = `${markerHeight}px`
   el.style.backgroundImage = `url(${getThumbnailUrl(item, markerHeight)})`
@@ -304,8 +349,15 @@ function addOrUpdateMarker(
 ) {
   let marker = markers[key]
   if (!marker) {
+    const element = createElement()
+    element.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const lngLat = markers[key]?.getLngLat()
+      handleMarkerClick(key, lngLat ? [lngLat.lng, lngLat.lat] : coords)
+    })
     marker = markers[key] = new maplibregl.Marker({
-      element: createElement(),
+      element,
       anchor: 'center',
     }).setLngLat(coords)
   } else {
@@ -332,14 +384,183 @@ const updateClusterMarkerElement = (el: HTMLElement, count: number) => {
   if (badge) badge.textContent = String(count)
 }
 
+async function handleMarkerClick(key: string, coords: [number, number]) {
+  if (selectedMarkerKey.value === key) {
+    clearMarkerSelection()
+    return
+  }
+
+  selectedMarkerKey.value = key
+  selectedLngLat.value = coords
+  updateSelectedMarkerClasses()
+
+  if (key.startsWith('cluster-')) {
+    const clusterId = Number(key.replace('cluster-', ''))
+    await selectCluster(clusterId)
+  } else {
+    const item = photoItems.value.find((photoItem) => `photo-${photoItem.id}` === key)
+    if (!item) return
+    selectedClusterItems.value = null
+    selectedPopupItem.value = item
+    showPopup(item, coords)
+  }
+}
+
+async function selectCluster(clusterId: number) {
+  if (!map) return
+  const source = map.getSource('photos') as maplibregl.GeoJSONSource
+  const clusterFeature = map
+    .queryRenderedFeatures({ layers: ['cluster-helper'] })
+    .find((feature) => Number(feature.properties.cluster_id) === clusterId)
+  const count = Number(clusterFeature?.properties.point_count)
+  const leaves = await source.getClusterLeaves(clusterId, Number.isFinite(count) ? count : 100, 0)
+  const items = leaves
+    .map((leaf) => getItemFromProperties(leaf.properties))
+    .filter((item) => !!item)
+  selectedClusterItems.value = items
+  selectedPopupItem.value = items[0] ?? null
+  if (selectedPopupItem.value && selectedLngLat.value)
+    showPopup(selectedPopupItem.value, selectedLngLat.value)
+}
+
+function clearMarkerSelection() {
+  selectedClusterItems.value = null
+  selectedMarkerKey.value = null
+  selectedPopupItem.value = null
+  selectedLngLat.value = null
+  updateSelectedMarkerClasses()
+  closePopup()
+}
+
+function updateSelectedMarkerClasses() {
+  for (const [key, marker] of Object.entries(markers)) {
+    marker.getElement().classList.toggle('map-marker-selected', key === selectedMarkerKey.value)
+  }
+}
+
+function showPopup(item: SimpleTimelineItem, coords: [number, number]) {
+  closePopup()
+  if (!map) return
+  const popupArea = 300 ** 2
+  const popupWidth = Math.sqrt(popupArea * item.ratio)
+  const popupHeight = Math.sqrt(popupArea * (1 / item.ratio))
+  const popupEl = document.createElement('div')
+  popupEl.style.width = `${popupWidth}px`
+  popupEl.style.height = `${popupHeight}px`
+  const closeButton = document.createElement('button')
+  let mediaEl: HTMLImageElement | HTMLVideoElement
+  popupEl.className = 'map-media-popup'
+  if (item.isVideo) {
+    const videoEl = document.createElement('video')
+    videoEl.autoplay = true
+    videoEl.muted = true
+    videoEl.loop = true
+    videoEl.playsInline = true
+    videoEl.poster = getThumbnailUrl(item, 480)
+    videoEl.src = mediaItemService.getVideo(item.id, getVideoHeight(480), !item.hasThumbnails)
+    mediaEl = videoEl
+  } else {
+    const imageEl = document.createElement('img')
+    imageEl.src = getThumbnailUrl(item, 480)
+    imageEl.alt = ''
+    mediaEl = imageEl
+  }
+  mediaEl.className = 'map-media-popup-image'
+  closeButton.className = 'map-media-popup-close'
+  closeButton.type = 'button'
+  closeButton.textContent = '×'
+
+  closeButton.addEventListener('click', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    clearMarkerSelection()
+  })
+  popupEl.addEventListener('click', (e) => {
+    e.stopPropagation()
+    router.push({ path: `/map/view/${item.id}` })
+  })
+  popupEl.append(mediaEl, closeButton)
+
+  popupMarker = new maplibregl.Marker({
+    element: popupEl,
+    anchor: 'bottom',
+    offset: [0, -38],
+  })
+    .setLngLat(coords)
+    .addTo(map)
+}
+
+function closePopup() {
+  popupMarker?.remove()
+  popupMarker = null
+}
+
+function closeSidebar() {
+  sidebarOpen.value = false
+  requestMapResize()
+}
+
+function openSidebar() {
+  sidebarOpen.value = true
+  requestMapResize()
+}
+
+function startSidebarResize(e: MouseEvent) {
+  if (!sidebarOpen.value || !outerLayoutEl.value) return
+  e.preventDefault()
+  isResizingSidebar.value = true
+}
+
+function updateSidebarResize(clientX: number) {
+  if (!outerLayoutEl.value) return
+  const rect = outerLayoutEl.value.getBoundingClientRect()
+  if (clientX >= rect.right - CLOSE_DRAG_THRESHOLD) {
+    closeSidebar()
+    isResizingSidebar.value = false
+    return
+  }
+
+  const rawWidth = rect.right - clientX
+  sidebarWidth.value = Math.round(
+    Math.min(Math.max(rawWidth, MIN_SIDEBAR_WIDTH), getMaxSidebarWidth()),
+  )
+  requestMapResize()
+}
+
+useEventListener(window, 'mousemove', (e: MouseEvent) => {
+  if (!isResizingSidebar.value) return
+  e.preventDefault()
+  updateSidebarResize(e.clientX)
+})
+
+useEventListener(window, 'mouseup', () => {
+  isResizingSidebar.value = false
+})
+
+useResizeObserver(outerLayoutEl, () => {
+  sidebarWidth.value = resolvedSidebarWidth.value
+  requestMapResize()
+})
+
+watch(sidebarOpen, requestMapResize)
+
 onUnmounted(() => {
   Object.values(markers).forEach((m) => m.remove())
+  closePopup()
   clusterPreviewCache.clear()
 })
 </script>
 
 <template>
-  <div class="outer-layout">
+  <div
+    ref="outerLayout"
+    class="outer-layout"
+    :class="{
+      'sidebar-closed': !sidebarOpen,
+      'sidebar-resizing': isResizingSidebar,
+    }"
+    :style="layoutStyle"
+  >
     <main-layout-container class="map-layout">
       <!-- Ensure the container has height -->
       <v-theme-provider with-background class="map-wrapper" theme="light">
@@ -352,22 +573,67 @@ onUnmounted(() => {
         <div v-else class="map-loading">
           <v-progress-circular indeterminate color="primary" />
         </div>
+        <v-btn
+          v-if="!sidebarOpen"
+          class="open-sidebar-btn"
+          icon
+          density="comfortable"
+          color="primary"
+          variant="elevated"
+          v-tooltip="{
+            location: 'left',
+            text: 'Open sidebar',
+          }"
+          @click="openSidebar"
+        >
+          <v-icon size="20" icon="mdi-chevron-left" />
+        </v-btn>
       </v-theme-provider>
     </main-layout-container>
+    <div
+      class="sidebar-resize-handle"
+      :class="{ disabled: !sidebarOpen }"
+      @mousedown="startSidebarResize"
+    />
     <simple-timeline
       class="timeline"
       v-if="mapPhotos"
-      :timeline-items="mapPhotos.items.map((p) => p.item).filter((p) => !!p)"
+      :timeline-items="timelineItems"
       view-link="/map/view/"
     >
       <div class="timeline-header">
-        <h2>Photos in view</h2>
+        <div>
+          <template v-if="selectedClusterItems">
+            <div class="photo-count-header">
+              <h2>Cluster</h2>
+              <span class="photo-count">{{ timelineItems.length.toLocaleString() }}</span>
+            </div>
+            <v-btn
+              density="compact"
+              variant="plain"
+              color="primary"
+              class="return-cluster-button"
+              rounded
+              @click="clearMarkerSelection"
+              prepend-icon="mdi-chevron-left"
+            >
+              Deselect
+            </v-btn>
+          </template>
+          <template v-else>
+            <div class="photo-count-header">
+              <h2>In View</h2>
+              <span class="photo-count">{{ timelineItems.length.toLocaleString() }}</span>
+            </div>
+          </template>
+        </div>
         <v-spacer />
         <v-btn
           icon
           density="compact"
           color="primary"
           variant="text"
+          @click="closeSidebar"
           v-tooltip="{
             location: 'top',
             text: 'Close sidebar',
@@ -384,16 +650,57 @@ onUnmounted(() => {
 .outer-layout {
   height: 100%;
   width: 100%;
-  display: flex;
-  gap: 5px;
+  display: grid;
+  grid-template-columns: minmax(400px, 1fr) 5px var(--map-sidebar-width);
+  transition: grid-template-columns 0.22s ease;
+  overflow: hidden;
+}
+
+.outer-layout.sidebar-resizing {
+  transition: none;
+  user-select: none;
+  cursor: col-resize;
+}
+
+.outer-layout.sidebar-closed {
+  grid-template-columns: minmax(400px, 1fr) 0 0;
 }
 
 .map-layout {
-  width: calc(100% - 405px) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .timeline {
-  width: 400px !important;
+  width: var(--map-sidebar-width) !important;
+  min-width: 0;
+  overflow: hidden;
+  transition:
+    width 0.22s ease,
+    opacity 0.18s ease;
+}
+
+.sidebar-resizing .timeline {
+  transition: none;
+}
+
+.sidebar-closed .timeline {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-resize-handle {
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 3;
+}
+
+.sidebar-resize-handle.disabled {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .timeline-header {
@@ -407,6 +714,24 @@ onUnmounted(() => {
   font-weight: 500;
   font-size: 20px;
   color: rgba(var(--v-theme-on-surface-variant));
+  margin: 0;
+}
+
+.return-cluster-button {
+  margin-left: -15px;
+  transform: scale(0.9);
+}
+
+.photo-count-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.photo-count {
+  color: rgba(var(--v-theme-on-surface-variant), 0.7);
+  font-weight: 500;
+  font-size: 20px;
 }
 
 .map-wrapper {
@@ -429,6 +754,13 @@ onUnmounted(() => {
   place-items: center;
 }
 
+.open-sidebar-btn {
+  position: absolute !important;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+}
+
 .map-photo-marker,
 .map-cluster-visual {
   background-color: rgba(20, 20, 24, 0.65);
@@ -438,6 +770,7 @@ onUnmounted(() => {
   border: 2px solid white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
   cursor: pointer;
+  z-index: 1;
 }
 
 .map-photo-marker {
@@ -445,11 +778,16 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+.map-photo-marker-video {
+  border-color: #ff9800;
+}
+
 .map-cluster-marker {
   width: 52px;
   height: 52px;
   cursor: pointer;
   overflow: visible;
+  z-index: 1;
 }
 
 .map-cluster-visual {
@@ -490,5 +828,80 @@ onUnmounted(() => {
     0 2px 8px rgba(0, 0, 0, 0.35),
     0 0 0 3px rgba(255, 255, 255, 0.35);
   z-index: 10;
+}
+
+.map-photo-marker.map-marker-selected,
+.map-cluster-marker.map-marker-selected .map-cluster-visual {
+  border-color: rgb(var(--v-theme-secondary));
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 0 0 4px rgba(var(--v-theme-secondary), 0.45);
+  z-index: 2;
+}
+
+.map-media-popup {
+  position: relative;
+  border: 2px solid rgba(255, 255, 255, 0.86);
+  border-radius: 12px;
+  background: rgba(20, 20, 24, 0.78);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  z-index: 20;
+}
+
+.map-media-popup::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  width: 0;
+  height: 0;
+  border-left: 13px solid transparent;
+  border-right: 13px solid transparent;
+  border-top: 14px solid rgba(255, 255, 255, 0.86);
+  transform: translateX(-50%);
+}
+
+.map-media-popup::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -11px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 11px solid rgba(20, 20, 24, 0.78);
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.map-media-popup-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.map-media-popup-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+
+.map-media-popup-close:hover {
+  background: rgba(0, 0, 0, 0.68);
 }
 </style>
