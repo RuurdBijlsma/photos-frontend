@@ -32,7 +32,11 @@ backgroundStore.initialize()
     <v-navigation-drawer :width="40" floating color="transparent" v-else></v-navigation-drawer>
 
     <v-main class="layout-body">
-      <router-view class="router-view" />
+      <router-view class="router-view" v-slot="{ Component }">
+        <keep-alive :include="['MapView']">
+          <component :is="Component" :key="$route.fullPath" />
+        </keep-alive>
+      </router-view>
     </v-main>
   </v-layout>
 </template>

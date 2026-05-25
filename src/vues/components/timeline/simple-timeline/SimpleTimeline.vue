@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
-import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onActivated, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import type { SimpleLayoutRow, TimelineContext } from '@/scripts/types/timeline/layout.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
@@ -124,7 +124,7 @@ let lastScrollTop = 0
 let dragStartOffsetY = 0
 
 function calculateLayout(timelineItems: SimpleTimelineItem[], containerWidth: number) {
-  if (timelineItems.length === 0 || containerWidth === 0) return { rows: [], totalHeight: 0 }
+  if (timelineItems.length === 0 || containerWidth <= 0) return { rows: [], totalHeight: 0 }
   const layoutRows: SimpleLayoutRow[] = []
   let rowWidth = 0
   let offsetTop = 0
@@ -313,8 +313,10 @@ defineExpose({
 useResizeObserver(scrollContainerEl, (entries) => {
   if (entries[0]) {
     const rect = entries[0].contentRect
-    containerWidth.value = rect.width
-    containerHeight.value = rect.height
+    if (rect.width > 0 && rect.height > 0) {
+      containerWidth.value = rect.width
+      containerHeight.value = rect.height
+    }
   }
 })
 useResizeObserver(scrollTrackEl, (entries) => {
@@ -328,7 +330,27 @@ useResizeObserver(customSlotEl, (entries) => {
   }
 })
 
-watch([localItemsOrder, containerWidth], () => {
+const calcKey = ref(0)
+
+// For <keep-alive> support
+onActivated(() => {
+  const el = scrollContainerEl.value
+  if (!el) return
+  const bbox = el.getBoundingClientRect()
+  containerWidth.value = bbox.width
+  calcKey.value++
+  console.log('Activated', calcKey.value, containerWidth.value)
+  nextTick(() => {
+    if (scrollContainerEl.value && scrollTop.value > 0) {
+      console.log('Restore', scrollTop.value)
+      scrollContainerEl.value.scrollTop = scrollTop.value
+      rowVirtualizer.value.calculateRange()
+    }
+  })
+})
+
+watch([localItemsOrder, containerWidth, calcKey], () => {
+  if (containerWidth.value <= 0) return
   const { rows, totalHeight } = calculateLayout(localItemsOrder.value, containerWidth.value)
   gridLayout.value = rows
   contentHeight.value = totalHeight + customSlotHeight.value

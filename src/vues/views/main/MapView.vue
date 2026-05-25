@@ -1,5 +1,11 @@
+<script lang="ts">
+export default {
+  name: 'MapView',
+}
+</script>
+
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onActivated, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import maplibregl, { type Map as LibreMap, type MapOptions } from 'maplibre-gl'
 import BaseMap from '@/vues/components/map/BaseMap.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
@@ -564,6 +570,13 @@ onUnmounted(() => {
   Object.values(markers).forEach((m) => m.remove())
   closePopup()
   clusterPreviewCache.clear()
+})
+
+onActivated(() => {
+  if (map) {
+    map.resize()
+    nextTick(() => map?.resize())
+  }
 })
 </script>
 
