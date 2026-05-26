@@ -548,6 +548,36 @@ function showPopup(item: SimpleTimelineItem, coords: [number, number]) {
     .addTo(map)
 }
 
+function zoomToFitAll() {
+  if (!map || !mapPhotos.value) return
+  const locations = getValidPhotoLocations(mapPhotos.value)
+  if (locations.length === 0) return
+
+  if (locations.length === 1) {
+    const [location] = locations
+    map.flyTo({
+      center: getLngLat(location!),
+      zoom: 11,
+      essential: true,
+    })
+    return
+  }
+
+  const bounds = locations.reduce(
+    (photoBounds, item) => {
+      return photoBounds.extend([item.longitude, item.latitude])
+    },
+    new maplibregl.LngLatBounds(getLngLat(locations[0]!), getLngLat(locations[0]!)),
+  )
+
+  map.fitBounds(bounds, {
+    padding: 80,
+    maxZoom: 14,
+    essential: true,
+    duration: 1200,
+  })
+}
+
 function closePopup() {
   popupMarker?.remove()
   popupMarker = null
@@ -757,6 +787,24 @@ onUnmounted(() => {
           }"
         >
           <v-icon size="18" icon="mdi-chevron-right" />
+        </v-btn>
+      </div>
+
+      <div v-if="timelineItems.length === 0" class="map-empty-state">
+        <v-icon icon="mdi-map-search-outline" size="120" class="map-empty-icon" />
+        <h3 class="map-empty-title">No items in this area</h3>
+        <p class="map-empty-description">
+          Move or zoom the map to find photos taken in other locations.
+        </p>
+        <v-btn
+          color="primary"
+          variant="tonal"
+          rounded="xl"
+          class="map-empty-button"
+          prepend-icon="mdi-image-multiple-outline"
+          @click="zoomToFitAll"
+        >
+          View All Photos
         </v-btn>
       </div>
     </simple-timeline>
@@ -1157,5 +1205,55 @@ onUnmounted(() => {
 .map-style-option.active .map-style-option-label {
   font-weight: 700;
   color: rgb(var(--v-theme-primary));
+}
+
+.map-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  height: calc(100vh - 180px);
+  min-height: 300px;
+  box-sizing: border-box;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.map-empty-icon {
+  opacity: 0.4;
+  color: rgba(var(--v-theme-on-surface-variant), 0.8);
+  margin-bottom: 30px;
+}
+
+.map-empty-title {
+  font-size: 20px;
+  font-weight: 500;
+  color: rgba(var(--v-theme-on-surface-variant));
+  margin: 0 0 4px 0;
+}
+
+.map-empty-description {
+  font-size: 14px;
+  color: rgba(var(--v-theme-on-surface-variant), 0.7);
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.map-empty-button {
+  text-transform: none;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

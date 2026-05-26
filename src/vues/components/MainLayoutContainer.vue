@@ -12,7 +12,10 @@ withDefaults(
 </script>
 
 <template>
-  <div class="outer-container" :class="{ 'fit-content': fitToContent, 'hide-drop-shadow': hideDropShadow }">
+  <div
+    class="outer-container"
+    :class="{ 'fit-content': fitToContent, 'hide-drop-shadow': hideDropShadow }"
+  >
     <div class="inner-container">
       <slot></slot>
     </div>
@@ -38,7 +41,7 @@ withDefaults(
   height: 100%;
 }
 
-.hide-drop-shadow.outer-container{
+.hide-drop-shadow.outer-container {
   box-shadow: none !important;
 }
 
