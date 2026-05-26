@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import maplibregl, { type Map as LibreMap, type MapOptions } from 'maplibre-gl'
-import BaseMap from '@/vues/components/map/BaseMap.vue'
+import BaseMap, { type StyleName } from '@/vues/components/map/BaseMap.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { getThumbnailHeight, getVideoHeight } from '@/scripts/utils.ts'
@@ -42,6 +42,39 @@ const selectedLngLat = ref<[number, number] | null>(null)
 type MapOptionsWithoutContainer = Omit<MapOptions, 'container' | 'style'>
 
 const mapOptions = ref<MapOptionsWithoutContainer | null>(null)
+
+const currentStyle = useStorage<StyleName>('mapStyle', 'LIBERTY')
+const isStyleSelectorHovered = ref(false)
+
+const MAP_STYLES = [
+  { key: 'LIBERTY', label: 'Light Map', thumb: 'img/map-thumb/LIBERTY.png' },
+  { key: 'SATELLITE', label: 'Satellite', thumb: 'img/map-thumb/SATELLITE.png' },
+  { key: 'TERRAIN', label: 'Terrain', thumb: 'img/map-thumb/TERRAIN.png' },
+  { key: 'WATERCOLOR', label: 'Watercolor', thumb: 'img/map-thumb/WATERCOLOR.png' },
+  { key: 'DARK_COLORFUL', label: 'Dark Map', thumb: 'img/map-thumb/DARK_COLORFUL.png' },
+] as const
+
+const nextStyle = computed(() => {
+  const currentIndex = MAP_STYLES.findIndex((s) => s.key === currentStyle.value)
+  const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % MAP_STYLES.length
+  return MAP_STYLES[nextIndex]
+})
+
+function cycleStyle() {
+  currentStyle.value = nextStyle.value.key
+}
+
+function handleStyleLoad(loadedMap: LibreMap) {
+  if (mapPhotos.value === null) return
+
+  // Re-add sources and layers if they are missing after style change
+  if (!loadedMap.getSource('photos')) {
+    addPhotoSource(loadedMap, mapPhotos.value)
+    addHelperLayers(loadedMap)
+  }
+
+  syncVisibleMarkers(loadedMap)
+}
 const DEFAULT_MAP_OPTIONS = {
   center: { lat: 40, lng: 0 },
   zoom: 3,
@@ -154,8 +187,19 @@ async function initialize() {
   initialized = true
   const loadedMap = map
 
-  addPhotoSource(loadedMap, mapPhotos.value)
-  addHelperLayers(loadedMap)
+  map.addControl(
+    new maplibregl.NavigationControl({
+      showCompass: true,
+      showZoom: true,
+      visualizePitch: true,
+    }),
+    'bottom-right',
+  )
+
+  if (!loadedMap.getSource('photos')) {
+    addPhotoSource(loadedMap, mapPhotos.value)
+    addHelperLayers(loadedMap)
+  }
 
   const updateMarkers = () => syncVisibleMarkers(loadedMap)
   const throttledUpdate = useThrottleFn(updateMarkers, 50)
@@ -580,14 +624,72 @@ onUnmounted(() => {
     <main-layout-container class="map-layout">
       <v-theme-provider with-background class="map-wrapper" theme="light">
         <base-map
-          map-style="WATERCOLOR"
+          :map-style="currentStyle"
           v-if="mapOptions"
           class="map-instance"
           :map-options="mapOptions"
           @load="handleMapLoad"
+          @style-load="handleStyleLoad"
         />
         <div v-else class="map-loading">
           <v-progress-circular indeterminate color="primary" />
+        </div>
+
+        <!-- Map Style / Layer Selector -->
+        <div
+          v-if="mapOptions"
+          class="map-style-container"
+          @mouseenter="isStyleSelectorHovered = true"
+          @mouseleave="isStyleSelectorHovered = false"
+        >
+          <v-fade-transition>
+            <v-card
+              flat
+              v-show="isStyleSelectorHovered"
+              class="map-style-options-card"
+              rounded="xl"
+            >
+              <div class="map-style-options-list">
+                <div
+                  v-for="style in MAP_STYLES"
+                  :key="style.key"
+                  class="map-style-option"
+                  :class="{ active: currentStyle === style.key }"
+                  @click="currentStyle = style.key"
+                >
+                  <div class="map-style-option-thumb-wrapper">
+                    <v-img
+                      :src="style.thumb"
+                      cover
+                      class="map-style-option-thumb"
+                      :alt="style.label"
+                    />
+                    <v-icon
+                      v-if="currentStyle === style.key"
+                      color="primary"
+                      icon="mdi-check-circle"
+                      class="map-style-option-check"
+                      size="20"
+                    />
+                  </div>
+                  <span class="map-style-option-label">{{ style.label }}</span>
+                </div>
+              </div>
+            </v-card>
+          </v-fade-transition>
+
+          <v-card class="map-style-trigger-card" elevation="6" rounded="xl" @click="cycleStyle">
+            <v-img
+              :src="nextStyle.thumb"
+              cover
+              class="map-style-trigger-thumb"
+              :alt="nextStyle.label"
+            >
+              <div class="map-style-trigger-overlay">
+                <span class="map-style-trigger-label">Layers</span>
+              </div>
+            </v-img>
+          </v-card>
         </div>
         <v-btn
           v-if="!sidebarOpen"
@@ -919,5 +1021,143 @@ onUnmounted(() => {
 
 .map-media-popup-close:hover {
   background: rgba(0, 0, 0, 0.68);
+}
+
+/* Map Style Selector */
+.map-style-container {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 2;
+}
+
+.map-style-trigger-card {
+  width: 96px;
+  height: 96px;
+  cursor: pointer;
+  overflow: hidden;
+  border: 2px solid white;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.map-style-trigger-card:hover {
+  transform: scale(1.05);
+  border-color: rgba(var(--v-theme-primary), 0.8);
+}
+
+.map-style-trigger-thumb {
+  width: 100%;
+  height: 100%;
+}
+
+.map-style-trigger-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.map-style-options-card {
+  position: absolute;
+  bottom: 100px;
+  left: 0;
+  z-index: 3;
+  padding: 22px 15px;
+  background-color: rgba(var(--v-theme-background), 0.7);
+  backdrop-filter: saturate(250%) blur(12px) !important;
+  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+}
+
+/* Invisible bridge so mouse hover is not lost in the 12px gap between cards */
+.map-style-options-card::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background: transparent;
+}
+
+.map-style-options-list {
+  display: flex;
+  gap: 12px;
+}
+
+.map-style-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  width: 68px;
+  text-align: center;
+}
+
+.map-style-option-thumb-wrapper {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.map-style-option-thumb {
+  width: 100%;
+  height: 100%;
+}
+
+.map-style-option:hover .map-style-option-thumb-wrapper {
+  transform: translateY(-2px);
+  border-color: rgba(var(--v-theme-primary), 0.5);
+}
+
+.map-style-option.active .map-style-option-thumb-wrapper {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.2);
+}
+
+.map-style-option-check {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-style-option-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.map-style-option:hover .map-style-option-label {
+  color: rgb(var(--v-theme-primary));
+}
+
+.map-style-option.active .map-style-option-label {
+  font-weight: 700;
+  color: rgb(var(--v-theme-primary));
 }
 </style>

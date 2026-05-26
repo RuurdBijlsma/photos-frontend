@@ -11,7 +11,7 @@ const props = withDefaults(
     mapOptions: MapOptionsWithoutContainer
   }>(),
   {
-    style: 'LIBERTY',
+    mapStyle: 'LIBERTY',
     mapOptions: () => ({
       center: { lon: 0, lat: 0 },
       zoom: 2,
@@ -22,7 +22,7 @@ const props = withDefaults(
   },
 )
 
-const emit = defineEmits(['load', 'style.load'])
+const emit = defineEmits(['load', 'style-load'])
 
 const mapContainer = ref<HTMLElement | null>(null)
 let map: null | maplibregl.Map = null
@@ -66,7 +66,7 @@ onMounted(() => {
   map = new maplibregl.Map({
     ...props.mapOptions,
     container: mapContainer.value,
-    style: styles[props.mapStyle],
+    style: styles[props.mapStyle] as unknown as maplibregl.StyleSpecification,
   })
 
   map.on('load', () => {
@@ -74,7 +74,7 @@ onMounted(() => {
   })
 
   map.on('style.load', () => {
-    emit('style.load', map)
+    emit('style-load', map)
   })
 })
 
@@ -95,6 +95,14 @@ watch(
   () => {
     if (map === null || props.mapOptions.zoom === undefined) return
     map.setZoom(props.mapOptions.zoom)
+  },
+)
+
+watch(
+  () => props.mapStyle,
+  (newStyle) => {
+    if (map === null || !newStyle) return
+    map.setStyle(styles[newStyle] as unknown as maplibregl.StyleSpecification)
   },
 )
 </script>
