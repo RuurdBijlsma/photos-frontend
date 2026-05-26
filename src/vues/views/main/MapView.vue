@@ -199,7 +199,7 @@ function addPhotoSource(loadedMap: LibreMap, photos: MapPhotosResponse) {
     data: createPhotosGeoJson(photos),
     cluster: true,
     clusterMaxZoom: 17, // Changing to 18 effectively keeps clustering through all zoom levels
-    clusterRadius: 50,
+    clusterRadius: 48,
   })
 }
 
@@ -580,6 +580,7 @@ onUnmounted(() => {
     <main-layout-container class="map-layout">
       <v-theme-provider with-background class="map-wrapper" theme="light">
         <base-map
+          map-style="WATERCOLOR"
           v-if="mapOptions"
           class="map-instance"
           :map-options="mapOptions"
