@@ -72,8 +72,6 @@ function handleStyleLoad(loadedMap: LibreMap) {
     addPhotoSource(loadedMap, mapPhotos.value)
     addHelperLayers(loadedMap)
   }
-
-  syncVisibleMarkers(loadedMap)
 }
 const DEFAULT_MAP_OPTIONS = {
   center: { lat: 40, lng: 0 },
