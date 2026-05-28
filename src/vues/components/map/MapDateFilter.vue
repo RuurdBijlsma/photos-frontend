@@ -160,8 +160,9 @@ function syncSlidersFromDates() {
   endGranularity.value = props.modelValue.endGranularity
 }
 
-// Watch modelValue to sync sliders
+// Watch modelValue to sync sliders (skip during drag to avoid feedback loop)
 watch(() => props.modelValue, () => {
+  if (activeHandle.value) return
   syncSlidersFromDates()
 }, { deep: true })
 
@@ -181,26 +182,16 @@ function onMouseMove(e: MouseEvent) {
   const N = chronologicalRatios.value.length
   const index = Math.round((pct / 100) * (N - 1))
 
-  // Smart handle selection when overlapping
-  let currentHandle = activeHandle.value
-  if (leftIndex.value === rightIndex.value) {
-    if (index < leftIndex.value) {
-      currentHandle = 'left'
-      activeHandle.value = 'left'
-    } else if (index > rightIndex.value) {
-      currentHandle = 'right'
-      activeHandle.value = 'right'
-    }
-  }
-
-  if (currentHandle === 'left') {
+  if (activeHandle.value === 'left') {
+    // Clamp so left handle can never pass right handle
     const newLeft = Math.min(index, rightIndex.value)
     if (newLeft !== leftIndex.value) {
       leftIndex.value = newLeft
       startGranularity.value = 'month'
       updateRange(true) // dragging
     }
-  } else if (currentHandle === 'right') {
+  } else if (activeHandle.value === 'right') {
+    // Clamp so right handle can never pass left handle
     const newRight = Math.max(index, leftIndex.value)
     if (newRight !== rightIndex.value) {
       rightIndex.value = newRight
@@ -234,25 +225,16 @@ function onTouchMove(e: TouchEvent) {
   const N = chronologicalRatios.value.length
   const index = Math.round((pct / 100) * (N - 1))
 
-  let currentHandle = activeHandle.value
-  if (leftIndex.value === rightIndex.value) {
-    if (index < leftIndex.value) {
-      currentHandle = 'left'
-      activeHandle.value = 'left'
-    } else if (index > rightIndex.value) {
-      currentHandle = 'right'
-      activeHandle.value = 'right'
-    }
-  }
-
-  if (currentHandle === 'left') {
+  if (activeHandle.value === 'left') {
+    // Clamp so left handle can never pass right handle
     const newLeft = Math.min(index, rightIndex.value)
     if (newLeft !== leftIndex.value) {
       leftIndex.value = newLeft
       startGranularity.value = 'month'
       updateRange(true)
     }
-  } else if (currentHandle === 'right') {
+  } else if (activeHandle.value === 'right') {
+    // Clamp so right handle can never pass left handle
     const newRight = Math.max(index, leftIndex.value)
     if (newRight !== rightIndex.value) {
       rightIndex.value = newRight

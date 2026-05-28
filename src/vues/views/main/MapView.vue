@@ -681,7 +681,7 @@ watch(mapPhotos, (newPhotos) => {
       map.triggerRepaint()
       setTimeout(() => {
         if (map) syncVisibleMarkers(map)
-      }, 50)
+      }, 75)
     }
   }
 })
