@@ -13,13 +13,54 @@ import type {
 } from '@/scripts/types/generated/timeline.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import { useRouter } from 'vue-router'
+import MapDateFilter from '@/vues/components/map/MapDateFilter.vue'
 
 const markers: Record<string, maplibregl.Marker> = {}
 const clusterPreviewCache = new Map<number, SimpleTimelineItem>()
 let updateRun = 0
 let initialized = false
 const mapPhotos = ref<MapPhotosResponse | null>(null)
-let map: LibreMap | null = null
+let map: null | maplibregl.Map = null
+
+const dateFilter = ref({
+  startDate: null as Date | null,
+  endDate: null as Date | null,
+  active: false,
+  startGranularity: 'month' as 'month' | 'day',
+  endGranularity: 'month' as 'month' | 'day',
+})
+
+async function fetchMapPhotos(start: Date | null, end: Date | null) {
+  const startStr = start?.toISOString()
+  const endStr = end?.toISOString()
+
+  try {
+    const loadedPhotos = await mediaItemService.listMapPhotos(startStr, endStr)
+    photoIdToOrder.clear()
+    loadedPhotos.items.forEach((p, index) => {
+      if (p.item?.id) {
+        photoIdToOrder.set(p.item.id, index)
+      }
+    })
+    mapPhotos.value = loadedPhotos
+    clearMarkerSelection()
+  } catch (err) {
+    console.error('Failed to list map photos with date filter:', err)
+  }
+}
+
+const throttledFetchMapPhotos = useThrottleFn(fetchMapPhotos, 100)
+
+function handleDateFilterChange(payload: { isDragging: boolean }) {
+  const start = dateFilter.value.active ? dateFilter.value.startDate : null
+  const end = dateFilter.value.active ? dateFilter.value.endDate : null
+  
+  if (payload.isDragging) {
+    throttledFetchMapPhotos(start, end)
+  } else {
+    fetchMapPhotos(start, end)
+  }
+}
 let popupMarker: maplibregl.Marker | null = null
 const router = useRouter()
 const outerLayoutEl = useTemplateRef('outerLayout')
@@ -632,6 +673,16 @@ useResizeObserver(outerLayoutEl, () => {
 
 watch(sidebarOpen, requestMapResize)
 
+watch(mapPhotos, (newPhotos) => {
+  if (map && newPhotos) {
+    const source = map.getSource('photos') as maplibregl.GeoJSONSource | undefined
+    if (source) {
+      source.setData(createPhotosGeoJson(newPhotos))
+      syncVisibleMarkers(map)
+    }
+  }
+})
+
 onUnmounted(() => {
   Object.values(markers).forEach((m) => m.remove())
   closePopup()
@@ -662,6 +713,13 @@ onUnmounted(() => {
         <div v-else class="map-loading">
           <v-progress-circular indeterminate color="primary" />
         </div>
+
+        <!-- Date Range Filter -->
+        <map-date-filter
+          v-if="mapPhotos"
+          v-model="dateFilter"
+          @change="handleDateFilterChange"
+        />
 
         <!-- Map Style / Layer Selector -->
         <div
