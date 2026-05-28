@@ -194,3 +194,5 @@
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
 * als je search naar locatie naam doet, map laten zien in SearchView
 * Search by photo, accept drag photo / paste (ctrl v) photo into search bar to find similar images
+* in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
+  button
