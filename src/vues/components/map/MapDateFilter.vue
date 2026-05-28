@@ -32,8 +32,7 @@ const startDateMenu = ref(false)
 const endDateMenu = ref(false)
 
 const trackRef = ref<HTMLElement | null>(null)
-const isDraggingLeft = ref(false)
-const isDraggingRight = ref(false)
+const activeHandle = ref<'left' | 'right' | null>(null)
 
 // Fetch timeline ratios if not loaded
 onMounted(async () => {
@@ -169,28 +168,39 @@ watch(() => props.modelValue, () => {
 // Drag event handlers
 function handleTrackMouseDown(e: MouseEvent, target: 'left' | 'right') {
   e.preventDefault()
-  if (target === 'left') isDraggingLeft.value = true
-  else isDraggingRight.value = true
+  activeHandle.value = target
 
   window.addEventListener('mousemove', onMouseMove)
   window.addEventListener('mouseup', onMouseUp)
 }
 
 function onMouseMove(e: MouseEvent) {
-  if (!trackRef.value || chronologicalRatios.value.length === 0) return
+  if (!trackRef.value || chronologicalRatios.value.length === 0 || !activeHandle.value) return
   const rect = trackRef.value.getBoundingClientRect()
   const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
   const N = chronologicalRatios.value.length
   const index = Math.round((pct / 100) * (N - 1))
 
-  if (isDraggingLeft.value) {
+  // Smart handle selection when overlapping
+  let currentHandle = activeHandle.value
+  if (leftIndex.value === rightIndex.value) {
+    if (index < leftIndex.value) {
+      currentHandle = 'left'
+      activeHandle.value = 'left'
+    } else if (index > rightIndex.value) {
+      currentHandle = 'right'
+      activeHandle.value = 'right'
+    }
+  }
+
+  if (currentHandle === 'left') {
     const newLeft = Math.min(index, rightIndex.value)
     if (newLeft !== leftIndex.value) {
       leftIndex.value = newLeft
       startGranularity.value = 'month'
       updateRange(true) // dragging
     }
-  } else if (isDraggingRight.value) {
+  } else if (currentHandle === 'right') {
     const newRight = Math.max(index, leftIndex.value)
     if (newRight !== rightIndex.value) {
       rightIndex.value = newRight
@@ -201,8 +211,7 @@ function onMouseMove(e: MouseEvent) {
 }
 
 function onMouseUp() {
-  isDraggingLeft.value = false
-  isDraggingRight.value = false
+  activeHandle.value = null
   window.removeEventListener('mousemove', onMouseMove)
   window.removeEventListener('mouseup', onMouseUp)
   updateRange(false) // final change
@@ -210,29 +219,40 @@ function onMouseUp() {
 
 // Touch event handlers for mobile devices
 function handleTrackTouchStart(e: TouchEvent, target: 'left' | 'right') {
-  if (target === 'left') isDraggingLeft.value = true
-  else isDraggingRight.value = true
+  e.preventDefault() // prevent simulated mouse events
+  activeHandle.value = target
 
   window.addEventListener('touchmove', onTouchMove)
   window.addEventListener('touchend', onTouchEnd)
 }
 
 function onTouchMove(e: TouchEvent) {
-  if (!trackRef.value || chronologicalRatios.value.length === 0 || e.touches.length === 0) return
+  if (!trackRef.value || chronologicalRatios.value.length === 0 || e.touches.length === 0 || !activeHandle.value) return
   const touch = e.touches[0]!
   const rect = trackRef.value.getBoundingClientRect()
   const pct = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100))
   const N = chronologicalRatios.value.length
   const index = Math.round((pct / 100) * (N - 1))
 
-  if (isDraggingLeft.value) {
+  let currentHandle = activeHandle.value
+  if (leftIndex.value === rightIndex.value) {
+    if (index < leftIndex.value) {
+      currentHandle = 'left'
+      activeHandle.value = 'left'
+    } else if (index > rightIndex.value) {
+      currentHandle = 'right'
+      activeHandle.value = 'right'
+    }
+  }
+
+  if (currentHandle === 'left') {
     const newLeft = Math.min(index, rightIndex.value)
     if (newLeft !== leftIndex.value) {
       leftIndex.value = newLeft
       startGranularity.value = 'month'
       updateRange(true)
     }
-  } else if (isDraggingRight.value) {
+  } else if (currentHandle === 'right') {
     const newRight = Math.max(index, leftIndex.value)
     if (newRight !== rightIndex.value) {
       rightIndex.value = newRight
@@ -243,8 +263,7 @@ function onTouchMove(e: TouchEvent) {
 }
 
 function onTouchEnd() {
-  isDraggingLeft.value = false
-  isDraggingRight.value = false
+  activeHandle.value = null
   window.removeEventListener('touchmove', onTouchMove)
   window.removeEventListener('touchend', onTouchEnd)
   updateRange(false)

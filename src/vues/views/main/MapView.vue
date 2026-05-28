@@ -54,7 +54,7 @@ const throttledFetchMapPhotos = useThrottleFn(fetchMapPhotos, 100)
 function handleDateFilterChange(payload: { isDragging: boolean }) {
   const start = dateFilter.value.active ? dateFilter.value.startDate : null
   const end = dateFilter.value.active ? dateFilter.value.endDate : null
-  
+
   if (payload.isDragging) {
     throttledFetchMapPhotos(start, end)
   } else {
@@ -678,7 +678,10 @@ watch(mapPhotos, (newPhotos) => {
     const source = map.getSource('photos') as maplibregl.GeoJSONSource | undefined
     if (source) {
       source.setData(createPhotosGeoJson(newPhotos))
-      syncVisibleMarkers(map)
+      map.triggerRepaint()
+      setTimeout(() => {
+        if (map) syncVisibleMarkers(map)
+      }, 50)
     }
   }
 })
