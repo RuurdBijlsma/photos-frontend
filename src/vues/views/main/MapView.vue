@@ -336,27 +336,43 @@ function getClusterPreviewItem(clusterId: number, leaves: GeoJSON.Feature[]) {
 async function syncVisibleMarkers(loadedMap: LibreMap) {
   const run = ++updateRun
   const source = loadedMap.getSource('photos') as maplibregl.GeoJSONSource
+  if (!source) return
+
   const clusterFeatures = loadedMap.queryRenderedFeatures({ layers: ['cluster-helper'] })
   const pointFeatures = loadedMap.queryRenderedFeatures({ layers: ['unclustered-point-helper'] })
   const newMarkers: Record<string, maplibregl.Marker> = {}
   const visibleItemMap = new Map<string, SimpleTimelineItem>()
 
-  for (const feature of clusterFeatures) {
-    const clusterId = Number(feature.properties.cluster_id)
-    const count = Number(feature.properties.point_count)
-    const coords = getFeatureCoordinates(feature)
+  // Fetch all cluster leaves concurrently to minimize asynchronous yields and race conditions
+  let clusterResults: Array<{
+    clusterId: number
+    count: number
+    coords: [number, number]
+    leaves: GeoJSON.Feature[]
+  }> = []
 
-    let leaves: GeoJSON.Feature[] = []
-    try {
-      leaves = await source.getClusterLeaves(clusterId, count, 0)
-    } catch (err) {
-      // If the source data updated or changed while we were awaiting,
-      // the clusterId may no longer exist in MapLibre. Catching this prevents the uncaught error.
-      if (run !== updateRun) return
-      continue
-    }
+  try {
+    const promises = clusterFeatures.map(async (feature) => {
+      const clusterId = Number(feature.properties.cluster_id)
+      const count = Number(feature.properties.point_count)
+      const coords = getFeatureCoordinates(feature)
+      const leaves = await source.getClusterLeaves(clusterId, count, 0)
+      return { clusterId, count, coords, leaves }
+    })
 
-    if (run !== updateRun) return
+    clusterResults = await Promise.all(promises)
+  } catch (err) {
+    // If any cluster query fails, the source data has changed mid-execution.
+    // Abort the entire run immediately to prevent half-rendered states or deleting active markers.
+    return
+  }
+
+  // If a newer sync run has already started, discard this one
+  if (run !== updateRun) return
+
+  // Process and render clusters
+  for (const res of clusterResults) {
+    const { clusterId, count, coords, leaves } = res
     const previewItem = getClusterPreviewItem(clusterId, leaves)
     if (!previewItem) continue
 
@@ -367,6 +383,7 @@ async function syncVisibleMarkers(loadedMap: LibreMap) {
     addOrUpdateClusterMarker(loadedMap, clusterId, previewItem, count, coords, newMarkers)
   }
 
+  // Process and render unclustered points
   for (const feature of pointFeatures) {
     const item = getItemFromProperties(feature.properties)
     if (!item) continue
