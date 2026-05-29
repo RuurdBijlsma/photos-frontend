@@ -345,8 +345,16 @@ async function syncVisibleMarkers(loadedMap: LibreMap) {
     const clusterId = Number(feature.properties.cluster_id)
     const count = Number(feature.properties.point_count)
     const coords = getFeatureCoordinates(feature)
-    // todo kan die met promise.all?
-    const leaves = await source.getClusterLeaves(clusterId, count, 0)
+
+    let leaves: GeoJSON.Feature[] = []
+    try {
+      leaves = await source.getClusterLeaves(clusterId, count, 0)
+    } catch (err) {
+      // If the source data updated or changed while we were awaiting,
+      // the clusterId may no longer exist in MapLibre. Catching this prevents the uncaught error.
+      if (run !== updateRun) return
+      continue
+    }
 
     if (run !== updateRun) return
     const previewItem = getClusterPreviewItem(clusterId, leaves)
@@ -528,13 +536,18 @@ async function selectCluster(clusterId: number) {
     .queryRenderedFeatures({ layers: ['cluster-helper'] })
     .find((feature) => Number(feature.properties.cluster_id) === clusterId)
   const count = Number(clusterFeature?.properties.point_count)
-  const leaves = await source.getClusterLeaves(clusterId, Number.isFinite(count) ? count : 100, 0)
-  selectedClusterItems.value = leaves
-    .map((leaf) => getItemFromProperties(leaf.properties))
-    .filter((item) => !!item)
-  selectedPopupItem.value = getClusterPreviewItem(clusterId, leaves)
-  if (selectedPopupItem.value && selectedLngLat.value)
-    showPopup(selectedPopupItem.value, selectedLngLat.value)
+
+  try {
+    const leaves = await source.getClusterLeaves(clusterId, Number.isFinite(count) ? count : 100, 0)
+    selectedClusterItems.value = leaves
+      .map((leaf) => getItemFromProperties(leaf.properties))
+      .filter((item) => !!item)
+    selectedPopupItem.value = getClusterPreviewItem(clusterId, leaves)
+    if (selectedPopupItem.value && selectedLngLat.value)
+      showPopup(selectedPopupItem.value, selectedLngLat.value)
+  } catch (err) {
+    console.warn('Failed to retrieve cluster leaves (the cluster may have updated):', err)
+  }
 }
 
 function clearMarkerSelection() {
