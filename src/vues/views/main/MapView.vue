@@ -316,6 +316,23 @@ function addHelperLayers(loadedMap: LibreMap) {
   })
 }
 
+function getClusterPreviewItem(clusterId: number, leaves: GeoJSON.Feature[]) {
+  if (!clusterPreviewCache.has(clusterId)) {
+    let firstProps = leaves[0]?.properties
+    for (const leaf of leaves) {
+      const props = leaf.properties
+      if (!props) continue
+      if (!firstProps || props.id > firstProps.id) {
+        firstProps = props
+      }
+    }
+    const previewItem = getItemFromProperties(firstProps ?? undefined)
+    if (!previewItem) return null
+    clusterPreviewCache.set(clusterId, previewItem)
+  }
+  return clusterPreviewCache.get(clusterId)!
+}
+
 async function syncVisibleMarkers(loadedMap: LibreMap) {
   const run = ++updateRun
   const source = loadedMap.getSource('photos') as maplibregl.GeoJSONSource
@@ -328,18 +345,13 @@ async function syncVisibleMarkers(loadedMap: LibreMap) {
     const clusterId = Number(feature.properties.cluster_id)
     const count = Number(feature.properties.point_count)
     const coords = getFeatureCoordinates(feature)
-    let previewItem = clusterPreviewCache.get(clusterId)
-
-    if (!previewItem) {
-      const leaves = await source.getClusterLeaves(clusterId, 1, 0)
-      if (run !== updateRun) return
-      previewItem = getItemFromProperties(leaves[0]?.properties ?? undefined)
-      if (!previewItem) continue
-      clusterPreviewCache.set(clusterId, previewItem)
-    }
-
+    // todo kan die met promise.all?
     const leaves = await source.getClusterLeaves(clusterId, count, 0)
+
     if (run !== updateRun) return
+    const previewItem = getClusterPreviewItem(clusterId, leaves)
+    if (!previewItem) continue
+
     leaves
       .map((leaf) => getItemFromProperties(leaf.properties))
       .filter((item) => !!item)
@@ -517,11 +529,10 @@ async function selectCluster(clusterId: number) {
     .find((feature) => Number(feature.properties.cluster_id) === clusterId)
   const count = Number(clusterFeature?.properties.point_count)
   const leaves = await source.getClusterLeaves(clusterId, Number.isFinite(count) ? count : 100, 0)
-  const items = leaves
+  selectedClusterItems.value = leaves
     .map((leaf) => getItemFromProperties(leaf.properties))
     .filter((item) => !!item)
-  selectedClusterItems.value = items
-  selectedPopupItem.value = items[0] ?? null
+  selectedPopupItem.value = getClusterPreviewItem(clusterId, leaves)
   if (selectedPopupItem.value && selectedLngLat.value)
     showPopup(selectedPopupItem.value, selectedLngLat.value)
 }

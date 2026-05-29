@@ -197,4 +197,4 @@
 * Search by photo, accept drag photo / paste (ctrl v) photo into search bar to find similar images
 * in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
   button
-* make picking photo for cluster deterministic, so it doesnt flicker when moving timeline slider
+* ✅ make picking photo for cluster deterministic, so it doesnt flicker when moving timeline slider
