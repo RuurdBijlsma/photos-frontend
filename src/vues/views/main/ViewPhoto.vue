@@ -100,7 +100,7 @@ const locationString = computed(() => {
   if (!fullImage.value?.gps?.location) return ''
   const location = fullImage.value.gps.location
   const result = makeLocationString(location)
-  return result ? result + ' · ' : ''
+  return result ?? ''
 })
 
 const fullImage = computed(() => {
@@ -226,16 +226,22 @@ watch(
       <div class="top-main-text">
         <h3>{{ timestampString }}</h3>
         <p>
-          <span
+          <router-link
+            class="location-link"
+            v-if="fullImage?.gps"
+            :to="`/map?lat=${fullImage.gps.latitude}&lon=${fullImage.gps.longitude}`"
             v-tooltip="{
-              text: fullImage?.gps?.location?.country_name,
-              disabled: fullImage?.gps?.location?.country_name === undefined,
+              text: fullImage.gps.location?.country_name,
+              disabled: fullImage.gps.location?.country_name === undefined,
               location: 'bottom',
               attach: true,
               width: 140,
             }"
-            >{{ locationString }}</span
-          >{{ currentIndex + 1 }} of
+          >
+            {{ locationString }}
+          </router-link>
+          <span v-if="locationString.length > 0"> · </span>
+          {{ currentIndex + 1 }} of
           {{ viewPhotoStore.ids.length === 0 ? '...' : viewPhotoStore.ids.length.toLocaleString() }}
         </p>
       </div>
@@ -472,6 +478,15 @@ watch(
 .hide-ui .left-buttons,
 .hide-ui .top-main-text {
   transform: translateY(-80px);
+}
+
+.location-link {
+  color: rgba(var(--fg), 0.6);
+  text-decoration: none;
+}
+
+.location-link:hover {
+  text-decoration: underline;
 }
 
 .next-area {

@@ -8,6 +8,7 @@ import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vu
 import searchService from '@/scripts/services/searchService.ts'
 import { isLikelyJwt } from '@/scripts/utils.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import peopleService from '@/scripts/services/peopleService.ts'
 
 const router = useRouter()
 const route = useRoute()
@@ -128,6 +129,7 @@ async function fetchSuggestions(searchQuery: string | null) {
     const apiSuggestions: SearchBarSuggestion[] = fetchedSuggestions
       .filter((s) => {
         if (s.suggestionType === SuggestionType.ALBUM) return true
+        if (s.suggestionType === SuggestionType.PERSON) return true
         return !historicMatches.some((h) => h.text.toLowerCase() === s.text.toLowerCase())
       })
       .map((s) => ({
@@ -150,8 +152,12 @@ function highlightMatch(text: string, match: string | null) {
 }
 
 function selectSuggestion(suggestion: SearchBarSuggestion) {
-  if (suggestion.suggestionType === SuggestionType.ALBUM && suggestion.id) {
-    router.push(`/album/${suggestion.id}`)
+  if (suggestion.id) {
+    if (suggestion.suggestionType === SuggestionType.ALBUM) {
+      router.push(`/album/${suggestion.id}`)
+    } else if (suggestion.suggestionType === SuggestionType.PERSON) {
+      router.push(`/person/${suggestion.id}`)
+    }
     isFocused.value = false
     if (searchInputEl.value) {
       searchInputEl.value.blur()
@@ -336,6 +342,12 @@ watch(
                 size="small"
                 class="suggestion-icon"
               />
+              <v-avatar
+                v-else-if="suggestion.suggestionType === SuggestionType.PERSON"
+                size="small"
+              >
+                <v-img :src="peopleService.getPersonThumbnail(suggestion.id)"></v-img>
+              </v-avatar>
               <span v-html="highlightMatch(suggestion.text, query)"></span>
             </div>
           </div>

@@ -12,6 +12,7 @@ export const protobufPackage = 'api'
 export enum SuggestionType {
   SEARCH = 0,
   ALBUM = 1,
+  PERSON = 2,
   UNRECOGNIZED = -1,
 }
 
@@ -23,6 +24,9 @@ export function suggestionTypeFromJSON(object: any): SuggestionType {
     case 1:
     case 'ALBUM':
       return SuggestionType.ALBUM
+    case 2:
+    case 'PERSON':
+      return SuggestionType.PERSON
     case -1:
     case 'UNRECOGNIZED':
     default:
@@ -36,6 +40,8 @@ export function suggestionTypeToJSON(object: SuggestionType): string {
       return 'SEARCH'
     case SuggestionType.ALBUM:
       return 'ALBUM'
+    case SuggestionType.PERSON:
+      return 'PERSON'
     case SuggestionType.UNRECOGNIZED:
     default:
       return 'UNRECOGNIZED'

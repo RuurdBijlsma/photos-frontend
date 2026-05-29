@@ -74,6 +74,19 @@ onMounted(() => {
   })
 
   map.on('style.load', () => {
+    // ── Add 3D Terrain for the TERRAIN style ──
+    if (map && props.mapStyle === 'TERRAIN') {
+      if (!map.getSource('terrarium')) {
+        map.addSource('terrarium', {
+          type: 'raster-dem',
+          tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          encoding: 'terrarium',
+        })
+      }
+      map.setTerrain({ source: 'terrarium', exaggeration: 1.5 })
+    }
+
     emit('style-load', map)
   })
 })

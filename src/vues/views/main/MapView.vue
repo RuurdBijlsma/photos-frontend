@@ -12,8 +12,10 @@ import type {
   SimpleTimelineItem,
 } from '@/scripts/types/generated/timeline.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import MapDateFilter from '@/vues/components/map/MapDateFilter.vue'
+
+const route = useRoute()
 
 const markers: Record<string, maplibregl.Marker> = {}
 const clusterPreviewCache = new Map<number, SimpleTimelineItem>()
@@ -114,6 +116,13 @@ function handleStyleLoad(loadedMap: LibreMap) {
     addHelperLayers(loadedMap)
   }
 }
+
+const loadCoord = computed(() => {
+  const lat = Number(route.query.lat)
+  const lon = Number(route.query.lon)
+  if (!lat || !lon) return null
+  return { lat: lat, lng: lon }
+})
 const DEFAULT_MAP_OPTIONS = {
   center: { lat: 40, lng: 0 },
   zoom: 3,
@@ -154,20 +163,15 @@ function requestMapResize() {
   })
 }
 
-function getValidPhotoLocations(photos: MapPhotosResponse) {
-  return photos.items.filter(
-    (item) =>
-      Number.isFinite(item.latitude) &&
-      Number.isFinite(item.longitude) &&
-      item.latitude >= -90 &&
-      item.latitude <= 90 &&
-      item.longitude >= -180 &&
-      item.longitude <= 180,
-  )
-}
-
 function getInitialMapOptions(photos: MapPhotosResponse): MapOptionsWithoutContainer {
-  const locations = getValidPhotoLocations(photos)
+  if (loadCoord.value) {
+    return {
+      ...DEFAULT_MAP_OPTIONS,
+      center: loadCoord.value,
+      zoom: 16,
+    }
+  }
+  const locations = photos.items
   if (locations.length === 0) return DEFAULT_MAP_OPTIONS
 
   if (locations.length === 1) {
@@ -259,7 +263,7 @@ async function initialize() {
 function createPhotosGeoJson(photos: MapPhotosResponse): GeoJSON.FeatureCollection<GeoJSON.Point> {
   return {
     type: 'FeatureCollection',
-    features: getValidPhotoLocations(photos).map((p) => ({
+    features: photos.items.map((p) => ({
       type: 'Feature',
       geometry: {
         type: 'Point',
@@ -576,7 +580,7 @@ function showPopup(item: SimpleTimelineItem, coords: [number, number]) {
   })
   popupEl.addEventListener('click', (e) => {
     e.stopPropagation()
-    router.push({ path: `/map/view/${item.id}` })
+    router.push({ path: `/map/view/${item.id}`, query: route.query })
   })
   popupEl.append(mediaEl, closeButton)
 
@@ -591,7 +595,7 @@ function showPopup(item: SimpleTimelineItem, coords: [number, number]) {
 
 function zoomToFitAll() {
   if (!map || !mapPhotos.value) return
-  const locations = getValidPhotoLocations(mapPhotos.value)
+  const locations = mapPhotos.value.items
   if (locations.length === 0) return
 
   if (locations.length === 1) {
@@ -599,7 +603,6 @@ function zoomToFitAll() {
     map.flyTo({
       center: getLngLat(location!),
       zoom: 11,
-      essential: true,
     })
     return
   }
@@ -614,7 +617,6 @@ function zoomToFitAll() {
   map.fitBounds(bounds, {
     padding: 80,
     maxZoom: 14,
-    essential: true,
     duration: 1200,
   })
 }
@@ -671,6 +673,15 @@ useResizeObserver(outerLayoutEl, () => {
   requestMapResize()
 })
 
+watch(loadCoord, (newVal, oldVal) => {
+  if (!map || !loadCoord.value) return
+  if (JSON.stringify(newVal) === JSON.stringify(oldVal)) return
+  map.flyTo({
+    center: loadCoord.value,
+    zoom: 17,
+  })
+})
+
 watch(sidebarOpen, requestMapResize)
 
 watch(mapPhotos, (newPhotos) => {
@@ -718,11 +729,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Date Range Filter -->
-        <map-date-filter
-          v-if="mapPhotos"
-          v-model="dateFilter"
-          @change="handleDateFilterChange"
-        />
+        <map-date-filter v-if="mapPhotos" v-model="dateFilter" @change="handleDateFilterChange" />
 
         <!-- Map Style / Layer Selector -->
         <div

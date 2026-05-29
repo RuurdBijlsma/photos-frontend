@@ -94,7 +94,9 @@ const earliestLabel = computed(() => {
 
 const latestLabel = computed(() => {
   if (chronologicalRatios.value.length === 0) return ''
-  const date = getStartOfMonth(chronologicalRatios.value[chronologicalRatios.value.length - 1]!.monthId)
+  const date = getStartOfMonth(
+    chronologicalRatios.value[chronologicalRatios.value.length - 1]!.monthId,
+  )
   return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
 })
 
@@ -161,10 +163,14 @@ function syncSlidersFromDates() {
 }
 
 // Watch modelValue to sync sliders (skip during drag to avoid feedback loop)
-watch(() => props.modelValue, () => {
-  if (activeHandle.value) return
-  syncSlidersFromDates()
-}, { deep: true })
+watch(
+  () => props.modelValue,
+  () => {
+    if (activeHandle.value) return
+    syncSlidersFromDates()
+  },
+  { deep: true },
+)
 
 // Drag event handlers
 function handleTrackMouseDown(e: MouseEvent, target: 'left' | 'right') {
@@ -218,7 +224,13 @@ function handleTrackTouchStart(e: TouchEvent, target: 'left' | 'right') {
 }
 
 function onTouchMove(e: TouchEvent) {
-  if (!trackRef.value || chronologicalRatios.value.length === 0 || e.touches.length === 0 || !activeHandle.value) return
+  if (
+    !trackRef.value ||
+    chronologicalRatios.value.length === 0 ||
+    e.touches.length === 0 ||
+    !activeHandle.value
+  )
+    return
   const touch = e.touches[0]!
   const rect = trackRef.value.getBoundingClientRect()
   const pct = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100))
@@ -258,19 +270,20 @@ function updateRange(isDragging = false) {
   const startMonth = chronologicalRatios.value[leftIndex.value]!
   const endMonth = chronologicalRatios.value[rightIndex.value]!
 
-  const start = startGranularity.value === 'month'
-    ? getStartOfMonth(startMonth.monthId)
-    : props.modelValue.startDate
+  const start =
+    startGranularity.value === 'month'
+      ? getStartOfMonth(startMonth.monthId)
+      : props.modelValue.startDate
 
-  const end = endGranularity.value === 'month'
-    ? getEndOfMonth(endMonth.monthId)
-    : props.modelValue.endDate
+  const end =
+    endGranularity.value === 'month' ? getEndOfMonth(endMonth.monthId) : props.modelValue.endDate
 
   // Check if fully reset (covering all months on month granularity)
-  const isFullRange = leftIndex.value === 0 &&
-                      rightIndex.value === chronologicalRatios.value.length - 1 &&
-                      startGranularity.value === 'month' &&
-                      endGranularity.value === 'month'
+  const isFullRange =
+    leftIndex.value === 0 &&
+    rightIndex.value === chronologicalRatios.value.length - 1 &&
+    startGranularity.value === 'month' &&
+    endGranularity.value === 'month'
 
   emit('update:modelValue', {
     startDate: start,
@@ -368,12 +381,7 @@ function clearFilter() {
     </v-btn>
 
     <!-- OPEN STATE DIALOG CARD -->
-    <v-card
-      v-else
-      class="map-date-filter-panel"
-      elevation="8"
-      rounded="xl"
-    >
+    <v-card v-else class="map-date-filter-panel" elevation="8" rounded="xl">
       <!-- Close Button -->
       <v-btn
         icon="mdi-close"
@@ -389,11 +397,7 @@ function clearFilter() {
         <span class="panel-title">Filter from</span>
 
         <!-- Start Date Button -->
-        <v-menu
-          v-model="startDateMenu"
-          :close-on-content-click="false"
-          location="top center"
-        >
+        <v-menu v-model="startDateMenu" :close-on-content-click="false" location="top center">
           <template v-slot:activator="{ props: menuProps }">
             <v-btn
               v-bind="menuProps"
@@ -403,14 +407,27 @@ function clearFilter() {
               rounded="lg"
               class="date-button ml-1 mr-1"
             >
-              {{ formatDateLabel(modelValue.startDate || (chronologicalRatios[0] ? getStartOfMonth(chronologicalRatios[0].monthId) : null), startGranularity) }}
+              {{
+                formatDateLabel(
+                  modelValue.startDate ||
+                    (chronologicalRatios[0]
+                      ? getStartOfMonth(chronologicalRatios[0].monthId)
+                      : null),
+                  startGranularity,
+                )
+              }}
             </v-btn>
           </template>
           <v-card border rounded="lg">
             <v-date-picker
               bg-color="surface-container"
               color="primary"
-              :model-value="modelValue.startDate || (chronologicalRatios[0] ? getStartOfMonth(chronologicalRatios[0].monthId) : new Date())"
+              :model-value="
+                modelValue.startDate ||
+                (chronologicalRatios[0]
+                  ? getStartOfMonth(chronologicalRatios[0].monthId)
+                  : new Date())
+              "
               @update:model-value="onStartDateInput"
               hide-header
             />
@@ -420,11 +437,7 @@ function clearFilter() {
         <span class="panel-title">to</span>
 
         <!-- End Date Button -->
-        <v-menu
-          v-model="endDateMenu"
-          :close-on-content-click="false"
-          location="top center"
-        >
+        <v-menu v-model="endDateMenu" :close-on-content-click="false" location="top center">
           <template v-slot:activator="{ props: menuProps }">
             <v-btn
               v-bind="menuProps"
@@ -434,14 +447,27 @@ function clearFilter() {
               rounded="lg"
               class="date-button ml-1 mr-1"
             >
-              {{ formatDateLabel(modelValue.endDate || (chronologicalRatios[chronologicalRatios.length - 1] ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId) : null), endGranularity) }}
+              {{
+                formatDateLabel(
+                  modelValue.endDate ||
+                    (chronologicalRatios[chronologicalRatios.length - 1]
+                      ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId)
+                      : null),
+                  endGranularity,
+                )
+              }}
             </v-btn>
           </template>
           <v-card border rounded="lg">
             <v-date-picker
               bg-color="surface-container"
               color="primary"
-              :model-value="modelValue.endDate || (chronologicalRatios[chronologicalRatios.length - 1] ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId) : new Date())"
+              :model-value="
+                modelValue.endDate ||
+                (chronologicalRatios[chronologicalRatios.length - 1]
+                  ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId)
+                  : new Date())
+              "
               @update:model-value="onEndDateInput"
               hide-header
             />
@@ -477,7 +503,7 @@ function clearFilter() {
               :class="{ 'is-active': idx >= leftIndex && idx <= rightIndex }"
               :style="{
                 height: `${(month.count / maxCount) * 100}%`,
-                width: `${100 / chronologicalRatios.length}%`
+                width: `${100 / chronologicalRatios.length}%`,
               }"
             ></div>
           </div>
@@ -489,7 +515,7 @@ function clearFilter() {
               class="slider-highlight"
               :style="{
                 left: `${(leftIndex / totalIntervals) * 100}%`,
-                right: `${100 - (rightIndex / totalIntervals) * 100}%`
+                right: `${100 - (rightIndex / totalIntervals) * 100}%`,
               }"
             ></div>
 
@@ -497,7 +523,7 @@ function clearFilter() {
             <div
               class="slider-handle left-handle"
               :style="{
-                left: `${(leftIndex / totalIntervals) * 100}%`
+                left: `${(leftIndex / totalIntervals) * 100}%`,
               }"
               @mousedown="handleTrackMouseDown($event, 'left')"
               @touchstart="handleTrackTouchStart($event, 'left')"
@@ -510,7 +536,7 @@ function clearFilter() {
             <div
               class="slider-handle right-handle"
               :style="{
-                left: `${(rightIndex / totalIntervals) * 100}%`
+                left: `${(rightIndex / totalIntervals) * 100}%`,
               }"
               @mousedown="handleTrackMouseDown($event, 'right')"
               @touchstart="handleTrackTouchStart($event, 'right')"
@@ -648,7 +674,9 @@ function clearFilter() {
   background-color: rgba(var(--v-theme-on-surface), 0.15);
   border-radius: 2px 2px 0 0;
   margin: 0 0.5px;
-  transition: background-color 0.2s ease, height 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    height 0.2s ease;
 }
 
 .histogram-bar.is-active {
@@ -709,7 +737,9 @@ function clearFilter() {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   box-sizing: border-box;
   margin-top: 1px;
-  transition: transform 0.15s ease, background-color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .slider-handle:hover .handle-anchor {

@@ -173,7 +173,7 @@
   music
 * ✅ in search, make person filter optionally AND instead of OR
 * ✅ In viewPhoto, in info v-menu, it should show which albums it's in
-* ✅ filters on front page (small ui button) -> nee op search page is dit nu (zoeken zonder query)
+* ✅ filters on front page (small ui button) → nee op search page is dit nu (zoeken zonder query)
 * ✅ misschien wil ik wel light theme in de foto viewer!
 * on login redirect to where you were
 * improve messaging when you load the website and the server is off
@@ -192,7 +192,9 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
-* als je search naar locatie naam doet, map laten zien in SearchView
+* ⛔ als je search naar locatie naam doet, map laten zien in SearchView
+* ✅ When searching person name, show link to /person/{id} in suggestions
 * Search by photo, accept drag photo / paste (ctrl v) photo into search bar to find similar images
 * in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
   button
+* make picking photo for cluster deterministic, so it doesnt flicker when moving timeline slider
