@@ -589,7 +589,6 @@ function clearFilter() {
 .map-date-filter-chip {
   background-color: rgba(var(--v-theme-surface), 0.85) !important;
   backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(var(--v-theme-on-surface), 0.1) !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
   text-transform: none !important;

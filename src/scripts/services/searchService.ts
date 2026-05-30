@@ -1,7 +1,11 @@
 import apiClient from './api.ts'
 import { SearchResponse, SearchSuggestionsResponse } from '@/scripts/types/generated/timeline.ts'
 import type { AxiosResponse } from 'axios'
-import type { SearchFilterRanges, SearchParams } from '@/scripts/types/api/search.ts'
+import type {
+  BaseSearchParams,
+  SearchFilterRanges,
+  SearchParams,
+} from '@/scripts/types/api/search.ts'
 
 const searchService = {
   async search(params: SearchParams): Promise<SearchResponse> {
@@ -31,7 +35,7 @@ const searchService = {
     return apiClient.get<SearchFilterRanges>('/search/params')
   },
 
-  async searchByImage(imageFile: File, params: SearchParams): Promise<SearchResponse> {
+  async searchByImage(imageFile: File, params: BaseSearchParams): Promise<SearchResponse> {
     const formData = new FormData()
     formData.append('image', imageFile)
 

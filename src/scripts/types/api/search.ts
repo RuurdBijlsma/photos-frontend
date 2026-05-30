@@ -4,8 +4,7 @@ export interface SearchFilterRanges {
   countries: string[][]
 }
 
-export type SearchParams = {
-  query: string
+export interface BaseSearchParams {
   limit?: number
   offset?: number
   startDate?: string
@@ -16,4 +15,8 @@ export type SearchParams = {
   countryCodes?: string
   faceNames?: string
   allFacesRequired?: boolean
+}
+
+export interface SearchParams extends BaseSearchParams {
+  query: string
 }

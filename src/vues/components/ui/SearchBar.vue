@@ -606,6 +606,9 @@ watch(
   max-width: 600px;
   margin: 5px;
   margin-left: 15px;
+  border: 2px solid rgba(var(--v-theme-on-surface), 0.25) !important;
+
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35) !important;
 }
 
 .image-clear-button {
