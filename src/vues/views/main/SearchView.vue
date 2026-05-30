@@ -87,9 +87,9 @@ function getSearchParams(isLoadMore: boolean) {
   }
 }
 
-async function executeTextSearch(isLoadMore = false) {
-  if (searchStore.searchImage) return
-  if (!query.value && !hasFilters.value) {
+async function executeSearch(isLoadMore = false) {
+  // If we are not performing an image search, verify that we actually have a text query or active filters.
+  if (!searchStore.searchImage && !query.value && !hasFilters.value) {
     results.value = []
     return
   }
@@ -98,16 +98,25 @@ async function executeTextSearch(isLoadMore = false) {
   if (!searchParams) return
 
   try {
-    const key = JSON.stringify(searchParams)
     let items: SimpleTimelineItem[] = []
 
-    if (searchCache.has(key)) {
-      items = searchCache.get(key)!
-    } else {
-      const response = await searchService.search(searchParams)
+    if (searchStore.searchImage) {
+      // Execute Image Search
+      const response = await searchService.searchByImage(searchStore.searchImage, searchParams)
       items = response.items
-      console.log('SearchPage results', items)
-      requestIdleCallback(() => searchCache.set(key, items))
+      console.log('[IMAGE] SearchPage results', items)
+      // todo cache results by UUID or something, link image to UUID
+    } else {
+      // Execute Text/Filter Search with Cache Check
+      const key = JSON.stringify(searchParams)
+      if (searchCache.has(key)) {
+        items = searchCache.get(key)!
+      } else {
+        const response = await searchService.search(searchParams)
+        items = response.items
+        console.log('SearchPage results', items)
+        requestIdleCallback(() => searchCache.set(key, items))
+      }
     }
 
     if (isLoadMore) {
@@ -126,43 +135,6 @@ async function executeTextSearch(isLoadMore = false) {
     loadingMore.value = false
     showLoadingUI.value = false
   }
-}
-
-async function executeImageSearch(isLoadMore = false) {
-  if (!searchStore.searchImage) return
-
-  const searchParams = getSearchParams(isLoadMore)
-  if (!searchParams) return
-
-  try {
-    let items: SimpleTimelineItem[] = []
-    // todo cache results by UUID or something, link image to UUID
-
-    const response = await searchService.searchByImage(searchStore.searchImage, searchParams)
-    items = response.items
-    console.log('[IMAGE] SearchPage results', items)
-
-    if (isLoadMore) {
-      results.value = [...results.value, ...items]
-    } else {
-      results.value = items
-    }
-
-    hasMore.value = items.length === SEARCH_LIMIT
-    offset.value += items.length
-  } catch (e) {
-    snackStore.error('Could not perform search', e)
-  } finally {
-    if (loadingTimer) clearTimeout(loadingTimer)
-    loading.value = false
-    loadingMore.value = false
-    showLoadingUI.value = false
-  }
-}
-
-function executeSearch(isLoadMore = false) {
-  if (!searchStore.searchImage) return executeTextSearch(isLoadMore)
-  return executeImageSearch(isLoadMore)
 }
 
 onMounted(() => {
