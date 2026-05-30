@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, useTemplateRef, onMounted } from 'vue'
+import { ref, watch, useTemplateRef, onMounted, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
@@ -9,16 +9,19 @@ import searchService from '@/scripts/services/searchService.ts'
 import { isLikelyJwt } from '@/scripts/utils.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import peopleService from '@/scripts/services/peopleService.ts'
+import { useSearchStore } from '@/scripts/stores/searchStore.ts'
 
 const router = useRouter()
 const route = useRoute()
 const snackStore = useSnackbarsStore()
 const authStore = useAuthStore()
+const searchStore = useSearchStore()
 const searchInputEl = useTemplateRef('searchInput')
 const searchContainer = useTemplateRef('searchContainer')
 
 const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
+const imagePreview = ref<string | null>(null)
 
 type SearchBarSuggestionType = SuggestionType | 'HISTORY'
 
@@ -44,6 +47,10 @@ const placeholder = ref<string | null>(
     ? null
     : JSON.parse(localStorage.getItem(SUGGESTION_PLACEHOLDER_KEY)!),
 )
+const placeholderValue = computed(() => {
+  if (searchStore.searchImage) return undefined
+  return placeholder.value === null ? 'Search...' : `Search “${placeholder.value}”`
+})
 const searchHistory = ref<string[]>([])
 
 function loadHistory() {
@@ -224,6 +231,68 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
+function handleDrop(e: DragEvent) {
+  e.preventDefault()
+  const files = e.dataTransfer?.files
+  if (files && files.length > 0) {
+    const file = files[0]
+    if (file.type.startsWith('image/')) {
+      submitImage(file)
+    }
+  }
+}
+
+function handlePaste(e: ClipboardEvent) {
+  const items = e.clipboardData?.items
+  if (items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile()
+        if (file) {
+          submitImage(file)
+          e.preventDefault()
+          break
+        }
+      }
+    }
+  }
+}
+
+function clearImage(focus: boolean = true) {
+  if (searchStore.searchImage) {
+    searchStore.searchImage = null
+    if (focus) {
+      isFocused.value = true
+      nextTick(() => {
+        if (searchInputEl.value) {
+          searchInputEl.value.focus()
+        }
+      })
+    } else {
+      isFocused.value = false
+    }
+  }
+  results.value = []
+}
+
+function submitImage(file: File) {
+  searchStore.searchImage = file
+  query.value = ''
+
+  const nextQuery: Record<string, string> = {
+    ...route.query,
+    mode: 'image',
+  }
+  // Clear text-query parameter when doing image search
+  delete nextQuery.query
+  router.push({
+    path: '/search',
+    query: nextQuery,
+  })
+  return
+}
+
 function handleSubmit(isManual = true) {
   const trimmed = query.value?.trim() ?? ''
   if (isManual && trimmed) {
@@ -277,11 +346,25 @@ onMounted(() => {
 })
 
 watch(
+  () => searchStore.searchImage,
+  () => {
+    if (searchStore.searchImage) {
+      imagePreview.value = URL.createObjectURL(searchStore.searchImage)
+    } else if (imagePreview.value) {
+      URL.revokeObjectURL(imagePreview.value)
+      imagePreview.value = null
+    }
+  },
+  { immediate: true },
+)
+
+watch(
   () => [route.path, route.query.query],
   ([newPath, newQuery]) => {
     isFocused.value = false
     if (newPath && !newPath.toString().startsWith('/search')) {
       query.value = ''
+      clearImage(false)
     } else if (newQuery && newQuery.toString() !== query.value) {
       query.value = newQuery.toString()
     }
@@ -291,20 +374,38 @@ watch(
 
 <template>
   <div class="search-section">
-    <div ref="searchContainer" class="search-centered-section" @focusout="handleFocusOut">
+    <div
+      ref="searchContainer"
+      class="search-centered-section"
+      @focusout="handleFocusOut"
+      @dragover.prevent
+      @dragleave.prevent
+      @drop.prevent="handleDrop"
+    >
       <form @submit.prevent="() => handleSubmit(true)">
-        <label class="search-bar" tabindex="-1" :class="{ 'is-focused': isFocused }">
+        <label
+          class="search-bar"
+          tabindex="-1"
+          :class="{ 'is-focused': isFocused && !searchStore.searchImage }"
+        >
           <span class="search-icon-div">
             <v-icon
               class="search-icon"
-              :icon="loading ? 'mdi-loading mdi-spin' : 'mdi-magnify'"
+              :icon="
+                loading
+                  ? 'mdi-loading mdi-spin'
+                  : searchStore.searchImage
+                    ? 'mdi-image-search-outline'
+                    : 'mdi-magnify'
+              "
             ></v-icon>
           </span>
+          <img v-if="imagePreview" :src="imagePreview" class="image-preview" alt="Search image" />
           <v-text-field
             ref="searchInput"
             v-model="query"
             class="search-text-field"
-            :placeholder="placeholder === null ? 'Search...' : `Search “${placeholder}”`"
+            :placeholder="placeholderValue"
             rounded
             autocomplete="off"
             hide-details
@@ -312,12 +413,24 @@ watch(
             @focus="handleFocus"
             @click:clear="results = []"
             @keydown="handleKeyDown"
+            @paste="handlePaste"
+            :disabled="!!searchStore.searchImage"
           />
+          <v-btn
+            class="image-clear-button"
+            icon="mdi-close"
+            v-if="searchStore.searchImage"
+            variant="plain"
+            @click="clearImage"
+            density="compact"
+          ></v-btn>
         </label>
       </form>
 
       <div
-        v-if="isFocused && (query?.length > 0 || suggestions.length > 0)"
+        v-if="
+          isFocused && !searchStore.searchImage && (query?.length > 0 || suggestions.length > 0)
+        "
         class="search-suggestions"
         tabindex="-1"
       >
@@ -472,7 +585,6 @@ watch(
   outline: none;
 }
 
-.search-centered-section:focus-within .search-bar,
 .search-bar.is-focused {
   background-color: white;
   color: black;
@@ -485,6 +597,19 @@ watch(
   display: flex;
   justify-content: flex-end;
   align-items: center;
+}
+
+.image-preview {
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  max-width: 600px;
+  margin: 5px;
+  margin-left: 15px;
+}
+
+.image-clear-button {
+  margin: 12px;
 }
 
 .search-text-field {

@@ -361,7 +361,7 @@ async function syncVisibleMarkers(loadedMap: LibreMap) {
     })
 
     clusterResults = await Promise.all(promises)
-  } catch (err) {
+  } catch {
     // If any cluster query fails, the source data has changed mid-execution.
     // Abort the entire run immediately to prevent half-rendered states or deleting active markers.
     return
