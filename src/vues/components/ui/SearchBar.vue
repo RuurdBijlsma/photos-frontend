@@ -263,14 +263,22 @@ function clearImage(focus: boolean = true) {
     searchStore.searchImage = null
     if (focus) {
       isFocused.value = true
-      nextTick(() => {
+      setTimeout(() => {
         if (searchInputEl.value) {
           searchInputEl.value.focus()
         }
-      })
+      }, 50)
     } else {
       isFocused.value = false
     }
+
+    // Clean up route query parameter when removing the image
+    const nextQuery = { ...route.query }
+    delete nextQuery.mode
+    router.push({
+      path: '/search',
+      query: nextQuery,
+    })
   }
   results.value = []
 }

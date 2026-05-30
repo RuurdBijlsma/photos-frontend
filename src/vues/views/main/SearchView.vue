@@ -137,27 +137,13 @@ async function executeSearch(isLoadMore = false) {
   }
 }
 
-onMounted(() => {
-  if (query.value || hasFilters.value || searchStore.searchImage) {
-    executeSearch()
-  }
-})
-
 onUnmounted(() => {
   if (loadingTimer) clearTimeout(loadingTimer)
 })
 
-watch(
-  () => route.query,
-  () => executeSearch(false),
-)
-
-watch(
-  () => searchStore.searchImage,
-  () => {
-    if (searchStore.searchImage) return executeSearch(false)
-  },
-)
+watch([() => route.query, () => searchStore.searchImage], () => executeSearch(false), {
+  immediate: true,
+})
 </script>
 
 <template>
