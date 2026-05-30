@@ -199,3 +199,4 @@
   button
 * ✅ make picking photo for cluster deterministic, so it doesnt flicker when moving timeline slider
 * [bug] Checkmark for select image is offset for some reason
+* [bug] als je album maakt op niet "/", bijv "/search", dan gaat ie naar "/search?create=1" ofzo
