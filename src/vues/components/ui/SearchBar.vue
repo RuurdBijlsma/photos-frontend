@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, useTemplateRef, onMounted, computed, nextTick } from 'vue'
+import { ref, watch, useTemplateRef, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
@@ -359,8 +359,8 @@ watch(
     if (newPath && !newPath.toString().startsWith('/search')) {
       query.value = ''
       clearImage(false)
-    } else if (newQuery && newQuery.toString() !== query.value) {
-      query.value = newQuery.toString()
+    } else {
+      query.value = newQuery ? newQuery.toString() : ''
     }
   },
 )

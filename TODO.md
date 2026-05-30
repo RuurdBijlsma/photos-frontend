@@ -198,3 +198,4 @@
 * in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
   button
 * ✅ make picking photo for cluster deterministic, so it doesnt flicker when moving timeline slider
+* [bug] Checkmark for select image is offset for some reason

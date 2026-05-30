@@ -104,8 +104,7 @@ async function executeSearch(isLoadMore = false) {
       // Execute Image Search
       const response = await searchService.searchByImage(searchStore.searchImage, searchParams)
       items = response.items
-      console.log('[IMAGE] SearchPage results', items)
-      // todo cache results by UUID or something, link image to UUID
+      console.log('[IMAGE] SearchPage results', response)
     } else {
       // Execute Text/Filter Search with Cache Check
       const key = JSON.stringify(searchParams)

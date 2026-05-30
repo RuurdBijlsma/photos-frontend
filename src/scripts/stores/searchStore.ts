@@ -6,13 +6,14 @@ export const useSearchStore = defineStore('search', () => {
   const imagePreview = ref<string | null>(null)
 
   watch(
-   searchImage,
-    () => {
-      if (searchImage.value) {
-        imagePreview.value = URL.createObjectURL(searchImage.value)
-      } else if (imagePreview.value) {
+    searchImage,
+    (newFile) => {
+      if (imagePreview.value) {
         URL.revokeObjectURL(imagePreview.value)
         imagePreview.value = null
+      }
+      if (newFile) {
+        imagePreview.value = URL.createObjectURL(newFile)
       }
     },
     { immediate: true },
