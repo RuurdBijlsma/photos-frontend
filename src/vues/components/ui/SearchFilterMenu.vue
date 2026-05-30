@@ -286,8 +286,8 @@ const activeFilterChips = computed(() => {
     })
   }
 
-  // Exclude (requires a text query)
-  if (filterNegativeQuery.value && query.value) {
+  // Exclude
+  if (filterNegativeQuery.value) {
     chips.push({
       id: 'exclude',
       type: 'Exclude',
@@ -497,7 +497,7 @@ const activeFilterChips = computed(() => {
               </v-select>
             </div>
 
-            <div class="negative-query" v-if="query">
+            <div class="negative-query">
               <p class="mt-2 mb-2 font-weight-medium">
                 Exclude
                 <v-icon

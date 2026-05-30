@@ -35,7 +35,7 @@ const searchService = {
     return apiClient.get<SearchFilterRanges>('/search/params')
   },
 
-  async searchByImage(imageFile: File, params: BaseSearchParams): Promise<SearchResponse> {
+  async searchByImage(imageFile: File, params: SearchParams): Promise<SearchResponse> {
     const formData = new FormData()
     formData.append('image', imageFile)
 

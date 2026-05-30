@@ -7,8 +7,10 @@ import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTim
 import SearchFilterMenu from '@/vues/components/ui/SearchFilterMenu.vue'
 import searchService from '@/scripts/services/searchService.ts'
 import { MONTHS } from '@/scripts/constants.ts'
+import { useSearchStore } from '@/scripts/stores/searchStore.ts'
 
 const snackStore = useSnackbarsStore()
+const searchStore = useSearchStore()
 const route = useRoute()
 
 const results = ref<SimpleTimelineItem[]>([])
@@ -35,8 +37,10 @@ const hasFilters = computed(() => {
   )
 })
 
-const isFilterOnlyBrowse = computed(() => !query.value && hasFilters.value)
-const isEmptySearch = computed(() => !query.value && !hasFilters.value)
+const isFilterOnlyBrowse = computed(
+  () => !query.value && hasFilters.value && !searchStore.searchImage,
+)
+const isEmptySearch = computed(() => !query.value && !hasFilters.value && !searchStore.searchImage)
 
 // Date Range ISO Helper
 function urlParamToISO(param: string | undefined, endOfMonth = false): string | undefined {
@@ -53,12 +57,7 @@ function urlParamToISO(param: string | undefined, endOfMonth = false): string | 
   return date.toISOString()
 }
 
-async function executeSearch(isLoadMore = false) {
-  if (!query.value && !hasFilters.value) {
-    results.value = []
-    return
-  }
-
+function getSearchParams(isLoadMore: boolean) {
   if (isLoadMore) {
     if (loadingMore.value || !hasMore.value) return
     loadingMore.value = true
@@ -71,23 +70,34 @@ async function executeSearch(isLoadMore = false) {
     if (results.value.length === 0) showLoadingUI.value = true
     else loadingTimer = setTimeout(() => (showLoadingUI.value = true), 300)
   }
+  return {
+    query: query.value,
+    limit: SEARCH_LIMIT,
+    offset: offset.value,
+    startDate: urlParamToISO(route.query.start as string),
+    endDate: urlParamToISO(route.query.end as string, true),
+    countryCodes: (route.query.countries as string) || '',
+    mediaType: (route.query.type as 'all' | 'photo' | 'video') || 'all',
+    negativeQuery: (route.query.exclude as string) || undefined,
+    faceNames: (route.query.people as string) || '',
+    allFacesRequired: route.query.peopleAnd === '1' ? true : undefined,
+    sortBy: (isFilterOnlyBrowse.value
+      ? 'date'
+      : (route.query.sort as 'date' | 'relevancy') || 'relevancy') as 'date' | 'relevancy',
+  }
+}
+
+async function executeSearch(isLoadMore = false) {
+  if (searchStore.searchImage) return
+  if (!query.value && !hasFilters.value) {
+    results.value = []
+    return
+  }
+
+  const searchParams = getSearchParams(isLoadMore)
+  if (!searchParams) return
 
   try {
-    const searchParams = {
-      query: query.value,
-      limit: SEARCH_LIMIT,
-      offset: offset.value,
-      startDate: urlParamToISO(route.query.start as string),
-      endDate: urlParamToISO(route.query.end as string, true),
-      countryCodes: (route.query.countries as string) || '',
-      mediaType: (route.query.type as 'all' | 'photo' | 'video') || 'all',
-      negativeQuery: (route.query.exclude as string) || undefined,
-      faceNames: (route.query.people as string) || '',
-      allFacesRequired: route.query.peopleAnd === '1' ? true : undefined,
-      sortBy: (isFilterOnlyBrowse.value
-        ? 'date'
-        : (route.query.sort as 'date' | 'relevancy') || 'relevancy') as 'date' | 'relevancy',
-    }
     const key = JSON.stringify(searchParams)
     let items: SimpleTimelineItem[] = []
 
@@ -99,6 +109,39 @@ async function executeSearch(isLoadMore = false) {
       console.log('SearchPage results', items)
       requestIdleCallback(() => searchCache.set(key, items))
     }
+
+    if (isLoadMore) {
+      results.value = [...results.value, ...items]
+    } else {
+      results.value = items
+    }
+
+    hasMore.value = items.length === SEARCH_LIMIT
+    offset.value += items.length
+  } catch (e) {
+    snackStore.error('Could not perform search', e)
+  } finally {
+    if (loadingTimer) clearTimeout(loadingTimer)
+    loading.value = false
+    loadingMore.value = false
+    showLoadingUI.value = false
+  }
+}
+
+async function executeImageSearch(isLoadMore = false) {
+  if (!searchStore.searchImage) return
+
+  const searchParams = getSearchParams(isLoadMore)
+  if (!searchParams) return
+
+  try {
+    let items: SimpleTimelineItem[] = []
+    // todo cache results by UUID or something, link image to UUID
+
+    searchParams.query = 'barefoot'
+    const response = await searchService.searchByImage(searchStore.searchImage, searchParams)
+    items = response.items
+    console.log('[IMAGE] SearchPage results', items)
 
     if (isLoadMore) {
       results.value = [...results.value, ...items]
@@ -139,7 +182,7 @@ watch(
     :timeline-items="showLoadingUI ? [] : results"
     view-link="/search/view/"
     :loading-more="loadingMore"
-    @load-more="executeSearch(true)"
+    @load-more="searchStore.searchImage ? executeImageSearch(true) : executeSearch(true)"
   >
     <div class="search-options">
       <h2 class="search-query-title">
@@ -148,10 +191,12 @@ watch(
           Search for “<span class="search-query-highlight">{{ query }}</span
           >”
         </template>
+        <template v-else-if="searchStore.searchImage">Image results</template>
         <template v-else-if="hasFilters">Filtered results</template>
         <template v-else>Search</template>
       </h2>
       <v-spacer />
+      <v-btn @click="executeImageSearch()">do it</v-btn>
       <search-filter-menu />
     </div>
     <div class="search-margin"></div>
