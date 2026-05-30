@@ -87,7 +87,7 @@ function getSearchParams(isLoadMore: boolean) {
   }
 }
 
-async function executeSearch(isLoadMore = false) {
+async function executeTextSearch(isLoadMore = false) {
   if (searchStore.searchImage) return
   if (!query.value && !hasFilters.value) {
     results.value = []
@@ -138,7 +138,6 @@ async function executeImageSearch(isLoadMore = false) {
     let items: SimpleTimelineItem[] = []
     // todo cache results by UUID or something, link image to UUID
 
-    searchParams.query = 'barefoot'
     const response = await searchService.searchByImage(searchStore.searchImage, searchParams)
     items = response.items
     console.log('[IMAGE] SearchPage results', items)
@@ -161,8 +160,13 @@ async function executeImageSearch(isLoadMore = false) {
   }
 }
 
+function executeSearch(isLoadMore = false) {
+  if (!searchStore.searchImage) return executeTextSearch(isLoadMore)
+  return executeImageSearch(isLoadMore)
+}
+
 onMounted(() => {
-  if (query.value || hasFilters.value) {
+  if (query.value || hasFilters.value || searchStore.searchImage) {
     executeSearch()
   }
 })
@@ -175,6 +179,13 @@ watch(
   () => route.query,
   () => executeSearch(false),
 )
+
+watch(
+  () => searchStore.searchImage,
+  () => {
+    if (searchStore.searchImage) return executeSearch(false)
+  },
+)
 </script>
 
 <template>
@@ -182,7 +193,7 @@ watch(
     :timeline-items="showLoadingUI ? [] : results"
     view-link="/search/view/"
     :loading-more="loadingMore"
-    @load-more="searchStore.searchImage ? executeImageSearch(true) : executeSearch(true)"
+    @load-more="executeSearch"
   >
     <div class="search-options">
       <h2 class="search-query-title">
@@ -191,16 +202,25 @@ watch(
           Search for “<span class="search-query-highlight">{{ query }}</span
           >”
         </template>
-        <template v-else-if="searchStore.searchImage">Image results</template>
+        <template v-else-if="searchStore.searchImage">
+          Images similar to
+          <img
+            class="image-preview"
+            v-if="searchStore.imagePreview"
+            :src="searchStore.imagePreview"
+            height="50"
+            width="auto"
+            alt="Search image"
+          />
+        </template>
         <template v-else-if="hasFilters">Filtered results</template>
         <template v-else>Search</template>
       </h2>
       <v-spacer />
-      <v-btn @click="executeImageSearch()">do it</v-btn>
       <search-filter-menu />
     </div>
     <div class="search-margin"></div>
-    <div v-if="isEmptySearch && !showLoadingUI" class="search-empty-state">
+    <div v-if="isEmptySearch && !showLoadingUI && results.length === 0" class="search-empty-state">
       <v-icon icon="mdi-magnify" size="100" class="mb-4 search-empty-icon" />
       <h2>Start a search</h2>
       <p>Enter a term in the search bar above, or use filters to browse your library.</p>
@@ -245,6 +265,16 @@ watch(
   white-space: nowrap;
   padding-right: 15px;
   margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.image-preview {
+  margin-top: -10px;
+  margin-bottom: -10px;
+  margin-left: 20px;
+  border-radius: 7px;
+  border: 2px solid rgba(var(--v-theme-on-surface), 0.25) !important;
 }
 
 .search-query-icon {

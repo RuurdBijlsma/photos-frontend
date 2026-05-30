@@ -21,7 +21,6 @@ const searchContainer = useTemplateRef('searchContainer')
 
 const query = ref('')
 const results = ref<SimpleTimelineItem[]>([])
-const imagePreview = ref<string | null>(null)
 
 type SearchBarSuggestionType = SuggestionType | 'HISTORY'
 
@@ -346,19 +345,6 @@ onMounted(() => {
 })
 
 watch(
-  () => searchStore.searchImage,
-  () => {
-    if (searchStore.searchImage) {
-      imagePreview.value = URL.createObjectURL(searchStore.searchImage)
-    } else if (imagePreview.value) {
-      URL.revokeObjectURL(imagePreview.value)
-      imagePreview.value = null
-    }
-  },
-  { immediate: true },
-)
-
-watch(
   () => [route.path, route.query.query],
   ([newPath, newQuery]) => {
     isFocused.value = false
@@ -400,7 +386,12 @@ watch(
               "
             ></v-icon>
           </span>
-          <img v-if="imagePreview" :src="imagePreview" class="image-preview" alt="Search image" />
+          <img
+            v-if="searchStore.imagePreview"
+            :src="searchStore.imagePreview"
+            class="image-preview"
+            alt="Search image"
+          />
           <v-text-field
             ref="searchInput"
             v-model="query"
