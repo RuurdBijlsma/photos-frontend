@@ -32,7 +32,12 @@ const startDateMenu = ref(false)
 const endDateMenu = ref(false)
 
 const trackRef = ref<HTMLElement | null>(null)
-const activeHandle = ref<'left' | 'right' | null>(null)
+const activeHandle = ref<'left' | 'right' | 'range' | null>(null)
+const dragStart = ref<{
+  clientX: number
+  leftIndex: number
+  rightIndex: number
+} | null>(null)
 
 // Fetch timeline ratios if not loaded
 onMounted(async () => {
@@ -173,9 +178,43 @@ watch(
 )
 
 // Drag event handlers
+function getIndexForClientX(clientX: number) {
+  if (!trackRef.value || chronologicalRatios.value.length === 0) return null
+  const rect = trackRef.value.getBoundingClientRect()
+  const pct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))
+  const N = chronologicalRatios.value.length
+  return Math.round((pct / 100) * (N - 1))
+}
+
+function resolveOverlappedHandle(target: 'left' | 'right', clientX: number) {
+  if (!trackRef.value || leftIndex.value !== rightIndex.value) return target
+
+  const maxIndex = Math.max(0, chronologicalRatios.value.length - 1)
+  if (leftIndex.value === maxIndex) return 'left'
+  if (rightIndex.value === 0) return 'right'
+
+  const rect = trackRef.value.getBoundingClientRect()
+  const centerX = rect.left + (leftIndex.value / totalIntervals.value) * rect.width
+  return clientX <= centerX ? 'left' : 'right'
+}
+
 function handleTrackMouseDown(e: MouseEvent, target: 'left' | 'right') {
   e.preventDefault()
-  activeHandle.value = target
+  activeHandle.value = resolveOverlappedHandle(target, e.clientX)
+  dragStart.value = null
+
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mouseup', onMouseUp)
+}
+
+function handleRangeMouseDown(e: MouseEvent) {
+  e.preventDefault()
+  activeHandle.value = 'range'
+  dragStart.value = {
+    clientX: e.clientX,
+    leftIndex: leftIndex.value,
+    rightIndex: rightIndex.value,
+  }
 
   window.addEventListener('mousemove', onMouseMove)
   window.addEventListener('mouseup', onMouseUp)
@@ -183,10 +222,8 @@ function handleTrackMouseDown(e: MouseEvent, target: 'left' | 'right') {
 
 function onMouseMove(e: MouseEvent) {
   if (!trackRef.value || chronologicalRatios.value.length === 0 || !activeHandle.value) return
-  const rect = trackRef.value.getBoundingClientRect()
-  const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
-  const N = chronologicalRatios.value.length
-  const index = Math.round((pct / 100) * (N - 1))
+  const index = getIndexForClientX(e.clientX)
+  if (index === null) return
 
   if (activeHandle.value === 'left') {
     // Clamp so left handle can never pass right handle
@@ -204,11 +241,29 @@ function onMouseMove(e: MouseEvent) {
       endGranularity.value = 'month'
       updateRange(true) // dragging
     }
+  } else if (activeHandle.value === 'range' && dragStart.value) {
+    const width = dragStart.value.rightIndex - dragStart.value.leftIndex
+    const startIndex = getIndexForClientX(dragStart.value.clientX)
+    if (startIndex === null) return
+
+    const maxLeft = Math.max(0, chronologicalRatios.value.length - 1 - width)
+    const delta = index - startIndex
+    const newLeft = Math.max(0, Math.min(maxLeft, dragStart.value.leftIndex + delta))
+    const newRight = newLeft + width
+
+    if (newLeft !== leftIndex.value || newRight !== rightIndex.value) {
+      leftIndex.value = newLeft
+      rightIndex.value = newRight
+      startGranularity.value = 'month'
+      endGranularity.value = 'month'
+      updateRange(true) // dragging
+    }
   }
 }
 
 function onMouseUp() {
   activeHandle.value = null
+  dragStart.value = null
   window.removeEventListener('mousemove', onMouseMove)
   window.removeEventListener('mouseup', onMouseUp)
   updateRange(false) // final change
@@ -217,7 +272,25 @@ function onMouseUp() {
 // Touch event handlers for mobile devices
 function handleTrackTouchStart(e: TouchEvent, target: 'left' | 'right') {
   e.preventDefault() // prevent simulated mouse events
-  activeHandle.value = target
+  const touch = e.touches[0]
+  activeHandle.value = touch ? resolveOverlappedHandle(target, touch.clientX) : target
+  dragStart.value = null
+
+  window.addEventListener('touchmove', onTouchMove)
+  window.addEventListener('touchend', onTouchEnd)
+}
+
+function handleRangeTouchStart(e: TouchEvent) {
+  e.preventDefault() // prevent simulated mouse events
+  const touch = e.touches[0]
+  if (!touch) return
+
+  activeHandle.value = 'range'
+  dragStart.value = {
+    clientX: touch.clientX,
+    leftIndex: leftIndex.value,
+    rightIndex: rightIndex.value,
+  }
 
   window.addEventListener('touchmove', onTouchMove)
   window.addEventListener('touchend', onTouchEnd)
@@ -232,10 +305,8 @@ function onTouchMove(e: TouchEvent) {
   )
     return
   const touch = e.touches[0]!
-  const rect = trackRef.value.getBoundingClientRect()
-  const pct = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100))
-  const N = chronologicalRatios.value.length
-  const index = Math.round((pct / 100) * (N - 1))
+  const index = getIndexForClientX(touch.clientX)
+  if (index === null) return
 
   if (activeHandle.value === 'left') {
     // Clamp so left handle can never pass right handle
@@ -253,11 +324,29 @@ function onTouchMove(e: TouchEvent) {
       endGranularity.value = 'month'
       updateRange(true)
     }
+  } else if (activeHandle.value === 'range' && dragStart.value) {
+    const width = dragStart.value.rightIndex - dragStart.value.leftIndex
+    const startIndex = getIndexForClientX(dragStart.value.clientX)
+    if (startIndex === null) return
+
+    const maxLeft = Math.max(0, chronologicalRatios.value.length - 1 - width)
+    const delta = index - startIndex
+    const newLeft = Math.max(0, Math.min(maxLeft, dragStart.value.leftIndex + delta))
+    const newRight = newLeft + width
+
+    if (newLeft !== leftIndex.value || newRight !== rightIndex.value) {
+      leftIndex.value = newLeft
+      rightIndex.value = newRight
+      startGranularity.value = 'month'
+      endGranularity.value = 'month'
+      updateRange(true)
+    }
   }
 }
 
 function onTouchEnd() {
   activeHandle.value = null
+  dragStart.value = null
   window.removeEventListener('touchmove', onTouchMove)
   window.removeEventListener('touchend', onTouchEnd)
   updateRange(false)
@@ -513,10 +602,13 @@ function clearFilter() {
             <!-- Selected Range Highlight -->
             <div
               class="slider-highlight"
+              :class="{ 'is-dragging': activeHandle === 'range' }"
               :style="{
                 left: `${(leftIndex / totalIntervals) * 100}%`,
                 right: `${100 - (rightIndex / totalIntervals) * 100}%`,
               }"
+              @mousedown="handleRangeMouseDown"
+              @touchstart="handleRangeTouchStart"
             ></div>
 
             <!-- Left Handle (Start Date) -->
@@ -699,7 +791,14 @@ function clearFilter() {
   bottom: 12px; /* aligns above the anchor handles */
   background-color: rgba(var(--v-theme-primary), 0.08);
   border-radius: 4px;
-  pointer-events: none;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 5;
+}
+
+.slider-highlight.is-dragging {
+  cursor: grabbing;
 }
 
 .slider-handle {
@@ -711,6 +810,7 @@ function clearFilter() {
   cursor: ew-resize;
   pointer-events: auto; /* let user drag handles */
   z-index: 10;
+  touch-action: none;
   display: flex;
   flex-direction: column;
   align-items: center;
