@@ -4,8 +4,12 @@ import SnackbarQueue from '@/vues/components/SnackbarQueue.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { watch } from 'vue'
 import DialogQueue from '@/vues/components/DialogQueue.vue'
+import { useThemeStore } from '@/scripts/stores/themeStore.ts'
 
 const settings = useSettingStore()
+const themeStore = useThemeStore()
+
+themeStore.initThemeSync()
 
 watch(
   () => settings.useBackdropBlur,

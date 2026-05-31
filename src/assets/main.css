@@ -66,3 +66,10 @@ h3,
 p {
   margin: 5px 0;
 }
+
+
+
+.v-time-picker-clock,
+.v-time-picker-controls__time__field .v-field {
+  background-color: rgba(var(--v-theme-primary), 0.1);
+}

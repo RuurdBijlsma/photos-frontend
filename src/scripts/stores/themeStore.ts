@@ -1,25 +1,19 @@
-import { type Ref, ref } from 'vue'
+import { type Ref, ref, watch, onBeforeUnmount } from 'vue'
 import { defineStore } from 'pinia'
 import type { ThemeDefinition } from 'vuetify'
 import type { DynamicScheme, Palette, Theme } from '@/scripts/types/themeColor.ts'
 import { useTheme } from 'vuetify/framework'
+import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { useSunStore } from '@/scripts/stores/sunStore.ts'
 
 type VuetifyColors = ThemeDefinition['colors']
 
-/**
- * Generates and adds lighten/darken color variations to the theme.
- * @param {VuetifyColors} colors - The colors object to modify. Can be undefined.
- * @param {string} name - The color name ('primary', 'secondary', etc.).
- * @param {Palette} palette - The color's corresponding palette.
- * @param {boolean} isDark - Whether the theme is dark or not.
- */
 export function generateColorVariations(
   colors: VuetifyColors,
   name: string,
   palette: Palette,
   isDark: boolean,
 ) {
-  // Ensure colors object exists before modifying it.
   if (!colors) return
 
   if (isDark) {
@@ -40,20 +34,19 @@ export function generateColorVariations(
 }
 
 /**
- * Transforms your backend's scheme into a Vuetify ThemeDefinition object.
+ * Transforms mcu scheme into a Vuetify ThemeDefinition object.
  * @param {DynamicScheme} scheme - The light or dark scheme from your types.
  * @param isDark is dark
  * @returns {ThemeDefinition} A complete Vuetify theme definition.
  */
 export function transformToVuetifyTheme(scheme: DynamicScheme, isDark: boolean): ThemeDefinition {
-  // Map the scheme from your backend to Vuetify's expected color properties.
   const colors: VuetifyColors = {
     background: scheme.background,
     surface: scheme.surface,
     primary: scheme.primary,
     secondary: scheme.secondary,
     tertiary: scheme.tertiary,
-    'on-background': scheme.on_surface, // Map on_surface to on_background
+    'on-background': scheme.on_surface,
     'on-surface': scheme.on_surface,
     'on-primary': scheme.on_primary,
     'on-secondary': scheme.on_secondary,
@@ -91,7 +84,6 @@ export function transformToVuetifyTheme(scheme: DynamicScheme, isDark: boolean):
     'surface-light': scheme.surface_tint,
   }
 
-  // Generate and inject the lighten/darken variations.
   generateColorVariations(colors, 'primary', scheme.primary_palette, scheme.is_dark)
   generateColorVariations(colors, 'secondary', scheme.secondary_palette, scheme.is_dark)
   generateColorVariations(colors, 'tertiary', scheme.tertiary_palette, scheme.is_dark)
@@ -125,7 +117,12 @@ export const useThemeStore = defineStore('theme', () => {
   const currentTheme: Ref<{ light: ThemeDefinition; dark: ThemeDefinition } | null> = ref(null)
   const vuetifyTheme = useTheme()
 
-  // --- ACTION ---
+  const settings = useSettingStore()
+  const sun = useSunStore()
+  let isInitialized = false
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  // --- ACTIONS ---
 
   function themeFromJson(
     themeData: Theme,
@@ -139,7 +136,6 @@ export const useThemeStore = defineStore('theme', () => {
     const lightTheme = transformToVuetifyTheme(schemes.light, false)
     const darkTheme = transformToVuetifyTheme(schemes.dark, true)
 
-    // Update the Pinia state
     return { light: lightTheme, dark: darkTheme }
   }
 
@@ -161,11 +157,175 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
+  /**
+   * Plans a single setTimeout execution targeting the next upcoming transition point (sunset or sunrise)
+   */
+  function scheduleNextTransition() {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+      timeoutId = null
+    }
+
+    if (settings.themeString !== 'schedule') {
+      return
+    }
+
+    const now = new Date()
+    let nextTransition: Date | null = null
+
+    if (settings.useSunSchedule) {
+      const sunrise = sun.sunrise
+      const sunset = sun.sunset
+
+      if (sunrise && sunset) {
+        // Find upcoming sunrise
+        const nextSunrise = new Date(sunrise)
+        while (nextSunrise <= now) {
+          nextSunrise.setDate(nextSunrise.getDate() + 1)
+        }
+
+        // Find upcoming sunset
+        const nextSunset = new Date(sunset)
+        while (nextSunset <= now) {
+          nextSunset.setDate(nextSunset.getDate() + 1)
+        }
+
+        nextTransition = nextSunrise < nextSunset ? nextSunrise : nextSunset
+      } else {
+        // If sun data is still loading, verify again in 5 seconds
+        timeoutId = setTimeout(() => {
+          updateActiveTheme()
+        }, 5000)
+        return
+      }
+    } else {
+      const lightTime = settings.enableLightThemeTime || '07:00'
+      const darkTime = settings.enableDarkThemeTime || '19:00'
+
+      const getNextTransitionDate = (timeStr: string) => {
+        const [h, m] = timeStr.split(':').map(Number)
+        const d = new Date()
+        d.setHours(h, m, 0, 0)
+        while (d <= now) {
+          d.setDate(d.getDate() + 1)
+        }
+        return d
+      }
+
+      const nextLight = getNextTransitionDate(lightTime)
+      const nextDark = getNextTransitionDate(darkTime)
+      nextTransition = nextLight < nextDark ? nextLight : nextDark
+    }
+
+    if (nextTransition) {
+      const delay = nextTransition.getTime() - now.getTime()
+      // Minimum safe boundary of 1 second to safeguard against infinite loop re-evaluation
+      const safeDelay = Math.max(delay, 1000)
+
+      timeoutId = setTimeout(() => {
+        updateActiveTheme()
+      }, safeDelay)
+    }
+  }
+
+  /**
+   * Applies the theme matching current configurations and schedules the next change event.
+   */
+  function updateActiveTheme() {
+    const themeType = settings.themeString
+
+    if (themeType === 'light') {
+      vuetifyTheme.change('light')
+    } else if (themeType === 'dark') {
+      vuetifyTheme.change('dark')
+    } else if (themeType === 'system') {
+      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      vuetifyTheme.change(isSystemDark ? 'dark' : 'light')
+    } else if (themeType === 'schedule') {
+      const now = new Date()
+      let isDark = false
+
+      if (settings.useSunSchedule) {
+        const sunrise = sun.sunrise
+        const sunset = sun.sunset
+
+        if (sunrise && sunset) {
+          const nowMin = now.getHours() * 60 + now.getMinutes()
+          const riseMin = sunrise.getHours() * 60 + sunrise.getMinutes()
+          const setMin = sunset.getHours() * 60 + sunset.getMinutes()
+
+          if (riseMin < setMin) {
+            isDark = nowMin < riseMin || nowMin >= setMin
+          } else {
+            isDark = nowMin >= setMin && nowMin < riseMin
+          }
+        } else {
+          const nowHour = now.getHours()
+          isDark = nowHour < 6 || nowHour >= 18
+        }
+      } else {
+        const lightTime = settings.enableLightThemeTime || '07:00'
+        const darkTime = settings.enableDarkThemeTime || '19:00'
+
+        const [lightH, lightM] = lightTime.split(':').map(Number)
+        const [darkH, darkM] = darkTime.split(':').map(Number)
+
+        const lightMin = lightH * 60 + lightM
+        const darkMin = darkH * 60 + darkM
+        const nowMin = now.getHours() * 60 + now.getMinutes()
+
+        if (lightMin < darkMin) {
+          isDark = nowMin < lightMin || nowMin >= darkMin
+        } else {
+          isDark = nowMin >= darkMin && nowMin < lightMin
+        }
+      }
+      vuetifyTheme.change(isDark ? 'dark' : 'light')
+    }
+
+    scheduleNextTransition()
+  }
+
+  function initThemeSync() {
+    if (isInitialized) return
+    isInitialized = true
+
+    watch(
+      [
+        () => settings.themeString,
+        () => settings.useSunSchedule,
+        () => settings.enableLightThemeTime,
+        () => settings.enableDarkThemeTime,
+        () => sun.sunrise,
+        () => sun.sunset,
+      ],
+      () => {
+        updateActiveTheme()
+      },
+      { immediate: true },
+    )
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const systemThemeListener = () => {
+      if (settings.themeString === 'system') {
+        updateActiveTheme()
+      }
+    }
+    mediaQuery.addEventListener('change', systemThemeListener)
+
+    onBeforeUnmount(() => {
+      mediaQuery.removeEventListener('change', systemThemeListener)
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    })
+  }
+
   return {
-    // State
     currentTheme,
-    // Actions
     setThemesFromJson,
     themeFromJson,
+    updateActiveTheme,
+    initThemeSync,
   }
 })
