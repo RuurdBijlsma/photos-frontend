@@ -3,11 +3,13 @@ import { ref, watch } from 'vue'
 
 export const useSearchStore = defineStore('search', () => {
   const searchImage = ref<File | null>(null)
+  const searchImageSessionId = ref<string | null>(null)
   const imagePreview = ref<string | null>(null)
 
   watch(
     searchImage,
     (newFile) => {
+      searchImageSessionId.value = null
       if (imagePreview.value) {
         URL.revokeObjectURL(imagePreview.value)
         imagePreview.value = null
@@ -21,6 +23,7 @@ export const useSearchStore = defineStore('search', () => {
 
   return {
     searchImage,
+    searchImageSessionId,
     imagePreview,
   }
 })

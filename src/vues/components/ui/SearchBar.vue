@@ -258,9 +258,14 @@ function handlePaste(e: ClipboardEvent) {
   }
 }
 
+function clearImageState() {
+  searchStore.searchImage = null
+  results.value = []
+}
+
 function clearImage(focus: boolean = true) {
   if (searchStore.searchImage) {
-    searchStore.searchImage = null
+    clearImageState()
     if (focus) {
       isFocused.value = true
       setTimeout(() => {
@@ -280,7 +285,6 @@ function clearImage(focus: boolean = true) {
       query: nextQuery,
     })
   }
-  results.value = []
 }
 
 function submitImage(file: File) {
@@ -358,7 +362,7 @@ watch(
     isFocused.value = false
     if (newPath && !newPath.toString().startsWith('/search')) {
       query.value = ''
-      clearImage(false)
+      clearImageState()
     } else {
       query.value = newQuery ? newQuery.toString() : ''
     }

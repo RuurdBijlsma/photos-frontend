@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useRoute } from 'vue-router'
 import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
@@ -102,7 +102,13 @@ async function executeSearch(isLoadMore = false) {
 
     if (searchStore.searchImage) {
       // Execute Image Search
-      const response = await searchService.searchByImage(searchStore.searchImage, searchParams)
+      const imageFile = searchStore.searchImage
+      const response = searchStore.searchImageSessionId
+        ? await searchService.searchByImageSession(searchStore.searchImageSessionId, searchParams)
+        : await searchService.searchByImage(imageFile, searchParams)
+      if (!searchStore.searchImageSessionId && searchStore.searchImage === imageFile) {
+        searchStore.searchImageSessionId = response.sessionId ?? null
+      }
       items = response.items
       console.log('[IMAGE] SearchPage results', response)
     } else {
