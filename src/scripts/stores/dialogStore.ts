@@ -51,7 +51,7 @@ export const useDialogStore = defineStore('dialog', () => {
   }
 
   function alert(options: DialogOptions | string): Promise<void> {
-    const opts = typeof options === 'string' ? { title: options } : options
+    const opts = typeof options === 'string' ? { title: 'Alert', description: options } : options
     return new Promise((resolve) => {
       queue.value.push({ id: crypto.randomUUID(), type: 'alert', options: opts, resolve })
       processQueue()

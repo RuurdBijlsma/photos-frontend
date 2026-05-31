@@ -164,3 +164,7 @@ export function useObjStorage<T>(
     serializer: StorageSerializers.object,
   })
 }
+
+export function caps(str: string) {
+  return str[0].toUpperCase() + str.slice(1)
+}

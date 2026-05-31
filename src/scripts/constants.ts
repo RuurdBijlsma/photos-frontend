@@ -69,3 +69,6 @@ export const WEATHER_ICONS: Record<string, string | { day: string; night: string
 
   Storm: 'wind_day_night.svg',
 }
+
+export const themeOptions = ['light', 'dark', 'system', 'schedule']
+export type ThemeType = (typeof themeOptions)[number]
