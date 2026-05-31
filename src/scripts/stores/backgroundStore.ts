@@ -9,7 +9,6 @@ import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
 // The single key we will use for localStorage
 const BG_CACHE_KEY = 'cachedBackgroundData'
-const COLOR_CACHE_KEY = 'cacheColorData'
 const DEFAULT_IMAGE_URL = '/img/etna.jpg'
 
 export const useBackgroundStore = defineStore('background', () => {
@@ -58,26 +57,18 @@ export const useBackgroundStore = defineStore('background', () => {
     }
   }
 
-  const fetchColorTheme = async (color = settings.customThemeColor) => {
+  async function fetchColorTheme(
+    color = settings.customThemeColor,
+    variant = settings.customThemeVariant,
+  ) {
     // Check variable
-    if (colorTheme.value && colorTheme.value.source === color) {
+    if (colorTheme.value && colorTheme.value.source && colorTheme.value.variant === variant) {
       return colorTheme.value
-    }
-
-    // Check localStorage
-    const localItem = localStorage.getItem(COLOR_CACHE_KEY)
-    if (localItem !== null) {
-      const data = JSON.parse(localItem) as { color: string; theme: Theme }
-      if (data.color === color) {
-        colorTheme.value = data.theme
-        return data.theme
-      }
     }
 
     // Get from API
     try {
-      const { data } = await mediaItemService.getTheme(color)
-      localStorage.setItem(COLOR_CACHE_KEY, JSON.stringify({ color, theme: data }))
+      const { data } = await mediaItemService.getTheme(color, variant)
       colorTheme.value = data
       return data
     } catch (e) {
@@ -106,13 +97,18 @@ export const useBackgroundStore = defineStore('background', () => {
     return null
   }
 
-  const setCorrectTheme = async () => {
+  async function setCorrectTheme() {
     const theme = settings.imageBackground ? getBackgroundTheme() : await fetchColorTheme()
     if (theme) themeStore.setThemesFromJson(theme)
   }
 
   watch(
     () => settings.customThemeColor,
+    () => setCorrectTheme(),
+  )
+
+  watch(
+    () => settings.customThemeVariant,
     () => setCorrectTheme(),
   )
 

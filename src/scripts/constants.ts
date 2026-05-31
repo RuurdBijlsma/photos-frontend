@@ -71,4 +71,37 @@ export const WEATHER_ICONS: Record<string, string | { day: string; night: string
 }
 
 export const themeOptions = ['light', 'dark', 'system', 'schedule']
-export type ThemeType = (typeof themeOptions)[number]
+export type ThemeType = 'light' | 'dark' | 'system' | 'schedule'
+
+export const themeVariantOptions = [
+  /// grayscale
+  'Monochrome',
+  /// near-neutral palette
+  'Neutral',
+  /// calm, sedated colors
+  'TonalSpot',
+  ///  highly saturated
+  'Vibrant',
+  /// highly colorful, playful
+  'Expressive',
+  /// maximally faithful to source color
+  'Fidelity',
+  /// colors derived closely from the source color
+  'Content',
+  /// rainbow-like palette
+  'Rainbow',
+  /// multiple hues
+  'FruitSalad',
+  'Cmf',
+]
+export type ThemeVariant =
+  | 'Monochrome'
+  | 'Neutral'
+  | 'TonalSpot'
+  | 'Vibrant'
+  | 'Expressive'
+  | 'Fidelity'
+  | 'Content'
+  | 'Rainbow'
+  | 'FruitSalad'
+  | 'Cmf'

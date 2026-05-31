@@ -41,21 +41,27 @@ async function logout() {
           </v-btn>
         </template>
         <div class="menu-container">
-          <v-sheet color="surface-variant" class="pb-5">
-            <div class="menu-header" v-if="authStore.user">
-              <div class="user-icon">
-                <user-avatar
-                  v-if="authStore.user"
-                  :name="authStore.user.name"
-                  :avatar-id="authStore.user.avatarId"
-                />
+          <router-link
+            v-if="authStore.user"
+            :to="`/user/${authStore.user.id}/${encodeURIComponent(authStore.user.name)}`"
+          >
+            <v-sheet color="surface-variant" class="pb-5" v-ripple to="/profile">
+              <div class="menu-header">
+                <div class="user-icon">
+                  <user-avatar
+                    size="50"
+                    v-if="authStore.user"
+                    :name="authStore.user.name"
+                    :avatar-id="authStore.user.avatarId"
+                  />
+                </div>
+                <div class="user-info">
+                  <p class="user-name">{{ authStore.user.name }}</p>
+                  <p class="user-email">{{ authStore.user.email }}</p>
+                </div>
               </div>
-              <div class="user-info">
-                <p class="user-name">{{ authStore.user.name }}</p>
-                <p class="user-email">{{ authStore.user.email }}</p>
-              </div>
-            </div>
-          </v-sheet>
+            </v-sheet>
+          </router-link>
           <v-list bg-color="surface-container">
             <v-list-item>
               <div class="mt-1 theme-container">
@@ -138,6 +144,12 @@ async function logout() {
 .menu-container {
   border-radius: 20px;
   overflow: hidden;
+  user-select: none;
+  box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.3);
+}
+
+.menu-container > * {
+  text-decoration: none !important;
 }
 
 .theme-container {
