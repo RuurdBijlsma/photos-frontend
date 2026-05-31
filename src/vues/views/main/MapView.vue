@@ -770,7 +770,12 @@ onUnmounted(() => {
         </div>
 
         <!-- Date Range Filter -->
-        <map-date-filter :theme="currentStyle === 'DARK_COLORFUL' ? 'dark' : 'light'" v-if="mapPhotos" v-model="dateFilter" @change="handleDateFilterChange" />
+        <map-date-filter
+          :theme="currentStyle === 'DARK_COLORFUL' ? 'dark' : 'light'"
+          v-if="mapPhotos"
+          v-model="dateFilter"
+          @change="handleDateFilterChange"
+        />
 
         <!-- Map Style / Layer Selector -->
         <div
