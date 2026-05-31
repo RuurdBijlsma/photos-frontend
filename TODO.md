@@ -192,7 +192,6 @@
 * preload 1440p thumbnail on grid item hover
 * re-establish ws connection if auth failed and it's refreshed automatically afterwards
 * add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
-* ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
 * idea to fix desync timeline bug:
     * bug: timeline ids/ratios/by month might by out of sync because theyre separate requests
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
@@ -201,5 +200,6 @@
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
 * in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
   button
+* Theme picker in profile v-menu top right (same as ruurd music). Dark | Light | Follow system | Follow schedule
 * [investigate] krijg je ratio/monthItem desync als je de map eerst laad, terwijl de backend foto metadata ingest, en
   dan naar de timeline gaat? Want de map date filter heeft dan al de ratios opgevraagd in de timelineStore.
