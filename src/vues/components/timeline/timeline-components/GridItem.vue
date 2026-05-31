@@ -184,7 +184,6 @@ function selectItem(e: PointerEvent) {
 
 .check-item-selecting {
   display: none;
-  transform: translateY(-2px);
 }
 
 .selecting-overlay {
@@ -248,7 +247,6 @@ function selectItem(e: PointerEvent) {
 
 .check-item {
   display: none;
-  transform: translateY(-2px);
 }
 
 .checkbox:hover .check-item {

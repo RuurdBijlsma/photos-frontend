@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { computed, nextTick, onBeforeUnmount, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineItem, TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
@@ -14,14 +23,15 @@ import SelectionOverlay from '@/vues/components/timeline/timeline-components/Sel
 import DateOverlay from '@/vues/components/timeline/timeline-components/DateOverlay.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
+import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
+const settings = useSettingStore()
 const route = useRoute()
 const router = useRouter()
 
-const IDEAL_ROW_HEIGHT = 320
 const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 2
 const ROW_HEADER_HEIGHT = 76
@@ -194,13 +204,13 @@ function calculateLayout(
     for (const [i, ratio] of ratios.entries()) {
       rowItems.push({ ratio, index: i })
       const gapSize = (rowItems.length - 1) * ITEM_GAP
-      itemsWidth += IDEAL_ROW_HEIGHT * ratio
+      itemsWidth += settings.timelineRowHeight * ratio
       if (itemsWidth + gapSize > containerWidth) {
         const sizeMultiplier = Math.min(
           (containerWidth - gapSize) / itemsWidth,
           MAX_SIZE_MULTIPLIER,
         )
-        const rowHeight = IDEAL_ROW_HEIGHT * sizeMultiplier
+        const rowHeight = settings.timelineRowHeight * sizeMultiplier
         const lastOfTheMonth = i === ratios.length - 1
         layoutRows.push({
           items: rowItems,
@@ -229,7 +239,7 @@ function calculateLayout(
 
     if (rowItems.length > 0) {
       const sizeMultiplier = Math.min(containerWidth / itemsWidth, MAX_SIZE_MULTIPLIER)
-      const rowHeight = IDEAL_ROW_HEIGHT * sizeMultiplier
+      const rowHeight = settings.timelineRowHeight * sizeMultiplier
       layoutRows.push({
         items: rowItems,
         height: rowHeight,
@@ -327,17 +337,6 @@ function handleMouseDown(e: MouseEvent) {
   isScrollDragging = true
   updateScrollPosition(e.clientY)
 }
-
-async function initializeViewPhoto() {
-  viewPhotoStore.viewLink = '/view/'
-
-  if (route.name!.toString().startsWith('view-photo')) {
-    await timelineStore.setViewPhotoStoreIds()
-  } else {
-    await requestIdleCallbackAsync(timelineStore.setViewPhotoStoreIds)
-  }
-}
-initializeViewPhoto()
 
 function findRowIndexByMediaId(mediaId: string): number {
   const mediaItemIndex = timelineStore.mediaItemIds.indexOf(mediaId)
@@ -450,6 +449,23 @@ function startRefreshPoll() {
   }, 10000)
 }
 
+async function initializeViewPhoto() {
+  viewPhotoStore.viewLink = '/view/'
+
+  if (route.name!.toString().startsWith('view-photo')) {
+    await timelineStore.setViewPhotoStoreIds()
+  } else {
+    await requestIdleCallbackAsync(timelineStore.setViewPhotoStoreIds)
+  }
+}
+
+onMounted(() => {
+  if (timelineStore.allMonthsPreloaded) {
+    selectionStore.allIds = timelineStore.mediaItemIds
+  }
+  initializeViewPhoto()
+})
+
 onBeforeUnmount(() => {
   clearRefreshPoll()
 })
@@ -543,48 +559,50 @@ watch(
   },
 )
 
-watch([() => timelineStore.monthRatios, containerSize], ([, oldSize], [, newSize]) => {
-  const now = performance.now()
-  const { rows, scrollYears, scrollMonths, totalHeight } = calculateLayout(
-    timelineStore.monthRatios,
-    containerSize.value.width,
-    'desc',
-  )
-  console.log('calculateLayout', performance.now() - now, 'ms')
-  scrollLabels.value = {
-    months: scrollMonths,
-    years: scrollYears,
-    totalHeight,
-  }
-  gridLayout.value = rows
-  scrollHeight.value = totalHeight
+watch(
+  [() => timelineStore.monthRatios, containerSize, () => settings.timelineRowHeight],
+  ([, oldSize], [, newSize]) => {
+    const now = performance.now()
+    const { rows, scrollYears, scrollMonths, totalHeight } = calculateLayout(
+      timelineStore.monthRatios,
+      containerSize.value.width,
+      'desc',
+    )
+    console.log('calculateLayout', performance.now() - now, 'ms')
+    scrollLabels.value = {
+      months: scrollMonths,
+      years: scrollYears,
+      totalHeight,
+    }
+    gridLayout.value = rows
+    scrollHeight.value = totalHeight
 
-  const isResize = newSize.width !== 0 && oldSize.width !== 0 && oldSize.width !== newSize.width
+    const isResize = newSize.width !== 0 && oldSize.width !== 0 && oldSize.width !== newSize.width
 
-  if (isResize) {
-    if (timelineStore.mediaIdInView) {
-      if (resizeAnchor === null) {
-        resizeAnchor = timelineStore.mediaIdInView
+    if (isResize) {
+      if (timelineStore.mediaIdInView) {
+        if (resizeAnchor === null) {
+          resizeAnchor = timelineStore.mediaIdInView
+        }
+        if (resizeRafId !== null) cancelAnimationFrame(resizeRafId)
+        resizeRafId = requestAnimationFrame(lockResize)
       }
-      if (resizeRafId !== null) cancelAnimationFrame(resizeRafId)
-      resizeRafId = requestAnimationFrame(lockResize)
-    }
-    resetResizeAnchorDb()
-  } else {
-    console.warn(route.query.highlight === undefined)
-    if (timelineStore.mediaIdInView && route.query.highlight === undefined) {
-      console.info('Restoring scroll position to media item:', timelineStore.mediaIdInView)
-      const mediaItemInViewId = timelineStore.mediaIdInView
-      nextTick(() => {
-        scrollToMediaId(mediaItemInViewId, {
-          type: 'offset',
-          align: 'start',
-          behavior: 'auto',
+      resetResizeAnchorDb()
+    } else {
+      if (timelineStore.mediaIdInView && route.query.highlight === undefined) {
+        console.info('Restoring scroll position to media item:', timelineStore.mediaIdInView)
+        const mediaItemInViewId = timelineStore.mediaIdInView
+        nextTick(() => {
+          scrollToMediaId(mediaItemInViewId, {
+            type: 'offset',
+            align: 'start',
+            behavior: 'auto',
+          })
         })
-      })
+      }
     }
-  }
-})
+  },
+)
 
 watch(
   monthInView,

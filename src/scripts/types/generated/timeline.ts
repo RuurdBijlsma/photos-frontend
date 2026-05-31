@@ -12,6 +12,7 @@ export const protobufPackage = 'api'
 export enum SuggestionType {
   SEARCH = 0,
   ALBUM = 1,
+  PERSON = 2,
   UNRECOGNIZED = -1,
 }
 
@@ -23,6 +24,9 @@ export function suggestionTypeFromJSON(object: any): SuggestionType {
     case 1:
     case 'ALBUM':
       return SuggestionType.ALBUM
+    case 2:
+    case 'PERSON':
+      return SuggestionType.PERSON
     case -1:
     case 'UNRECOGNIZED':
     default:
@@ -36,6 +40,8 @@ export function suggestionTypeToJSON(object: SuggestionType): string {
       return 'SEARCH'
     case SuggestionType.ALBUM:
       return 'ALBUM'
+    case SuggestionType.PERSON:
+      return 'PERSON'
     case SuggestionType.UNRECOGNIZED:
     default:
       return 'UNRECOGNIZED'
@@ -114,6 +120,7 @@ export interface AlbumInfo {
 /** --- Search */
 export interface SearchResponse {
   items: SimpleTimelineItem[]
+  sessionId?: string | undefined
 }
 
 export interface SearchSuggestion {
@@ -142,6 +149,17 @@ export interface ListPeopleResponse {
 export interface FullPersonMediaResponse {
   person: PersonInfo | undefined
   items: SimpleTimelineItem[]
+}
+
+/** --- Map specific --- */
+export interface MapPhotoItem {
+  latitude: number
+  longitude: number
+  item: SimpleTimelineItem | undefined
+}
+
+export interface MapPhotosResponse {
+  items: MapPhotoItem[]
 }
 
 function createBaseTimelineRatiosResponse(): TimelineRatiosResponse {
@@ -1287,13 +1305,16 @@ export const AlbumInfo: MessageFns<AlbumInfo> = {
 }
 
 function createBaseSearchResponse(): SearchResponse {
-  return { items: [] }
+  return { items: [], sessionId: undefined }
 }
 
 export const SearchResponse: MessageFns<SearchResponse> = {
   encode(message: SearchResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.items) {
       SimpleTimelineItem.encode(v!, writer.uint32(10).fork()).join()
+    }
+    if (message.sessionId !== undefined) {
+      writer.uint32(18).string(message.sessionId)
     }
     return writer
   },
@@ -1313,6 +1334,14 @@ export const SearchResponse: MessageFns<SearchResponse> = {
           message.items.push(SimpleTimelineItem.decode(reader, reader.uint32()))
           continue
         }
+        case 2: {
+          if (tag !== 18) {
+            break
+          }
+
+          message.sessionId = reader.string()
+          continue
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break
@@ -1327,6 +1356,11 @@ export const SearchResponse: MessageFns<SearchResponse> = {
       items: globalThis.Array.isArray(object?.items)
         ? object.items.map((e: any) => SimpleTimelineItem.fromJSON(e))
         : [],
+      sessionId: isSet(object.sessionId)
+        ? globalThis.String(object.sessionId)
+        : isSet(object.session_id)
+          ? globalThis.String(object.session_id)
+          : undefined,
     }
   },
 
@@ -1334,6 +1368,9 @@ export const SearchResponse: MessageFns<SearchResponse> = {
     const obj: any = {}
     if (message.items?.length) {
       obj.items = message.items.map((e) => SimpleTimelineItem.toJSON(e))
+    }
+    if (message.sessionId !== undefined) {
+      obj.sessionId = message.sessionId
     }
     return obj
   },
@@ -1344,6 +1381,7 @@ export const SearchResponse: MessageFns<SearchResponse> = {
   fromPartial<I extends Exact<DeepPartial<SearchResponse>, I>>(object: I): SearchResponse {
     const message = createBaseSearchResponse()
     message.items = object.items?.map((e) => SimpleTimelineItem.fromPartial(e)) || []
+    message.sessionId = object.sessionId ?? undefined
     return message
   },
 }
@@ -1795,6 +1833,163 @@ export const FullPersonMediaResponse: MessageFns<FullPersonMediaResponse> = {
         ? PersonInfo.fromPartial(object.person)
         : undefined
     message.items = object.items?.map((e) => SimpleTimelineItem.fromPartial(e)) || []
+    return message
+  },
+}
+
+function createBaseMapPhotoItem(): MapPhotoItem {
+  return { latitude: 0, longitude: 0, item: undefined }
+}
+
+export const MapPhotoItem: MessageFns<MapPhotoItem> = {
+  encode(message: MapPhotoItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.latitude !== 0) {
+      writer.uint32(9).double(message.latitude)
+    }
+    if (message.longitude !== 0) {
+      writer.uint32(17).double(message.longitude)
+    }
+    if (message.item !== undefined) {
+      SimpleTimelineItem.encode(message.item, writer.uint32(26).fork()).join()
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MapPhotoItem {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseMapPhotoItem()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 9) {
+            break
+          }
+
+          message.latitude = reader.double()
+          continue
+        }
+        case 2: {
+          if (tag !== 17) {
+            break
+          }
+
+          message.longitude = reader.double()
+          continue
+        }
+        case 3: {
+          if (tag !== 26) {
+            break
+          }
+
+          message.item = SimpleTimelineItem.decode(reader, reader.uint32())
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): MapPhotoItem {
+    return {
+      latitude: isSet(object.latitude) ? globalThis.Number(object.latitude) : 0,
+      longitude: isSet(object.longitude) ? globalThis.Number(object.longitude) : 0,
+      item: isSet(object.item) ? SimpleTimelineItem.fromJSON(object.item) : undefined,
+    }
+  },
+
+  toJSON(message: MapPhotoItem): unknown {
+    const obj: any = {}
+    if (message.latitude !== 0) {
+      obj.latitude = message.latitude
+    }
+    if (message.longitude !== 0) {
+      obj.longitude = message.longitude
+    }
+    if (message.item !== undefined) {
+      obj.item = SimpleTimelineItem.toJSON(message.item)
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<MapPhotoItem>, I>>(base?: I): MapPhotoItem {
+    return MapPhotoItem.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<MapPhotoItem>, I>>(object: I): MapPhotoItem {
+    const message = createBaseMapPhotoItem()
+    message.latitude = object.latitude ?? 0
+    message.longitude = object.longitude ?? 0
+    message.item =
+      object.item !== undefined && object.item !== null
+        ? SimpleTimelineItem.fromPartial(object.item)
+        : undefined
+    return message
+  },
+}
+
+function createBaseMapPhotosResponse(): MapPhotosResponse {
+  return { items: [] }
+}
+
+export const MapPhotosResponse: MessageFns<MapPhotosResponse> = {
+  encode(message: MapPhotosResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.items) {
+      MapPhotoItem.encode(v!, writer.uint32(10).fork()).join()
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MapPhotosResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseMapPhotosResponse()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break
+          }
+
+          message.items.push(MapPhotoItem.decode(reader, reader.uint32()))
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): MapPhotosResponse {
+    return {
+      items: globalThis.Array.isArray(object?.items)
+        ? object.items.map((e: any) => MapPhotoItem.fromJSON(e))
+        : [],
+    }
+  },
+
+  toJSON(message: MapPhotosResponse): unknown {
+    const obj: any = {}
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => MapPhotoItem.toJSON(e))
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<MapPhotosResponse>, I>>(base?: I): MapPhotosResponse {
+    return MapPhotosResponse.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<MapPhotosResponse>, I>>(object: I): MapPhotosResponse {
+    const message = createBaseMapPhotosResponse()
+    message.items = object.items?.map((e) => MapPhotoItem.fromPartial(e)) || []
     return message
   },
 }

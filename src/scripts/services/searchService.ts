@@ -30,6 +30,30 @@ const searchService = {
   filterRanges(): Promise<AxiosResponse<SearchFilterRanges>> {
     return apiClient.get<SearchFilterRanges>('/search/params')
   },
+
+  async searchByImage(imageFile: File, params: SearchParams): Promise<SearchResponse> {
+    const formData = new FormData()
+    formData.append('image', imageFile)
+
+    const response = await apiClient.post('/search/image', formData, {
+      params,
+      responseType: 'arraybuffer',
+      headers: {
+        'Content-Type': undefined,
+      },
+    })
+    const buffer = new Uint8Array(response.data)
+    return SearchResponse.decode(buffer)
+  },
+
+  async searchByImageSession(sessionId: string, params: SearchParams): Promise<SearchResponse> {
+    const response = await apiClient.get(`/search/image/uuid/${sessionId}`, {
+      params,
+      responseType: 'arraybuffer',
+    })
+    const buffer = new Uint8Array(response.data)
+    return SearchResponse.decode(buffer)
+  },
 }
 
 export default searchService

@@ -1,10 +1,11 @@
 import type { AxiosResponse } from 'axios'
 import apiClient from './api.ts'
 import type { RandomPhotoResponse } from '@/scripts/types/api/photos.ts'
-import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
+import type { MediaItemWithAlbums } from '@/scripts/types/api/fullPhoto.ts'
 import type { Theme } from '@/scripts/types/themeColor.ts'
 import type { Album } from '@/scripts/types/api/album.ts'
 import type { UpdateMediaItemRequest } from '@/scripts/types/api/mediaItem.ts'
+import { MapPhotosResponse } from '@/scripts/types/generated/timeline.ts'
 
 const mediaItemService = {
   update(id: string, payload: UpdateMediaItemRequest) {
@@ -41,8 +42,8 @@ const mediaItemService = {
     })
   },
 
-  getMediaItem(id: string): Promise<AxiosResponse<FullMediaItem>> {
-    return apiClient.get<FullMediaItem>(`/photos/${id}/item`)
+  getMediaItem(id: string): Promise<AxiosResponse<MediaItemWithAlbums>> {
+    return apiClient.get<MediaItemWithAlbums>(`/photos/${id}/item`)
   },
 
   /**
@@ -61,6 +62,15 @@ const mediaItemService = {
     return apiClient.get<Blob>(`/photos/${id}/download`, {
       responseType: 'blob',
     })
+  },
+
+  async listMapPhotos(startDate?: string, endDate?: string): Promise<MapPhotosResponse> {
+    const response = await apiClient.get('/photos/geo', {
+      responseType: 'arraybuffer',
+      params: { startDate, endDate },
+    })
+    const buffer = new Uint8Array(response.data)
+    return MapPhotosResponse.decode(buffer)
   },
 }
 

@@ -154,6 +154,18 @@ export interface Weather {
   is_daytime?: boolean
 }
 
+export interface MediaItemAlbumRef {
+  id: string
+  name: string
+  thumbnail_id: string | null
+  media_count: number
+}
+
+export interface MediaItemWithAlbums {
+  media_item: FullMediaItem
+  albums: MediaItemAlbumRef[]
+}
+
 export interface FullMediaItem {
   id: string
   user_id: number

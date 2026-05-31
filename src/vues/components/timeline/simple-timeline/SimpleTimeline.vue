@@ -19,16 +19,13 @@ const props = withDefaults(
     loadingMore?: boolean
     context?: TimelineContext
     isManualOrderMode?: boolean
+    hideDropShadow?: boolean
   }>(),
   {
     context: () => ({}),
     isManualOrderMode: false,
+    hideDropShadow: false,
   },
-)
-
-watch(
-  () => props.timelineItems,
-  () => console.log('Total timeline items', props.timelineItems.length),
 )
 
 const emit = defineEmits(['loadMore', 'reorder'])
@@ -358,7 +355,7 @@ useEventListener(window, 'mouseup', () => {
 
 <template>
   <div class="simple-timeline">
-    <main-layout-container>
+    <main-layout-container :hide-drop-shadow="hideDropShadow">
       <selection-overlay v-if="context" :context="context" />
       <teleport to="body">
         <router-view />

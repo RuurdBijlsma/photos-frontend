@@ -1,16 +1,22 @@
 <script setup lang="ts">
-interface Props {
-  fitToContent?: boolean
-}
-
-withDefaults(defineProps<Props>(), {
-  fitToContent: false,
-})
+withDefaults(
+  defineProps<{
+    fitToContent?: boolean
+    hideDropShadow?: boolean
+  }>(),
+  {
+    fitToContent: false,
+    hideDropShadow: false,
+  },
+)
 </script>
 
 <template>
-  <div class="outer-container" :class="{ 'fit-content': fitToContent }">
-    <div class="inner-container" :class="{ 'fit-content': fitToContent }">
+  <div
+    class="outer-container"
+    :class="{ 'fit-content': fitToContent, 'hide-drop-shadow': hideDropShadow }"
+  >
+    <div class="inner-container">
       <slot></slot>
     </div>
   </div>
@@ -33,6 +39,10 @@ withDefaults(defineProps<Props>(), {
   max-width: calc(100% - 50px);
   width: 100%;
   height: 100%;
+}
+
+.hide-drop-shadow.outer-container {
+  box-shadow: none !important;
 }
 
 .outer-container.fit-content {
@@ -67,7 +77,7 @@ withDefaults(defineProps<Props>(), {
   scrollbar-width: none;
 }
 
-.inner-container.fit-content {
+.fit-content .inner-container {
   flex: none;
   height: auto;
   border-radius: 50px;

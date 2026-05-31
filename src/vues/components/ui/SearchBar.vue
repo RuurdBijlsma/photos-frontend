@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, useTemplateRef, onMounted } from 'vue'
+import { ref, watch, useTemplateRef, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
@@ -8,11 +8,14 @@ import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vu
 import searchService from '@/scripts/services/searchService.ts'
 import { isLikelyJwt } from '@/scripts/utils.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import peopleService from '@/scripts/services/peopleService.ts'
+import { useSearchStore } from '@/scripts/stores/searchStore.ts'
 
 const router = useRouter()
 const route = useRoute()
 const snackStore = useSnackbarsStore()
 const authStore = useAuthStore()
+const searchStore = useSearchStore()
 const searchInputEl = useTemplateRef('searchInput')
 const searchContainer = useTemplateRef('searchContainer')
 
@@ -43,6 +46,10 @@ const placeholder = ref<string | null>(
     ? null
     : JSON.parse(localStorage.getItem(SUGGESTION_PLACEHOLDER_KEY)!),
 )
+const placeholderValue = computed(() => {
+  if (searchStore.searchImage) return undefined
+  return placeholder.value === null ? 'Search...' : `Search “${placeholder.value}”`
+})
 const searchHistory = ref<string[]>([])
 
 function loadHistory() {
@@ -128,6 +135,7 @@ async function fetchSuggestions(searchQuery: string | null) {
     const apiSuggestions: SearchBarSuggestion[] = fetchedSuggestions
       .filter((s) => {
         if (s.suggestionType === SuggestionType.ALBUM) return true
+        if (s.suggestionType === SuggestionType.PERSON) return true
         return !historicMatches.some((h) => h.text.toLowerCase() === s.text.toLowerCase())
       })
       .map((s) => ({
@@ -150,8 +158,12 @@ function highlightMatch(text: string, match: string | null) {
 }
 
 function selectSuggestion(suggestion: SearchBarSuggestion) {
-  if (suggestion.suggestionType === SuggestionType.ALBUM && suggestion.id) {
-    router.push(`/album/${suggestion.id}`)
+  if (suggestion.id) {
+    if (suggestion.suggestionType === SuggestionType.ALBUM) {
+      router.push(`/album/${suggestion.id}`)
+    } else if (suggestion.suggestionType === SuggestionType.PERSON) {
+      router.push(`/person/${suggestion.id}`)
+    }
     isFocused.value = false
     if (searchInputEl.value) {
       searchInputEl.value.blur()
@@ -218,17 +230,97 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
+function handleDrop(e: DragEvent) {
+  e.preventDefault()
+  const files = e.dataTransfer?.files
+  if (files && files.length > 0) {
+    const file = files[0]
+    if (file.type.startsWith('image/')) {
+      submitImage(file)
+    }
+  }
+}
+
+function handlePaste(e: ClipboardEvent) {
+  const items = e.clipboardData?.items
+  if (items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile()
+        if (file) {
+          submitImage(file)
+          e.preventDefault()
+          break
+        }
+      }
+    }
+  }
+}
+
+function clearImageState() {
+  searchStore.searchImage = null
+  results.value = []
+}
+
+function clearImage(focus: boolean = true) {
+  if (searchStore.searchImage) {
+    clearImageState()
+    if (focus) {
+      isFocused.value = true
+      setTimeout(() => {
+        if (searchInputEl.value) {
+          searchInputEl.value.focus()
+        }
+      }, 50)
+    } else {
+      isFocused.value = false
+    }
+
+    // Clean up route query parameter when removing the image
+    const nextQuery = { ...route.query }
+    delete nextQuery.mode
+    router.push({
+      path: '/search',
+      query: nextQuery,
+    })
+  }
+}
+
+function submitImage(file: File) {
+  searchStore.searchImage = file
+  query.value = ''
+
+  const nextQuery: Record<string, string> = {
+    ...route.query,
+    mode: 'image',
+  }
+  // Clear text-query parameter when doing image search
+  delete nextQuery.query
+  router.push({
+    path: '/search',
+    query: nextQuery,
+  })
+  return
+}
+
 function handleSubmit(isManual = true) {
-  if (!query.value?.trim()) return
-  if (isManual) {
-    saveToHistory(query.value)
+  const trimmed = query.value?.trim() ?? ''
+  if (isManual && trimmed) {
+    saveToHistory(trimmed)
   }
   if (searchInputEl.value) {
     searchInputEl.value.blur()
   }
+  const nextQuery = { ...route.query }
+  if (trimmed) {
+    nextQuery.query = trimmed
+  } else {
+    delete nextQuery.query
+  }
   router.push({
     path: '/search',
-    query: { query: query.value },
+    query: nextQuery,
   })
 }
 
@@ -270,8 +362,9 @@ watch(
     isFocused.value = false
     if (newPath && !newPath.toString().startsWith('/search')) {
       query.value = ''
-    } else if (newQuery && newQuery.toString() !== query.value) {
-      query.value = newQuery.toString()
+      clearImageState()
+    } else {
+      query.value = newQuery ? newQuery.toString() : ''
     }
   },
 )
@@ -279,20 +372,43 @@ watch(
 
 <template>
   <div class="search-section">
-    <div ref="searchContainer" class="search-centered-section" @focusout="handleFocusOut">
+    <div
+      ref="searchContainer"
+      class="search-centered-section"
+      @focusout="handleFocusOut"
+      @dragover.prevent
+      @dragleave.prevent
+      @drop.prevent="handleDrop"
+    >
       <form @submit.prevent="() => handleSubmit(true)">
-        <label class="search-bar" tabindex="-1" :class="{ 'is-focused': isFocused }">
+        <label
+          class="search-bar"
+          tabindex="-1"
+          :class="{ 'is-focused': isFocused && !searchStore.searchImage }"
+        >
           <span class="search-icon-div">
             <v-icon
               class="search-icon"
-              :icon="loading ? 'mdi-loading mdi-spin' : 'mdi-magnify'"
+              :icon="
+                loading
+                  ? 'mdi-loading mdi-spin'
+                  : searchStore.searchImage
+                    ? 'mdi-image-search-outline'
+                    : 'mdi-magnify'
+              "
             ></v-icon>
           </span>
+          <img
+            v-if="searchStore.imagePreview"
+            :src="searchStore.imagePreview"
+            class="image-preview"
+            alt="Search image"
+          />
           <v-text-field
             ref="searchInput"
             v-model="query"
             class="search-text-field"
-            :placeholder="placeholder === null ? 'Search...' : `Search “${placeholder}”`"
+            :placeholder="placeholderValue"
             rounded
             autocomplete="off"
             hide-details
@@ -300,12 +416,24 @@ watch(
             @focus="handleFocus"
             @click:clear="results = []"
             @keydown="handleKeyDown"
+            @paste="handlePaste"
+            :disabled="!!searchStore.searchImage"
           />
+          <v-btn
+            class="image-clear-button"
+            icon="mdi-close"
+            v-if="searchStore.searchImage"
+            variant="plain"
+            @click="clearImage"
+            density="compact"
+          ></v-btn>
         </label>
       </form>
 
       <div
-        v-if="isFocused && (query?.length > 0 || suggestions.length > 0)"
+        v-if="
+          isFocused && !searchStore.searchImage && (query?.length > 0 || suggestions.length > 0)
+        "
         class="search-suggestions"
         tabindex="-1"
       >
@@ -330,6 +458,12 @@ watch(
                 size="small"
                 class="suggestion-icon"
               />
+              <v-avatar
+                v-else-if="suggestion.suggestionType === SuggestionType.PERSON"
+                size="small"
+              >
+                <v-img :src="peopleService.getPersonThumbnail(suggestion.id)"></v-img>
+              </v-avatar>
               <span v-html="highlightMatch(suggestion.text, query)"></span>
             </div>
           </div>
@@ -454,7 +588,6 @@ watch(
   outline: none;
 }
 
-.search-centered-section:focus-within .search-bar,
 .search-bar.is-focused {
   background-color: white;
   color: black;
@@ -467,6 +600,22 @@ watch(
   display: flex;
   justify-content: flex-end;
   align-items: center;
+}
+
+.image-preview {
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  max-width: 600px;
+  margin: 5px;
+  margin-left: 15px;
+  border: 2px solid rgba(var(--v-theme-on-surface), 0.25) !important;
+
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35) !important;
+}
+
+.image-clear-button {
+  margin: 12px;
 }
 
 .search-text-field {

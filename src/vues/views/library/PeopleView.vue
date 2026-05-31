@@ -14,6 +14,7 @@ const peopleStore = usePeopleStore()
 const dialogs = useDialogStore()
 const draggedPersonId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
+const dragCounters = ref<Record<string, number>>({})
 // Rename functionality
 const nameDialogVisible = ref(false)
 const selectedPerson = ref<PersonInfo | null>(null)
@@ -56,6 +57,7 @@ function photoCountText(count: number) {
 
 function onDragStart(person: PersonInfo, event: DragEvent) {
   draggedPersonId.value = person.id
+  dragCounters.value = {}
   event.dataTransfer?.setData('text/plain', person.id)
   if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
 }
@@ -63,12 +65,36 @@ function onDragStart(person: PersonInfo, event: DragEvent) {
 function onDragEnd() {
   draggedPersonId.value = null
   dragOverId.value = null
+  dragCounters.value = {}
+}
+
+function handleDragEnter(personId: string) {
+  if (draggedPersonId.value === personId) return
+
+  // Increment counter for this specific card
+  dragCounters.value[personId] = (dragCounters.value[personId] || 0) + 1
+  dragOverId.value = personId
+}
+
+function handleDragLeave(personId: string) {
+  if (draggedPersonId.value === personId) return
+
+  // Decrement counter
+  dragCounters.value[personId] = (dragCounters.value[personId] || 0) - 1
+
+  // Only remove highlight if we've truly left the parent and all its children
+  if (dragCounters.value[personId] <= 0) {
+    if (dragOverId.value === personId) {
+      dragOverId.value = null
+    }
+  }
 }
 
 async function onDrop(dropPerson: PersonInfo, event: DragEvent) {
   const sourceId = event.dataTransfer?.getData('text/plain') || draggedPersonId.value
   draggedPersonId.value = null
   dragOverId.value = null
+  dragCounters.value = {}
   if (!sourceId || sourceId === dropPerson.id) return
 
   const sourcePerson = peopleStore.people.find((person) => person.id === sourceId)
@@ -145,11 +171,11 @@ peopleStore.fetchPeople()
               @dragstart="onDragStart(person, $event)"
               @dragend="onDragEnd"
               :class="{
-                'drag-over-card': dragOverId === person.id && draggedPersonId !== person.id,
+                'drag-over-card': dragOverId === person.id,
                 'is-dragging': draggedPersonId !== null,
               }"
-              @dragenter="dragOverId = person.id"
-              @dragleave="dragOverId = null"
+              @dragenter="handleDragEnter(person.id)"
+              @dragleave="handleDragLeave(person.id)"
               @dragover.prevent
               @drop.prevent="onDrop(person, $event)"
               @mouseenter="peopleStore.fetchPersonMedia(person.id, true, false)"
@@ -258,11 +284,10 @@ peopleStore.fetchPeople()
   text-decoration: none;
   transition:
     background-color 150ms ease,
-    transform 150ms ease,
+    transform 50ms ease,
     opacity 150ms ease;
 }
 
-/* Only apply the card hover effect IF the unnamed text is NOT being hovered */
 .person-card:hover:not(:has(.unnamed:hover)) {
   background-color: rgba(var(--v-theme-on-background), 0.06);
   transform: translateY(-2px);
@@ -272,14 +297,10 @@ peopleStore.fetchPeople()
   pointer-events: none;
 }
 
-.person-card.drag-over-card.is-dragging {
+.person-card.drag-over-card {
   outline: 2px solid rgb(var(--v-theme-primary)) !important;
-  background-color: rgba(var(--v-theme-primary), 0.1);
-  border-radius: 12px;
-}
-
-.person-card.is-dragging * {
-  pointer-events: none;
+  background-color: rgba(var(--v-theme-primary), 0.1) !important;
+  transform: scale(1.01);
 }
 
 .person-card[draggable='true']:active {

@@ -80,7 +80,7 @@
 * ✅ when holding shift & selecting dont insta lose preview when not hovering a photo
 * ✅ fix lag spike when moving from photos → explore → [LAG HERE] photos
 * ✅ [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
-* 🫸 remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
+* 🫸 -> ✅ remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
 * ✅ add way to add description
 * ✅ als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.
 * ✅ als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is
@@ -163,42 +163,43 @@
 * ✅ make sure the frontend sends the datetime like "2023-05-15T10:00:00"
 * ✅ eigen theme per photo is te chaotisch
 * ✅ Als je full screen foto bekijkt, manier maken om de top balk te hiden (als je muis niet beweegt ofzo)
+* ✅ when viewing a photo outside of 'timeline' context, add v-menu option to view this photo in 'timeline' context
+* ✅ when logged out person is viewing album (with public url), it shouldnt show the nav bar (left), and not the search
+  bar, and the user thing top right should be a login button, and remove the upload button in top bar
+* ✅ maak /people styling gelijk aan /albums (vooral fonts en titel placement)
+* ✅ [BUG] 1e load nadat je recreate_db doet, dan laad de grid niet nadat je inlogt! - ik denk dat dit komt doordat
+  isInitialized nog true is door de buggy logout doordat de refresh token niet meer werkt. Dus niet in normale flow?
+* ✅ make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
+  music
+* ✅ in search, make person filter optionally AND instead of OR
+* ✅ In viewPhoto, in info v-menu, it should show which albums it's in
+* ✅ filters on front page (small ui button) → nee op search page is dit nu (zoeken zonder query)
+* ✅ misschien wil ik wel light theme in de foto viewer!
+* 🫸 als je search naar locatie naam doet, map laten zien in SearchView
+* ✅ When searching person name, show link to /person/{id} in suggestions
+* ✅ Search by photo, accept drag photo / paste (ctrl v) photo into search bar to find similar images
+* ✅ make picking photo for cluster deterministic, so it doesnt flicker when moving timeline slider
+* ✅ [bug] Checkmark for select image is offset for some reason
+* ✅ [bug] als je album maakt op niet "/", bijv "/search", dan gaat ie naar "/search?create=1" ofzo
+* ✅ [bug] selection store init
 * on login redirect to where you were
 * improve messaging when you load the website and the server is off
-* make nav drawer collapsible, automatically make it small for smaller windows. Collapse to size of navbar in ruurd
-  music
 * make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
 * view-option (like gmail), split view: if you single click a photo it opens in a right half of the window pane. Only
   works with enough screen width (desktop).
-* implement frontend for share via registerProtocolHandler link
-    * On login, Alice allows her website to register the protocol for photoshare://
-    * bob wants to share album, generates share link: photos.bob.com/share?t=as8df89sad89asdf98, sends it to alice
-        * as8df89sad89asdf98 contains bob's link, bob's username, and the secret token string.
-    * alice opens link, finds public page on bobs frontend with a button to share the link: photoshare:
-      as8df89sad89asdf98
-    * alice's frontend automatically opens this and asks to import this album
 * don't allow user to go to /onboarding if onboarding is done already.
 * setting: usebackdropblur doesnt apply everywhere.
 * preload 1440p thumbnail on grid item hover
 * re-establish ws connection if auth failed and it's refreshed automatically afterwards
 * add sort order to timeline controller and remove it as passed down prop, and use it in api requests through that prop
-* ga alle grote refs objects langs om te zien of een shallowref voordeel zou geven
 * idea to fix desync timeline bug:
     * bug: timeline ids/ratios/by month might by out of sync because theyre separate requests
     * possible solution: add a param: addedAtCutoff which is set by frontend at the currenttime of the first request.
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
-* filters on front page (small ui button)
-    * similar to search page but not so random, and shows all results
-    * face filter
-    * location filter
-    * video/photo type filter
-* misschien wil ik wel light theme in de foto viewer!
-* [BUG] 1e load nadat je recreate_db doet, dan laad de grid niet nadat je inlogt!
-* when viewing a photo outside of 'timeline' context, add v-menu option to view this photo in 'timeline' context
-* ✅ when logged out person is viewing album (with public url), it shouldnt show the nav bar (left), and not the search
-  bar, and the user thing top right should be a login button, and remove the upload button in top bar
-* In viewPhoto, in info v-menu, it should show which albums it's in
-* maak /people styling gelijk aan /albums (vooral fonts en titel placement)
-* in search, make person filter optionally AND instead of OR
+* in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
+  button
+* Theme picker in profile v-menu top right (same as ruurd music). Dark | Light | Follow system | Follow schedule
+* [investigate] krijg je ratio/monthItem desync als je de map eerst laad, terwijl de backend foto metadata ingest, en
+  dan naar de timeline gaat? Want de map date filter heeft dan al de ratios opgevraagd in de timelineStore.

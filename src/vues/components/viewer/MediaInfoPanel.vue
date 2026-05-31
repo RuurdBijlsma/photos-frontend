@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BaseMap from '@/vues/components/map/BaseMap.vue'
-import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
+import type { FullMediaItem, MediaItemAlbumRef } from '@/scripts/types/api/fullPhoto.ts'
+import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { computed, ref, watch } from 'vue'
@@ -10,16 +11,27 @@ import { makeLocationString } from '@/scripts/utils.ts'
 import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
+import { useRoute } from 'vue-router'
+import { useTheme } from 'vuetify/framework'
 
 const props = defineProps<{
   mediaItem?: FullMediaItem | SharedMediaItem
+  albums?: MediaItemAlbumRef[]
 }>()
 
 const emit = defineEmits(['closeDateTime', 'openDateTime'])
 
+const theme = useTheme()
 const dialogs = useDialogStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
+const route = useRoute()
+
+const currentAlbumId = computed(() => route.params.albumId as string | undefined)
+
+const showAlbums = computed(
+  () => authStore.isAuthenticated && props.albums !== undefined && props.albums.length > 0,
+)
 
 const dateTimeDialogOpen = ref(false)
 
@@ -70,7 +82,10 @@ watch(dateTimeDialogOpen, () => {
 </script>
 
 <template>
-  <div class="info-panel" :class="{ 'backdrop-blur': settings.useBackdropBlur }">
+  <div
+    class="info-panel"
+    :class="{ 'backdrop-blur': settings.useBackdropBlur, light: !theme.current.value.dark }"
+  >
     <h2 class="info-title">Info</h2>
     <div class="info-loading" v-if="mediaItem === undefined">
       <v-progress-circular indeterminate size="50" />
@@ -149,57 +164,71 @@ watch(dateTimeDialogOpen, () => {
           }}</span>
         </p>
       </div>
-      <div class="capture-info"></div>
+      <section v-if="showAlbums" class="albums-section">
+        <p class="section-label">Albums</p>
+        <router-link
+          v-for="album in albums"
+          :key="album.id"
+          :to="`/album/${album.id}`"
+          class="album-row"
+          :class="{ 'current-album': currentAlbumId === album.id }"
+          v-ripple
+        >
+          <v-avatar size="30" rounded class="album-avatar" color="surface-container-high">
+            <thumbnail-img
+              v-if="album.thumbnail_id"
+              :media-item-id="album.thumbnail_id"
+              :height="144"
+              cover
+            />
+            <v-icon v-else icon="mdi-image-album" size="18" class="album-fallback-icon" />
+          </v-avatar>
+          <span class="album-text">
+            <span
+              class="album-name"
+              v-tooltip:bottom="{ text: album.name, disabled: album.name.length <= 28 }"
+            >
+              {{ album.name || 'Unnamed' }}
+            </span>
+            <span class="album-count">
+              {{ album.media_count.toLocaleString() }}
+              item{{ album.media_count === 1 ? '' : 's' }}
+            </span>
+          </span>
+          <v-icon icon="mdi-chevron-right" size="16" class="album-chevron" />
+        </router-link>
+      </section>
+      <div class="capture-info">
+        <!--        todo! capture info-->
+      </div>
       <div class="map-info" v-if="mediaItem?.gps">
         <base-map
           class="base-map"
-          height="300px"
-          width="380px"
-          :center="{ lat: mediaItem.gps.latitude, lon: mediaItem.gps.longitude }"
-          :zoom="9"
+          :map-options="{
+            center: { lat: mediaItem.gps.latitude, lon: mediaItem.gps.longitude },
+            zoom: 9,
+            attributionControl: {
+              compact: true,
+            },
+          }"
         />
-        <a
-          class="map-buttons"
-          v-ripple
-          :href="`https://www.google.com/maps/place/${mediaItem.gps.latitude},${mediaItem.gps.longitude}`"
-          target="_blank"
-          referrerpolicy="no-referrer"
-        >
-          <span v-if="mediaItem.gps.location">{{
-            makeLocationString(mediaItem.gps.location, 3)
-          }}</span>
-          <v-icon size="15" class="ml-2 map-button-icon" icon="mdi-arrow-top-right" />
-        </a>
+        <v-theme-provider theme="dark">
+          <v-sheet class="map-buttons">
+            <a
+              v-ripple
+              :href="`https://www.google.com/maps/place/${mediaItem.gps.latitude},${mediaItem.gps.longitude}`"
+              target="_blank"
+              referrerpolicy="no-referrer"
+            >
+              <span v-if="mediaItem.gps.location">{{
+                makeLocationString(mediaItem.gps.location, 3)
+              }}</span>
+              <v-icon size="15" class="ml-2 map-button-icon" icon="mdi-arrow-top-right" />
+            </a>
+          </v-sheet>
+        </v-theme-provider>
       </div>
     </template>
-
-    <!--
-UI ELEMENTS TO PUT HERE (see fullPhoto.ts for available fields):
-Caption - text input -> edit button that opens dialogs.prompt
-<v-divider/>
-Date: Sunday - Aug 12, 2018 - 17:29 -> edit button that opens custom dialog to adjust photo's datetime
-Weather (fields are nullable, often individually unavilable)
-* temperature
-* weather condition, shown with nice icon.
-* On click, show custom dialog with more info -> temp, dew point, relative humidity, precisipitation, snow, wind direction, speed, wind gust, pressure.
-context: temp is celcius, dew point is celcius, humidity is %, precipitation is mm per hour, snow is millimeters, wind is degrees, wind speed/gust is km/h, pressure is sea-level air pressure in hPa, weather condition is a condition code:
- for weather icons, use utils.ts getWeatherIcon(condition: string, isDaytime: boolean)
-
-Filename: Photo's filename
-
-<little card within the card>
-  * camera name - filetype
-  * resolution in MP - resolution in width x height * file size
-  * iso, lens adjusted zoom, exposure compensation, f-stop, shutter time
-  * if video -> fps
-</>little card within the card>
-
-map card showing where the photo is taken (see BaseMap.vue)
-location name (see location string computed prop on this component) (clickable, opens google maps at coordinate)
-
---- style
-copy general style from search filters v-menu. See SearchView.vue.
--->
   </div>
 </template>
 
@@ -209,14 +238,18 @@ copy general style from search filters v-menu. See SearchView.vue.
   width: 400px;
   border-radius: 30px;
   font-size: 15px;
-  background-color: rgba(var(--v-theme-background), 0.5);
+  background-color: rgba(var(--v-theme-background), 0.8);
   color: rgb(var(--v-theme-on-background));
   position: relative;
 }
 
+.info-panel.light {
+  background-color: rgba(var(--v-theme-background), 0.8);
+}
+
 .backdrop-blur {
   backdrop-filter: blur(15px) saturate(150%) brightness(90%) contrast(110%);
-  background-color: rgba(var(--v-theme-background), 0.5);
+  background-color: rgba(var(--v-theme-background), 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -288,6 +321,83 @@ copy general style from search filters v-menu. See SearchView.vue.
   align-items: center;
 }
 
+.albums-section {
+  padding: 4px 22px 8px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  margin: 0 8px 6px;
+  color: rgb(var(--v-theme-on-surface-variant));
+  user-select: none;
+}
+
+.album-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  margin-bottom: 2px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.album-row.current-album {
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
+}
+
+.album-row:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.15);
+}
+
+.album-row.current-album:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.2);
+}
+
+.album-row:active {
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
+}
+
+.album-avatar {
+  flex-shrink: 0;
+}
+
+.album-fallback-icon {
+  opacity: 0.65;
+}
+
+.album-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.album-name {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-count {
+  font-size: 12px;
+  opacity: 0.55;
+  line-height: 1.2;
+}
+
+.album-chevron {
+  flex-shrink: 0;
+  opacity: 0.35;
+}
+
 .map-info {
   border-radius: 20px;
   margin: 10px;
@@ -295,18 +405,23 @@ copy general style from search filters v-menu. See SearchView.vue.
 }
 
 .base-map {
+  width: 380px;
+  height: 300px;
 }
 
 .map-buttons {
   background-color: rgba(var(--v-theme-on-surface), 0.9);
+}
+
+.map-buttons a {
   color: rgba(var(--v-theme-surface-variant), 1);
-  padding: 7px 20px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
   user-select: none;
   font-weight: 500;
   font-size: 13px;
-  display: flex;
-  align-items: center;
-  text-decoration: none;
+  padding: 7px 20px;
 }
 
 .map-button-icon {
