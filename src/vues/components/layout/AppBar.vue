@@ -2,8 +2,13 @@
 import SearchBar from '@/vues/components/ui/SearchBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import UserAvatar from '@/vues/components/ui/UserAvatar.vue'
+import { settings } from '@vue/eslint-config-prettier'
+import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { themeOptions } from '@/scripts/constants.ts'
+import { caps } from '@/scripts/utils.ts'
 
 const authStore = useAuthStore()
+const settings = useSettingStore()
 
 async function logout() {
   await authStore.logout(false)
@@ -33,7 +38,7 @@ async function logout() {
           </v-btn>
         </template>
         <div>
-          <v-sheet color="background">
+          <v-sheet color="surface-variant" class="pb-4">
             <div class="menu-header" v-if="authStore.user">
               <div class="user-icon">
                 <user-avatar
@@ -48,7 +53,24 @@ async function logout() {
               </div>
             </div>
           </v-sheet>
-          <v-list>
+          <v-list bg-color="surface-container">
+            <v-list-item>
+              <div class="mt-1">
+                <v-list-item-title class="theme-title"> Theme</v-list-item-title>
+
+                <v-chip-group
+                  v-model="settings.themeString"
+                  color="primary"
+                  class="chip-group"
+                  mandatory
+                >
+                  <v-chip v-for="opt in themeOptions" :value="opt" class="theme-chip" :key="opt">
+                    {{ caps(opt) }}
+                  </v-chip>
+                </v-chip-group>
+              </div>
+            </v-list-item>
+            <v-divider class="mb-2 mt-2" />
             <v-list-item
               v-if="authStore.user"
               prepend-icon="mdi-account-circle"
@@ -59,7 +81,9 @@ async function logout() {
             <v-list-item prepend-icon="mdi-logout" @click="logout">
               <v-list-item-title>Sign out</v-list-item-title>
             </v-list-item>
-            <v-divider />
+
+            <v-divider class="mb-2 mt-2" />
+
             <v-list-item prepend-icon="mdi-security" to="/admin" v-if="authStore.isAdmin">
               <v-list-item-title>Admin</v-list-item-title>
             </v-list-item>
@@ -114,5 +138,13 @@ async function logout() {
 
 .user-email {
   opacity: 0.7;
+}
+
+.theme-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 300;
+  opacity: 0.7;
+  text-align: center;
 }
 </style>
