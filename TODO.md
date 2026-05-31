@@ -80,7 +80,7 @@
 * ✅ when holding shift & selecting dont insta lose preview when not hovering a photo
 * ✅ fix lag spike when moving from photos → explore → [LAG HERE] photos
 * ✅ [BUG] als je voor preview selectie eerst hover op een item, en dan shift indrukt, komt de preview niet
-* 🫸 remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
+* 🫸 -> ✅ remove theme per photo in /view/ (idk moet dit wel? wacht nog maar even)
 * ✅ add way to add description
 * ✅ als je weg gaat van timeline, en dan terugkomt moet je eigelijk naar dezelfde datum.
 * ✅ als je pagina laad op een view photo, en dan uit de photo viewer gaat, moet je gescrollt zijn op de goeie plek (is
@@ -175,6 +175,13 @@
 * ✅ In viewPhoto, in info v-menu, it should show which albums it's in
 * ✅ filters on front page (small ui button) → nee op search page is dit nu (zoeken zonder query)
 * ✅ misschien wil ik wel light theme in de foto viewer!
+* 🫸 als je search naar locatie naam doet, map laten zien in SearchView
+* ✅ When searching person name, show link to /person/{id} in suggestions
+* ✅ Search by photo, accept drag photo / paste (ctrl v) photo into search bar to find similar images
+* ✅ make picking photo for cluster deterministic, so it doesnt flicker when moving timeline slider
+* ✅ [bug] Checkmark for select image is offset for some reason
+* ✅ [bug] als je album maakt op niet "/", bijv "/search", dan gaat ie naar "/search?create=1" ofzo
+* ✅ [bug] selection store init
 * on login redirect to where you were
 * improve messaging when you load the website and the server is off
 * make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
@@ -192,15 +199,7 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
-* ⛔ als je search naar locatie naam doet, map laten zien in SearchView
-* ✅ When searching person name, show link to /person/{id} in suggestions
-* ✅ Search by photo, accept drag photo / paste (ctrl v) photo into search bar to find similar images
 * in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
   button
-* ✅ make picking photo for cluster deterministic, so it doesnt flicker when moving timeline slider
-* [bug] Checkmark for select image is offset for some reason
-* [bug] als je album maakt op niet "/", bijv "/search", dan gaat ie naar "/search?create=1" ofzo
-* [bug] load web app op / (timeline), ga naar /map, select een kleine cluster, select 1 photo, klik select all, klik
-  clear selection, ga naar / (timeline), selecteer 1 photo, klik select all. Hij select nu de fotos in de cluster van
-  /map om een of andere reden
-  * waarschijnlijk initialized / timeline de selectionStore niet goed als je terug komt naar de pagina
+* [investigate] krijg je ratio/monthItem desync als je de map eerst laad, terwijl de backend foto metadata ingest, en
+  dan naar de timeline gaat? Want de map date filter heeft dan al de ratios opgevraagd in de timelineStore.

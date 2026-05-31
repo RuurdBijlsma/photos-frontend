@@ -253,7 +253,7 @@ useEventListener(document, 'mousemove', (e) => {
   top: 0;
   height: 100%;
   width: 6px;
-  cursor: e-resize;
+  cursor: col-resize;
 }
 
 .nav-list {

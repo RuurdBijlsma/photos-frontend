@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import { computed, nextTick, onBeforeUnmount, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useDebounceFn, useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TimelineItem, TimelineMonthRatios } from '@/scripts/types/generated/timeline.ts'
@@ -329,17 +338,6 @@ function handleMouseDown(e: MouseEvent) {
   updateScrollPosition(e.clientY)
 }
 
-async function initializeViewPhoto() {
-  viewPhotoStore.viewLink = '/view/'
-
-  if (route.name!.toString().startsWith('view-photo')) {
-    await timelineStore.setViewPhotoStoreIds()
-  } else {
-    await requestIdleCallbackAsync(timelineStore.setViewPhotoStoreIds)
-  }
-}
-initializeViewPhoto()
-
 function findRowIndexByMediaId(mediaId: string): number {
   const mediaItemIndex = timelineStore.mediaItemIds.indexOf(mediaId)
   if (mediaItemIndex === -1) {
@@ -450,6 +448,23 @@ function startRefreshPoll() {
     timelineStore.refresh()
   }, 10000)
 }
+
+async function initializeViewPhoto() {
+  viewPhotoStore.viewLink = '/view/'
+
+  if (route.name!.toString().startsWith('view-photo')) {
+    await timelineStore.setViewPhotoStoreIds()
+  } else {
+    await requestIdleCallbackAsync(timelineStore.setViewPhotoStoreIds)
+  }
+}
+
+onMounted(() => {
+  if (timelineStore.allMonthsPreloaded) {
+    selectionStore.allIds = timelineStore.mediaItemIds
+  }
+  initializeViewPhoto()
+})
 
 onBeforeUnmount(() => {
   clearRefreshPoll()
