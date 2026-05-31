@@ -194,9 +194,13 @@
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
 * ⛔ als je search naar locatie naam doet, map laten zien in SearchView
 * ✅ When searching person name, show link to /person/{id} in suggestions
-* Search by photo, accept drag photo / paste (ctrl v) photo into search bar to find similar images
+* ✅ Search by photo, accept drag photo / paste (ctrl v) photo into search bar to find similar images
 * in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
   button
 * ✅ make picking photo for cluster deterministic, so it doesnt flicker when moving timeline slider
 * [bug] Checkmark for select image is offset for some reason
 * [bug] als je album maakt op niet "/", bijv "/search", dan gaat ie naar "/search?create=1" ofzo
+* [bug] load web app op / (timeline), ga naar /map, select een kleine cluster, select 1 photo, klik select all, klik
+  clear selection, ga naar / (timeline), selecteer 1 photo, klik select all. Hij select nu de fotos in de cluster van
+  /map om een of andere reden
+  * waarschijnlijk initialized / timeline de selectionStore niet goed als je terug komt naar de pagina
