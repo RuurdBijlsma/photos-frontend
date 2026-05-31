@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import SearchBar from '@/vues/components/ui/SearchBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import UserAvatar from '@/vues/components/ui/UserAvatar.vue'
-import { settings } from '@vue/eslint-config-prettier'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { themeOptions } from '@/scripts/constants.ts'
 import { caps } from '@/scripts/utils.ts'
@@ -10,7 +10,10 @@ import { caps } from '@/scripts/utils.ts'
 const authStore = useAuthStore()
 const settings = useSettingStore()
 
+const menuOpen = ref(false)
+
 async function logout() {
+  menuOpen.value = false
   await authStore.logout(false)
   location.reload()
 }
@@ -27,7 +30,7 @@ async function logout() {
         <v-icon icon="mdi-upload"></v-icon>
         Upload
       </v-btn>
-      <v-menu>
+      <v-menu v-model="menuOpen" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props">
             <user-avatar
@@ -37,8 +40,8 @@ async function logout() {
             />
           </v-btn>
         </template>
-        <div>
-          <v-sheet color="surface-variant" class="pb-4">
+        <div class="menu-container">
+          <v-sheet color="surface-variant" class="pb-5">
             <div class="menu-header" v-if="authStore.user">
               <div class="user-icon">
                 <user-avatar
@@ -55,16 +58,22 @@ async function logout() {
           </v-sheet>
           <v-list bg-color="surface-container">
             <v-list-item>
-              <div class="mt-1">
+              <div class="mt-1 theme-container">
                 <v-list-item-title class="theme-title"> Theme</v-list-item-title>
 
                 <v-chip-group
                   v-model="settings.themeString"
                   color="primary"
                   class="chip-group"
+                  content-class="theme-item"
                   mandatory
                 >
-                  <v-chip v-for="opt in themeOptions" :value="opt" class="theme-chip" :key="opt">
+                  <v-chip
+                    v-for="opt in themeOptions.slice(0, 3)"
+                    :value="opt"
+                    class="theme-chip"
+                    :key="opt"
+                  >
                     {{ caps(opt) }}
                   </v-chip>
                 </v-chip-group>
@@ -75,6 +84,7 @@ async function logout() {
               v-if="authStore.user"
               prepend-icon="mdi-account-circle"
               :to="`/user/${authStore.user.id}/${encodeURIComponent(authStore.user.name)}`"
+              @click="menuOpen = false"
             >
               <v-list-item-title>Profile</v-list-item-title>
             </v-list-item>
@@ -84,10 +94,15 @@ async function logout() {
 
             <v-divider class="mb-2 mt-2" />
 
-            <v-list-item prepend-icon="mdi-security" to="/admin" v-if="authStore.isAdmin">
+            <v-list-item
+              prepend-icon="mdi-security"
+              to="/admin"
+              v-if="authStore.isAdmin"
+              @click="menuOpen = false"
+            >
               <v-list-item-title>Admin</v-list-item-title>
             </v-list-item>
-            <v-list-item prepend-icon="mdi-cog" to="/settings">
+            <v-list-item prepend-icon="mdi-cog" to="/settings" @click="menuOpen = false">
               <v-list-item-title>Settings</v-list-item-title>
             </v-list-item>
           </v-list>
@@ -118,6 +133,21 @@ async function logout() {
   display: flex;
   gap: 20px;
   align-items: center;
+}
+
+.menu-container {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.theme-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.theme-container :deep(.theme-item) {
+  transform: translateX(4px);
 }
 
 .menu-header {
