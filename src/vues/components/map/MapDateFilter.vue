@@ -12,6 +12,7 @@ interface DateRange {
 
 const props = defineProps<{
   modelValue: DateRange
+  theme: 'dark' | 'light'
 }>()
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -457,197 +458,199 @@ function clearFilter() {
 </script>
 
 <template>
-  <div class="map-date-filter">
-    <!-- CLOSED STATE BUTTON -->
-    <v-btn
-      v-if="!isOpen"
-      class="map-date-filter-chip"
-      variant="flat"
-      rounded="xl"
-      elevation="4"
-      prepend-icon="mdi-calendar-filter"
-      @click="isOpen = true"
-    >
-      {{ closedButtonLabel }}
-    </v-btn>
-
-    <!-- OPEN STATE DIALOG CARD -->
-    <v-card v-else class="map-date-filter-panel" elevation="8" rounded="xl">
-      <!-- Close Button -->
+  <v-theme-provider :theme="props.theme">
+    <div class="map-date-filter">
+      <!-- CLOSED STATE BUTTON -->
       <v-btn
-        icon="mdi-close"
-        variant="text"
-        density="comfortable"
-        class="panel-close-btn"
-        size="small"
-        @click="isOpen = false"
-      />
+        v-if="!isOpen"
+        class="map-date-filter-chip"
+        variant="flat"
+        rounded="xl"
+        elevation="4"
+        prepend-icon="mdi-calendar-filter"
+        @click="isOpen = true"
+      >
+        {{ closedButtonLabel }}
+      </v-btn>
 
-      <!-- Title / Header -->
-      <div class="panel-header">
-        <span class="panel-title">Filter from</span>
-
-        <!-- Start Date Button -->
-        <v-menu v-model="startDateMenu" :close-on-content-click="false" location="top center">
-          <template v-slot:activator="{ props: menuProps }">
-            <v-btn
-              v-bind="menuProps"
-              variant="tonal"
-              color="primary"
-              density="compact"
-              rounded="lg"
-              class="date-button ml-1 mr-1"
-            >
-              {{
-                formatDateLabel(
-                  modelValue.startDate ||
-                    (chronologicalRatios[0]
-                      ? getStartOfMonth(chronologicalRatios[0].monthId)
-                      : null),
-                  startGranularity,
-                )
-              }}
-            </v-btn>
-          </template>
-          <v-card border rounded="lg">
-            <v-date-picker
-              bg-color="surface-container"
-              color="primary"
-              :model-value="
-                modelValue.startDate ||
-                (chronologicalRatios[0]
-                  ? getStartOfMonth(chronologicalRatios[0].monthId)
-                  : new Date())
-              "
-              @update:model-value="onStartDateInput"
-              hide-header
-            />
-          </v-card>
-        </v-menu>
-
-        <span class="panel-title">to</span>
-
-        <!-- End Date Button -->
-        <v-menu v-model="endDateMenu" :close-on-content-click="false" location="top center">
-          <template v-slot:activator="{ props: menuProps }">
-            <v-btn
-              v-bind="menuProps"
-              variant="tonal"
-              color="primary"
-              density="compact"
-              rounded="lg"
-              class="date-button ml-1 mr-1"
-            >
-              {{
-                formatDateLabel(
-                  modelValue.endDate ||
-                    (chronologicalRatios[chronologicalRatios.length - 1]
-                      ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId)
-                      : null),
-                  endGranularity,
-                )
-              }}
-            </v-btn>
-          </template>
-          <v-card border rounded="lg">
-            <v-date-picker
-              bg-color="surface-container"
-              color="primary"
-              :model-value="
-                modelValue.endDate ||
-                (chronologicalRatios[chronologicalRatios.length - 1]
-                  ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId)
-                  : new Date())
-              "
-              @update:model-value="onEndDateInput"
-              hide-header
-            />
-          </v-card>
-        </v-menu>
-
-        <!-- Reset Button -->
+      <!-- OPEN STATE DIALOG CARD -->
+      <v-card v-else class="map-date-filter-panel" elevation="8" rounded="xl">
+        <!-- Close Button -->
         <v-btn
-          v-if="modelValue.active"
+          icon="mdi-close"
           variant="text"
-          color="error"
-          density="compact"
+          density="comfortable"
+          class="panel-close-btn"
           size="small"
-          class="reset-button ml-2"
-          @click="clearFilter"
-        >
-          Reset
-        </v-btn>
-      </div>
+          @click="isOpen = false"
+        />
 
-      <!-- Histogram & Range Slider Area -->
-      <div v-if="chronologicalRatios.length > 0" class="histogram-slider-area">
-        <!-- Bounds Labels -->
-        <span class="bounds-label bounds-left">{{ earliestLabel }}</span>
+        <!-- Title / Header -->
+        <div class="panel-header">
+          <span class="panel-title">Filter from</span>
 
-        <div class="histogram-wrapper">
-          <!-- Histogram bars -->
-          <div class="histogram-bars">
-            <div
-              v-for="(month, idx) in chronologicalRatios"
-              :key="month.monthId"
-              class="histogram-bar"
-              :class="{ 'is-active': idx >= leftIndex && idx <= rightIndex }"
-              :style="{
-                height: `${(month.count / maxCount) * 100}%`,
-                width: `${100 / chronologicalRatios.length}%`,
-              }"
-            ></div>
-          </div>
+          <!-- Start Date Button -->
+          <v-menu v-model="startDateMenu" :close-on-content-click="false" location="top center">
+            <template v-slot:activator="{ props: menuProps }">
+              <v-btn
+                v-bind="menuProps"
+                variant="tonal"
+                color="primary"
+                density="compact"
+                rounded="lg"
+                class="date-button ml-1 mr-1"
+              >
+                {{
+                  formatDateLabel(
+                    modelValue.startDate ||
+                      (chronologicalRatios[0]
+                        ? getStartOfMonth(chronologicalRatios[0].monthId)
+                        : null),
+                    startGranularity,
+                  )
+                }}
+              </v-btn>
+            </template>
+            <v-card border rounded="lg">
+              <v-date-picker
+                bg-color="surface-container"
+                color="primary"
+                :model-value="
+                  modelValue.startDate ||
+                  (chronologicalRatios[0]
+                    ? getStartOfMonth(chronologicalRatios[0].monthId)
+                    : new Date())
+                "
+                @update:model-value="onStartDateInput"
+                hide-header
+              />
+            </v-card>
+          </v-menu>
 
-          <!-- Draggable slider track -->
-          <div ref="trackRef" class="slider-track">
-            <!-- Selected Range Highlight -->
-            <div
-              class="slider-highlight"
-              :class="{ 'is-dragging': activeHandle === 'range' }"
-              :style="{
-                left: `${(leftIndex / totalIntervals) * 100}%`,
-                right: `${100 - (rightIndex / totalIntervals) * 100}%`,
-              }"
-              @mousedown="handleRangeMouseDown"
-              @touchstart="handleRangeTouchStart"
-            ></div>
+          <span class="panel-title">to</span>
 
-            <!-- Left Handle (Start Date) -->
-            <div
-              class="slider-handle left-handle"
-              :style="{
-                left: `${(leftIndex / totalIntervals) * 100}%`,
-              }"
-              @mousedown="handleTrackMouseDown($event, 'left')"
-              @touchstart="handleTrackTouchStart($event, 'left')"
-            >
-              <div class="handle-stick"></div>
-              <div class="handle-anchor"></div>
-            </div>
+          <!-- End Date Button -->
+          <v-menu v-model="endDateMenu" :close-on-content-click="false" location="top center">
+            <template v-slot:activator="{ props: menuProps }">
+              <v-btn
+                v-bind="menuProps"
+                variant="tonal"
+                color="primary"
+                density="compact"
+                rounded="lg"
+                class="date-button ml-1 mr-1"
+              >
+                {{
+                  formatDateLabel(
+                    modelValue.endDate ||
+                      (chronologicalRatios[chronologicalRatios.length - 1]
+                        ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId)
+                        : null),
+                    endGranularity,
+                  )
+                }}
+              </v-btn>
+            </template>
+            <v-card border rounded="lg">
+              <v-date-picker
+                bg-color="surface-container"
+                color="primary"
+                :model-value="
+                  modelValue.endDate ||
+                  (chronologicalRatios[chronologicalRatios.length - 1]
+                    ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId)
+                    : new Date())
+                "
+                @update:model-value="onEndDateInput"
+                hide-header
+              />
+            </v-card>
+          </v-menu>
 
-            <!-- Right Handle (End Date) -->
-            <div
-              class="slider-handle right-handle"
-              :style="{
-                left: `${(rightIndex / totalIntervals) * 100}%`,
-              }"
-              @mousedown="handleTrackMouseDown($event, 'right')"
-              @touchstart="handleTrackTouchStart($event, 'right')"
-            >
-              <div class="handle-stick"></div>
-              <div class="handle-anchor"></div>
-            </div>
-          </div>
+          <!-- Reset Button -->
+          <v-btn
+            v-if="modelValue.active"
+            variant="text"
+            color="error"
+            density="compact"
+            size="small"
+            class="reset-button ml-2"
+            @click="clearFilter"
+          >
+            Reset
+          </v-btn>
         </div>
 
-        <span class="bounds-label bounds-right">{{ latestLabel }}</span>
-      </div>
-      <div v-else class="loading-state">
-        <v-progress-circular indeterminate size="20" width="2" color="primary" />
-      </div>
-    </v-card>
-  </div>
+        <!-- Histogram & Range Slider Area -->
+        <div v-if="chronologicalRatios.length > 0" class="histogram-slider-area">
+          <!-- Bounds Labels -->
+          <span class="bounds-label bounds-left">{{ earliestLabel }}</span>
+
+          <div class="histogram-wrapper">
+            <!-- Histogram bars -->
+            <div class="histogram-bars">
+              <div
+                v-for="(month, idx) in chronologicalRatios"
+                :key="month.monthId"
+                class="histogram-bar"
+                :class="{ 'is-active': idx >= leftIndex && idx <= rightIndex }"
+                :style="{
+                  height: `${(month.count / maxCount) * 100}%`,
+                  width: `${100 / chronologicalRatios.length}%`,
+                }"
+              ></div>
+            </div>
+
+            <!-- Draggable slider track -->
+            <div ref="trackRef" class="slider-track">
+              <!-- Selected Range Highlight -->
+              <div
+                class="slider-highlight"
+                :class="{ 'is-dragging': activeHandle === 'range' }"
+                :style="{
+                  left: `${(leftIndex / totalIntervals) * 100}%`,
+                  right: `${100 - (rightIndex / totalIntervals) * 100}%`,
+                }"
+                @mousedown="handleRangeMouseDown"
+                @touchstart="handleRangeTouchStart"
+              ></div>
+
+              <!-- Left Handle (Start Date) -->
+              <div
+                class="slider-handle left-handle"
+                :style="{
+                  left: `${(leftIndex / totalIntervals) * 100}%`,
+                }"
+                @mousedown="handleTrackMouseDown($event, 'left')"
+                @touchstart="handleTrackTouchStart($event, 'left')"
+              >
+                <div class="handle-stick"></div>
+                <div class="handle-anchor"></div>
+              </div>
+
+              <!-- Right Handle (End Date) -->
+              <div
+                class="slider-handle right-handle"
+                :style="{
+                  left: `${(rightIndex / totalIntervals) * 100}%`,
+                }"
+                @mousedown="handleTrackMouseDown($event, 'right')"
+                @touchstart="handleTrackTouchStart($event, 'right')"
+              >
+                <div class="handle-stick"></div>
+                <div class="handle-anchor"></div>
+              </div>
+            </div>
+          </div>
+
+          <span class="bounds-label bounds-right">{{ latestLabel }}</span>
+        </div>
+        <div v-else class="loading-state">
+          <v-progress-circular indeterminate size="20" width="2" color="primary" />
+        </div>
+      </v-card>
+    </div>
+  </v-theme-provider>
 </template>
 
 <style>
@@ -766,7 +769,7 @@ function clearFilter() {
 .histogram-bar {
   background-color: rgba(var(--v-theme-on-surface), 0.15);
   border-radius: 2px 2px 0 0;
-  margin: 0 0.5px;
+  margin: 0 1px;
   transition:
     background-color 0.2s ease,
     height 0.2s ease;
