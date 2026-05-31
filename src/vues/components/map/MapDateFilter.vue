@@ -222,6 +222,7 @@ function handleRangeMouseDown(e: MouseEvent) {
 
 function onMouseMove(e: MouseEvent) {
   if (!trackRef.value || chronologicalRatios.value.length === 0 || !activeHandle.value) return
+  const maxIndex = chronologicalRatios.value.length - 1
   const index = getIndexForClientX(e.clientX)
   if (index === null) return
 
@@ -231,7 +232,7 @@ function onMouseMove(e: MouseEvent) {
     if (newLeft !== leftIndex.value) {
       leftIndex.value = newLeft
       startGranularity.value = 'month'
-      updateRange(true) // dragging
+      updateRange(newLeft !== 0) // dragging, except when flushing the boundary immediately
     }
   } else if (activeHandle.value === 'right') {
     // Clamp so right handle can never pass left handle
@@ -239,14 +240,14 @@ function onMouseMove(e: MouseEvent) {
     if (newRight !== rightIndex.value) {
       rightIndex.value = newRight
       endGranularity.value = 'month'
-      updateRange(true) // dragging
+      updateRange(newRight !== maxIndex) // dragging, except when flushing the boundary immediately
     }
   } else if (activeHandle.value === 'range' && dragStart.value) {
     const width = dragStart.value.rightIndex - dragStart.value.leftIndex
     const startIndex = getIndexForClientX(dragStart.value.clientX)
     if (startIndex === null) return
 
-    const maxLeft = Math.max(0, chronologicalRatios.value.length - 1 - width)
+    const maxLeft = Math.max(0, maxIndex - width)
     const delta = index - startIndex
     const newLeft = Math.max(0, Math.min(maxLeft, dragStart.value.leftIndex + delta))
     const newRight = newLeft + width
@@ -256,7 +257,7 @@ function onMouseMove(e: MouseEvent) {
       rightIndex.value = newRight
       startGranularity.value = 'month'
       endGranularity.value = 'month'
-      updateRange(true) // dragging
+      updateRange(newLeft !== 0 && newRight !== maxIndex) // dragging, except when flushing the boundary immediately
     }
   }
 }
@@ -304,6 +305,7 @@ function onTouchMove(e: TouchEvent) {
     !activeHandle.value
   )
     return
+  const maxIndex = chronologicalRatios.value.length - 1
   const touch = e.touches[0]!
   const index = getIndexForClientX(touch.clientX)
   if (index === null) return
@@ -314,7 +316,7 @@ function onTouchMove(e: TouchEvent) {
     if (newLeft !== leftIndex.value) {
       leftIndex.value = newLeft
       startGranularity.value = 'month'
-      updateRange(true)
+      updateRange(newLeft !== 0)
     }
   } else if (activeHandle.value === 'right') {
     // Clamp so right handle can never pass left handle
@@ -322,14 +324,14 @@ function onTouchMove(e: TouchEvent) {
     if (newRight !== rightIndex.value) {
       rightIndex.value = newRight
       endGranularity.value = 'month'
-      updateRange(true)
+      updateRange(newRight !== maxIndex)
     }
   } else if (activeHandle.value === 'range' && dragStart.value) {
     const width = dragStart.value.rightIndex - dragStart.value.leftIndex
     const startIndex = getIndexForClientX(dragStart.value.clientX)
     if (startIndex === null) return
 
-    const maxLeft = Math.max(0, chronologicalRatios.value.length - 1 - width)
+    const maxLeft = Math.max(0, maxIndex - width)
     const delta = index - startIndex
     const newLeft = Math.max(0, Math.min(maxLeft, dragStart.value.leftIndex + delta))
     const newRight = newLeft + width
@@ -339,7 +341,7 @@ function onTouchMove(e: TouchEvent) {
       rightIndex.value = newRight
       startGranularity.value = 'month'
       endGranularity.value = 'month'
-      updateRange(true)
+      updateRange(newLeft !== 0 && newRight !== maxIndex)
     }
   }
 }
