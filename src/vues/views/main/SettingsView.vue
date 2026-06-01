@@ -178,10 +178,10 @@ const previewSwatches = [
                 <v-btn
                   v-if="settings.imageBackground"
                   rounded
-                  variant="flat"
+                  variant="text"
                   prepend-icon="mdi-shuffle-variant"
                   @click="backgroundStore.newBackgroundTheme"
-                  color="secondary"
+                  color="primary"
                   >New background</v-btn
                 >
                 <v-slide-y-transition>
