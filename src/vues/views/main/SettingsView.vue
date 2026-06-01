@@ -103,13 +103,14 @@ const sunString = computed(() => {
           <template v-if="!settings.imageBackground">
             <p>Pick a theme color</p>
             <v-color-picker bg-color="surface-variant" v-model="settings.customThemeColor" />
-
-            <v-chip-group v-model="settings.customThemeVariant" color="primary" mandatory>
-              <v-chip v-for="opt in themeVariantOptions" :value="opt" class="theme-chip" :key="opt">
-                {{ caps(opt) }}
-              </v-chip>
-            </v-chip-group>
           </template>
+
+          <p class="mt-5">Pick a theme variant</p>
+          <v-chip-group v-model="settings.customThemeVariant" color="primary" mandatory>
+            <v-chip v-for="opt in themeVariantOptions" :value="opt" class="theme-chip" :key="opt">
+              {{ caps(opt) }}
+            </v-chip>
+          </v-chip-group>
         </div>
       </v-card>
 
