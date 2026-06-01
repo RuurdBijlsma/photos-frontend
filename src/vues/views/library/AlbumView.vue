@@ -549,6 +549,7 @@ watch(collabMenuOpen, () => {
                 density="compact"
                 v-if="authStore.isAuthenticated"
                 icon
+                variant="text"
                 @click="manualOrderMode()"
                 v-tooltip="{
                   location: 'top',
@@ -573,6 +574,7 @@ watch(collabMenuOpen, () => {
               <v-btn
                 density="compact"
                 icon
+                variant="text"
                 @click="album?.isPublic ? privatize() : publicize()"
                 v-tooltip="{
                   location: 'top',
