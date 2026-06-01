@@ -281,7 +281,7 @@ const previewSwatches = [
           Other Settings Placeholder
         </h3>
         <p class="text-body-2 text-on-surface-variant">
-          Configure system features, import profiles, and data synchronizations here.
+          Hello world
         </p>
       </div>
     </div>
