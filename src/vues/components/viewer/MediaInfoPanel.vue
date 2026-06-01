@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import BaseMap from '@/vues/components/map/BaseMap.vue'
 import type { FullMediaItem, MediaItemAlbumRef } from '@/scripts/types/api/fullPhoto.ts'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import { computed, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { DAYS, MONTHS } from '@/scripts/constants.ts'
 import MediaWeatherInfo from '@/vues/components/viewer/MediaWeatherInfo.vue'
 import { makeLocationString } from '@/scripts/utils.ts'
@@ -13,6 +12,8 @@ import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
 import { useRoute } from 'vue-router'
 import { useTheme } from 'vuetify/framework'
+
+const BaseMap = defineAsyncComponent(() => import('@/vues/components/map/BaseMap.vue'))
 
 const props = defineProps<{
   mediaItem?: FullMediaItem | SharedMediaItem

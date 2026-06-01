@@ -1,8 +1,16 @@
 <script setup lang="ts">
+import { defineAsyncComponent } from 'vue'
 import type { PhotoViewerType } from '@/scripts/types/viewerType.ts'
-import PhotoViewer from '@/vues/components/viewer/viewers/PhotoViewer.vue'
-import VideoViewer from '@/vues/components/viewer/viewers/VideoViewer.vue'
-import PanoViewer from '@/vues/components/viewer/viewers/PanoViewer.vue'
+
+const PhotoViewer = defineAsyncComponent(
+  () => import('@/vues/components/viewer/viewers/PhotoViewer.vue'),
+)
+const VideoViewer = defineAsyncComponent(
+  () => import('@/vues/components/viewer/viewers/VideoViewer.vue'),
+)
+const PanoViewer = defineAsyncComponent(
+  () => import('@/vues/components/viewer/viewers/PanoViewer.vue'),
+)
 
 defineProps<{
   viewType: PhotoViewerType
