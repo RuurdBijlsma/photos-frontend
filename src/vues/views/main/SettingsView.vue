@@ -4,14 +4,12 @@ import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { themeOptions, themeVariantOptions } from '@/scripts/constants.ts'
 import { caps } from '@/scripts/utils.ts'
 import { useSunStore } from '@/scripts/stores/sunStore.ts'
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
+import { useBackgroundStore } from '@/scripts/stores/backgroundStore.ts'
 
 const settings = useSettingStore()
 const sun = useSunStore()
-
-onMounted(() => {
-  sun.fetchSunTimes(true)
-})
+const backgroundStore = useBackgroundStore()
 
 const sunString = computed(() => {
   if (!sun.sunset || !sun.sunrise) {
@@ -19,188 +17,321 @@ const sunString = computed(() => {
   }
   return ` (${sun.sunrise.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} - ${sun.sunset.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })})`
 })
+
+// Swatches to visualize semantic theme colors mapped to current theme formulas
+const previewSwatches = [
+  { name: 'Primary', bg: 'bg-primary', text: 'text-on-primary', desc: 'Main accent' },
+  {
+    name: 'Primary Container',
+    bg: 'bg-primary-container',
+    text: 'text-on-primary-container',
+    desc: 'Primary container',
+  },
+  {
+    name: 'Secondary',
+    bg: 'bg-secondary',
+    text: 'text-on-secondary',
+    desc: 'Less prominent accent',
+  },
+  {
+    name: 'Secondary Container',
+    bg: 'bg-secondary-container',
+    text: 'text-on-secondary-container',
+    desc: 'Secondary container',
+  },
+  { name: 'Tertiary', bg: 'bg-tertiary', text: 'text-on-tertiary', desc: 'Contrasting accent' },
+  {
+    name: 'Tertiary Container',
+    bg: 'bg-tertiary-container',
+    text: 'text-on-tertiary-container',
+    desc: 'Tertiary container',
+  },
+  {
+    name: 'Surface Low',
+    bg: 'bg-surface-container-low',
+    text: 'text-on-surface',
+    desc: 'Lowest emphasis card background',
+  },
+  {
+    name: 'Surface High',
+    bg: 'bg-surface-container-high',
+    text: 'text-on-surface',
+    desc: 'Highest emphasis card background',
+  },
+]
 </script>
 
 <template>
   <main-layout-container class="settings">
-    <div class="main-container">
-      <h1>Settings</h1>
+    <div class="settings-content py-8 px-6 max-width-container">
+      <h1 class="text-h4 font-weight-bold mb-6 text-on-surface">Settings</h1>
 
-      <v-card flat class="theme-settings" rounded="xl">
-        <h2 class="theme-heading">Theme</h2>
-        <v-divider class="header-divider" />
-
-        <p class="sub-header-text">Mode</p>
-
-        <div class="sub-settings">
-          <div class="theme-chips">
-            <v-chip-group
-              v-model="settings.themeString"
-              color="primary"
-              class="chip-group"
-              mandatory
+      <v-row class="g-6">
+        <!-- Settings Configuration Panel -->
+        <v-col cols="12" lg="7">
+          <v-card class="bg-surface-container-low" flat rounded="xl" border>
+            <!-- Card Header -->
+            <div
+              class="bg-surface-container-high px-6 py-4 rounded-t-xl d-flex align-center justify-space-between border-b"
             >
-              <v-chip v-for="opt in themeOptions" :value="opt" class="theme-chip" :key="opt">
-                {{ caps(opt) }}
-              </v-chip>
-            </v-chip-group>
-          </div>
+              <span class="text-h6 font-weight-medium text-on-surface">Theme Configuration</span>
+              <v-icon color="primary" size="large">mdi-palette-outline</v-icon>
+            </div>
 
-          <div v-if="settings.themeString === 'schedule'">
-            <h4 class="schedule-heading">Schedule theme</h4>
-            <v-switch
-              v-model="settings.useSunSchedule"
-              :label="`Sunrise to sunset${sunString}`"
-              hide-details
-              color="primary"
-            ></v-switch>
+            <div class="pa-6">
+              <!-- Section: Mode Settings -->
+              <div class="d-flex align-center mb-4">
+                <span class="text-overline font-weight-bold text-primary tracking-wide">Mode</span>
+                <v-divider class="ms-4 opacity-30" />
+              </div>
 
-            <v-expand-transition>
-              <template v-if="!settings.useSunSchedule">
-                <div class="time-picker-container">
-                  <div class="picker-card">
-                    <div class="picker-header">
-                      <v-icon color="warning">mdi-white-balance-sunny</v-icon>
-                      Turn on light theme
+              <div class="mb-6">
+                <v-chip-group v-model="settings.themeString" color="primary" mandatory>
+                  <v-chip
+                    v-for="opt in themeOptions"
+                    :value="opt"
+                    :key="opt"
+                    variant="flat"
+                    class="px-5 py-4"
+                  >
+                    {{ caps(opt) }}
+                  </v-chip>
+                </v-chip-group>
+              </div>
+
+              <!-- Subsection: Schedule Options -->
+              <v-expand-transition>
+                <div
+                  v-if="settings.themeString === 'schedule'"
+                  class="mb-6 bg-surface-container-highest pa-5 rounded-lg border"
+                >
+                  <span class="text-subtitle-2 font-weight-medium text-on-surface mb-2 d-block"
+                    >Schedule Theme Settings</span
+                  >
+                  <v-switch
+                    v-model="settings.useSunSchedule"
+                    :label="`Sunrise to sunset${sunString}`"
+                    hide-details
+                    color="primary"
+                    inset
+                    density="comfortable"
+                    class="mb-4"
+                  />
+
+                  <v-expand-transition>
+                    <div v-if="!settings.useSunSchedule" class="time-picker-grid mt-4">
+                      <v-card class="bg-surface-container-high border" rounded="xl" flat>
+                        <div class="px-4 py-3 d-flex align-center gap-2 border-b">
+                          <v-icon color="warning">mdi-white-balance-sunny</v-icon>
+                          <span class="text-caption font-weight-bold">Turn on light theme</span>
+                        </div>
+                        <div class="pa-3 d-flex justify-center">
+                          <v-time-picker
+                            rounded="lg"
+                            bg-color="surface-container"
+                            v-model="settings.enableLightThemeTime"
+                            format="24hr"
+                            scrollable
+                            elevation="0"
+                          />
+                        </div>
+                      </v-card>
+
+                      <v-card class="bg-surface-container-high border" rounded="xl" flat>
+                        <div class="px-4 py-3 d-flex align-center gap-2 border-b">
+                          <v-icon color="primary">mdi-weather-night</v-icon>
+                          <span class="text-caption font-weight-bold">Turn on dark theme</span>
+                        </div>
+                        <div class="pa-3 d-flex justify-center">
+                          <v-time-picker
+                            rounded="lg"
+                            bg-color="surface-container"
+                            v-model="settings.enableDarkThemeTime"
+                            format="24hr"
+                            scrollable
+                            elevation="0"
+                          />
+                        </div>
+                      </v-card>
                     </div>
-                    <v-time-picker
-                      rounded="xl"
-                      bg-color="surface-variant"
-                      v-model="settings.enableLightThemeTime"
-                      format="24hr"
-                      scrollable
-                    ></v-time-picker>
-                  </div>
-
-                  <div class="picker-card">
-                    <div class="picker-header">
-                      <v-icon color="primary">mdi-weather-night</v-icon>
-                      Turn on dark theme
-                    </div>
-                    <v-time-picker
-                      rounded="xl"
-                      bg-color="surface-variant"
-                      v-model="settings.enableDarkThemeTime"
-                      format="24hr"
-                      scrollable
-                    ></v-time-picker>
-                  </div>
+                  </v-expand-transition>
                 </div>
-              </template>
-            </v-expand-transition>
-          </div>
-        </div>
+              </v-expand-transition>
 
-        <p class="sub-header-text">Color</p>
+              <!-- Section: Color Settings -->
+              <div class="d-flex align-center mb-4 mt-6">
+                <span class="text-overline font-weight-bold text-primary tracking-wide">Color</span>
+                <v-divider class="ms-4 opacity-30" />
+              </div>
 
-        <div class="sub-settings">
-          <v-switch
-            color="primary"
-            v-model="settings.imageBackground"
-            label="Use random image background"
-            hide-details
-          ></v-switch>
-          <template v-if="!settings.imageBackground">
-            <p>Pick a theme color</p>
-            <v-color-picker bg-color="surface-variant" v-model="settings.customThemeColor" />
-          </template>
+              <div class="mb-6">
+                <v-switch
+                  color="primary"
+                  v-model="settings.imageBackground"
+                  label="Use random image background"
+                  hide-details
+                  inset
+                  density="comfortable"
+                  class="mb-4"
+                />
 
-          <p class="mt-5">Pick a theme variant</p>
-          <v-chip-group v-model="settings.customThemeVariant" color="primary" mandatory>
-            <v-chip v-for="opt in themeVariantOptions" :value="opt" class="theme-chip" :key="opt">
-              {{ caps(opt) }}
-            </v-chip>
-          </v-chip-group>
-        </div>
-      </v-card>
+                <v-btn
+                  v-if="settings.imageBackground"
+                  rounded
+                  variant="flat"
+                  prepend-icon="mdi-shuffle-variant"
+                  @click="backgroundStore.newBackgroundTheme"
+                  color="secondary"
+                  >New background</v-btn
+                >
+                <v-slide-y-transition>
+                  <div v-if="!settings.imageBackground" class="mb-6">
+                    <span class="text-subtitle-2 font-weight-medium text-on-surface mb-3 d-block"
+                      >Pick a Theme Seed Color</span
+                    >
+                    <v-card
+                      class="bg-surface-container-high d-inline-block border pa-2"
+                      rounded="xl"
+                      flat
+                    >
+                      <v-color-picker
+                        bg-color="transparent"
+                        v-model="settings.customThemeColor"
+                        hide-inputs
+                        flat
+                      />
+                    </v-card>
+                  </div>
+                </v-slide-y-transition>
+              </div>
 
-      <v-divider class="divider-spacing" />
+              <!-- Section: Variant Options -->
+              <div class="mb-4">
+                <span class="text-subtitle-2 font-weight-medium text-on-surface mb-2 d-block"
+                  >Pick a Theme Variant</span
+                >
+                <v-chip-group
+                  v-model="settings.customThemeVariant"
+                  color="primary"
+                  mandatory
+                  column
+                >
+                  <v-chip
+                    v-for="opt in themeVariantOptions"
+                    :value="opt"
+                    :key="opt"
+                    variant="flat"
+                    class="px-5 py-4"
+                  >
+                    {{ caps(opt) }}
+                  </v-chip>
+                </v-chip-group>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
 
-      <h3>Other settings placeholder</h3>
+        <!-- Active Theme Palette Visualizer -->
+        <v-col cols="12" lg="5">
+          <v-card class="bg-surface-container-low h-100" flat rounded="xl" border>
+            <div
+              class="bg-surface-container-high px-6 py-4 rounded-t-xl d-flex align-center justify-space-between border-b"
+            >
+              <span class="text-h6 font-weight-medium text-on-surface">Active Swatches</span>
+              <v-icon color="secondary" size="large">mdi-eyedropper</v-icon>
+            </div>
+
+            <div class="pa-6">
+              <p class="text-body-2 text-on-surface-variant mb-4">
+                This visualization shows how your currently active scheme translates to different UI
+                elements within the app.
+              </p>
+
+              <div class="swatch-grid">
+                <v-card
+                  v-for="swatch in previewSwatches"
+                  :key="swatch.name"
+                  :class="[swatch.bg, swatch.text, 'swatch-card border']"
+                  flat
+                  rounded="lg"
+                >
+                  <div class="pa-3 d-flex flex-column justify-between h-100">
+                    <div>
+                      <div class="text-caption font-weight-black lh-tight">{{ swatch.name }}</div>
+                      <div class="swatch-class-label mt-1 text-lowercase opacity-70">
+                        {{ swatch.bg }}
+                      </div>
+                    </div>
+                    <div
+                      class="text-right text-caption swatch-desc opacity-75 mt-3 pt-2 border-t border-opacity-10"
+                    >
+                      {{ swatch.desc }}
+                    </div>
+                  </div>
+                </v-card>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Section: Placeholder Other Settings -->
+      <div class="mt-8 border-t pt-6">
+        <h3 class="text-h6 font-weight-medium text-on-surface-variant mb-2">
+          Other Settings Placeholder
+        </h3>
+        <p class="text-body-2 text-on-surface-variant">
+          Configure system features, import profiles, and data synchronizations here.
+        </p>
+      </div>
     </div>
   </main-layout-container>
 </template>
 
 <style scoped>
-.main-container {
-  padding: 20px 40px;
+.max-width-container {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.theme-settings {
-  margin-top: 25px;
-  padding: 10px 30px;
-  border: 1px solid rgba(var(--v-theme-on-primary), 0.3);
-  background-color: rgba(var(--v-theme-on-primary), 0.03);
+.time-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
 }
 
-.divider-spacing {
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
-.theme-heading {
-  background-color: rgba(var(--v-theme-on-primary), 0.1);
-  padding: 30px;
-  margin-left: -30px;
-  margin-right: -30px;
-  margin-top: -10px;
-  margin-bottom: 0;
-}
-
-.header-divider {
-  margin-left: -30px;
-  margin-right: -30px;
-  margin-bottom: 20px;
-}
-
-.sub-header-text {
-  text-align: center;
-  font-weight: 400;
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface-variant), 1);
-  text-transform: uppercase;
-  border: 1px solid rgba(var(--v-theme-on-primary), 0.4);
-  background-color: rgba(var(--v-theme-on-primary), 0.2);
-  border-radius: 10px;
-  padding: 5px;
-  margin: 10px 0px;
-}
-
-.sub-settings {
-  padding: 10px 25px;
-}
-
-.schedule-heading {
-  margin-top: 12px;
-  margin-bottom: 0;
-  font-weight: 400;
-  font-size: 15px;
-  opacity: 0.7;
-}
-
-.time-picker-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  margin-top: 24px;
-  justify-content: flex-start;
-  align-items: stretch;
-}
-
-.picker-card {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.picker-header {
-  opacity: 0.8;
-  font-size: 1rem;
-  font-weight: bold;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
+.gap-2 {
   gap: 8px;
+}
+
+.lh-tight {
+  line-height: 1.2;
+}
+
+/* Custom CSS-Grid for Swatches */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.swatch-card {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  min-height: 100px;
+}
+
+.swatch-card:hover {
+  transform: translateY(-2px);
+}
+
+.swatch-class-label {
+  font-family: monospace;
+  font-size: 0.7rem;
+}
+
+.swatch-desc {
+  font-size: 0.72rem;
 }
 </style>

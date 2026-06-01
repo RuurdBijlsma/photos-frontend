@@ -8,6 +8,7 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import type { ThemeVariant } from '@/scripts/constants.ts'
 import { useThrottleFn } from '@vueuse/core'
+import type { RandomPhotoResponse } from '@/scripts/types/api/photos.ts'
 
 // The single key we will use for localStorage
 const BG_CACHE_KEY = 'cachedBackgroundData'
@@ -125,6 +126,20 @@ export const useBackgroundStore = defineStore('background', () => {
     }
   }
 
+  async function newBackgroundTheme() {
+    let newBgJson: RandomPhotoResponse | null = null
+    try {
+      const { data } = await mediaItemService.getRandomPhoto(settings.customThemeVariant)
+      newBgJson = data
+    } catch (e) {
+      snackbarStore.error('Could not get new background theme', e)
+    }
+    if (!newBgJson) return
+    backgroundTheme.value = newBgJson.theme
+    backgroundUrl.value = mediaItemService.getPhotoThumbnail(newBgJson.mediaId, 1080, false)
+    themeStore.setThemesFromJson(backgroundTheme.value)
+  }
+
   function getBackgroundTheme() {
     // Check variable
     if (backgroundTheme.value) return backgroundTheme.value
@@ -205,5 +220,6 @@ export const useBackgroundStore = defineStore('background', () => {
     initialize,
     backgroundTheme,
     colorTheme,
+    newBackgroundTheme,
   }
 })

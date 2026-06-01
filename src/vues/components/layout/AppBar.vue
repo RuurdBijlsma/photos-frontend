@@ -79,6 +79,7 @@ async function logout() {
                     v-for="opt in themeOptions.slice(0, 3)"
                     :value="opt"
                     class="theme-chip"
+                    variant="text"
                     :key="opt"
                   >
                     {{ caps(opt) }}
