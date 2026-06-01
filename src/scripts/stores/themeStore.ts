@@ -5,6 +5,7 @@ import type { DynamicScheme, Palette, Theme } from '@/scripts/types/themeColor.t
 import { useTheme } from 'vuetify/framework'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useSunStore } from '@/scripts/stores/sunStore.ts'
+import { resolveThemeMode } from '@/scripts/themeUtils.ts'
 
 type VuetifyColors = ThemeDefinition['colors']
 
@@ -17,13 +18,13 @@ export function generateColorVariations(
   if (!colors) return
 
   if (isDark) {
-    // Dark Theme: The base color is a high tone (e.g., 80).
+    // Dark Theme: Guess that base color is a high tone (e.g., 80).
     colors[`${name}-lighten-1`] = palette.tones['90']
     colors[`${name}-darken-1`] = palette.tones['70']
     colors[`${name}-darken-2`] = palette.tones['60']
     colors[`${name}-darken-3`] = palette.tones['50']
   } else {
-    // Light Theme: The base color is a mid-tone (e.g., 40).
+    // Light Theme: Guess that base color is a mid-tone (e.g., 40).
     colors[`${name}-lighten-1`] = palette.tones['50']
     colors[`${name}-lighten-2`] = palette.tones['60']
     colors[`${name}-lighten-3`] = palette.tones['70']
@@ -139,11 +140,6 @@ export const useThemeStore = defineStore('theme', () => {
     return { light: lightTheme, dark: darkTheme }
   }
 
-  /**
-   * Applies a new theme to both the store's state and the live Vuetify instance.
-   * This is the single entry point for changing the application's theme.
-   * @param themeData The theme object from your backend.
-   */
   function setThemesFromJson(themeData: Theme) {
     const theme = themeFromJson(themeData)
     currentTheme.value = theme
@@ -158,7 +154,7 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   /**
-   * Plans a single setTimeout execution targeting the next upcoming transition point (sunset or sunrise)
+   * Plans a setTimeout execution targeting the next upcoming transition point (sunset or sunrise)
    */
   function scheduleNextTransition() {
     if (timeoutId) {
@@ -178,21 +174,20 @@ export const useThemeStore = defineStore('theme', () => {
       const sunset = sun.sunset
 
       if (sunrise && sunset) {
-        // Find upcoming sunrise
         const nextSunrise = new Date(sunrise)
-        while (nextSunrise <= now) {
+        nextSunrise.setFullYear(now.getFullYear(), now.getMonth(), now.getDate())
+        if (nextSunrise <= now) {
           nextSunrise.setDate(nextSunrise.getDate() + 1)
         }
 
-        // Find upcoming sunset
         const nextSunset = new Date(sunset)
-        while (nextSunset <= now) {
+        nextSunset.setFullYear(now.getFullYear(), now.getMonth(), now.getDate())
+        if (nextSunset <= now) {
           nextSunset.setDate(nextSunset.getDate() + 1)
         }
 
         nextTransition = nextSunrise < nextSunset ? nextSunrise : nextSunset
       } else {
-        // If sun data is still loading, verify again in 5 seconds
         timeoutId = setTimeout(() => {
           updateActiveTheme()
         }, 5000)
@@ -206,7 +201,7 @@ export const useThemeStore = defineStore('theme', () => {
         const [h, m] = timeStr.split(':').map(Number)
         const d = new Date()
         d.setHours(h, m, 0, 0)
-        while (d <= now) {
+        if (d <= now) {
           d.setDate(d.getDate() + 1)
         }
         return d
@@ -219,7 +214,6 @@ export const useThemeStore = defineStore('theme', () => {
 
     if (nextTransition) {
       const delay = nextTransition.getTime() - now.getTime()
-      // Minimum safe boundary of 1 second to safeguard against infinite loop re-evaluation
       const safeDelay = Math.max(delay, 1000)
 
       timeoutId = setTimeout(() => {
@@ -228,59 +222,18 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  /**
-   * Applies the theme matching current configurations and schedules the next change event.
-   */
   function updateActiveTheme() {
-    const themeType = settings.themeString
+    const targetTheme = resolveThemeMode(
+      settings.themeString,
+      settings.useSunSchedule,
+      sun.sunrise,
+      sun.sunset,
+      settings.enableLightThemeTime,
+      settings.enableDarkThemeTime,
+    )
 
-    if (themeType === 'light') {
-      vuetifyTheme.change('light')
-    } else if (themeType === 'dark') {
-      vuetifyTheme.change('dark')
-    } else if (themeType === 'system') {
-      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      vuetifyTheme.change(isSystemDark ? 'dark' : 'light')
-    } else if (themeType === 'schedule') {
-      const now = new Date()
-      let isDark = false
-
-      if (settings.useSunSchedule) {
-        const sunrise = sun.sunrise
-        const sunset = sun.sunset
-
-        if (sunrise && sunset) {
-          const nowMin = now.getHours() * 60 + now.getMinutes()
-          const riseMin = sunrise.getHours() * 60 + sunrise.getMinutes()
-          const setMin = sunset.getHours() * 60 + sunset.getMinutes()
-
-          if (riseMin < setMin) {
-            isDark = nowMin < riseMin || nowMin >= setMin
-          } else {
-            isDark = nowMin >= setMin && nowMin < riseMin
-          }
-        } else {
-          const nowHour = now.getHours()
-          isDark = nowHour < 6 || nowHour >= 18
-        }
-      } else {
-        const lightTime = settings.enableLightThemeTime || '07:00'
-        const darkTime = settings.enableDarkThemeTime || '19:00'
-
-        const [lightH, lightM] = lightTime.split(':').map(Number)
-        const [darkH, darkM] = darkTime.split(':').map(Number)
-
-        const lightMin = lightH * 60 + lightM
-        const darkMin = darkH * 60 + darkM
-        const nowMin = now.getHours() * 60 + now.getMinutes()
-
-        if (lightMin < darkMin) {
-          isDark = nowMin < lightMin || nowMin >= darkMin
-        } else {
-          isDark = nowMin >= darkMin && nowMin < lightMin
-        }
-      }
-      vuetifyTheme.change(isDark ? 'dark' : 'light')
+    if (vuetifyTheme.global.name.value !== targetTheme) {
+      vuetifyTheme.change(targetTheme)
     }
 
     scheduleNextTransition()
@@ -289,6 +242,8 @@ export const useThemeStore = defineStore('theme', () => {
   function initThemeSync() {
     if (isInitialized) return
     isInitialized = true
+
+    sun.fetchSunTimes(true)
 
     watch(
       [
@@ -305,16 +260,7 @@ export const useThemeStore = defineStore('theme', () => {
       { immediate: true },
     )
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const systemThemeListener = () => {
-      if (settings.themeString === 'system') {
-        updateActiveTheme()
-      }
-    }
-    mediaQuery.addEventListener('change', systemThemeListener)
-
     onBeforeUnmount(() => {
-      mediaQuery.removeEventListener('change', systemThemeListener)
       if (timeoutId) {
         clearTimeout(timeoutId)
       }

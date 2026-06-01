@@ -1,76 +1,28 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import type { SunCache } from '@/scripts/themeUtils.ts'
+import { useObjStorage } from '@/scripts/utils.ts'
 
 interface GeoResponse {
   latitude: string
   longitude: string
 }
 
-interface SunResponse {
-  results: {
-    sunrise: string
-    sunset: string
-  }
-  status: string
-}
-
-interface SunCache {
-  sunrise: string
-  sunset: string
-  lastFetched: number
-}
-
-const CACHE_KEY = 'sun_store_cache'
 const CACHE_DURATION = 12 * 60 * 60 * 1000 // 12 hours in milliseconds
 
-// Helper to safely read cache (handles SSR environments)
-function getCachedData(): SunCache | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const cached = localStorage.getItem(CACHE_KEY)
-    return cached ? JSON.parse(cached) : null
-  } catch (err) {
-    console.error('Failed to read from localStorage', err)
-    return null
-  }
-}
-
-// Helper to safely write cache
-function setCachedData(data: SunCache): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data))
-  } catch (err) {
-    console.error('Failed to write to localStorage', err)
-  }
-}
-
 export const useSunStore = defineStore('sun', () => {
-  // Try initializing state from valid cache immediately on store instantiation
-  const initialCache = getCachedData()
-  const isCacheFresh = initialCache && Date.now() - initialCache.lastFetched < CACHE_DURATION
-
-  const sunrise = ref<Date | null>(
-    isCacheFresh && initialCache ? new Date(initialCache.sunrise) : null,
-  )
-  const sunset = ref<Date | null>(
-    isCacheFresh && initialCache ? new Date(initialCache.sunset) : null,
-  )
+  const sunData = useObjStorage<SunCache | null>('sun_cache', null)
+  const sunrise = computed(() => (sunData.value ? new Date(sunData.value.sunrise) : null))
+  const sunset = computed(() => (sunData.value ? new Date(sunData.value.sunset) : null))
 
   const loading = ref<boolean>(false)
   const error = ref<string | null>(null)
 
-  // Modified signature to allow disabling the cache (e.g., force refresh) if needed
   async function fetchSunTimes(useCache: boolean = true): Promise<void> {
-    if (useCache) {
-      const cached = getCachedData()
-      if (cached) {
-        const age = Date.now() - cached.lastFetched
-        if (age < CACHE_DURATION) {
-          sunrise.value = new Date(cached.sunrise)
-          sunset.value = new Date(cached.sunset)
-          return
-        }
+    if (useCache && sunData.value) {
+      const age = Date.now() - sunData.value.lastFetched
+      if (age < CACHE_DURATION) {
+        return
       }
     }
 
@@ -89,20 +41,15 @@ export const useSunStore = defineStore('sun', () => {
         `https://api.sunrise-sunset.org/json?lat=${latitude}&lng=${longitude}&formatted=0`,
       )
       if (!sunResponse.ok) throw new Error('Failed to fetch sun times')
-      const sunData = (await sunResponse.json()) as SunResponse
+      const sunDataJson = await sunResponse.json()
 
-      const fetchedSunrise = new Date(sunData.results.sunrise)
-      const fetchedSunset = new Date(sunData.results.sunset)
-
-      sunrise.value = fetchedSunrise
-      sunset.value = fetchedSunset
-
-      // 3. Save to cache
-      setCachedData({
+      const fetchedSunrise = new Date(sunDataJson.results.sunrise)
+      const fetchedSunset = new Date(sunDataJson.results.sunset)
+      sunData.value = {
         sunrise: fetchedSunrise.toISOString(),
         sunset: fetchedSunset.toISOString(),
         lastFetched: Date.now(),
-      })
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         error.value = err.message
@@ -115,5 +62,5 @@ export const useSunStore = defineStore('sun', () => {
     }
   }
 
-  return { sunrise, sunset, loading, error, fetchSunTimes }
+  return { sunrise, sunset, loading, error, fetchSunTimes, sunData }
 })
