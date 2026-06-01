@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import type { ThemeType, ThemeVariant } from '@/scripts/constants.ts'
 
-
 export const useSettingStore = defineStore('settings', () => {
   const useImageGlow = useStorage('settingsImageGlow', false)
   const useBackdropBlur = useStorage('settingsBackdropBlur', true)

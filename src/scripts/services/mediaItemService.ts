@@ -33,7 +33,9 @@ const mediaItemService = {
     return new URL(path, baseUrl).href
   },
 
-  getRandomPhoto(variant: ThemeVariant = 'Vibrant'): Promise<AxiosResponse<RandomPhotoResponse | null>> {
+  getRandomPhoto(
+    variant: ThemeVariant = 'Vibrant',
+  ): Promise<AxiosResponse<RandomPhotoResponse | null>> {
     return apiClient.get<RandomPhotoResponse | null>('/theme/random-photo', {
       params: { variant },
     })
