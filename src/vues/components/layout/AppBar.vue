@@ -42,6 +42,7 @@ async function logout() {
         </template>
         <div class="menu-container">
           <router-link
+            @click="menuOpen = false"
             v-if="authStore.user"
             :to="`/user/${authStore.user.id}/${encodeURIComponent(authStore.user.name)}`"
           >
