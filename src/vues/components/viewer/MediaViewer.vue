@@ -15,13 +15,14 @@ const PanoViewer = defineAsyncComponent(
 defineProps<{
   viewType: PhotoViewerType
   mediaItemId: string
+  muted: boolean
 }>()
 </script>
 
 <template>
   <div class="viewer-container">
     <photo-viewer :media-item-id="mediaItemId" v-if="viewType === 'photo'" />
-    <video-viewer :media-item-id="mediaItemId" v-else-if="viewType === 'video'" />
+    <video-viewer :media-item-id="mediaItemId" v-else-if="viewType === 'video'" :muted="muted" />
     <pano-viewer :media-item-id="mediaItemId" v-if="viewType === 'panorama'" />
   </div>
 </template>

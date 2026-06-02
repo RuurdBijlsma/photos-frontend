@@ -1,13 +1,17 @@
+<!-- File: src/vues/views/main/SettingsView.vue -->
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import ThemeSettings from '@/vues/components/settings/ThemeSettings.vue'
+import InterfaceSettings from '@/vues/components/settings/InterfaceSettings.vue'
 </script>
 
 <template>
   <main-layout-container class="settings">
     <div class="settings-content">
       <h1 class="settings-title">Settings</h1>
-      <theme-settings></theme-settings>
+      <theme-settings />
+
+      <interface-settings class="mt-6" />
 
       <!-- Section: Placeholder Other Settings -->
       <section class="placeholder-section">
@@ -28,8 +32,20 @@ import ThemeSettings from '@/vues/components/settings/ThemeSettings.vue'
 .settings-title {
   font-size: 2.125rem;
   font-weight: 700;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   color: rgb(var(--v-theme-on-surface));
+}
+
+.settings-section {
+  margin-bottom: 48px;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-surface));
+  display: flex;
+  align-items: center;
 }
 
 .placeholder-section {

@@ -16,6 +16,17 @@ import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { useTheme } from 'vuetify/framework'
 
+const props = withDefaults(
+  defineProps<{
+    overrideId?: string
+    muted?: boolean
+  }>(),
+  {
+    overrideId: undefined,
+    muted: false,
+  },
+)
+
 const route = useRoute()
 const router = useRouter()
 const theme = useTheme()
@@ -46,6 +57,7 @@ useEventListener(document, 'mousemove', () => {
 })
 
 const id = computed(() => {
+  if (props.overrideId) return props.overrideId
   const rawId = route.params.mediaId
   if (rawId && !Array.isArray(rawId)) return rawId
   console.warn('WEIRD ID IN ROUTE DETECTED')
@@ -206,7 +218,7 @@ watch(
       backgroundColor: settings.useImageGlow ? 'rgb(var(--v-theme-background))' : 'black',
     }"
   >
-    <media-viewer v-if="id" :view-type="viewerType" :media-item-id="id" class="photo-viewer" />
+    <media-viewer :muted="muted" v-if="id" :view-type="viewerType" :media-item-id="id" class="photo-viewer" />
     <div class="top-bar">
       <div class="left-buttons">
         <v-btn

@@ -20,11 +20,15 @@ const props = withDefaults(
     context?: TimelineContext
     isManualOrderMode?: boolean
     hideDropShadow?: boolean
+    idealRowHeight?: number
+    hideScrollBar?: boolean
   }>(),
   {
     context: () => ({}),
     isManualOrderMode: false,
     hideDropShadow: false,
+    hideScrollBar: false,
+    idealRowHeight: 330,
   },
 )
 
@@ -70,7 +74,6 @@ function onReorder({
   emit('reorder', items)
 }
 
-const IDEAL_ROW_HEIGHT = 330
 const MAX_SIZE_MULTIPLIER = 1.5
 const ITEM_GAP = 2
 const MIN_THUMB_HEIGHT = 20
@@ -130,10 +133,10 @@ function calculateLayout(timelineItems: SimpleTimelineItem[], containerWidth: nu
   for (const [i, item] of timelineItems.entries()) {
     rowItems.push(item)
     const gapSize = (rowItems.length - 1) * ITEM_GAP
-    rowWidth += IDEAL_ROW_HEIGHT * item.ratio
+    rowWidth += props.idealRowHeight * item.ratio
     if (rowWidth + gapSize > containerWidth) {
       const sizeMultiplier = Math.min((containerWidth - gapSize) / rowWidth, MAX_SIZE_MULTIPLIER)
-      const rowHeight = IDEAL_ROW_HEIGHT * sizeMultiplier
+      const rowHeight = props.idealRowHeight * sizeMultiplier
       layoutRows.push({
         items: rowItems,
         height: rowHeight,
@@ -151,7 +154,7 @@ function calculateLayout(timelineItems: SimpleTimelineItem[], containerWidth: nu
 
   if (rowItems.length > 0) {
     const sizeMultiplier = Math.min(containerWidth / rowWidth, MAX_SIZE_MULTIPLIER)
-    const rowHeight = IDEAL_ROW_HEIGHT * sizeMultiplier
+    const rowHeight = props.idealRowHeight * sizeMultiplier
     layoutRows.push({
       items: rowItems,
       height: rowHeight,
@@ -325,7 +328,7 @@ useResizeObserver(customSlotEl, (entries) => {
   }
 })
 
-watch([localItemsOrder, containerWidth], () => {
+watch([localItemsOrder, containerWidth, ()=>props.idealRowHeight], () => {
   const { rows, totalHeight } = calculateLayout(localItemsOrder.value, containerWidth.value)
   gridLayout.value = rows
   contentHeight.value = totalHeight + customSlotHeight.value
@@ -355,7 +358,7 @@ useEventListener(window, 'mouseup', () => {
 
 <template>
   <div class="simple-timeline">
-    <main-layout-container :hide-drop-shadow="hideDropShadow">
+    <main-layout-container :hide-drop-shadow="hideDropShadow" :ignore-scroll-bar="hideScrollBar">
       <selection-overlay v-if="context" :context="context" />
       <teleport to="body">
         <router-view />
@@ -417,6 +420,7 @@ useEventListener(window, 'mouseup', () => {
 
     <!-- Scrollbar Track -->
     <div
+      v-if="!hideScrollBar"
       class="timeline-scroll"
       ref="scrollTrack"
       @mousedown="handleMouseDown"

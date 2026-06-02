@@ -13,6 +13,7 @@ import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 
 const props = defineProps<{
   mediaItemId: string
+  muted: boolean
 }>()
 
 const windowSize = useWindowSize()
@@ -33,7 +34,7 @@ const fullImage = computed(() => mediaItemStore.mediaItems.get(props.mediaItemId
 
 <template>
   <div class="video-viewer">
-    <video controls autoplay :src="videoUrl" loop />
+    <video :muted="muted" controls autoplay :src="videoUrl" loop />
   </div>
 </template>
 

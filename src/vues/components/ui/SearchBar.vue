@@ -482,7 +482,7 @@ watch(
                 :thumbnail-size="240"
                 :is-scrolling-fast="false"
                 class="search-grid-item"
-                :view-link="`/search/view/`"
+                view-link="/search/view/"
                 :query="{ query }"
               />
             </div>

@@ -3,10 +3,12 @@ withDefaults(
   defineProps<{
     fitToContent?: boolean
     hideDropShadow?: boolean
+    ignoreScrollBar?: boolean
   }>(),
   {
     fitToContent: false,
     hideDropShadow: false,
+    ignoreScrollBar: false,
   },
 )
 </script>
@@ -14,7 +16,11 @@ withDefaults(
 <template>
   <div
     class="outer-container"
-    :class="{ 'fit-content': fitToContent, 'hide-drop-shadow': hideDropShadow }"
+    :class="{
+      'fit-content': fitToContent,
+      'hide-drop-shadow': hideDropShadow,
+      'ignore-scrollbar': ignoreScrollBar,
+    }"
   >
     <div class="inner-container">
       <slot></slot>
@@ -39,6 +45,10 @@ withDefaults(
   max-width: calc(100% - 50px);
   width: 100%;
   height: 100%;
+}
+
+.outer-container.ignore-scrollbar {
+  max-width: 100%;
 }
 
 .hide-drop-shadow.outer-container {
