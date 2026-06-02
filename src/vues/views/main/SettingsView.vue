@@ -1,4 +1,3 @@
-<!-- File: src/vues/views/main/SettingsView.vue -->
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import ThemeSettings from '@/vues/components/settings/ThemeSettings.vue'
@@ -9,9 +8,22 @@ import InterfaceSettings from '@/vues/components/settings/InterfaceSettings.vue'
   <main-layout-container class="settings">
     <div class="settings-content">
       <h1 class="settings-title">Settings</h1>
+
+      <div class="divider-flex">
+        <v-divider />
+        <span>Theming</span>
+        <v-divider />
+      </div>
+
       <theme-settings />
 
-      <interface-settings class="mt-6" />
+      <div class="divider-flex">
+        <v-divider />
+        <span>User Interface</span>
+        <v-divider />
+      </div>
+
+      <interface-settings />
 
       <!-- Section: Placeholder Other Settings -->
       <section class="placeholder-section">
@@ -23,6 +35,10 @@ import InterfaceSettings from '@/vues/components/settings/InterfaceSettings.vue'
 </template>
 
 <style scoped>
+.settings {
+  overflow-y: auto;
+}
+
 .settings-content {
   max-width: 1400px;
   margin: 0 auto;
@@ -36,16 +52,19 @@ import InterfaceSettings from '@/vues/components/settings/InterfaceSettings.vue'
   color: rgb(var(--v-theme-on-surface));
 }
 
-.settings-section {
-  margin-bottom: 48px;
+.divider-flex {
+  display: flex;
+  gap: 30px;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  margin-left: 50px;
+  margin-right: 50px;
+  align-items: center;
 }
 
-.section-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-on-surface));
-  display: flex;
-  align-items: center;
+.divider-flex span {
+  font-size: 25px;
+  white-space: nowrap;
 }
 
 .placeholder-section {

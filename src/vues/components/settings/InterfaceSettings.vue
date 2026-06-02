@@ -1,4 +1,3 @@
-<!-- File: src/vues/components/settings/UiSettings.vue -->
 <script setup lang="ts">
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import ViewPhoto from '@/vues/views/main/ViewPhoto.vue'
@@ -6,6 +5,7 @@ import { ref } from 'vue'
 import { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 import searchService from '@/scripts/services/searchService.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
+import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import { useEventListener } from '@vueuse/core'
 
 const settings = useSettingStore()
@@ -22,7 +22,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
 <template>
   <div class="ui-settings-layout">
     <simple-timeline
-      v-if="rowHeightEditing"
+      v-if="rowHeightEditing && previewTimeline.length > 0"
       hide-scroll-bar
       class="timeline-preview"
       :timeline-items="previewTimeline"
@@ -82,17 +82,27 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
               <span class="slider-label"
                 >Timeline Row Height: {{ settings.timelineRowHeight }}px</span
               >
-              <v-slider
-                v-model="settings.timelineRowHeight"
-                @mousedown="rowHeightEditing = true"
-                :min="50"
-                :max="1000"
-                :step="5"
-                color="primary"
-                track-color="surface-container-high"
-                hide-details
-                class="mt-2"
-              />
+              <div class="slider-flex">
+                <v-slider
+                  v-model="settings.timelineRowHeight"
+                  @mousedown="rowHeightEditing = true"
+                  :min="50"
+                  :max="1000"
+                  :step="5"
+                  color="primary"
+                  hide-details
+                  class="mt-2"
+                />
+                <v-btn
+                  class="slider-reset-button"
+                  color="tertiary"
+                  @click="settings.timelineRowHeight = 330"
+                  rounded
+                  density="compact"
+                  variant="plain"
+                  >Reset</v-btn
+                >
+              </div>
             </div>
 
             <v-switch
@@ -156,14 +166,42 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
           <div class="preview-element mt-6">
             <div class="preview-element-title">Backdrop Blur</div>
             <div class="blur-preview-box">
-              <div class="colorful-bg">
-                <div class="color-dot dot-1"></div>
-                <div class="color-dot dot-2"></div>
+              <!-- Background layer simulating actual UI behind -->
+              <div class="blur-preview-bg-ui">
+                <div class="mock-grid">
+                  <div class="mock-grid-item" v-for="n in 3" :key="n">
+                    <thumbnail-img
+                      v-if="previewTimeline[n - 1]"
+                      :media-item-id="previewTimeline[n - 1].id"
+                      :height="80"
+                      cover
+                    />
+                    <div v-else class="fallback-color-dot" :class="'dot-' + n"></div>
+                  </div>
+                </div>
+                <div class="mock-text-lines">
+                  <div class="mock-line title-line"></div>
+                  <div class="mock-line text-line"></div>
+                  <div class="mock-line text-line short"></div>
+                </div>
               </div>
-              <div class="blur-overlay" :class="{ 'apply-blur': settings.useBackdropBlur }">
-                <span class="blur-status-text">
-                  Blur: {{ settings.useBackdropBlur ? 'Enabled' : 'Disabled' }}
-                </span>
+
+              <!-- Foreground overlay representing a dialog card -->
+              <div class="mock-dialog-overlay">
+                <div class="mock-dialog-card" :class="{ 'apply-blur': settings.useBackdropBlur }">
+                  <div class="mock-dialog-header">
+                    <v-icon size="small" class="mr-1">mdi-blur</v-icon>
+                    <span>System Settings</span>
+                  </div>
+                  <div class="mock-dialog-body">
+                    Backdrop blur status is currently shown as
+                    <strong>{{ settings.useBackdropBlur ? 'enabled' : 'disabled' }}</strong
+                    >.
+                  </div>
+                  <div class="mock-dialog-footer">
+                    <div class="mock-dialog-btn">Settings</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -264,6 +302,16 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
   display: block;
 }
 
+.slider-flex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-reset-button {
+  transform: translateY(3px);
+}
+
 .preview-desc {
   font-size: 0.875rem;
   color: rgb(var(--v-theme-on-surface-variant));
@@ -293,7 +341,8 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
     color 0.3s ease;
   background-color: rgb(var(--v-theme-surface-container-high));
   height: 133px;
-  width: 400px;
+  width: 100%;
+  max-width: 400px;
   overflow: hidden;
   position: relative;
 }
@@ -309,130 +358,148 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
   pointer-events: none;
 }
 
-/* Timeline Simulation */
-.timeline-preview-box {
-  background-color: rgb(var(--v-theme-surface-container-high));
-  border-radius: 12px;
-  padding: 12px;
+/* Backdrop Blur Simulation */
+.blur-preview-box {
+  position: relative;
+  height: 180px;
+  border-radius: 16px;
+  overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background-color: rgb(var(--v-theme-surface-container-low));
+}
+
+.blur-preview-bg-ui {
+  position: absolute;
+  inset: 0;
+  padding: 12px;
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  z-index: 1;
+}
+
+.mock-grid {
+  display: flex;
   gap: 8px;
 }
 
-.mock-day-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  background-color: rgb(var(--v-theme-surface-container-highest));
-  color: rgb(var(--v-theme-on-surface));
-  padding: 4px 8px;
-  border-radius: 6px;
-  align-self: flex-start;
-  display: flex;
-  align-items: center;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.mock-row {
-  display: flex;
-  gap: 6px;
-  transition: height 0.3s ease;
-  overflow: hidden;
-}
-
-.mock-photo-card {
+.mock-grid-item {
   flex: 1;
-  height: 100%;
-  border-radius: 6px;
-  display: flex;
-  align-items: flex-end;
-  padding: 6px;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: rgb(var(--v-theme-surface-container-highest));
   position: relative;
   border: 1px solid rgba(var(--v-border-color), 0.15);
 }
 
-.photo-index {
-  font-size: 0.65rem;
-  font-weight: bold;
-  color: white;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 1px 5px;
-  border-radius: 4px;
-}
-
-.timeline-scale-indicator {
-  font-size: 0.7rem;
-  opacity: 0.6;
-  text-align: right;
-}
-
-/* Backdrop Blur Simulation */
-.blur-preview-box {
-  position: relative;
-  height: 100px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.colorful-bg {
+.fallback-color-dot {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  background: rgb(var(--v-theme-surface-container-high));
-  overflow: hidden;
-}
-
-.color-dot {
-  position: absolute;
+  inset: 10px;
   border-radius: 50%;
 }
 
-.dot-1 {
-  width: 60px;
-  height: 60px;
-  top: 10px;
-  left: 20%;
+.fallback-color-dot.dot-1 {
   background-color: rgb(var(--v-theme-primary));
 }
-
-.dot-2 {
-  width: 50px;
-  height: 50px;
-  bottom: 10px;
-  right: 20%;
+.fallback-color-dot.dot-2 {
+  background-color: rgb(var(--v-theme-secondary));
+}
+.fallback-color-dot.dot-3 {
   background-color: rgb(var(--v-theme-tertiary));
 }
 
-.blur-overlay {
+.mock-text-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mock-line {
+  height: 8px;
+  border-radius: 4px;
+  background-color: rgb(var(--v-theme-on-surface));
+  opacity: 0.15;
+}
+
+.mock-line.title-line {
+  width: 40%;
+  height: 12px;
+  opacity: 0.25;
+}
+
+.mock-line.text-line {
+  width: 85%;
+}
+
+.mock-line.text-line.short {
+  width: 60%;
+}
+
+/* Foreground Modal Overlay with SearchBar Dropdown Styling */
+.mock-dialog-overlay {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--v-theme-surface-container-low), 0.45);
   z-index: 2;
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.mock-dialog-card {
+  color: rgb(var(--v-theme-on-surface-container-high));
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(var(--v-theme-surface-container-high), 0.95);
+  box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.2);
+  width: 80%;
+  max-width: 280px;
+  padding: 12px 16px;
   transition:
     backdrop-filter 0.3s ease,
     background-color 0.3s ease;
 }
 
-.blur-overlay.apply-blur {
-  backdrop-filter: blur(8px);
-  background: rgba(var(--v-theme-surface-container-low), 0.25);
+.mock-dialog-card.apply-blur {
+  background-color: rgba(var(--v-theme-surface-container-high), 0.8);
+  backdrop-filter: saturate(250%) blur(12px);
 }
 
-.blur-status-text {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-on-surface));
-  background-color: rgb(var(--v-theme-surface-container-high));
-  padding: 6px 12px;
-  border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+.mock-dialog-header {
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  color: rgb(var(--v-theme-primary));
+}
+
+.mock-dialog-body {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+
+.mock-dialog-body strong {
+  color: rgb(var(--v-theme-primary));
+}
+
+.mock-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mock-dialog-btn {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgb(var(--v-theme-primary));
+  padding: 4px 10px;
+  border-radius: 6px;
+  background-color: rgba(var(--v-theme-primary), 0.1);
+  cursor: pointer;
 }
 </style>
