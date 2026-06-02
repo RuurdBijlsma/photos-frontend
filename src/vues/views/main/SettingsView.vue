@@ -2,6 +2,9 @@
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import ThemeSettings from '@/vues/components/settings/ThemeSettings.vue'
 import InterfaceSettings from '@/vues/components/settings/InterfaceSettings.vue'
+import { DEFAULT_BG_URL, useBackgroundStore } from '@/scripts/stores/backgroundStore.ts'
+
+const backgroundStore = useBackgroundStore()
 </script>
 
 <template>
@@ -15,6 +18,16 @@ import InterfaceSettings from '@/vues/components/settings/InterfaceSettings.vue'
         <v-divider />
       </div>
 
+      <v-alert
+        variant="tonal"
+        type="info"
+        rounded="xl"
+        v-if="backgroundStore.backgroundUrl === DEFAULT_BG_URL"
+        class="etna-text"
+      >
+        Theming with background images is not supported until at least one of your photos is fully
+        processed.
+      </v-alert>
       <theme-settings />
 
       <div class="divider-flex">
@@ -43,6 +56,10 @@ import InterfaceSettings from '@/vues/components/settings/InterfaceSettings.vue'
   max-width: 1400px;
   margin: 0 auto;
   padding: 32px 24px;
+}
+
+.etna-text {
+  margin-bottom: 30px;
 }
 
 .settings-title {

@@ -12,12 +12,12 @@ import type { RandomPhotoResponse } from '@/scripts/types/api/photos.ts'
 
 // The single key we will use for localStorage
 const BG_CACHE_KEY = 'cachedBackgroundData'
-const DEFAULT_IMAGE_URL = '/img/etna.jpg'
+export const DEFAULT_BG_URL = '/img/etna.jpg'
 type CachedBackgroundData = { url: string; theme: Theme; variant: ThemeVariant }
 
 export const useBackgroundStore = defineStore('background', () => {
   // --- STATE ---
-  const backgroundUrl = ref(DEFAULT_IMAGE_URL)
+  const backgroundUrl = ref(DEFAULT_BG_URL)
   const hasFetchedForThisSession = ref(false)
   const backgroundTheme = shallowRef<Theme | null>(null)
   const colorTheme = shallowRef<Theme | null>(null)
@@ -155,7 +155,7 @@ export const useBackgroundStore = defineStore('background', () => {
     }
 
     // Fallback
-    backgroundUrl.value = DEFAULT_IMAGE_URL
+    backgroundUrl.value = DEFAULT_BG_URL
     return null
   }
 
