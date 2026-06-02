@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-
 </script>
 
 <template>

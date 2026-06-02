@@ -218,7 +218,13 @@ watch(
       backgroundColor: settings.useImageGlow ? 'rgb(var(--v-theme-background))' : 'black',
     }"
   >
-    <media-viewer :muted="muted" v-if="id" :view-type="viewerType" :media-item-id="id" class="photo-viewer" />
+    <media-viewer
+      :muted="muted"
+      v-if="id"
+      :view-type="viewerType"
+      :media-item-id="id"
+      class="photo-viewer"
+    />
     <div class="top-bar">
       <div class="left-buttons">
         <v-btn

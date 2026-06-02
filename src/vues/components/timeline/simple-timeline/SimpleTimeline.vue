@@ -328,7 +328,7 @@ useResizeObserver(customSlotEl, (entries) => {
   }
 })
 
-watch([localItemsOrder, containerWidth, ()=>props.idealRowHeight], () => {
+watch([localItemsOrder, containerWidth, () => props.idealRowHeight], () => {
   const { rows, totalHeight } = calculateLayout(localItemsOrder.value, containerWidth.value)
   gridLayout.value = rows
   contentHeight.value = totalHeight + customSlotHeight.value
