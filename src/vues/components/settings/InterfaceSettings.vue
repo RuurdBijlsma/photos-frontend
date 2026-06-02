@@ -342,18 +342,18 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
   background-color: rgb(var(--v-theme-surface-container-high));
   height: 133px;
   width: 100%;
-  max-width: 400px;
   overflow: hidden;
   position: relative;
+  margin: 0 auto;
 }
 
 .preview-scale {
   position: absolute;
   top: 0;
   left: 0;
-  width: 900px;
-  height: 300px;
-  transform: scale(0.444444);
+  width: 300%;
+  height: 400px;
+  transform: scale(0.33333);
   transform-origin: top left;
   pointer-events: none;
 }
