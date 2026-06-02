@@ -160,7 +160,7 @@ export const useBackgroundStore = defineStore('background', () => {
   }
 
   async function setCorrectTheme() {
-    const theme = settings.imageBackground ? getBackgroundTheme() : await fetchColorTheme()
+    const theme = settings.useImageBackground ? getBackgroundTheme() : await fetchColorTheme()
     if (theme) themeStore.setThemesFromJson(theme)
   }
 
@@ -172,12 +172,12 @@ export const useBackgroundStore = defineStore('background', () => {
   watch(
     () => settings.customThemeVariant,
     async () => {
-      if (settings.imageBackground) {
+      if (settings.useImageBackground) {
         await refreshCurrentBackgroundTheme()
       } else {
         await setCorrectTheme()
       }
-      if (settings.imageBackground && authStore.isAuthenticated) {
+      if (settings.useImageBackground && authStore.isAuthenticated) {
         fetchAndCacheNextBackground(true)
       }
     },
@@ -186,7 +186,7 @@ export const useBackgroundStore = defineStore('background', () => {
   const throttledTheme = useThrottleFn(setCorrectTheme, 50, true, true)
 
   watch(
-    () => settings.imageBackground,
+    () => settings.useImageBackground,
     () => {
       return throttledTheme()
     },

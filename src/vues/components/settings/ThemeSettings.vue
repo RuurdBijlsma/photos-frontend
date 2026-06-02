@@ -155,7 +155,7 @@ const previewSwatches = [
           <div class="color-settings-content">
             <v-switch
               color="primary"
-              v-model="settings.imageBackground"
+              v-model="settings.useImageBackground"
               label="Use random photo as background"
               hide-details
               inset
@@ -164,7 +164,7 @@ const previewSwatches = [
             />
 
             <v-btn
-              v-if="settings.imageBackground"
+              v-if="settings.useImageBackground"
               rounded
               variant="text"
               prepend-icon="mdi-shuffle-variant"
@@ -176,7 +176,7 @@ const previewSwatches = [
             </v-btn>
 
             <v-slide-y-transition>
-              <div v-if="!settings.imageBackground" class="color-picker-wrapper">
+              <div v-if="!settings.useImageBackground" class="color-picker-wrapper">
                 <span class="color-picker-title">Pick a Theme Seed Color</span>
                 <v-card class="color-picker-card" flat border>
                   <v-color-picker

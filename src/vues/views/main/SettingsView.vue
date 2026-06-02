@@ -65,6 +65,7 @@ import InterfaceSettings from '@/vues/components/settings/InterfaceSettings.vue'
 .divider-flex span {
   font-size: 25px;
   white-space: nowrap;
+  color: rgba(var(--v-theme-on-surface-variant), 0.8);
 }
 
 .placeholder-section {

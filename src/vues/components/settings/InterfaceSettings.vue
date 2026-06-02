@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { TIMELINE_ROW_HEIGHT, useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import ViewPhoto from '@/vues/views/main/ViewPhoto.vue'
 import { ref } from 'vue'
 import { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
@@ -96,7 +96,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
                 <v-btn
                   class="slider-reset-button"
                   color="tertiary"
-                  @click="settings.timelineRowHeight = 330"
+                  @click="settings.timelineRowHeight = TIMELINE_ROW_HEIGHT"
                   rounded
                   density="compact"
                   variant="plain"
@@ -173,7 +173,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
                     <thumbnail-img
                       v-if="previewTimeline[n - 1]"
                       :media-item-id="previewTimeline[n - 1].id"
-                      :height="80"
+                      :height="144"
                       cover
                     />
                     <div v-else class="fallback-color-dot" :class="'dot-' + n"></div>

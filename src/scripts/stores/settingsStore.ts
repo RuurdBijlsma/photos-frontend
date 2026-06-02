@@ -2,29 +2,42 @@ import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import type { ThemeType, ThemeVariant } from '@/scripts/constants.ts'
 
+export const USE_IMAGE_GLOW = false
+export const DARK_PHOTO_VIEWER = true
+export const USE_BACKDROP_BLUR = true
+export const TIMELINE_ROW_HEIGHT = 320
+export const TIMELINE_USE_DAY_LABELS = false
+export const THEME_STRING: ThemeType = 'system'
+export const ENABLE_LIGHT_THEME_TIME = '07:00'
+export const ENABLE_DARK_THEME_TIME = '19:00'
+export const USE_SUN_SCHEDULE = false
+export const USE_IMAGE_BACKGROUND = true
+export const CUSTOM_THEME_COLOR = '#462de8'
+export const CUSTOM_THEME_VARIANT: ThemeVariant = 'Expressive'
+
 export const useSettingStore = defineStore('settings', () => {
-  // UI -> Photo Viewer
-  const useImageGlow = useStorage('settingsImageGlow', false)
-  const darkPhotoViewer = useStorage('settingsDarkPhotoViewer', true)
-  // UI -> General
-  const useBackdropBlur = useStorage('settingsBackdropBlur', true)
-  // UI -> Timeline
-  const timelineRowHeight = useStorage('settingsTimelineRowHeight', 320)
-  const timelineUseDayLabels = useStorage('settingsTimelineUseDayLabels', true)
   // Theme -> Mode
-  const themeString = useStorage<ThemeType>('theme', 'system')
-  const enableLightThemeTime = useStorage('enableLightThemeTime', '07:00')
-  const enableDarkThemeTime = useStorage('enableDarkThemeTime', '19:00')
-  const useSunSchedule = useStorage('useSunSchedule', false)
+  const themeString = useStorage<ThemeType>('themeString', THEME_STRING)
+  const enableLightThemeTime = useStorage('enableLightThemeTime', ENABLE_LIGHT_THEME_TIME)
+  const enableDarkThemeTime = useStorage('enableDarkThemeTime', ENABLE_DARK_THEME_TIME)
+  const useSunSchedule = useStorage('useSunSchedule', USE_SUN_SCHEDULE)
   // Theme -> Color
-  const imageBackground = useStorage('settingsImageBackground', true)
-  const customThemeColor = useStorage('settingsCustomThemeColor', '#462de8')
-  const customThemeVariant = useStorage<ThemeVariant>('settingsCustomThemeVariant', 'Vibrant')
+  const useImageBackground = useStorage('useImageBackground', USE_IMAGE_BACKGROUND)
+  const customThemeColor = useStorage('customThemeColor', CUSTOM_THEME_COLOR)
+  const customThemeVariant = useStorage<ThemeVariant>('customThemeVariant', CUSTOM_THEME_VARIANT)
+  // UI -> Photo Viewer
+  const useImageGlow = useStorage('imageGlow', USE_IMAGE_GLOW)
+  const darkPhotoViewer = useStorage('darkPhotoViewer', DARK_PHOTO_VIEWER)
+  // UI -> General
+  const useBackdropBlur = useStorage('backdropBlur', USE_BACKDROP_BLUR)
+  // UI -> Timeline
+  const timelineRowHeight = useStorage('timelineRowHeight', TIMELINE_ROW_HEIGHT)
+  const timelineUseDayLabels = useStorage('timelineUseDayLabels', TIMELINE_USE_DAY_LABELS)
 
   return {
     useImageGlow,
     useBackdropBlur,
-    imageBackground,
+    useImageBackground,
     customThemeColor,
     customThemeVariant,
     timelineRowHeight,

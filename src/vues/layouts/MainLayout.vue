@@ -20,14 +20,14 @@ backgroundStore.initialize()
 <template>
   <div class="blurred-background">
     <div
-      v-if="settings.imageBackground"
+      v-if="settings.useImageBackground"
       class="blur-filter"
       :class="{ 'monochrome-filter': isMonochrome }"
     ></div>
     <div
       class="background-image"
       :style="{
-        backgroundImage: settings.imageBackground ? `url(${backgroundStore.backgroundUrl})` : '',
+        backgroundImage: settings.useImageBackground ? `url(${backgroundStore.backgroundUrl})` : '',
       }"
     ></div>
   </div>
