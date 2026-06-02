@@ -4,11 +4,14 @@ import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import NavDrawer from '@/vues/components/layout/NavDrawer.vue'
 import AppBar from '@/vues/components/layout/AppBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import { computed } from 'vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
+
+const isMonochrome = computed(() => settings.customThemeVariant === 'Monochrome')
 
 // Initialize the stores.
 backgroundStore.initialize()
@@ -16,7 +19,11 @@ backgroundStore.initialize()
 
 <template>
   <div class="blurred-background">
-    <div v-if="settings.imageBackground" class="blur-filter"></div>
+    <div
+      v-if="settings.imageBackground"
+      class="blur-filter"
+      :class="{ 'monochrome-filter': isMonochrome }"
+    ></div>
     <div
       class="background-image"
       :style="{
@@ -69,6 +76,10 @@ backgroundStore.initialize()
   );
   backdrop-filter: saturate(150%) brightness(70%) blur(25px) contrast(100%);
   z-index: 1;
+}
+
+.blur-filter.monochrome-filter {
+  backdrop-filter: saturate(0%) brightness(100%) blur(25px) contrast(100%);
 }
 
 .layout-body {
