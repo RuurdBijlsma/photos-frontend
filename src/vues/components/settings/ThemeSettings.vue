@@ -59,34 +59,33 @@ const previewSwatches = [
   },
 ]
 </script>
+
 <template>
-  <v-row class="g-6">
+  <div class="theme-settings-layout">
     <!-- Settings Configuration Panel -->
-    <v-col cols="12" lg="7">
-      <v-card class="bg-surface-container-low" flat rounded="xl" border>
+    <section class="config-panel">
+      <v-card class="settings-card" flat border>
         <!-- Card Header -->
-        <div
-          class="bg-surface-container-high px-6 py-4 rounded-t-xl d-flex align-center justify-space-between border-b"
-        >
-          <span class="text-h6 font-weight-medium text-on-surface">Theme Configuration</span>
+        <div class="card-header">
+          <span class="card-title">Theme Configuration</span>
           <v-icon color="primary" size="large">mdi-palette-outline</v-icon>
         </div>
 
-        <div class="pa-6">
+        <div class="card-body">
           <!-- Section: Mode Settings -->
-          <div class="d-flex align-center mb-4">
-            <span class="text-overline font-weight-bold text-primary tracking-wide">Mode</span>
-            <v-divider class="ms-4 opacity-30" />
+          <div class="section-divider">
+            <span class="section-label">Mode</span>
+            <v-divider class="divider-line" />
           </div>
 
-          <div class="mb-6">
+          <div class="chip-group-wrapper">
             <v-chip-group v-model="settings.themeString" color="primary" mandatory>
               <v-chip
                 v-for="opt in themeOptions"
                 :value="opt"
                 :key="opt"
                 variant="flat"
-                class="px-5 py-4"
+                class="theme-chip"
               >
                 {{ caps(opt) }}
               </v-chip>
@@ -95,13 +94,8 @@ const previewSwatches = [
 
           <!-- Subsection: Schedule Options -->
           <v-expand-transition>
-            <div
-              v-if="settings.themeString === 'schedule'"
-              class="mb-6 bg-surface-container-highest pa-5 rounded-lg border"
-            >
-              <span class="text-subtitle-2 font-weight-medium text-on-surface mb-2 d-block"
-                >Schedule Theme Settings</span
-              >
+            <div v-if="settings.themeString === 'schedule'" class="schedule-settings">
+              <span class="schedule-title">Schedule Theme Settings</span>
               <v-switch
                 v-model="settings.useSunSchedule"
                 :label="`Sunrise to sunset${sunString}`"
@@ -109,17 +103,17 @@ const previewSwatches = [
                 color="primary"
                 inset
                 density="comfortable"
-                class="mb-4"
+                class="schedule-switch"
               />
 
               <v-expand-transition>
-                <div v-if="!settings.useSunSchedule" class="time-picker-grid mt-4">
-                  <v-card class="bg-surface-container-high border" rounded="xl" flat>
-                    <div class="px-4 py-3 d-flex align-center gap-2 border-b">
+                <div v-if="!settings.useSunSchedule" class="time-picker-grid">
+                  <v-card class="time-picker-card" flat border>
+                    <div class="time-picker-header">
                       <v-icon color="warning">mdi-white-balance-sunny</v-icon>
-                      <span class="text-caption font-weight-bold">Turn on light theme</span>
+                      <span class="time-picker-label">Turn on light theme</span>
                     </div>
-                    <div class="pa-3 d-flex justify-center">
+                    <div class="time-picker-body">
                       <v-time-picker
                         rounded="lg"
                         bg-color="surface-container"
@@ -131,12 +125,12 @@ const previewSwatches = [
                     </div>
                   </v-card>
 
-                  <v-card class="bg-surface-container-high border" rounded="xl" flat>
-                    <div class="px-4 py-3 d-flex align-center gap-2 border-b">
+                  <v-card class="time-picker-card" flat border>
+                    <div class="time-picker-header">
                       <v-icon color="primary">mdi-weather-night</v-icon>
-                      <span class="text-caption font-weight-bold">Turn on dark theme</span>
+                      <span class="time-picker-label">Turn on dark theme</span>
                     </div>
-                    <div class="pa-3 d-flex justify-center">
+                    <div class="time-picker-body">
                       <v-time-picker
                         rounded="lg"
                         bg-color="surface-container"
@@ -153,12 +147,12 @@ const previewSwatches = [
           </v-expand-transition>
 
           <!-- Section: Color Settings -->
-          <div class="d-flex align-center mb-4 mt-6">
-            <span class="text-overline font-weight-bold text-primary tracking-wide">Color</span>
-            <v-divider class="ms-4 opacity-30" />
+          <div class="section-divider color-section-divider">
+            <span class="section-label">Color</span>
+            <v-divider class="divider-line" />
           </div>
 
-          <div class="mb-6">
+          <div class="color-settings-content">
             <v-switch
               color="primary"
               v-model="settings.imageBackground"
@@ -166,7 +160,7 @@ const previewSwatches = [
               hide-details
               inset
               density="comfortable"
-              class="mb-4"
+              class="background-switch"
             />
 
             <v-btn
@@ -176,18 +170,15 @@ const previewSwatches = [
               prepend-icon="mdi-shuffle-variant"
               @click="backgroundStore.newBackgroundTheme"
               color="primary"
-              >New background</v-btn
+              class="new-background-btn"
             >
+              New background
+            </v-btn>
+
             <v-slide-y-transition>
-              <div v-if="!settings.imageBackground" class="mb-6">
-                <span class="text-subtitle-2 font-weight-medium text-on-surface mb-3 d-block"
-                  >Pick a Theme Seed Color</span
-                >
-                <v-card
-                  class="bg-surface-container-high d-inline-block border pa-2"
-                  rounded="xl"
-                  flat
-                >
+              <div v-if="!settings.imageBackground" class="color-picker-wrapper">
+                <span class="color-picker-title">Pick a Theme Seed Color</span>
+                <v-card class="color-picker-card" flat border>
                   <v-color-picker
                     bg-color="transparent"
                     v-model="settings.customThemeColor"
@@ -200,17 +191,15 @@ const previewSwatches = [
           </div>
 
           <!-- Section: Variant Options -->
-          <div class="mb-4">
-            <span class="text-subtitle-2 font-weight-medium text-on-surface mb-2 d-block"
-              >Pick a Theme Variant</span
-            >
+          <div class="variant-settings">
+            <span class="variant-title">Pick a Theme Variant</span>
             <v-chip-group v-model="settings.customThemeVariant" color="primary" mandatory column>
               <v-chip
                 v-for="opt in themeVariantOptions"
                 :value="opt"
                 :key="opt"
                 variant="flat"
-                class="px-5 py-4"
+                class="theme-chip"
               >
                 {{ caps(opt) }}
               </v-chip>
@@ -218,20 +207,18 @@ const previewSwatches = [
           </div>
         </div>
       </v-card>
-    </v-col>
+    </section>
 
     <!-- Active Theme Palette Visualizer -->
-    <v-col cols="12" lg="5">
-      <v-card class="bg-surface-container-low h-100" flat rounded="xl" border>
-        <div
-          class="bg-surface-container-high px-6 py-4 rounded-t-xl d-flex align-center justify-space-between border-b"
-        >
-          <span class="text-h6 font-weight-medium text-on-surface">Active Swatches</span>
+    <aside class="palette-visualizer">
+      <v-card class="settings-card height-100" flat border>
+        <div class="card-header">
+          <span class="card-title">Active Swatches</span>
           <v-icon color="secondary" size="large">mdi-eyedropper</v-icon>
         </div>
 
-        <div class="pa-6">
-          <p class="text-body-2 text-on-surface-variant mb-4">
+        <div class="card-body">
+          <p class="visualizer-desc">
             This visualization shows how your currently active scheme translates to different UI
             elements within the app.
           </p>
@@ -240,20 +227,15 @@ const previewSwatches = [
             <v-card
               v-for="swatch in previewSwatches"
               :key="swatch.name"
-              :class="[swatch.bg, swatch.text, 'swatch-card border']"
+              :class="[swatch.bg, swatch.text, 'swatch-card']"
               flat
-              rounded="lg"
             >
-              <div class="pa-3 d-flex flex-column justify-between h-100">
-                <div>
-                  <div class="text-caption font-weight-black lh-tight">{{ swatch.name }}</div>
-                  <div class="swatch-class-label mt-1 text-lowercase opacity-70">
-                    {{ swatch.bg }}
-                  </div>
+              <div class="swatch-content">
+                <div class="swatch-header">
+                  <div class="swatch-name">{{ swatch.name }}</div>
+                  <div class="swatch-class-label">{{ swatch.bg }}</div>
                 </div>
-                <div
-                  class="text-right text-caption swatch-desc opacity-75 mt-3 pt-2 border-t border-opacity-10"
-                >
+                <div class="swatch-desc-container">
                   {{ swatch.desc }}
                 </div>
               </div>
@@ -261,26 +243,186 @@ const previewSwatches = [
           </div>
         </div>
       </v-card>
-    </v-col>
-  </v-row>
+    </aside>
+  </div>
 </template>
 
 <style scoped>
+.theme-settings-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 1280px) {
+  .theme-settings-layout {
+    grid-template-columns: 7fr 5fr;
+  }
+}
+
+.settings-card {
+  background-color: rgb(var(--v-theme-surface-container-low)) !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+}
+
+.height-100 {
+  height: 100%;
+}
+
+.card-header {
+  background-color: rgb(var(--v-theme-surface-container-high));
+  padding: 16px 24px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.card-body {
+  padding: 24px;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.color-section-divider {
+  margin-top: 24px;
+}
+
+.section-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: rgb(var(--v-theme-primary));
+}
+
+.divider-line {
+  margin-left: 16px;
+  opacity: 0.3;
+}
+
+.chip-group-wrapper {
+  margin-bottom: 24px;
+}
+
+.theme-chip {
+  padding: 16px 20px !important;
+}
+
+.schedule-settings {
+  margin-bottom: 24px;
+  background-color: rgb(var(--v-theme-surface-container-highest));
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.schedule-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface));
+  display: block;
+  margin-bottom: 8px;
+}
+
+.schedule-switch {
+  margin-bottom: 16px;
+}
+
 .time-picker-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
+  margin-top: 16px;
 }
 
-.gap-2 {
+.time-picker-card {
+  background-color: rgb(var(--v-theme-surface-container-high)) !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+}
+
+.time-picker-header {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
   gap: 8px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-.lh-tight {
-  line-height: 1.2;
+.time-picker-label {
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
-/* Custom CSS-Grid for Swatches */
+.time-picker-body {
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.color-settings-content {
+  margin-bottom: 24px;
+}
+
+.background-switch {
+  margin-bottom: 16px;
+}
+
+.new-background-btn {
+  margin-bottom: 16px;
+}
+
+.color-picker-wrapper {
+  margin-bottom: 24px;
+}
+
+.color-picker-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface));
+  display: block;
+  margin-bottom: 12px;
+}
+
+.color-picker-card {
+  background-color: rgb(var(--v-theme-surface-container-high)) !important;
+  display: inline-block !important;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+  padding: 8px;
+  border-radius: 24px !important;
+}
+
+.variant-settings {
+  margin-bottom: 16px;
+}
+
+.variant-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface));
+  display: block;
+  margin-bottom: 8px;
+}
+
+.visualizer-desc {
+  font-size: 0.875rem;
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin-bottom: 16px;
+}
+
 .swatch-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -292,18 +434,45 @@ const previewSwatches = [
     transform 0.2s ease,
     box-shadow 0.2s ease;
   min-height: 100px;
+  border-radius: 8px !important;
+  border: 1px solid rgba(var(--v-border-color), 0.1) !important;
 }
 
 .swatch-card:hover {
   transform: translateY(-2px);
 }
 
-.swatch-class-label {
-  font-family: monospace;
-  font-size: 0.7rem;
+.swatch-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
 }
 
-.swatch-desc {
+.swatch-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.swatch-name {
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.swatch-class-label {
+  font-family: monospace;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  text-transform: lowercase;
+}
+
+.swatch-desc-container {
+  text-align: right;
   font-size: 0.72rem;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(var(--v-border-color), 0.1);
 }
 </style>
