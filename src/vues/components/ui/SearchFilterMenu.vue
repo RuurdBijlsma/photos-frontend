@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch, onMounted } from 'vue'
+import HistogramDateRangePicker from '@/vues/components/ui/HistogramDateRangePicker.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useObjStorage } from '@/scripts/utils.ts'
 import { useDebounceFn } from '@vueuse/core'
@@ -86,77 +87,75 @@ function isoToUrlParam(iso: string | undefined): string | undefined {
   return MONTHS[date.getUTCMonth()]!.substring(0, 3).toLowerCase() + date.getUTCFullYear()
 }
 
-// Slider state management (local because it depends on filterRanges)
-const filterDateIndices = ref([0, 0])
-let ignoreSliderWatch = false
-
-watch(
-  [filterRanges, () => route.query.start, () => route.query.end],
-  () => {
-    if (!filterRanges.value) return
-    const months = filterRanges.value.availableMonths
-    if (months.length === 0) return
-
-    let startIdx = 0
-    let endIdx = months.length - 1
-
-    if (route.query.start) {
-      const iso = urlParamToISO(route.query.start as string)
-      const datePart = iso?.substring(0, 10)
-      const found = months.findIndex((m) => m.startsWith(datePart!))
-      if (found !== -1) startIdx = found
-    }
-    if (route.query.end) {
-      const iso = urlParamToISO(route.query.end as string)
-      const datePart = iso?.substring(0, 10)
-      const found = months.findIndex((m) => m.startsWith(datePart!))
-      if (found !== -1) endIdx = found
-    }
-    ignoreSliderWatch = true
-    filterDateIndices.value = [startIdx, endIdx]
-    nextTick(() => (ignoreSliderWatch = false))
-  },
-  { immediate: true },
-)
-
-watch(filterDateIndices, (newVal) => {
-  if (ignoreSliderWatch || !filterRanges.value) return
-  const [start = 0, end = 0] = newVal
-  const months = filterRanges.value.availableMonths
-  updateURL({
-    start: start === 0 ? undefined : isoToUrlParam(months[start!]),
-    end: end === months.length - 1 ? undefined : isoToUrlParam(months[end!]),
-  })
-})
-
-function formatMonth(dateStr: string | undefined) {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
-}
-
 function formatMonthShort(dateStr: string | undefined) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
 }
 
-const dateRangeText = computed(() => {
-  if (!filterRanges.value || filterRanges.value.availableMonths.length === 0) return ''
-  const months = filterRanges.value.availableMonths
-  const [startIdx, endIdx] = filterDateIndices.value
-  const isFirst = startIdx === 0
-  const isLast = endIdx === months.length - 1
+interface DateRange {
+  startDate: Date | null
+  endDate: Date | null
+  active: boolean
+  startGranularity: 'month' | 'day'
+  endGranularity: 'month' | 'day'
+}
 
-  if (isFirst && isLast) return 'All dates'
-
-  const startMonth = formatMonth(months[startIdx!])
-  const endMonth = formatMonth(months[endIdx!])
-
-  if (isFirst) return `Captured up to ${endMonth}`
-  if (isLast) return `Captured from ${startMonth}`
-  return `Captured between ${startMonth} and ${endMonth}`
+const dateFilter = ref<DateRange>({
+  startDate: null,
+  endDate: null,
+  active: false,
+  startGranularity: 'month',
+  endGranularity: 'month',
 })
+
+let ignoreDateFilterWatch = false
+
+watch(
+  [() => route.query.start, () => route.query.end],
+  () => {
+    if (ignoreDateFilterWatch) return
+
+    const startIso = route.query.start ? urlParamToISO(route.query.start as string) : null
+    const endIso = route.query.end ? urlParamToISO(route.query.end as string, true) : null
+
+    const startDate = startIso ? new Date(startIso) : null
+    const endDate = endIso ? new Date(endIso) : null
+
+    dateFilter.value = {
+      startDate,
+      endDate,
+      active: !!(startDate || endDate),
+      startGranularity: 'month',
+      endGranularity: 'month',
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  dateFilter,
+  (newVal) => {
+    const startParam = newVal.active && newVal.startDate
+      ? isoToUrlParam(newVal.startDate.toISOString())
+      : undefined
+    const endParam = newVal.active && newVal.endDate
+      ? isoToUrlParam(newVal.endDate.toISOString())
+      : undefined
+
+    if (startParam !== route.query.start || endParam !== route.query.end) {
+      ignoreDateFilterWatch = true
+      updateURL({
+        start: startParam,
+        end: endParam,
+      })
+      nextTick(() => {
+        ignoreDateFilterWatch = false
+      })
+    }
+  },
+  { deep: true },
+)
 
 const hasFilters = computed(() => {
   return (
@@ -244,12 +243,7 @@ const activeFilterChips = computed(() => {
       type: 'Date range',
       label,
       clear: () => {
-        filterDateIndices.value = [
-          0,
-          filterRanges.value?.availableMonths.length
-            ? filterRanges.value.availableMonths.length - 1
-            : 0,
-        ]
+        updateURL({ start: undefined, end: undefined })
       },
     })
   }
@@ -361,46 +355,8 @@ const activeFilterChips = computed(() => {
         :loading="filterRanges === null"
       >
         <v-card-text>
-          <div
-            class="date-range-filter px-4 py-2"
-            v-if="filterRanges && filterRanges.availableMonths.length > 0"
-          >
-            <div class="d-flex date-range-text font-weight-medium">
-              <div class="flex-grow-1 font-weight-regular opacity-70 text-body-small mb-1 mt-1">
-                {{ dateRangeText }}
-              </div>
-              <template v-if="route.query.start || route.query.end">
-                <v-btn
-                  variant="text"
-                  density="comfortable"
-                  size="small"
-                  color="primary"
-                  rounded="xl"
-                  @click="filterDateIndices = [0, filterRanges.availableMonths.length - 1]"
-                >
-                  All dates
-                </v-btn>
-              </template>
-            </div>
-            <v-range-slider
-              v-model="filterDateIndices"
-              :max="filterRanges.availableMonths.length - 1"
-              :min="0"
-              :step="1"
-              hide-details
-              color="primary"
-              track-size="2"
-              thumb-size="16"
-              strict
-              thumb-label="always"
-              class="mt-8"
-            >
-              <template #thumb-label="{ modelValue }">
-                <span class="text-no-wrap" style="font-size: 10px; font-weight: 600">
-                  {{ formatMonthShort(filterRanges.availableMonths[modelValue!]) }}
-                </span>
-              </template>
-            </v-range-slider>
+          <div class="date-range-filter px-4 py-2">
+            <HistogramDateRangePicker v-model="dateFilter" />
           </div>
 
           <v-divider class="mt-1 ml-3 mr-3" />
