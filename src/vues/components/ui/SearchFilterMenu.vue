@@ -69,6 +69,17 @@ const sortDirection = computed({
 // Date Range Helpers
 function urlParamToISO(param: string | undefined, endOfMonth = false): string | undefined {
   if (!param) return undefined
+
+  // Check if it's already YYYY-MM-DD day granularity
+  if (/^\d{4}-\d{2}-\d{2}/.test(param)) {
+    const date = new Date(param + 'T00:00:00Z')
+    if (isNaN(date.getTime())) return undefined
+    if (endOfMonth) {
+      date.setUTCHours(23, 59, 59, 999)
+    }
+    return date.toISOString()
+  }
+
   const monthStr = param.substring(0, 3).toLowerCase()
   const year = parseInt(param.substring(3))
   const monthIndex = MONTHS.findIndex((m) => m.toLowerCase().startsWith(monthStr))
@@ -81,16 +92,25 @@ function urlParamToISO(param: string | undefined, endOfMonth = false): string | 
   return date.toISOString()
 }
 
-function isoToUrlParam(iso: string | undefined): string | undefined {
-  if (!iso) return undefined
-  const date = new Date(iso)
-  return MONTHS[date.getUTCMonth()]!.substring(0, 3).toLowerCase() + date.getUTCFullYear()
+function dateToUrlParam(date: Date | null | undefined, granularity: 'month' | 'day'): string | undefined {
+  if (!date) return undefined
+  if (granularity === 'day') {
+    const y = date.getUTCFullYear()
+    const m = String(date.getUTCMonth() + 1).padStart(2, '0')
+    const d = String(date.getUTCDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  } else {
+    return MONTHS[date.getUTCMonth()]!.substring(0, 3).toLowerCase() + date.getUTCFullYear()
+  }
 }
 
-function formatMonthShort(dateStr: string | undefined) {
+function formatDateShort(dateStr: string | undefined, granularity: 'month' | 'day') {
   if (!dateStr) return ''
   const date = new Date(dateStr)
-  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+  if (granularity === 'day') {
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+  }
+  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' })
 }
 
 interface DateRange {
@@ -122,12 +142,19 @@ watch(
     const startDate = startIso ? new Date(startIso) : null
     const endDate = endIso ? new Date(endIso) : null
 
+    const startGranularity = route.query.start && /^\d{4}-\d{2}-\d{2}/.test(route.query.start as string)
+      ? 'day'
+      : 'month'
+    const endGranularity = route.query.end && /^\d{4}-\d{2}-\d{2}/.test(route.query.end as string)
+      ? 'day'
+      : 'month'
+
     dateFilter.value = {
       startDate,
       endDate,
       active: !!(startDate || endDate),
-      startGranularity: 'month',
-      endGranularity: 'month',
+      startGranularity,
+      endGranularity,
     }
   },
   { immediate: true },
@@ -137,10 +164,10 @@ watch(
   dateFilter,
   (newVal) => {
     const startParam = newVal.active && newVal.startDate
-      ? isoToUrlParam(newVal.startDate.toISOString())
+      ? dateToUrlParam(newVal.startDate, newVal.startGranularity)
       : undefined
     const endParam = newVal.active && newVal.endDate
-      ? isoToUrlParam(newVal.endDate.toISOString())
+      ? dateToUrlParam(newVal.endDate, newVal.endGranularity)
       : undefined
 
     if (startParam !== route.query.start || endParam !== route.query.end) {
@@ -227,11 +254,14 @@ const activeFilterChips = computed(() => {
 
   // Date Range
   if (route.query.start || route.query.end) {
+    const startGran = route.query.start && /^\d{4}-\d{2}-\d{2}/.test(route.query.start as string) ? 'day' : 'month'
+    const endGran = route.query.end && /^\d{4}-\d{2}-\d{2}/.test(route.query.end as string) ? 'day' : 'month'
+
     const start = route.query.start
-      ? formatMonthShort(urlParamToISO(route.query.start as string))
+      ? formatDateShort(urlParamToISO(route.query.start as string), startGran)
       : null
     const end = route.query.end
-      ? formatMonthShort(urlParamToISO(route.query.end as string, true))
+      ? formatDateShort(urlParamToISO(route.query.end as string, true), endGran)
       : null
     let label = ''
     if (start && end) label = `Date: ${start} - ${end}`
@@ -359,7 +389,7 @@ const activeFilterChips = computed(() => {
             <HistogramDateRangePicker v-model="dateFilter" />
           </div>
 
-          <v-divider class="mt-1 ml-3 mr-3" />
+          <v-divider class="mt-4 ml-3 mr-3 mb-4" />
 
           <div class="small-filters">
             <div class="media-type">

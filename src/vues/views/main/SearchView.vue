@@ -45,6 +45,17 @@ const isEmptySearch = computed(() => !query.value && !hasFilters.value && !searc
 // Date Range ISO Helper
 function urlParamToISO(param: string | undefined, endOfMonth = false): string | undefined {
   if (!param) return undefined
+
+  // Check if it's already YYYY-MM-DD day granularity
+  if (/^\d{4}-\d{2}-\d{2}/.test(param)) {
+    const date = new Date(param + 'T00:00:00Z')
+    if (isNaN(date.getTime())) return undefined
+    if (endOfMonth) {
+      date.setUTCHours(23, 59, 59, 999)
+    }
+    return date.toISOString()
+  }
+
   const monthStr = param.substring(0, 3).toLowerCase()
   const year = parseInt(param.substring(3))
   const monthIndex = MONTHS.findIndex((m) => m.toLowerCase().startsWith(monthStr))

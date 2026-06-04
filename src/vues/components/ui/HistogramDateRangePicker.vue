@@ -38,6 +38,16 @@ const dragStart = ref<{
   rightIndex: number
 } | null>(null)
 
+// Date conversion helper functions to map between UTC and Local
+function localToUtcDate(localDate: Date): Date {
+  return new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate()))
+}
+
+function utcToLocalDate(utcDate: Date | null): Date | null {
+  if (!utcDate) return null
+  return new Date(utcDate.getUTCFullYear(), utcDate.getUTCMonth(), utcDate.getUTCDate())
+}
+
 // Fetch timeline ratios if not loaded
 onMounted(async () => {
   if (timelineStore.monthRatios.length === 0) {
@@ -69,31 +79,31 @@ function resetIndices() {
   endGranularity.value = 'month'
 }
 
-// Convert monthId string "YYYY-MM-DD" to Date
+// Convert monthId string "YYYY-MM-DD" to Date in UTC
 function getStartOfMonth(monthStr: string): Date {
-  return new Date(monthStr + 'T00:00:00')
+  return new Date(monthStr + 'T00:00:00Z')
 }
 
 function getEndOfMonth(monthStr: string): Date {
-  const date = new Date(monthStr + 'T00:00:00')
-  date.setMonth(date.getMonth() + 1)
+  const date = new Date(monthStr + 'T00:00:00Z')
+  date.setUTCMonth(date.getUTCMonth() + 1)
   return new Date(date.getTime() - 1)
 }
 
-// Format date for display on buttons
+// Format date for display on buttons using UTC representations
 function formatDateLabel(date: Date | null, granularity: 'month' | 'day'): string {
   if (!date) return 'Select Date'
   if (granularity === 'month') {
-    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' })
   }
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
 }
 
-// Earliest and latest bounds labels
+// Earliest and latest bounds labels (formatted in UTC)
 const earliestLabel = computed(() => {
   if (chronologicalRatios.value.length === 0) return ''
   const date = getStartOfMonth(chronologicalRatios.value[0]!.monthId)
-  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' })
 })
 
 const latestLabel = computed(() => {
@@ -101,7 +111,7 @@ const latestLabel = computed(() => {
   const date = getStartOfMonth(
     chronologicalRatios.value[chronologicalRatios.value.length - 1]!.monthId,
   )
-  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' })
 })
 
 // Sync local left/right slider indices when external date props change
@@ -331,6 +341,7 @@ function onTouchMove(e: TouchEvent) {
   }
 }
 
+// Touch end
 function onTouchEnd() {
   activeHandle.value = null
   dragStart.value = null
@@ -374,8 +385,10 @@ function onStartDateInput(newDate: unknown) {
   if (!(newDate instanceof Date)) return
   startGranularity.value = 'day'
 
-  let validDate = newDate
-  if (props.modelValue.endDate && newDate > props.modelValue.endDate) {
+  const utcDate = localToUtcDate(newDate)
+
+  let validDate = utcDate
+  if (props.modelValue.endDate && utcDate > props.modelValue.endDate) {
     validDate = new Date(props.modelValue.endDate)
   }
 
@@ -398,8 +411,10 @@ function onEndDateInput(newDate: unknown) {
   if (!(newDate instanceof Date)) return
   endGranularity.value = 'day'
 
-  let validDate = newDate
-  if (props.modelValue.startDate && newDate < props.modelValue.startDate) {
+  const utcDate = localToUtcDate(newDate)
+
+  let validDate = utcDate
+  if (props.modelValue.startDate && utcDate < props.modelValue.startDate) {
     validDate = new Date(props.modelValue.startDate)
   }
 
@@ -466,10 +481,12 @@ function clearFilter() {
             bg-color="surface-container"
             color="primary"
             :model-value="
-              modelValue.startDate ||
-              (chronologicalRatios[0]
-                ? getStartOfMonth(chronologicalRatios[0].monthId)
-                : new Date())
+              utcToLocalDate(
+                modelValue.startDate ||
+                  (chronologicalRatios[0]
+                    ? getStartOfMonth(chronologicalRatios[0].monthId)
+                    : new Date())
+              )
             "
             @update:model-value="onStartDateInput"
             hide-header
@@ -506,10 +523,12 @@ function clearFilter() {
             bg-color="surface-container"
             color="primary"
             :model-value="
-              modelValue.endDate ||
-              (chronologicalRatios[chronologicalRatios.length - 1]
-                ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId)
-                : new Date())
+              utcToLocalDate(
+                modelValue.endDate ||
+                  (chronologicalRatios[chronologicalRatios.length - 1]
+                    ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId)
+                    : new Date())
+              )
             "
             @update:model-value="onEndDateInput"
             hide-header
@@ -606,6 +625,8 @@ function clearFilter() {
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
 }
 
 .panel-header {
