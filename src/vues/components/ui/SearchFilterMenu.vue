@@ -41,6 +41,14 @@ function formatPeopleFilterLabel(names: string[], matchAll: boolean) {
   return `${names.slice(0, -1).join(', ')}${joiner}${last}`
 }
 
+function getNamesFromIds(ids: string[]) {
+  if (!filterRanges.value) return ids
+  return ids.map((id) => {
+    const p = filterRanges.value?.people.find((p) => p[1] === id)
+    return p ? p[0] : id
+  })
+}
+
 const filterNegativeQuery = computed({
   get: () => (route.query.exclude as string) || null,
   set: (val) => updateURL({ exclude: val || undefined }),
@@ -261,7 +269,7 @@ const activeFilterChips = computed(() => {
     chips.push({
       id: 'people',
       type: 'People',
-      label: formatPeopleFilterLabel(filterPeople.value, filterPeopleMatchAll.value),
+      label: formatPeopleFilterLabel(getNamesFromIds(filterPeople.value), filterPeopleMatchAll.value),
       clear: () => updateURL({ people: undefined, peopleAnd: undefined }),
     })
   }
@@ -416,7 +424,7 @@ const activeFilterChips = computed(() => {
                 clearable
                 placeholder="Anyone"
                 item-title="name"
-                item-value="name"
+                item-value="personId"
                 variant="solo"
                 density="comfortable"
                 multiple

@@ -79,7 +79,7 @@ function getSearchParams(isLoadMore: boolean) {
     countryCodes: (route.query.countries as string) || '',
     mediaType: (route.query.type as 'all' | 'photo' | 'video') || 'all',
     negativeQuery: (route.query.exclude as string) || undefined,
-    faceNames: (route.query.people as string) || '',
+    personIds: (route.query.people as string) || '',
     allFacesRequired: route.query.peopleAnd === '1' ? true : undefined,
     sortBy: (isFilterOnlyBrowse.value
       ? 'date'
