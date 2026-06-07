@@ -96,7 +96,12 @@ function formatDateLabel(date: Date | null, granularity: 'month' | 'day'): strin
   if (granularity === 'month') {
     return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' })
   }
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
 }
 
 // Earliest and latest bounds labels (formatted in UTC)
@@ -468,9 +473,7 @@ function clearFilter() {
             {{
               formatDateLabel(
                 modelValue.startDate ||
-                  (chronologicalRatios[0]
-                    ? getStartOfMonth(chronologicalRatios[0].monthId)
-                    : null),
+                  (chronologicalRatios[0] ? getStartOfMonth(chronologicalRatios[0].monthId) : null),
                 startGranularity,
               )
             }}
@@ -485,7 +488,7 @@ function clearFilter() {
                 modelValue.startDate ||
                   (chronologicalRatios[0]
                     ? getStartOfMonth(chronologicalRatios[0].monthId)
-                    : new Date())
+                    : new Date()),
               )
             "
             @update:model-value="onStartDateInput"
@@ -527,7 +530,7 @@ function clearFilter() {
                 modelValue.endDate ||
                   (chronologicalRatios[chronologicalRatios.length - 1]
                     ? getEndOfMonth(chronologicalRatios[chronologicalRatios.length - 1].monthId)
-                    : new Date())
+                    : new Date()),
               )
             "
             @update:model-value="onEndDateInput"
@@ -695,7 +698,7 @@ function clearFilter() {
 .histogram-bar {
   background-color: rgba(var(--v-theme-on-surface), 0.15);
   border-radius: 2px 2px 0 0;
-  margin: 0 1px;
+  margin: 0 0.5px;
   transition:
     background-color 0.2s ease,
     height 0.2s ease;
