@@ -197,20 +197,37 @@ const mediaSpecsLine = computed(() => {
 const exposureItems = computed(() => {
   const cs = props.mediaItem?.camera_settings
   if (!cs) return []
-  const items: string[] = []
+  const items: { label: string; tooltip?: string | undefined }[] = []
 
-  if (cs.iso != null) items.push(`ISO ${cs.iso}`)
-  if (cs.focal_length != null) items.push(`${cs.focal_length} mm`)
+  if (cs.iso != null) items.push({ label: `ISO ${cs.iso}` })
+  if (cs.focal_length != null || cs.focal_length_in_35mm != null) {
+    if (cs.focal_length === null) {
+      items.push({
+        label: `${cs.focal_length_in_35mm} mm eq`,
+        tooltip: '35mm-equivalent focal length',
+      })
+    } else if (cs.focal_length_in_35mm === null) {
+      items.push({
+        label: `${cs.focal_length} mm`,
+        tooltip: 'Actual focal length (35mm equivalent unavailable)',
+      })
+    } else {
+      items.push({
+        label: `${cs.focal_length_in_35mm} mm eq`,
+        tooltip: `35mm-equivalent focal length • Actual: ${cs.focal_length} mm`,
+      })
+    }
+  }
   if (cs.exposure_compensation != null)
-    items.push(`${Math.round(cs.exposure_compensation * 100) / 100} ev`)
-  if (cs.aperture != null) items.push(`ƒ${cs.aperture}`)
+    items.push({ label: `${Math.round(cs.exposure_compensation * 100) / 100} ev` })
+  if (cs.aperture != null) items.push({ label: `ƒ${cs.aperture}` })
 
   if (cs.exposure_time != null) {
     if (cs.exposure_time >= 0.5) {
-      items.push(`${Math.round(cs.exposure_time * 100) / 100} s`)
+      items.push({ label: `${Math.round(cs.exposure_time * 100) / 100} s` })
     } else {
       const denom = Math.round(1 / cs.exposure_time)
-      items.push(`1/${denom} s`)
+      items.push({ label: `1/${denom} s` })
     }
   }
 
@@ -219,7 +236,7 @@ const exposureItems = computed(() => {
     const fps =
       props.mediaItem.media_features.video_fps ?? props.mediaItem.media_features.capture_fps
     if (fps) {
-      items.push(`${Math.round(fps * 10) / 10} fps`)
+      items.push({ label: `${Math.round(fps * 10) / 10} fps` })
     }
   }
 
@@ -372,7 +389,17 @@ const showCameraSection = computed(() => {
         <p class="lens-info no-lens" v-else-if="cameraDisplayName">No lens information</p>
         <p class="media-specs" v-if="mediaSpecsLine">{{ mediaSpecsLine }}</p>
         <div class="exposure-row" v-if="exposureItems.length > 0">
-          <span v-for="(item, i) in exposureItems" :key="i" class="exposure-cell">{{ item }}</span>
+          <span
+            v-for="(item, i) in exposureItems"
+            :key="i"
+            class="exposure-cell"
+            v-tooltip="{
+              location: 'bottom',
+              text: item.tooltip,
+              disabled: !item.tooltip,
+            }"
+            >{{ item.label }}</span
+          >
         </div>
       </div>
       <div class="map-info" v-if="mediaItem?.gps">
@@ -605,6 +632,7 @@ const showCameraSection = computed(() => {
 
 .camera-info {
   margin: 8px 20px;
+  margin-bottom: 15px;
   padding: 12px 14px;
   border-radius: 14px;
   background-color: rgba(var(--v-theme-on-surface), 0.06);
