@@ -153,7 +153,7 @@ async function initialize() {
     await mediaItemStore.fetchSharedMediaItem(albumId.value, loadingId)
   }
   if (id.value !== loadingId) return
-  console.log('SHARED MEDIA ITEM', fullImage.value)
+  console.log('FULL MEDIA ITEM', fullImage.value)
 }
 
 function toggleSelected() {

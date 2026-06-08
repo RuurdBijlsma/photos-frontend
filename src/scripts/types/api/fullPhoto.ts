@@ -99,6 +99,10 @@ export interface MediaFeatures {
   is_nightsight: boolean
   is_timelapse: boolean
   exif: { [key: string]: unknown }
+  audio_format?: string
+  audio_channels?: number
+  audio_sample_rate?: number
+  compressor_id?: string
 }
 
 export interface CameraSettings {
@@ -106,8 +110,15 @@ export interface CameraSettings {
   exposure_time?: number
   aperture?: number
   focal_length?: number
+  focal_length_in_35mm?: number
   camera_make?: string
   camera_model?: string
+  digital_zoom_ratio?: number
+  flash_fired?: boolean
+  flash_mode?: string
+  lens_make?: string
+  lens_model?: string
+  exposure_compensation?: number
 }
 
 export interface Panorama {

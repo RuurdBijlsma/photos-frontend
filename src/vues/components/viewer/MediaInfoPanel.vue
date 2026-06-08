@@ -6,12 +6,13 @@ import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { DAYS, MONTHS } from '@/scripts/constants.ts'
 import MediaWeatherInfo from '@/vues/components/viewer/MediaWeatherInfo.vue'
-import { makeLocationString } from '@/scripts/utils.ts'
+import { caps, makeLocationString } from '@/scripts/utils.ts'
 import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
 import { useRoute } from 'vue-router'
 import { useTheme } from 'vuetify/framework'
+import { humanReadableFileSize } from 'vuetify/lib/util'
 
 const BaseMap = defineAsyncComponent(() => import('@/vues/components/map/BaseMap.vue'))
 
@@ -79,6 +80,159 @@ watch(dateTimeDialogOpen, () => {
     dialogs.customVisible = false
     emit('closeDateTime')
   }
+})
+
+// Camera info computeds
+const cameraDisplayName = computed(() => {
+  const cs = props.mediaItem?.camera_settings
+  if (!cs) return null
+  const make = cs.camera_make?.trim() ?? cs.lens_make?.trim()
+  const model = cs.camera_model?.trim()
+  if (!make && !model) return null
+  if (!make) return model!
+  if (!model) return make
+  // Avoid duplication like "Canon Canon EOS R5"
+  if (model.toLowerCase().startsWith(make.toLowerCase())) return model
+  return `${make} ${model}`
+})
+
+const fileTypeLabel = computed(() => {
+  const mime = props.mediaItem?.media_features?.mime_type
+  if (!mime) return null
+  const sub = mime.split('/')[1]
+  if (!sub) return null
+  const map: Record<string, string> = {
+    quicktime: 'MOV',
+    'x-msvideo': 'AVI',
+    'x-matroska': 'MKV',
+  }
+  return map[sub] ?? sub.toUpperCase()
+})
+
+const featureBadges = computed(() => {
+  const features = props.mediaItem?.media_features
+  if (!features) return []
+  const badges: string[] = []
+  if (features.is_hdr) badges.push('HDR')
+  if (features.is_nightsight) badges.push('Night')
+  if (features.is_motion_photo) badges.push('Motion')
+  if (features.is_burst) badges.push('Burst')
+  if (features.is_timelapse) badges.push('Timelapse')
+  return badges
+})
+
+const lensDisplayName = computed(() => {
+  const cs = props.mediaItem?.camera_settings
+  if (!cs) return null
+  const lensModel = cs.lens_model?.trim()
+  const lensMake = cs.lens_make?.trim()
+  const cameraMake = cs.camera_make?.trim()
+  const cameraModel = cs.camera_model?.trim()
+  if (!lensMake && !lensModel) return null
+  let result
+  if (!lensMake) {
+    result = lensModel!
+  } else if (!lensModel) {
+    result = lensMake!
+  } else {
+    if (lensModel.startsWith(lensMake)) {
+      result = lensModel!
+    } else {
+      result = `${lensMake} ${lensModel!}`
+    }
+  }
+
+  if (cameraMake) {
+    if (result.startsWith(cameraMake)) {
+      result = caps(result.replace(cameraMake, '').trim())
+    }
+  }
+  if (cameraModel) {
+    if (result.startsWith(cameraModel)) {
+      result = caps(result.replace(cameraModel, '').trim())
+    }
+  }
+
+  return result
+})
+
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours}:${mins.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+const mediaSpecsLine = computed(() => {
+  const item = props.mediaItem
+  if (!item) return null
+  const parts: string[] = []
+
+  if (!item.is_video && item.width && item.height) {
+    const mp = (item.width * item.height) / 1_000_000
+    parts.push(`${Math.round(mp)} MP`)
+  }
+
+  if (item.width && item.height) {
+    parts.push(`${item.width} × ${item.height}`)
+  }
+
+  if (item.is_video && item.duration_ms) {
+    parts.push(formatDuration(item.duration_ms))
+  }
+
+  const bytes = item.media_features?.size_bytes
+  if (bytes) {
+    parts.push(humanReadableFileSize(bytes))
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : null
+})
+
+const exposureItems = computed(() => {
+  const cs = props.mediaItem?.camera_settings
+  if (!cs) return []
+  const items: string[] = []
+
+  if (cs.iso != null) items.push(`ISO ${cs.iso}`)
+  if (cs.focal_length != null) items.push(`${cs.focal_length} mm`)
+  if (cs.exposure_compensation != null)
+    items.push(`${Math.round(cs.exposure_compensation * 100) / 100} ev`)
+  if (cs.aperture != null) items.push(`ƒ${cs.aperture}`)
+
+  if (cs.exposure_time != null) {
+    if (cs.exposure_time >= 0.5) {
+      items.push(`${Math.round(cs.exposure_time * 100) / 100} s`)
+    } else {
+      const denom = Math.round(1 / cs.exposure_time)
+      items.push(`1/${denom} s`)
+    }
+  }
+
+  // Video FPS
+  if (props.mediaItem?.is_video) {
+    const fps =
+      props.mediaItem.media_features.video_fps ?? props.mediaItem.media_features.capture_fps
+    if (fps) {
+      items.push(`${Math.round(fps * 10) / 10} fps`)
+    }
+  }
+
+  return items
+})
+
+const showCameraSection = computed(() => {
+  return !!(
+    cameraDisplayName.value ||
+    fileTypeLabel.value ||
+    mediaSpecsLine.value ||
+    exposureItems.value.length > 0
+  )
 })
 </script>
 
@@ -199,8 +353,27 @@ watch(dateTimeDialogOpen, () => {
           <v-icon icon="mdi-chevron-right" size="16" class="album-chevron" />
         </router-link>
       </section>
-      <div class="capture-info">
-        <!--        todo! capture info-->
+      <div class="camera-info" v-if="showCameraSection">
+        <!--        todo add more info here!-->
+        <div
+          class="camera-header"
+          v-if="cameraDisplayName || fileTypeLabel || featureBadges.length > 0"
+        >
+          <span class="camera-model" v-if="cameraDisplayName">{{ cameraDisplayName }}</span>
+          <span class="lens-info no-lens" v-else>No camera info</span>
+          <div class="camera-badges">
+            <span v-for="badge in featureBadges" :key="badge" class="feature-badge">{{
+              badge
+            }}</span>
+            <span v-if="fileTypeLabel" class="file-type-badge">{{ fileTypeLabel }}</span>
+          </div>
+        </div>
+        <p class="lens-info" v-if="lensDisplayName">{{ lensDisplayName }}</p>
+        <p class="lens-info no-lens" v-else-if="cameraDisplayName">No lens information</p>
+        <p class="media-specs" v-if="mediaSpecsLine">{{ mediaSpecsLine }}</p>
+        <div class="exposure-row" v-if="exposureItems.length > 0">
+          <span v-for="(item, i) in exposureItems" :key="i" class="exposure-cell">{{ item }}</span>
+        </div>
       </div>
       <div class="map-info" v-if="mediaItem?.gps">
         <base-map
@@ -428,5 +601,94 @@ watch(dateTimeDialogOpen, () => {
 .map-button-icon {
   font-weight: lighter;
   opacity: 0.8;
+}
+
+.camera-info {
+  margin: 8px 20px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background-color: rgba(var(--v-theme-on-surface), 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.camera-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.camera-model {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.camera-badges {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.file-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
+}
+
+.feature-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background-color: rgba(var(--v-theme-primary), 0.15);
+  color: rgb(var(--v-theme-primary));
+}
+
+.lens-info {
+  font-size: 13px;
+  font-style: italic;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.lens-info.no-lens {
+  opacity: 0.45;
+}
+
+.media-specs {
+  font-size: 13px;
+  opacity: 0.8;
+  margin: 2px 0 0;
+}
+
+.exposure-row {
+  display: flex;
+  gap: 0;
+  margin-top: 4px;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+  padding-top: 8px;
+}
+
+.exposure-cell {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.75;
+  padding: 0 10px;
+  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.15);
+  white-space: nowrap;
+}
+
+.exposure-cell:first-child {
+  padding-left: 0;
+}
+
+.exposure-cell:last-child {
+  border-right: none;
 }
 </style>
