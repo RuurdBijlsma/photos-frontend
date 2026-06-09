@@ -39,9 +39,9 @@ const HEATMAP_CONFIG = {
   // Heatmap Radius: Blending circle radius in pixels by zoom level.
   // A progressive curve allows distant cities to bridge together into connected corridors.
   radius: [
-    [0, 15], // Tight at world level to prevent oceans from flooding with color
-    [5, 19], // Tight at world level to prevent oceans from flooding with color
-    [6, 20], // Expanded at Europe level to form beautiful organic channels
+    [0, 13], // Tight at world level to prevent oceans from flooding with color
+    [5, 16], // Tight at world level to prevent oceans from flooding with color
+    [6, 17], // Expanded at Europe level to form beautiful organic channels
     [11, 15], // Generous blending of regional structures
     [16, 10], // Large smooth diffusion before fading out
   ] as [number, number][],
