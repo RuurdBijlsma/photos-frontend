@@ -6,13 +6,13 @@ import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { DAYS, MONTHS } from '@/scripts/constants.ts'
 import MediaWeatherInfo from '@/vues/components/viewer/MediaWeatherInfo.vue'
-import { caps, makeLocationString } from '@/scripts/utils.ts'
+import { caps, makeLocationString, prettyBytes, toHms } from '@/scripts/utils.ts'
 import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
 import { useRoute } from 'vue-router'
 import { useTheme } from 'vuetify/framework'
-import { humanReadableFileSize } from 'vuetify/lib/util'
+import { getCodecInfo } from '@/scripts/codecUtils.ts'
 
 const BaseMap = defineAsyncComponent(() => import('@/vues/components/map/BaseMap.vue'))
 
@@ -143,30 +143,18 @@ const lensDisplayName = computed(() => {
   }
 
   if (cameraMake) {
-    if (result.startsWith(cameraMake)) {
-      result = caps(result.replace(cameraMake, '').trim())
+    if (result.startsWith(cameraMake) && result.length !== cameraMake.length) {
+      result = result.replace(cameraMake, '').trim()
     }
   }
   if (cameraModel) {
-    if (result.startsWith(cameraModel)) {
-      result = caps(result.replace(cameraModel, '').trim())
+    if (result.startsWith(cameraModel) && result.length !== cameraModel.length) {
+      result = result.replace(cameraModel, '').trim()
     }
   }
 
-  return result
+  return caps(result)
 })
-
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  if (minutes >= 60) {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    return `${hours}:${mins.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-  }
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-}
 
 const mediaSpecsLine = computed(() => {
   const item = props.mediaItem
@@ -183,12 +171,12 @@ const mediaSpecsLine = computed(() => {
   }
 
   if (item.is_video && item.duration_ms) {
-    parts.push(formatDuration(item.duration_ms))
+    parts.push(toHms(item.duration_ms / 1000))
   }
 
   const bytes = item.media_features?.size_bytes
   if (bytes) {
-    parts.push(humanReadableFileSize(bytes))
+    parts.push(prettyBytes(bytes))
   }
 
   return parts.length > 0 ? parts.join(' · ') : null
@@ -237,6 +225,24 @@ const exposureItems = computed(() => {
       props.mediaItem.media_features.video_fps ?? props.mediaItem.media_features.capture_fps
     if (fps) {
       items.push({ label: `${Math.round(fps * 10) / 10} fps` })
+    }
+  }
+
+  // Video Bitrate
+  const item = props.mediaItem
+  const bytes = item?.media_features?.size_bytes
+  const durationMs = item?.duration_ms
+  const isVideo = item?.is_video
+  if (bytes && durationMs && isVideo) {
+    const bytesPerSecond = Math.round(bytes / (durationMs / 1000) / 1000) * 1000
+    const bitRate = prettyBytes(bytesPerSecond) + '/s'
+    items.push({ label: bitRate })
+  }
+
+  if (isVideo && item?.media_features?.compressor_id) {
+    const codecInfo = getCodecInfo(item.media_features.compressor_id)
+    if (codecInfo) {
+      items.push({ label: codecInfo?.friendlyName })
     }
   }
 
@@ -683,6 +689,8 @@ const showCameraSection = computed(() => {
   font-style: italic;
   opacity: 0.7;
   margin: 0;
+  display: flex;
+  gap: 5px;
 }
 
 .lens-info.no-lens {
