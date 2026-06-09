@@ -17,7 +17,7 @@ import type {
   SimpleTimelineItem,
 } from '@/scripts/types/generated/timeline.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import MapDateFilter from '@/vues/components/map/MapDateFilter.vue'
 
 // Tweakable visual configuration for the map representation
@@ -32,17 +32,18 @@ const HEATMAP_CONFIG = {
   intensity: [
     [0, 0.15], // Global view (very low multiplier to prevent massive solid blocks)
     [6, 0.25], // Europe scale (excellent range for stretching teal and green)
-    [11, .7], // Regional scale (starts scaling up as clusters separate)
+    [11, 0.7], // Regional scale (starts scaling up as clusters separate)
     [15, 1], // High local intensity to make sparse spots stand out
   ] as [number, number][],
 
   // Heatmap Radius: Blending circle radius in pixels by zoom level.
   // A progressive curve allows distant cities to bridge together into connected corridors.
   radius: [
-    [0, 8], // Tight at world level to prevent oceans from flooding with color
-    [6, 13], // Expanded at Europe level to form beautiful organic channels
-    [11, 20], // Generous blending of regional structures
-    [16, 30], // Large smooth diffusion before fading out
+    [0, 15], // Tight at world level to prevent oceans from flooding with color
+    [5, 19], // Tight at world level to prevent oceans from flooding with color
+    [6, 20], // Expanded at Europe level to form beautiful organic channels
+    [11, 15], // Generous blending of regional structures
+    [16, 10], // Large smooth diffusion before fading out
   ] as [number, number][],
 
   // Heatmap Opacity: Gradual crossover transition to point markers
@@ -55,8 +56,9 @@ const HEATMAP_CONFIG = {
   // We raise the color opacities slightly so they are vibrant, but keep the gradient wide.
   colorStops: [
     [0, 'rgba(124, 77, 255, 0)'], // Ground state (invisible boundary)
-    [0.0001, 'rgba(115, 50, 160, .2)'], // Soft violet outer haze
-    [0.10, 'rgb(103 83 232 / 0.7)'], // Soft violet outer haze
+    [0.01, 'rgb(71 64 175 / 0.25)'], // Soft violet outer haze
+    [0.02, 'rgb(103 83 232 / 0.35)'], // Soft violet outer haze
+    [0.1, 'rgb(103 83 232 / 0.5)'], // Soft violet outer haze
     [0.35, 'rgba(0, 180, 210, 0.7)'], // Broad, cool cyan/teal transition layer
     [0.6, 'rgba(135, 195, 60, 0.7)'], // Warm lime-green core framing
     [0.9, 'rgba(235, 172, 45, 0.7)'], // Warm yellow-orange transition
