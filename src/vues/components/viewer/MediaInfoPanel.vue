@@ -6,7 +6,7 @@ import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { DAYS, MONTHS } from '@/scripts/constants.ts'
 import MediaWeatherInfo from '@/vues/components/viewer/MediaWeatherInfo.vue'
-import { caps, makeLocationString, prettyBytes, toHms } from '@/scripts/utils.ts'
+import { caps, prettyBytes, toHms } from '@/scripts/utils.ts'
 import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
@@ -14,7 +14,9 @@ import { useRoute } from 'vue-router'
 import { useTheme } from 'vuetify/framework'
 import { getCodecInfo } from '@/scripts/codecUtils.ts'
 
-const BaseMap = defineAsyncComponent(() => import('@/vues/components/map/BaseMap.vue'))
+const MediaLocationMap = defineAsyncComponent(
+  () => import('@/vues/components/map/MediaLocationMap.vue'),
+)
 
 const props = defineProps<{
   mediaItem?: FullMediaItem | SharedMediaItem
@@ -408,33 +410,7 @@ const showCameraSection = computed(() => {
           >
         </div>
       </div>
-      <div class="map-info" v-if="mediaItem?.gps">
-        <base-map
-          class="base-map"
-          :map-options="{
-            center: { lat: mediaItem.gps.latitude, lon: mediaItem.gps.longitude },
-            zoom: 9,
-            attributionControl: {
-              compact: true,
-            },
-          }"
-        />
-        <v-theme-provider theme="dark">
-          <v-sheet class="map-buttons">
-            <a
-              v-ripple
-              :href="`https://www.google.com/maps/place/${mediaItem.gps.latitude},${mediaItem.gps.longitude}`"
-              target="_blank"
-              referrerpolicy="no-referrer"
-            >
-              <span v-if="mediaItem.gps.location">{{
-                makeLocationString(mediaItem.gps.location, 3)
-              }}</span>
-              <v-icon size="15" class="ml-2 map-button-icon" icon="mdi-arrow-top-right" />
-            </a>
-          </v-sheet>
-        </v-theme-provider>
-      </div>
+      <media-location-map class="map-info" :media-item="mediaItem" />
     </template>
   </div>
 </template>
@@ -606,34 +582,7 @@ const showCameraSection = computed(() => {
 }
 
 .map-info {
-  border-radius: 20px;
   margin: 10px;
-  overflow: hidden;
-}
-
-.base-map {
-  width: 380px;
-  height: 300px;
-}
-
-.map-buttons {
-  background-color: rgba(var(--v-theme-on-surface), 0.9);
-}
-
-.map-buttons a {
-  color: rgba(var(--v-theme-surface-variant), 1);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  user-select: none;
-  font-weight: 500;
-  font-size: 13px;
-  padding: 7px 20px;
-}
-
-.map-button-icon {
-  font-weight: lighter;
-  opacity: 0.8;
 }
 
 .camera-info {
