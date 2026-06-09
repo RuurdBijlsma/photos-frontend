@@ -4,7 +4,13 @@ import maplibregl, { type Map as LibreMap, type MapOptions } from 'maplibre-gl'
 import BaseMap, { type StyleName } from '@/vues/components/map/BaseMap.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
-import { useEventListener, useResizeObserver, useStorage, useThrottleFn } from '@vueuse/core'
+import {
+  useEventListener,
+  useResizeObserver,
+  useStorage,
+  useDebounceFn,
+  useThrottleFn,
+} from '@vueuse/core'
 import type {
   MapPhotoItem,
   MapPhotosResponse,
@@ -18,6 +24,9 @@ const route = useRoute()
 let initialized = false
 const mapPhotos = ref<MapPhotosResponse | null>(null)
 let map: null | maplibregl.Map = null
+
+// Keep track of the active viewport IDs to prevent redundant state writes and re-renders
+const currentVisibleIds = new Set<string>()
 
 const dateFilter = ref({
   startDate: null as Date | null,
@@ -230,15 +239,15 @@ async function initialize() {
   }
 
   const updateVisibleItems = () => syncVisibleItems(loadedMap)
-  const throttledUpdate = useThrottleFn(updateVisibleItems, 50)
+  // Debouncing movement end event prevents layout updates from colliding with map panning rendering loops
+  const debouncedUpdate = useDebounceFn(updateVisibleItems, 80)
 
-  loadedMap.on('zoomend', throttledUpdate)
-  loadedMap.on('move', throttledUpdate)
-  loadedMap.on('moveend', throttledUpdate)
+  loadedMap.on('zoomend', debouncedUpdate)
+  loadedMap.on('moveend', debouncedUpdate)
   loadedMap.on(
     'data',
     (e: maplibregl.MapDataEvent & { sourceId?: string; isSourceLoaded?: boolean }) => {
-      if (e.sourceId === 'photos' && e.isSourceLoaded) throttledUpdate()
+      if (e.sourceId === 'photos' && e.isSourceLoaded) debouncedUpdate()
     },
   )
 
@@ -280,9 +289,7 @@ function addMapLayers(loadedMap: LibreMap) {
     source: 'photos',
     maxzoom: 15,
     paint: {
-      // Increase heatmap intensity as zoom decreases
       'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 15, 3],
-      // Standard color ramp for high-contrast visibility
       'heatmap-color': [
         'interpolate',
         ['linear'],
@@ -300,9 +307,7 @@ function addMapLayers(loadedMap: LibreMap) {
         1,
         'rgb(178,24,43)',
       ],
-      // Adjust heatmap footprint by zoom level
       'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 3, 15, 25],
-      // Gradually fade out the heatmap as points resolve
       'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 10, 1, 15, 0],
     },
   })
@@ -335,17 +340,44 @@ function addMapLayers(loadedMap: LibreMap) {
 }
 
 function syncVisibleItems(loadedMap: LibreMap) {
+  if (!loadedMap.getLayer('photos-helper')) return
+
   const helperFeatures = loadedMap.queryRenderedFeatures({ layers: ['photos-helper'] })
-  const visibleItemMap = new Map<string, SimpleTimelineItem>()
+
+  if (helperFeatures.length === 0 && visibleItems.value.length === 0) {
+    return
+  }
+
+  const newItems: SimpleTimelineItem[] = []
+  const newIds = new Set<string>()
 
   for (const feature of helperFeatures) {
-    const item = getItemFromProperties(feature.properties)
-    if (item) {
-      visibleItemMap.set(item.id, item)
+    const id = feature.properties?.id
+    if (id && !newIds.has(id)) {
+      const item = getItemFromProperties(feature.properties)
+      if (item) {
+        newIds.add(id)
+        newItems.push(item)
+      }
     }
   }
 
-  visibleItems.value = [...visibleItemMap.values()]
+  // Deep diffing calculation: Skip Vue updates if the on-screen set is identical
+  let hasChanged = newIds.size !== currentVisibleIds.size
+  if (!hasChanged) {
+    for (const id of newIds) {
+      if (!currentVisibleIds.has(id)) {
+        hasChanged = true
+        break
+      }
+    }
+  }
+
+  if (hasChanged) {
+    currentVisibleIds.clear()
+    newIds.forEach((id) => currentVisibleIds.add(id))
+    visibleItems.value = newItems
+  }
 }
 
 const getItemFromProperties = (
