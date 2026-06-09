@@ -20,12 +20,65 @@ import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTim
 import { useRoute, useRouter } from 'vue-router'
 import MapDateFilter from '@/vues/components/map/MapDateFilter.vue'
 
+// Tweakable visual configuration for the map representation
+const HEATMAP_CONFIG = {
+  // The zoom level where point circles begin to show up
+  pointMinZoom: 13,
+  heatmapMaxZoom: 16,
+
+  // Heatmap Intensity: Global weight multiplier based on zoom level
+  intensity: [
+    // Increase heatmap intensity gradually while zooming
+    [0, 1], ///// zoom 0
+    [15, 1], // zoom 15
+  ] as [number, number][],
+
+  // Heatmap Radius: Size of the blurred area per point (in pixels)
+  radius: [
+    // Increase radius of heatmap area while zooming
+    [0, 15], /// zoom 0
+    [8, 25], /// zoom 8
+    [16, 45], // zoom 16
+  ] as [number, number][],
+
+  // Heatmap Opacity: Gradual fadeout as you zoom in closer to individual markers
+  opacity: [
+    // Fade out from zoom 12 to 15
+    [12, 1], // zoom 12
+    [15, 0], // zoom 15
+  ] as [number, number][],
+
+  // Color Stops: [density, color_string] matching the attached screenshot gradient sequence
+  colorStops: [
+    [0, 'rgba(124, 77, 255, 0)'], // Outer boundary (fully transparent)
+    [0.3, 'rgba(115, 50, 160, 0.2)'], // Muted violet outer fringe
+    [0.6, 'rgba(0, 180, 210, 0.3)'], // Cool cyan / light blue ring
+    [0.8, 'rgba(135, 195, 60, 0.4)'], // Warm lime-green ring
+    [0.9, 'rgb(235 172 45 / 0.5)'], // Orange transition zone
+    [1.0, 'rgb(165 30 46 / 0.6)'], // Rich magenta / deep pink center core
+  ] as [number, string][],
+
+  // Visual options for individual markers at high zoom levels
+  point: {
+    color: 'rgb(165, 30, 115)', // Matches the magenta core color of the heatmap
+    strokeColor: '#ffffff',
+    strokeWidth: 1.5,
+    radius: [
+      [13, 5],
+      [17, 10],
+    ] as [number, number][],
+    opacity: [
+      [12, 0], // Fades in alongside heatmap fade-out
+      [14, 1],
+    ] as [number, number][],
+  },
+}
+
 const route = useRoute()
 let initialized = false
 const mapPhotos = ref<MapPhotosResponse | null>(null)
 let map: null | maplibregl.Map = null
 
-// Keep track of the active viewport IDs to prevent redundant state writes and re-renders
 const currentVisibleIds = new Set<string>()
 
 const dateFilter = ref({
@@ -239,7 +292,6 @@ async function initialize() {
   }
 
   const updateVisibleItems = () => syncVisibleItems(loadedMap)
-  // Debouncing movement end event prevents layout updates from colliding with map panning rendering loops
   const debouncedUpdate = useDebounceFn(updateVisibleItems, 80)
 
   loadedMap.on('zoomend', debouncedUpdate)
@@ -282,48 +334,47 @@ function addPhotoSource(loadedMap: LibreMap, photos: MapPhotosResponse) {
 }
 
 function addMapLayers(loadedMap: LibreMap) {
-  // Heatmap Layer representing visual density of photos
+  // Heatmap Layer using configured intensity, color bands, and radius curves
   loadedMap.addLayer({
     id: 'photos-heat',
     type: 'heatmap',
     source: 'photos',
-    maxzoom: 15,
+    maxzoom: HEATMAP_CONFIG.heatmapMaxZoom,
     paint: {
-      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 15, 3],
+      'heatmap-intensity': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        ...HEATMAP_CONFIG.intensity.flat(),
+      ],
       'heatmap-color': [
         'interpolate',
         ['linear'],
         ['heatmap-density'],
-        0,
-        'rgba(33,102,172,0)',
-        0.2,
-        'rgb(103,169,207)',
-        0.4,
-        'rgb(209,229,240)',
-        0.6,
-        'rgb(253,219,199)',
-        0.8,
-        'rgb(239,138,98)',
-        1,
-        'rgb(178,24,43)',
+        ...HEATMAP_CONFIG.colorStops.flat(),
       ],
-      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 3, 15, 25],
-      'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 10, 1, 15, 0],
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], ...HEATMAP_CONFIG.radius.flat()],
+      'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], ...HEATMAP_CONFIG.opacity.flat()],
     },
   })
 
-  // Exact point marker locations on high zoom levels
+  // Exact point marker circles mapping to the zoom configuration
   loadedMap.addLayer({
     id: 'photos-point',
     type: 'circle',
     source: 'photos',
-    minzoom: 10,
+    minzoom: HEATMAP_CONFIG.pointMinZoom,
     paint: {
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 5, 16, 12],
-      'circle-color': 'rgb(178,24,43)',
-      'circle-stroke-color': 'white',
-      'circle-stroke-width': 1.5,
-      'circle-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0, 12, 1],
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], ...HEATMAP_CONFIG.point.radius.flat()],
+      'circle-color': HEATMAP_CONFIG.point.color,
+      'circle-stroke-color': HEATMAP_CONFIG.point.strokeColor,
+      'circle-stroke-width': HEATMAP_CONFIG.point.strokeWidth,
+      'circle-opacity': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        ...HEATMAP_CONFIG.point.opacity.flat(),
+      ],
     },
   })
 
@@ -362,7 +413,6 @@ function syncVisibleItems(loadedMap: LibreMap) {
     }
   }
 
-  // Deep diffing calculation: Skip Vue updates if the on-screen set is identical
   let hasChanged = newIds.size !== currentVisibleIds.size
   if (!hasChanged) {
     for (const id of newIds) {
