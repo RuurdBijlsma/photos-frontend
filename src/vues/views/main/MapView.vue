@@ -26,56 +26,54 @@ const HEATMAP_CONFIG = {
   pointMinZoom: 13,
   heatmapMaxZoom: 16,
 
-  // Heatmap Intensity: Controls global density multiplier by zoom level.
-  // We keep it low when zoomed out to prevent instant saturation, and
-  // ramp it up as points separate to keep details visible.
+  // Heatmap Intensity: global density multiplier by zoom.
+  // Kept low when zoomed out to show structure, ramped up as points separate.
   intensity: [
-    [0, 0.15], // Global view (very low multiplier to prevent massive solid blocks)
-    [6, 0.25], // Europe scale (excellent range for stretching teal and green)
-    [11, 0.7], // Regional scale (starts scaling up as clusters separate)
-    [15, 1], // High local intensity to make sparse spots stand out
+    [0, 0.2], // World view – gentle presence
+    [5, 0.35], // Continent scale
+    [10, 0.7], // Regional clusters become distinct
+    [14, 1.0], // Local peaks stand out clearly
   ] as [number, number][],
 
-  // Heatmap Radius: Blending circle radius in pixels by zoom level.
-  // A progressive curve allows distant cities to bridge together into connected corridors.
+  // Heatmap Radius: blending radius in pixels per zoom.
+  // A smooth decay that prevents oceans from flooding while keeping cities connected.
   radius: [
-    [0, 13], // Tight at world level to prevent oceans from flooding with color
-    [5, 16], // Tight at world level to prevent oceans from flooding with color
-    [6, 17], // Expanded at Europe level to form beautiful organic channels
-    [11, 15], // Generous blending of regional structures
-    [16, 10], // Large smooth diffusion before fading out
+    [0, 12], // Tight at global level to avoid ocean smearing
+    [5, 16], // Merges distant points into corridors
+    [10, 13], // Natural separation of neighbourhoods
+    [16, 8], // Crisp individual hotspots before fading
   ] as [number, number][],
 
-  // Heatmap Opacity: Gradual crossover transition to point markers
+  // Heatmap Opacity: seamless crossover from heatmap to point markers.
   opacity: [
     [12, 1],
     [16, 0],
   ] as [number, number][],
 
-  // Color Stops: [density, color_string] mapping directly to your second screenshot.
-  // We raise the color opacities slightly so they are vibrant, but keep the gradient wide.
+  // Color Stops: classic thermal gradient (transparent → cold → hot → peak white).
+  // Uses solid colours so that layer blending is controlled only by heatmap-opacity.
   colorStops: [
-    [0, 'rgba(124, 77, 255, 0)'], // Ground state (invisible boundary)
-    [0.01, 'rgb(71 64 175 / 0.25)'], // Soft violet outer haze
-    [0.02, 'rgb(103 83 232 / 0.35)'], // Soft violet outer haze
-    [0.1, 'rgb(103 83 232 / 0.5)'], // Soft violet outer haze
-    [0.35, 'rgba(0, 180, 210, 0.7)'], // Broad, cool cyan/teal transition layer
-    [0.6, 'rgba(135, 195, 60, 0.7)'], // Warm lime-green core framing
-    [0.9, 'rgba(235, 172, 45, 0.7)'], // Warm yellow-orange transition
-    [1, 'rgb(213 87 102 / 0.7)'], // Magenta/deep-red core reserved only for major peaks
+    [0, 'rgba(0, 0, 0, 0)'], // fully invisible boundary
+    [0.05, 'rgba(45, 40, 130, 0.7)'], // deep indigo for lowest density
+    [0.2, 'rgba(0, 140, 200, 0.7)'], // rich cyan/blue
+    [0.4, 'rgba(40, 200, 100, 0.7)'], // vivid green
+    [0.6, 'rgba(240, 220, 40, 0.7)'], // warm yellow
+    [0.8, 'rgb(214 116 49 / 0.7)'], // intense orange
+    [1, 'rgb(213 75 75 / 0.7)'], // bright near-white for extreme peaks
   ] as [number, string][],
 
-  // Visual options for individual markers at high zoom levels
+  // Point markers – subtle circles at high zoom to show exact location.
   point: {
-    color: 'rgb(165, 30, 115)',
+    color: 'rgb(80, 30, 120)', // deep purple, visible on most maps
     strokeColor: '#ffffff',
-    strokeWidth: 1.5,
+    strokeWidth: 1.8,
     radius: [
-      [13, 5],
-      [17, 10],
+      [13, 4],
+      [17, 11],
     ] as [number, number][],
     opacity: [
       [13, 0],
+      [15.5, 0.8],
       [16, 1],
     ] as [number, number][],
   },
