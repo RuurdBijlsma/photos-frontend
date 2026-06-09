@@ -39,14 +39,14 @@ const HEATMAP_CONFIG = {
   // A smooth decay that prevents oceans from flooding while keeping cities connected.
   radius: [
     [0, 12], // Tight at global level to avoid ocean smearing
-    [5, 16], // Merges distant points into corridors
-    [10, 13], // Natural separation of neighbourhoods
-    [16, 8], // Crisp individual hotspots before fading
+    [5, 18], // Merges distant points into corridors
+    [10, 30], // Natural separation of neighbourhoods
+    [16, 25], // Crisp individual hotspots before fading
   ] as [number, number][],
 
   // Heatmap Opacity: seamless crossover from heatmap to point markers.
   opacity: [
-    [12, 1],
+    [12, .75],
     [16, 0],
   ] as [number, number][],
 
@@ -54,7 +54,7 @@ const HEATMAP_CONFIG = {
   // Uses solid colours so that layer blending is controlled only by heatmap-opacity.
   colorStops: [
     [0, 'rgba(0, 0, 0, 0)'], // fully invisible boundary
-    [0.05, 'rgba(45, 40, 130, 0.7)'], // deep indigo for lowest density
+    [0.05, 'rgb(76 70 184 / 0.7)'], // deep indigo for lowest density
     [0.2, 'rgba(0, 140, 200, 0.7)'], // rich cyan/blue
     [0.4, 'rgba(40, 200, 100, 0.7)'], // vivid green
     [0.6, 'rgba(240, 220, 40, 0.7)'], // warm yellow
@@ -396,6 +396,7 @@ function addMapLayers(loadedMap: LibreMap) {
 
 function syncVisibleItems(loadedMap: LibreMap) {
   if (!loadedMap.getLayer('photos-helper')) return
+  console.log(loadedMap.getZoom())
 
   const helperFeatures = loadedMap.queryRenderedFeatures({ layers: ['photos-helper'] })
 
