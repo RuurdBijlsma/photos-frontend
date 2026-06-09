@@ -13,6 +13,7 @@ import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
 import { useRoute } from 'vue-router'
 import { useTheme } from 'vuetify/framework'
 import { getCodecInfo } from '@/scripts/codecUtils.ts'
+import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 
 const MediaLocationMap = defineAsyncComponent(
   () => import('@/vues/components/map/MediaLocationMap.vue'),
@@ -25,11 +26,12 @@ const props = defineProps<{
 
 const emit = defineEmits(['closeDateTime', 'openDateTime'])
 
-const theme = useTheme()
 const dialogs = useDialogStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
+const mediaItemStore = useMediaItemStore()
 const route = useRoute()
+const theme = useTheme()
 
 const currentAlbumId = computed(() => route.params.albumId as string | undefined)
 
@@ -63,6 +65,7 @@ function fullDateString(date: Date) {
 }
 
 async function editCaption() {
+  if (!props.mediaItem?.id) return
   const oldCaption = props.mediaItem?.user_caption ?? ''
   const newCaption = await dialogs.prompt({
     title: 'Edit Caption',
@@ -70,8 +73,10 @@ async function editCaption() {
     confirmText: 'Update',
     attach: true,
   })
+  if (newCaption === '')
+    return await mediaItemStore.updateMediaItem(props.mediaItem.id, { userCaption: null })
   if (!newCaption) return
-  // todo update server with new caption and refresh media item
+  await mediaItemStore.updateMediaItem(props.mediaItem.id, { userCaption: newCaption })
 }
 
 watch(dateTimeDialogOpen, () => {
@@ -274,7 +279,10 @@ const showCameraSection = computed(() => {
     <template v-else>
       <div class="caption">
         <div class="user-caption">
-          <p v-if="mediaItem.user_caption">{{ mediaItem.user_caption }}</p>
+          <div class="user-caption-holder" v-if="mediaItem.user_caption">
+            <p class="user-caption-title">Caption</p>
+            <p class="user-caption-caption">{{ mediaItem.user_caption }}</p>
+          </div>
           <p class="no-caption" v-else>No caption</p>
           <v-btn
             v-if="authStore.isAuthenticated"
@@ -469,6 +477,24 @@ const showCameraSection = computed(() => {
   align-items: center;
   font-size: 13px;
   justify-content: space-between;
+}
+
+.user-caption-holder {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-caption-title {
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+.user-caption-caption {
+  font-size: 16px;
+}
+
+.user-caption-holder p {
+  margin: 0;
 }
 
 .no-caption {

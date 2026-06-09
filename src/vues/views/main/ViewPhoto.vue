@@ -242,7 +242,8 @@ watch(
         />
       </div>
       <div class="top-main-text">
-        <h3>{{ timestampString }}</h3>
+        <h3 v-if="fullImage?.user_caption">{{ fullImage.user_caption }}</h3>
+        <h3 v-else>{{ timestampString }}</h3>
         <p>
           <router-link
             class="location-link"
@@ -256,10 +257,14 @@ watch(
               width: 140,
             }"
           >
-            {{ locationString }}
+            <span>{{ locationString }}</span>
           </router-link>
-          <span v-if="locationString.length > 0"> · </span>
-          {{ currentIndex + 1 }} of
+          <template v-if="fullImage?.user_caption">
+            <span class="ml-2 mr-2"> • </span>
+            <span>{{ timestampString }}</span>
+          </template>
+          <span v-if="locationString.length > 0" class="ml-2 mr-2"> • </span>
+          {{ (currentIndex + 1).toLocaleString() }} of
           {{ viewPhotoStore.ids.length === 0 ? '...' : viewPhotoStore.ids.length.toLocaleString() }}
         </p>
       </div>

@@ -37,8 +37,6 @@ export const vuetify = createVuetify({
     themes: {
       light: lightDefinition,
       dark: darkDefinition,
-      lightView: lightDefinition,
-      darkView: darkDefinition,
     },
   },
   icons: {

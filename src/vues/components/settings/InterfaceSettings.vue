@@ -60,6 +60,16 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
               class="setting-switch"
             />
             <v-switch
+              v-model="settings.lightPhotoViewerMap"
+              label="Force Light Mode in Viewer Map"
+              hint="Always displays the map in the media info panel with a light theme, regardless of app theme"
+              persistent-hint
+              color="primary"
+              inset
+              density="comfortable"
+              class="setting-switch"
+            />
+            <v-switch
               v-model="settings.useImageGlow"
               label="Ambient Image Glow"
               hint="Adds a soft glowing background reflecting the colors of the active image"
@@ -67,7 +77,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
               color="primary"
               inset
               density="comfortable"
-              class="setting-switch mt-4"
+              class="setting-switch"
             />
           </div>
 

@@ -4,6 +4,7 @@ import type { ThemeType, ThemeVariant } from '@/scripts/constants.ts'
 
 export const USE_IMAGE_GLOW = false
 export const DARK_PHOTO_VIEWER = true
+export const LIGHT_PHOTO_VIEWER_MAP = false
 export const USE_BACKDROP_BLUR = true
 export const TIMELINE_ROW_HEIGHT = 320
 export const TIMELINE_USE_DAY_LABELS = false
@@ -28,6 +29,7 @@ export const useSettingStore = defineStore('settings', () => {
   // UI -> Photo Viewer
   const useImageGlow = useStorage('imageGlow', USE_IMAGE_GLOW)
   const darkPhotoViewer = useStorage('darkPhotoViewer', DARK_PHOTO_VIEWER)
+  const lightPhotoViewerMap = useStorage('lightPhotoViewerMap', LIGHT_PHOTO_VIEWER_MAP)
   // UI -> General
   const useBackdropBlur = useStorage('backdropBlur', USE_BACKDROP_BLUR)
   // UI -> Timeline
@@ -43,6 +45,7 @@ export const useSettingStore = defineStore('settings', () => {
     timelineRowHeight,
     timelineUseDayLabels,
     darkPhotoViewer,
+    lightPhotoViewerMap,
     themeString,
     useSunSchedule,
     enableLightThemeTime,
