@@ -26,41 +26,46 @@ const HEATMAP_CONFIG = {
   pointMinZoom: 13,
   heatmapMaxZoom: 16,
 
-  // Heatmap Intensity: Global weight multiplier based on zoom level
+  // Heatmap Intensity: Controls global density multiplier by zoom level.
+  // We keep it low when zoomed out to prevent instant saturation, and
+  // ramp it up as points separate to keep details visible.
   intensity: [
-    // Increase heatmap intensity gradually while zooming
-    [0, 1], ///// zoom 0
-    [15, 1], // zoom 15
+    [0, 0.15], // Global view (very low multiplier to prevent massive solid blocks)
+    [6, 0.25], // Europe scale (excellent range for stretching teal and green)
+    [11, .7], // Regional scale (starts scaling up as clusters separate)
+    [15, 1], // High local intensity to make sparse spots stand out
   ] as [number, number][],
 
-  // Heatmap Radius: Size of the blurred area per point (in pixels)
+  // Heatmap Radius: Blending circle radius in pixels by zoom level.
+  // A progressive curve allows distant cities to bridge together into connected corridors.
   radius: [
-    // Increase radius of heatmap area while zooming
-    [0, 15], /// zoom 0
-    [8, 25], /// zoom 8
-    [16, 45], // zoom 16
+    [0, 8], // Tight at world level to prevent oceans from flooding with color
+    [6, 13], // Expanded at Europe level to form beautiful organic channels
+    [11, 20], // Generous blending of regional structures
+    [16, 30], // Large smooth diffusion before fading out
   ] as [number, number][],
 
-  // Heatmap Opacity: Gradual fadeout as you zoom in closer to individual markers
+  // Heatmap Opacity: Gradual crossover transition to point markers
   opacity: [
-    // Fade out from zoom 12 to 15
-    [12, 1], // zoom 12
-    [15, 0], // zoom 15
+    [12, 1],
+    [16, 0],
   ] as [number, number][],
 
-  // Color Stops: [density, color_string] matching the attached screenshot gradient sequence
+  // Color Stops: [density, color_string] mapping directly to your second screenshot.
+  // We raise the color opacities slightly so they are vibrant, but keep the gradient wide.
   colorStops: [
-    [0, 'rgba(124, 77, 255, 0)'], // Outer boundary (fully transparent)
-    [0.3, 'rgba(115, 50, 160, 0.2)'], // Muted violet outer fringe
-    [0.6, 'rgba(0, 180, 210, 0.3)'], // Cool cyan / light blue ring
-    [0.8, 'rgba(135, 195, 60, 0.4)'], // Warm lime-green ring
-    [0.9, 'rgb(235 172 45 / 0.5)'], // Orange transition zone
-    [1.0, 'rgb(165 30 46 / 0.6)'], // Rich magenta / deep pink center core
+    [0, 'rgba(124, 77, 255, 0)'], // Ground state (invisible boundary)
+    [0.0001, 'rgba(115, 50, 160, .2)'], // Soft violet outer haze
+    [0.10, 'rgb(103 83 232 / 0.7)'], // Soft violet outer haze
+    [0.35, 'rgba(0, 180, 210, 0.7)'], // Broad, cool cyan/teal transition layer
+    [0.6, 'rgba(135, 195, 60, 0.7)'], // Warm lime-green core framing
+    [0.9, 'rgba(235, 172, 45, 0.7)'], // Warm yellow-orange transition
+    [1, 'rgb(213 87 102 / 0.7)'], // Magenta/deep-red core reserved only for major peaks
   ] as [number, string][],
 
   // Visual options for individual markers at high zoom levels
   point: {
-    color: 'rgb(165, 30, 115)', // Matches the magenta core color of the heatmap
+    color: 'rgb(165, 30, 115)',
     strokeColor: '#ffffff',
     strokeWidth: 1.5,
     radius: [
@@ -68,8 +73,8 @@ const HEATMAP_CONFIG = {
       [17, 10],
     ] as [number, number][],
     opacity: [
-      [12, 0], // Fades in alongside heatmap fade-out
-      [14, 1],
+      [13, 0],
+      [16, 1],
     ] as [number, number][],
   },
 }
@@ -120,7 +125,6 @@ function handleDateFilterChange(payload: { isDragging: boolean }) {
   }
 }
 
-const router = useRouter()
 const outerLayoutEl = useTemplateRef('outerLayout')
 const photoIdToOrder = new Map<string, number>()
 
