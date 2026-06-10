@@ -4,20 +4,15 @@ import maplibregl, { type Map as LibreMap, type MapOptions } from 'maplibre-gl'
 import BaseMap, { type StyleName } from '@/vues/components/map/BaseMap.vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
-import {
-  useEventListener,
-  useResizeObserver,
-  useStorage,
-  useDebounceFn,
-  useThrottleFn,
-} from '@vueuse/core'
+import { getThumbnailHeight, getVideoHeight } from '@/scripts/utils.ts'
+import { useEventListener, useResizeObserver, useStorage, useThrottleFn } from '@vueuse/core'
 import type {
   MapPhotoItem,
   MapPhotosResponse,
   SimpleTimelineItem,
 } from '@/scripts/types/generated/timeline.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import MapDateFilter from '@/vues/components/map/MapDateFilter.vue'
 
 // Tweakable visual configuration for the map representation
@@ -33,7 +28,7 @@ const HEATMAP_CONFIG = {
     [5, 0.35], // Continent scale
     [10, 0.7], // Regional clusters become distinct
     [14, 1.0], // Local peaks stand out clearly
-  ] as [number, number][],
+  ],
 
   // Heatmap Radius: blending radius in pixels per zoom.
   // A smooth decay that prevents oceans from flooding while keeping cities connected.
@@ -42,13 +37,13 @@ const HEATMAP_CONFIG = {
     [5, 18], // Merges distant points into corridors
     [10, 30], // Natural separation of neighbourhoods
     [16, 25], // Crisp individual hotspots before fading
-  ] as [number, number][],
+  ],
 
   // Heatmap Opacity: seamless crossover from heatmap to point markers.
   opacity: [
-    [12, .75],
+    [12, 0.75],
     [16, 0],
-  ] as [number, number][],
+  ],
 
   // Color Stops: classic thermal gradient (transparent → cold → hot → peak white).
   // Uses solid colours so that layer blending is controlled only by heatmap-opacity.
@@ -60,7 +55,7 @@ const HEATMAP_CONFIG = {
     [0.6, 'rgba(240, 220, 40, 0.7)'], // warm yellow
     [0.8, 'rgb(214 116 49 / 0.7)'], // intense orange
     [1, 'rgb(213 75 75 / 0.7)'], // bright near-white for extreme peaks
-  ] as [number, string][],
+  ],
 
   // Point markers – subtle circles at high zoom to show exact location.
   point: {
@@ -70,21 +65,37 @@ const HEATMAP_CONFIG = {
     radius: [
       [13, 4],
       [17, 11],
-    ] as [number, number][],
+    ],
     opacity: [
       [13, 0],
       [15.5, 0.8],
       [16, 1],
-    ] as [number, number][],
+    ],
   },
 }
 
 const route = useRoute()
-let initialized = false
+const router = useRouter()
+
+// --- State & Storage ---
+const mapMode = useStorage<'markers' | 'heatmap'>('mapViewMode', 'markers')
 const mapPhotos = ref<MapPhotosResponse | null>(null)
 let map: null | maplibregl.Map = null
+let initialized = false
+let updateRun = 0
 
+const photoIdToOrder = new Map<string, number>()
+const markers: Record<string, maplibregl.Marker> = {}
+const clusterPreviewCache = new Map<number, SimpleTimelineItem>()
+let popupMarker: maplibregl.Marker | null = null
+
+// Viewport selection state
 const currentVisibleIds = new Set<string>()
+const visibleItems = ref<SimpleTimelineItem[]>([])
+const selectedClusterItems = ref<SimpleTimelineItem[] | null>(null)
+const selectedMarkerKey = ref<string | null>(null)
+const selectedPopupItem = ref<SimpleTimelineItem | null>(null)
+const selectedLngLat = ref<[number, number] | null>(null)
 
 const dateFilter = ref({
   startDate: null as Date | null,
@@ -94,6 +105,76 @@ const dateFilter = ref({
   endGranularity: 'month' as 'month' | 'day',
 })
 
+// --- Layout & Resize Settings ---
+const outerLayoutEl = useTemplateRef('outerLayout')
+const MIN_MAP_WIDTH = 400
+const MIN_SIDEBAR_WIDTH = 200
+const SIDEBAR_GAP = 5
+const CLOSE_DRAG_THRESHOLD = 50
+
+const sidebarOpen = useStorage('mapSidebarOpen', true)
+const sidebarWidth = useStorage('mapSidebarWidth', window.innerWidth / 3)
+const isResizingSidebar = ref(false)
+
+const mapOptions = ref<Omit<MapOptions, 'container' | 'style'> | null>(null)
+const currentStyle = useStorage<StyleName>('mapStyle', 'LIBERTY')
+const isStyleSelectorHovered = ref(false)
+
+const MAP_STYLES = [
+  { key: 'LIBERTY', label: 'Light Map', thumb: 'img/map-thumb/LIBERTY.png' },
+  { key: 'SATELLITE', label: 'Satellite', thumb: 'img/map-thumb/SATELLITE.png' },
+  { key: 'TERRAIN', label: 'Terrain', thumb: 'img/map-thumb/TERRAIN.png' },
+  { key: 'WATERCOLOR', label: 'Watercolor', thumb: 'img/map-thumb/WATERCOLOR.png' },
+  { key: 'DARK_COLORFUL', label: 'Dark Map', thumb: 'img/map-thumb/DARK_COLORFUL.png' },
+] as const
+
+const DEFAULT_MAP_OPTIONS = {
+  center: { lat: 40, lng: 0 },
+  zoom: 3,
+  attributionControl: { compact: true },
+}
+
+// --- Computed Properties ---
+const nextStyle = computed(() => {
+  const currentIndex = MAP_STYLES.findIndex((s) => s.key === currentStyle.value)
+  const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % MAP_STYLES.length
+  return MAP_STYLES[nextIndex]
+})
+
+function cycleStyle() {
+  currentStyle.value = nextStyle.value.key
+}
+
+const loadCoord = computed(() => {
+  const lat = Number(route.query.lat)
+  const lon = Number(route.query.lon)
+  if (!lat || !lon) return null
+  return { lat, lng: lon }
+})
+
+const photoItems = computed(() => {
+  return mapPhotos.value?.items.map((p) => p.item).filter((p) => !!p) ?? []
+})
+
+const timelineItems = computed(() => {
+  const items = selectedClusterItems.value ?? visibleItems.value
+  return items.slice().sort((a, b) => {
+    const orderA = photoIdToOrder.get(a.id) ?? 0
+    const orderB = photoIdToOrder.get(b.id) ?? 0
+    return orderA - orderB
+  })
+})
+
+const resolvedSidebarWidth = computed(() => {
+  const maxWidth = getMaxSidebarWidth()
+  return Math.round(Math.min(Math.max(sidebarWidth.value, MIN_SIDEBAR_WIDTH), maxWidth))
+})
+
+const layoutStyle = computed(() => ({
+  '--map-sidebar-width': sidebarOpen.value ? `${resolvedSidebarWidth.value}px` : '0px',
+}))
+
+// --- Fetch Data ---
 async function fetchMapPhotos(start: Date | null, end: Date | null) {
   const startStr = start?.toISOString()
   const endStr = end?.toISOString()
@@ -107,6 +188,7 @@ async function fetchMapPhotos(start: Date | null, end: Date | null) {
       }
     })
     mapPhotos.value = loadedPhotos
+    clearMarkerSelection()
   } catch (err) {
     console.error('Failed to list map photos with date filter:', err)
   }
@@ -125,143 +207,15 @@ function handleDateFilterChange(payload: { isDragging: boolean }) {
   }
 }
 
-const outerLayoutEl = useTemplateRef('outerLayout')
-const photoIdToOrder = new Map<string, number>()
-
-const MIN_MAP_WIDTH = 400
-const MIN_SIDEBAR_WIDTH = 200
-const SIDEBAR_GAP = 5
-const CLOSE_DRAG_THRESHOLD = 50
-
-const sidebarOpen = useStorage('mapSidebarOpen', true)
-const sidebarWidth = useStorage('mapSidebarWidth', window.innerWidth / 3)
-const isResizingSidebar = ref(false)
-const visibleItems = ref<SimpleTimelineItem[]>([])
-
-type MapOptionsWithoutContainer = Omit<MapOptions, 'container' | 'style'>
-
-const mapOptions = ref<MapOptionsWithoutContainer | null>(null)
-
-const currentStyle = useStorage<StyleName>('mapStyle', 'LIBERTY')
-const isStyleSelectorHovered = ref(false)
-
-const MAP_STYLES = [
-  { key: 'LIBERTY', label: 'Light Map', thumb: 'img/map-thumb/LIBERTY.png' },
-  { key: 'SATELLITE', label: 'Satellite', thumb: 'img/map-thumb/SATELLITE.png' },
-  { key: 'TERRAIN', label: 'Terrain', thumb: 'img/map-thumb/TERRAIN.png' },
-  { key: 'WATERCOLOR', label: 'Watercolor', thumb: 'img/map-thumb/WATERCOLOR.png' },
-  { key: 'DARK_COLORFUL', label: 'Dark Map', thumb: 'img/map-thumb/DARK_COLORFUL.png' },
-] as const
-
-const nextStyle = computed(() => {
-  const currentIndex = MAP_STYLES.findIndex((s) => s.key === currentStyle.value)
-  const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % MAP_STYLES.length
-  return MAP_STYLES[nextIndex]
-})
-
-function cycleStyle() {
-  currentStyle.value = nextStyle.value.key
+// --- Map Lifecycle & Source Configuration ---
+function handleMapLoad(loadedMap: LibreMap) {
+  map = loadedMap
+  initializeMap()
 }
 
 function handleStyleLoad(loadedMap: LibreMap) {
   if (mapPhotos.value === null) return
-
-  if (!loadedMap.getSource('photos')) {
-    addPhotoSource(loadedMap, mapPhotos.value)
-    addMapLayers(loadedMap)
-  }
-}
-
-const loadCoord = computed(() => {
-  const lat = Number(route.query.lat)
-  const lon = Number(route.query.lon)
-  if (!lat || !lon) return null
-  return { lat: lat, lng: lon }
-})
-
-const DEFAULT_MAP_OPTIONS = {
-  center: { lat: 40, lng: 0 },
-  zoom: 3,
-  attributionControl: {
-    compact: true,
-  },
-} satisfies MapOptionsWithoutContainer
-
-const timelineItems = computed(() => {
-  const items = visibleItems.value
-
-  return items.sort((a, b) => {
-    const orderA = photoIdToOrder.get(a.id) ?? 0
-    const orderB = photoIdToOrder.get(b.id) ?? 0
-    return orderA - orderB
-  })
-})
-
-const resolvedSidebarWidth = computed(() => {
-  const maxWidth = getMaxSidebarWidth()
-  return Math.round(Math.min(Math.max(sidebarWidth.value, MIN_SIDEBAR_WIDTH), maxWidth))
-})
-
-const layoutStyle = computed(() => ({
-  '--map-sidebar-width': sidebarOpen.value ? `${resolvedSidebarWidth.value}px` : '0px',
-}))
-
-function getMaxSidebarWidth() {
-  const layoutWidth = outerLayoutEl.value?.getBoundingClientRect().width ?? window.innerWidth
-  return Math.max(MIN_SIDEBAR_WIDTH, layoutWidth - MIN_MAP_WIDTH - SIDEBAR_GAP)
-}
-
-function requestMapResize() {
-  nextTick(() => {
-    map?.resize()
-    window.setTimeout(() => map?.resize(), 220)
-  })
-}
-
-function getInitialMapOptions(photos: MapPhotosResponse): MapOptionsWithoutContainer {
-  if (loadCoord.value) {
-    return {
-      ...DEFAULT_MAP_OPTIONS,
-      center: loadCoord.value,
-      zoom: 16,
-    }
-  }
-  const locations = photos.items
-  if (locations.length === 0) return DEFAULT_MAP_OPTIONS
-
-  if (locations.length === 1) {
-    const [location] = locations
-    return {
-      ...DEFAULT_MAP_OPTIONS,
-      center: getLngLat(location),
-      zoom: 11,
-    }
-  }
-
-  const bounds = locations.reduce(
-    (photoBounds, item) => {
-      return photoBounds.extend([item.longitude, item.latitude])
-    },
-    new maplibregl.LngLatBounds(getLngLat(locations[0]), getLngLat(locations[0])),
-  )
-
-  return {
-    ...DEFAULT_MAP_OPTIONS,
-    bounds,
-    fitBoundsOptions: {
-      padding: 80,
-      maxZoom: 14,
-    },
-  }
-}
-
-function getLngLat(item: MapPhotoItem): [number, number] {
-  return [item.longitude, item.latitude]
-}
-
-function handleMapLoad(loadedMap: LibreMap) {
-  map = loadedMap
-  initialize()
+  rebuildMapResources(loadedMap)
 }
 
 mediaItemService.listMapPhotos().then((loadedPhotos) => {
@@ -272,14 +226,12 @@ mediaItemService.listMapPhotos().then((loadedPhotos) => {
   })
   mapPhotos.value = loadedPhotos
   mapOptions.value = getInitialMapOptions(loadedPhotos)
-  initialize()
+  initializeMap()
 })
 
-async function initialize() {
-  if (map === null || mapPhotos.value === null) return
-  if (initialized) return
+function initializeMap() {
+  if (map === null || mapPhotos.value === null || initialized) return
   initialized = true
-  const loadedMap = map
 
   map.addControl(
     new maplibregl.NavigationControl({
@@ -290,24 +242,78 @@ async function initialize() {
     'bottom-right',
   )
 
-  if (!loadedMap.getSource('photos')) {
-    addPhotoSource(loadedMap, mapPhotos.value)
-    addMapLayers(loadedMap)
+  rebuildMapResources(map)
+
+  const updateViewportData = () => {
+    if (!map) return
+    if (mapMode.value === 'markers') {
+      syncVisibleMarkers(map)
+    } else {
+      syncVisibleHeatmapItems(map)
+    }
+  }
+  const throttledUpdate = useThrottleFn(updateViewportData, 50)
+
+  map.on('zoomend', throttledUpdate)
+  map.on('move', throttledUpdate)
+  map.on('moveend', throttledUpdate)
+  map.on('data', (e: maplibregl.MapDataEvent & { sourceId?: string; isSourceLoaded?: boolean }) => {
+    if (e.sourceId === 'photos' && e.isSourceLoaded) throttledUpdate()
+  })
+  map.on('click', () => {
+    if (mapMode.value === 'markers') clearMarkerSelection()
+  })
+
+  updateViewportData()
+}
+
+/**
+ * Rebuilds map sources and layers from scratch based on the visualization mode
+ */
+function rebuildMapResources(loadedMap: LibreMap) {
+  // 1. Clear active selections and UI helpers
+  clearMarkerSelection()
+  removeAllMarkers()
+
+  // 2. Clear pre-existing layers safely
+  const layersToRemove = [
+    'photos-heat',
+    'photos-point',
+    'photos-helper',
+    'cluster-helper',
+    'unclustered-point-helper',
+  ]
+  layersToRemove.forEach((layerId) => {
+    if (loadedMap.getLayer(layerId)) loadedMap.removeLayer(layerId)
+  })
+
+  // 3. Rebuild sources (dynamic configuration for clusters vs heatmap)
+  if (loadedMap.getSource('photos')) {
+    loadedMap.removeSource('photos')
   }
 
-  const updateVisibleItems = () => syncVisibleItems(loadedMap)
-  const debouncedUpdate = useDebounceFn(updateVisibleItems, 80)
+  if (mapPhotos.value) {
+    loadedMap.addSource('photos', {
+      type: 'geojson',
+      data: createPhotosGeoJson(mapPhotos.value),
+      ...(mapMode.value === 'markers'
+        ? {
+            cluster: true,
+            clusterMaxZoom: 17,
+            clusterRadius: 48,
+          }
+        : {}),
+    })
+  }
 
-  loadedMap.on('zoomend', debouncedUpdate)
-  loadedMap.on('moveend', debouncedUpdate)
-  loadedMap.on(
-    'data',
-    (e: maplibregl.MapDataEvent & { sourceId?: string; isSourceLoaded?: boolean }) => {
-      if (e.sourceId === 'photos' && e.isSourceLoaded) debouncedUpdate()
-    },
-  )
-
-  updateVisibleItems()
+  // 4. Attach appropriate configuration layers
+  if (mapMode.value === 'markers') {
+    addMarkerLayers(loadedMap)
+    syncVisibleMarkers(loadedMap)
+  } else {
+    addHeatmapLayers(loadedMap)
+    syncVisibleHeatmapItems(loadedMap)
+  }
 }
 
 function createPhotosGeoJson(photos: MapPhotosResponse): GeoJSON.FeatureCollection<GeoJSON.Point> {
@@ -330,14 +336,8 @@ function createPhotosGeoJson(photos: MapPhotosResponse): GeoJSON.FeatureCollecti
   }
 }
 
-function addPhotoSource(loadedMap: LibreMap, photos: MapPhotosResponse) {
-  loadedMap.addSource('photos', {
-    type: 'geojson',
-    data: createPhotosGeoJson(photos),
-  })
-}
-
-function addMapLayers(loadedMap: LibreMap) {
+// --- Heatmap Setup & Syncer ---
+function addHeatmapLayers(loadedMap: LibreMap) {
   // Heatmap Layer using configured intensity, color bands, and radius curves
   loadedMap.addLayer({
     id: 'photos-heat',
@@ -394,12 +394,10 @@ function addMapLayers(loadedMap: LibreMap) {
   })
 }
 
-function syncVisibleItems(loadedMap: LibreMap) {
+function syncVisibleHeatmapItems(loadedMap: LibreMap) {
   if (!loadedMap.getLayer('photos-helper')) return
-  console.log(loadedMap.getZoom())
 
   const helperFeatures = loadedMap.queryRenderedFeatures({ layers: ['photos-helper'] })
-
   if (helperFeatures.length === 0 && visibleItems.value.length === 0) {
     return
   }
@@ -435,6 +433,355 @@ function syncVisibleItems(loadedMap: LibreMap) {
   }
 }
 
+// --- Markers & Clusters Setup & Syncer ---
+function addMarkerLayers(loadedMap: LibreMap) {
+  loadedMap.addLayer({
+    id: 'cluster-helper',
+    type: 'circle',
+    source: 'photos',
+    filter: ['has', 'point_count'],
+    paint: {
+      'circle-radius': 30,
+      'circle-opacity': 0,
+    },
+  })
+
+  loadedMap.addLayer({
+    id: 'unclustered-point-helper',
+    type: 'circle',
+    source: 'photos',
+    filter: ['!', ['has', 'point_count']],
+    paint: {
+      'circle-radius': 20,
+      'circle-opacity': 0,
+    },
+  })
+}
+
+async function syncVisibleMarkers(loadedMap: LibreMap) {
+  const run = ++updateRun
+  const source = loadedMap.getSource('photos') as maplibregl.GeoJSONSource
+  if (!source) return
+
+  const clusterFeatures = loadedMap.queryRenderedFeatures({ layers: ['cluster-helper'] })
+  const pointFeatures = loadedMap.queryRenderedFeatures({ layers: ['unclustered-point-helper'] })
+  const newMarkers: Record<string, maplibregl.Marker> = {}
+  const visibleItemMap = new Map<string, SimpleTimelineItem>()
+
+  let clusterResults: Array<{
+    clusterId: number
+    count: number
+    coords: [number, number]
+    leaves: GeoJSON.Feature[]
+  }> = []
+
+  try {
+    const promises = clusterFeatures.map(async (feature) => {
+      const clusterId = Number(feature.properties.cluster_id)
+      const count = Number(feature.properties.point_count)
+      const coords = getFeatureCoordinates(feature)
+      const leaves = await source.getClusterLeaves(clusterId, count, 0)
+      return { clusterId, count, coords, leaves }
+    })
+
+    clusterResults = await Promise.all(promises)
+  } catch {
+    return // Source changed mid-query, abort execution
+  }
+
+  if (run !== updateRun) return
+
+  // 1. Process clusters
+  for (const res of clusterResults) {
+    const { clusterId, count, coords, leaves } = res
+    const previewItem = getClusterPreviewItem(clusterId, leaves)
+    if (!previewItem) continue
+
+    leaves
+      .map((leaf) => getItemFromProperties(leaf.properties))
+      .filter((item): item is SimpleTimelineItem => !!item)
+      .forEach((item) => visibleItemMap.set(item.id, item))
+
+    addOrUpdateClusterMarker(loadedMap, clusterId, previewItem, count, coords, newMarkers)
+  }
+
+  // 2. Process exact points
+  for (const feature of pointFeatures) {
+    const item = getItemFromProperties(feature.properties)
+    if (!item) continue
+
+    visibleItemMap.set(item.id, item)
+    addOrUpdatePhotoMarker(loadedMap, item, getFeatureCoordinates(feature), newMarkers)
+  }
+
+  visibleItems.value = [...visibleItemMap.values()]
+  removeHiddenMarkers(newMarkers)
+  updateSelectedMarkerClasses()
+}
+
+function getClusterPreviewItem(clusterId: number, leaves: GeoJSON.Feature[]) {
+  if (!clusterPreviewCache.has(clusterId)) {
+    let firstProps = leaves[0]?.properties
+    for (const leaf of leaves) {
+      const props = leaf.properties
+      if (!props) continue
+      if (!firstProps || props.id > firstProps.id) {
+        firstProps = props
+      }
+    }
+    const previewItem = getItemFromProperties(firstProps ?? undefined)
+    if (!previewItem) return null
+    clusterPreviewCache.set(clusterId, previewItem)
+  }
+  return clusterPreviewCache.get(clusterId)!
+}
+
+// --- Marker DOM Creation & Lifecycle ---
+function addOrUpdateClusterMarker(
+  loadedMap: LibreMap,
+  clusterId: number,
+  item: SimpleTimelineItem,
+  count: number,
+  coords: [number, number],
+  visibleMarkers: Record<string, maplibregl.Marker>,
+) {
+  const key = `cluster-${clusterId}`
+  return addOrUpdateMarker(
+    loadedMap,
+    key,
+    coords,
+    visibleMarkers,
+    () => createClusterMarkerElement(item, count),
+    (el) => updateClusterMarkerElement(el, count),
+  )
+}
+
+function addOrUpdatePhotoMarker(
+  loadedMap: LibreMap,
+  item: SimpleTimelineItem,
+  coords: [number, number],
+  visibleMarkers: Record<string, maplibregl.Marker>,
+) {
+  const key = `photo-${item.id}`
+  if (visibleMarkers[key]) return visibleMarkers[key]
+
+  return addOrUpdateMarker(loadedMap, key, coords, visibleMarkers, () =>
+    createPhotoMarkerElement(item),
+  )
+}
+
+function addOrUpdateMarker(
+  loadedMap: LibreMap,
+  key: string,
+  coords: [number, number],
+  visibleMarkers: Record<string, maplibregl.Marker>,
+  createElement: () => HTMLElement,
+  updateElement?: (el: HTMLElement) => void,
+) {
+  let marker = markers[key]
+  if (!marker) {
+    const element = createElement()
+    element.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const lngLat = markers[key]?.getLngLat()
+      handleMarkerClick(key, lngLat ? [lngLat.lng, lngLat.lat] : coords)
+    })
+    marker = markers[key] = new maplibregl.Marker({
+      element,
+      anchor: 'center',
+    }).setLngLat(coords)
+  } else {
+    marker.setLngLat(coords)
+    updateElement?.(marker.getElement())
+  }
+
+  visibleMarkers[key] = marker
+  if (!marker.getElement().parentElement) marker.addTo(loadedMap)
+  return marker
+}
+
+function removeHiddenMarkers(visibleMarkers: Record<string, maplibregl.Marker>) {
+  for (const key in markers) {
+    if (!visibleMarkers[key]) {
+      markers[key].remove()
+      delete markers[key]
+    }
+  }
+}
+
+function removeAllMarkers() {
+  Object.values(markers).forEach((m) => m.remove())
+  for (const key in markers) {
+    delete markers[key]
+  }
+}
+
+const createPhotoMarkerElement = (item: SimpleTimelineItem) => {
+  const el = document.createElement('div')
+  const imageArea = 2500
+  const markerWidth = Math.sqrt(imageArea * item.ratio)
+  const markerHeight = Math.sqrt(imageArea * (1 / item.ratio))
+  el.className = 'map-photo-marker'
+  if (item.isVideo) el.classList.add('map-photo-marker-video')
+  el.style.width = `${Math.round(markerWidth)}px`
+  el.style.height = `${markerHeight}px`
+  el.style.backgroundImage = `url(${getThumbnailUrl(item, markerHeight)})`
+  return el
+}
+
+const createClusterMarkerElement = (item: SimpleTimelineItem, count: number) => {
+  const el = document.createElement('div')
+  const visual = document.createElement('div')
+  const badge = document.createElement('span')
+  el.className = 'map-cluster-marker'
+  visual.className = 'map-cluster-visual'
+  badge.className = 'map-cluster-count'
+  visual.style.backgroundImage = `url(${getThumbnailUrl(item, 52)})`
+  visual.append(badge)
+  el.append(visual)
+  updateClusterMarkerElement(el, count)
+  return el
+}
+
+const updateClusterMarkerElement = (el: HTMLElement, count: number) => {
+  const badge = el.querySelector<HTMLElement>('.map-cluster-count')
+  if (badge) badge.textContent = String(count)
+}
+
+// --- Marker Interactions & Popups ---
+async function handleMarkerClick(key: string, coords: [number, number]) {
+  if (selectedMarkerKey.value === key) {
+    clearMarkerSelection()
+    return
+  }
+
+  selectedMarkerKey.value = key
+  selectedLngLat.value = coords
+  updateSelectedMarkerClasses()
+
+  if (key.startsWith('cluster-')) {
+    const clusterId = Number(key.replace('cluster-', ''))
+    await selectCluster(clusterId)
+  } else {
+    const item = photoItems.value.find((photoItem) => `photo-${photoItem.id}` === key)
+    if (!item) return
+    selectedClusterItems.value = null
+    selectedPopupItem.value = item
+    showPopup(item, coords)
+  }
+}
+
+async function selectCluster(clusterId: number) {
+  if (!map) return
+  const source = map.getSource('photos') as maplibregl.GeoJSONSource
+  const clusterFeature = map
+    .queryRenderedFeatures({ layers: ['cluster-helper'] })
+    .find((feature) => Number(feature.properties.cluster_id) === clusterId)
+  const count = Number(clusterFeature?.properties.point_count)
+
+  try {
+    const leaves = await source.getClusterLeaves(clusterId, Number.isFinite(count) ? count : 100, 0)
+    selectedClusterItems.value = leaves
+      .map((leaf) => getItemFromProperties(leaf.properties))
+      .filter((item): item is SimpleTimelineItem => !!item)
+    selectedPopupItem.value = getClusterPreviewItem(clusterId, leaves)
+    if (selectedPopupItem.value && selectedLngLat.value) {
+      showPopup(selectedPopupItem.value, selectedLngLat.value)
+    }
+  } catch (err) {
+    console.warn('Failed to retrieve cluster leaves:', err)
+  }
+}
+
+function clearMarkerSelection() {
+  selectedClusterItems.value = null
+  selectedMarkerKey.value = null
+  selectedPopupItem.value = null
+  selectedLngLat.value = null
+  updateSelectedMarkerClasses()
+  closePopup()
+}
+
+function updateSelectedMarkerClasses() {
+  for (const [key, marker] of Object.entries(markers)) {
+    marker.getElement().classList.toggle('map-marker-selected', key === selectedMarkerKey.value)
+  }
+}
+
+function showPopup(item: SimpleTimelineItem, coords: [number, number]) {
+  closePopup()
+  if (!map) return
+
+  const popupArea = 300 ** 2
+  const popupWidth = Math.sqrt(popupArea * item.ratio)
+  const popupHeight = Math.sqrt(popupArea * (1 / item.ratio))
+
+  const popupEl = document.createElement('div')
+  popupEl.style.width = `${popupWidth}px`
+  popupEl.style.height = `${popupHeight}px`
+  popupEl.className = 'map-media-popup'
+
+  const closeButton = document.createElement('button')
+  let mediaEl: HTMLImageElement | HTMLVideoElement
+
+  if (item.isVideo) {
+    const videoEl = document.createElement('video')
+    videoEl.autoplay = true
+    videoEl.muted = true
+    videoEl.loop = true
+    videoEl.playsInline = true
+    videoEl.poster = getThumbnailUrl(item, 480)
+    videoEl.src = mediaItemService.getVideo(item.id, getVideoHeight(480), !item.hasThumbnails)
+    mediaEl = videoEl
+  } else {
+    const imageEl = document.createElement('img')
+    imageEl.src = getThumbnailUrl(item, 480)
+    imageEl.alt = ''
+    mediaEl = imageEl
+  }
+
+  mediaEl.className = 'map-media-popup-image'
+  closeButton.className = 'map-media-popup-close'
+  closeButton.type = 'button'
+  closeButton.textContent = '×'
+
+  closeButton.addEventListener('click', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    clearMarkerSelection()
+  })
+
+  popupEl.addEventListener('click', (e) => {
+    e.stopPropagation()
+    router.push({ path: `/map/view/${item.id}`, query: route.query })
+  })
+
+  popupEl.append(mediaEl, closeButton)
+
+  popupMarker = new maplibregl.Marker({
+    element: popupEl,
+    anchor: 'bottom',
+    offset: [0, -38],
+  })
+    .setLngLat(coords)
+    .addTo(map)
+}
+
+function closePopup() {
+  popupMarker?.remove()
+  popupMarker = null
+}
+
+// --- Utilities ---
+function getLngLat(item: MapPhotoItem): [number, number] {
+  return [item.longitude, item.latitude]
+}
+
+function getFeatureCoordinates(feature: maplibregl.MapGeoJSONFeature): [number, number] {
+  return (feature.geometry as GeoJSON.Point).coordinates as [number, number]
+}
+
 const getItemFromProperties = (
   properties: maplibregl.GeoJSONFeature['properties'] | null | undefined,
 ) => {
@@ -447,6 +794,14 @@ const getItemFromProperties = (
     durationMs: Number(properties.durationMs) || undefined,
     ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : 1,
   } satisfies SimpleTimelineItem
+}
+
+const getThumbnailUrl = (item: SimpleTimelineItem, markerHeight: number) => {
+  return mediaItemService.getPhotoThumbnail(
+    item.id,
+    getThumbnailHeight(markerHeight),
+    !item.hasThumbnails,
+  )
 }
 
 function zoomToFitAll() {
@@ -477,6 +832,44 @@ function zoomToFitAll() {
   })
 }
 
+function getInitialMapOptions(photos: MapPhotosResponse): Omit<MapOptions, 'container' | 'style'> {
+  if (loadCoord.value) {
+    return {
+      ...DEFAULT_MAP_OPTIONS,
+      center: loadCoord.value,
+      zoom: 16,
+    }
+  }
+  const locations = photos.items
+  if (locations.length === 0) return DEFAULT_MAP_OPTIONS
+
+  if (locations.length === 1) {
+    const [location] = locations
+    return {
+      ...DEFAULT_MAP_OPTIONS,
+      center: getLngLat(location),
+      zoom: 11,
+    }
+  }
+
+  const bounds = locations.reduce(
+    (photoBounds, item) => {
+      return photoBounds.extend([item.longitude, item.latitude])
+    },
+    new maplibregl.LngLatBounds(getLngLat(locations[0]), getLngLat(locations[0])),
+  )
+
+  return {
+    ...DEFAULT_MAP_OPTIONS,
+    bounds,
+    fitBoundsOptions: {
+      padding: 80,
+      maxZoom: 14,
+    },
+  }
+}
+
+// --- Layout Sizing Controls ---
 function closeSidebar() {
   sidebarOpen.value = false
   requestMapResize()
@@ -509,6 +902,18 @@ function updateSidebarResize(clientX: number) {
   requestMapResize()
 }
 
+function getMaxSidebarWidth() {
+  const layoutWidth = outerLayoutEl.value?.getBoundingClientRect().width ?? window.innerWidth
+  return Math.max(MIN_SIDEBAR_WIDTH, layoutWidth - MIN_MAP_WIDTH - SIDEBAR_GAP)
+}
+
+function requestMapResize() {
+  nextTick(() => {
+    map?.resize()
+    window.setTimeout(() => map?.resize(), 220)
+  })
+}
+
 useEventListener(window, 'mousemove', (e: MouseEvent) => {
   if (!isResizingSidebar.value) return
   e.preventDefault()
@@ -522,6 +927,13 @@ useEventListener(window, 'mouseup', () => {
 useResizeObserver(outerLayoutEl, () => {
   sidebarWidth.value = resolvedSidebarWidth.value
   requestMapResize()
+})
+
+// --- Watchers & Cleanups ---
+watch(mapMode, () => {
+  if (map && initialized) {
+    rebuildMapResources(map)
+  }
 })
 
 watch(loadCoord, (newVal, oldVal) => {
@@ -542,14 +954,22 @@ watch(mapPhotos, (newPhotos) => {
       source.setData(createPhotosGeoJson(newPhotos))
       map.triggerRepaint()
       setTimeout(() => {
-        if (map) syncVisibleItems(map)
+        if (map) {
+          if (mapMode.value === 'markers') {
+            syncVisibleMarkers(map)
+          } else {
+            syncVisibleHeatmapItems(map)
+          }
+        }
       }, 75)
     }
   }
 })
 
 onUnmounted(() => {
-  // Cleanup references if any
+  removeAllMarkers()
+  closePopup()
+  clusterPreviewCache.clear()
 })
 </script>
 
@@ -566,8 +986,8 @@ onUnmounted(() => {
     <main-layout-container class="map-layout">
       <v-theme-provider with-background class="map-wrapper" theme="light">
         <base-map
-          :map-style="currentStyle"
           v-if="mapOptions"
+          :map-style="currentStyle"
           class="map-instance"
           :map-options="mapOptions"
           @load="handleMapLoad"
@@ -579,8 +999,8 @@ onUnmounted(() => {
 
         <!-- Date Range Filter -->
         <map-date-filter
-          :theme="currentStyle === 'DARK_COLORFUL' ? 'dark' : 'light'"
           v-if="mapPhotos"
+          :theme="currentStyle === 'DARK_COLORFUL' ? 'dark' : 'light'"
           v-model="dateFilter"
           @change="handleDateFilterChange"
         />
@@ -594,11 +1014,31 @@ onUnmounted(() => {
         >
           <v-fade-transition>
             <v-card
-              flat
               v-show="isStyleSelectorHovered"
+              flat
               class="map-style-options-card"
               rounded="xl"
             >
+              <!-- Visualization View Selector -->
+              <div class="map-mode-selector">
+                <span class="map-mode-title">Layer Mode</span>
+                <v-chip-group v-model="mapMode" color="primary" mandatory column>
+                  <v-chip
+                    prepend-icon="mdi-map-marker-multiple-outline"
+                    value="markers"
+                    key="markers"
+                    variant="flat"
+                  >
+                    Markers
+                  </v-chip>
+                  <v-chip prepend-icon="mdi-fire" value="heatmap" key="heatmap" variant="flat">
+                    Heatmap
+                  </v-chip>
+                </v-chip-group>
+              </div>
+
+              <v-divider class="my-3 opacity-20" />
+
               <div class="map-style-options-list">
                 <div
                   v-for="style in MAP_STYLES"
@@ -641,6 +1081,7 @@ onUnmounted(() => {
             </v-img>
           </v-card>
         </div>
+
         <v-btn
           v-if="!sidebarOpen"
           class="open-sidebar-btn"
@@ -648,34 +1089,52 @@ onUnmounted(() => {
           density="comfortable"
           color="primary"
           variant="elevated"
-          v-tooltip="{
-            location: 'left',
-            text: 'Open sidebar',
-          }"
+          v-tooltip="{ location: 'left', text: 'Open sidebar' }"
           @click="openSidebar"
         >
           <v-icon size="20" icon="mdi-chevron-left" />
         </v-btn>
       </v-theme-provider>
     </main-layout-container>
+
     <div
       class="sidebar-resize-handle"
       :class="{ disabled: !sidebarOpen }"
       @mousedown="startSidebarResize"
     />
+
     <simple-timeline
+      v-if="mapPhotos"
       hide-drop-shadow
       class="timeline"
-      v-if="mapPhotos"
       :timeline-items="timelineItems"
       view-link="/map/view/"
     >
       <div class="timeline-header">
         <div>
-          <div class="photo-count-header">
-            <h2>In View</h2>
-            <span class="photo-count">{{ timelineItems.length.toLocaleString() }}</span>
-          </div>
+          <template v-if="selectedClusterItems">
+            <div class="photo-count-header">
+              <h2>Cluster</h2>
+              <span class="photo-count">{{ timelineItems.length.toLocaleString() }}</span>
+            </div>
+            <v-btn
+              density="compact"
+              variant="plain"
+              color="primary"
+              class="return-cluster-button"
+              rounded
+              @click="clearMarkerSelection"
+              prepend-icon="mdi-chevron-left"
+            >
+              Deselect
+            </v-btn>
+          </template>
+          <template v-else>
+            <div class="photo-count-header">
+              <h2>In View</h2>
+              <span class="photo-count">{{ timelineItems.length.toLocaleString() }}</span>
+            </div>
+          </template>
         </div>
         <v-spacer />
         <v-btn
@@ -684,10 +1143,7 @@ onUnmounted(() => {
           color="primary"
           variant="text"
           @click="closeSidebar"
-          v-tooltip="{
-            location: 'top',
-            text: 'Close sidebar',
-          }"
+          v-tooltip="{ location: 'top', text: 'Close sidebar' }"
         >
           <v-icon size="18" icon="mdi-chevron-right" />
         </v-btn>
@@ -715,6 +1171,7 @@ onUnmounted(() => {
 </template>
 
 <style>
+/* --- Outer Layout Framework --- */
 .outer-layout {
   height: 100%;
   width: 100%;
@@ -770,6 +1227,7 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
+/* --- Timeline Sidebar Elements --- */
 .timeline-header {
   padding: 15px 20px;
   margin-bottom: 10px;
@@ -784,6 +1242,11 @@ onUnmounted(() => {
   margin: 0;
 }
 
+.return-cluster-button {
+  margin-left: -15px;
+  transform: scale(0.9);
+}
+
 .photo-count-header {
   display: flex;
   align-items: center;
@@ -796,6 +1259,7 @@ onUnmounted(() => {
   font-size: 20px;
 }
 
+/* --- Map Wrapper & Controls --- */
 .map-wrapper {
   width: 100%;
   height: 100%;
@@ -822,7 +1286,153 @@ onUnmounted(() => {
   z-index: 2;
 }
 
-/* Map Style Selector */
+/* --- Custom Map Markers & Cluster Visuals --- */
+.map-photo-marker,
+.map-cluster-visual {
+  background-color: rgba(20, 20, 24, 0.65);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  z-index: 1;
+}
+
+.map-photo-marker {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.map-photo-marker-video {
+  border-color: #ff9800;
+}
+
+.map-cluster-marker {
+  width: 52px;
+  height: 52px;
+  cursor: pointer;
+  overflow: visible;
+  z-index: 1;
+}
+
+.map-cluster-visual {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: 50%;
+  overflow: visible;
+}
+
+.map-cluster-count {
+  position: absolute;
+  right: -7px;
+  top: -7px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 2px solid white;
+  box-sizing: border-box;
+  background: rgb(var(--v-theme-primary));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.map-photo-marker:hover,
+.map-cluster-marker:hover .map-cluster-visual {
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 0 0 3px rgba(255, 255, 255, 0.35);
+  z-index: 10;
+}
+
+.map-photo-marker.map-marker-selected,
+.map-cluster-marker.map-marker-selected .map-cluster-visual {
+  border-color: rgb(var(--v-theme-secondary));
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 0 0 4px rgba(var(--v-theme-secondary), 0.45);
+  z-index: 2;
+}
+
+/* --- Map Media Popup --- */
+.map-media-popup {
+  position: relative;
+  border: 2px solid rgba(255, 255, 255, 0.86);
+  border-radius: 12px;
+  background: rgba(20, 20, 24, 0.78);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  z-index: 20;
+}
+
+.map-media-popup::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  width: 0;
+  height: 0;
+  border-left: 13px solid transparent;
+  border-right: 13px solid transparent;
+  border-top: 14px solid rgba(255, 255, 255, 0.86);
+  transform: translateX(-50%);
+}
+
+.map-media-popup::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -11px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 11px solid rgba(20, 20, 24, 0.78);
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.map-media-popup-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.map-media-popup-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+
+.map-media-popup-close:hover {
+  background: rgba(0, 0, 0, 0.68);
+}
+
+/* --- Style & Visualization Switcher UI --- */
 .map-style-container {
   position: absolute;
   bottom: 12px;
@@ -872,13 +1482,13 @@ onUnmounted(() => {
   bottom: 100px;
   left: 0;
   z-index: 3;
-  padding: 22px 15px;
-  background-color: rgba(var(--v-theme-background), 0.7);
+  padding: 16px 15px;
+  background-color: rgba(var(--v-theme-background), 0.75);
   backdrop-filter: saturate(250%) blur(12px) !important;
   border: 1px solid rgba(var(--v-theme-primary), 0.2);
+  width: max-content;
 }
 
-/* Invisible bridge so mouse hover is not lost in the 12px gap between cards */
 .map-style-options-card::after {
   content: '';
   position: absolute;
@@ -887,6 +1497,20 @@ onUnmounted(() => {
   right: 0;
   height: 16px;
   background: transparent;
+}
+
+/* --- Visualization Toggle Styles --- */
+.map-mode-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-mode-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(var(--v-theme-on-surface-variant), 0.7);
 }
 
 .map-style-options-list {
@@ -960,6 +1584,7 @@ onUnmounted(() => {
   color: rgb(var(--v-theme-primary));
 }
 
+/* --- Empty Search State --- */
 .map-empty-state {
   display: flex;
   flex-direction: column;
