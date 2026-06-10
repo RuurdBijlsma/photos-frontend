@@ -6,7 +6,7 @@ import MapLayerSelector from '@/vues/components/map/MapLayerSelector.vue'
 import MapDateFilter from '@/vues/components/map/MapDateFilter.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { getThumbnailHeight, getVideoHeight } from '@/scripts/utils.ts'
-import { useThrottleFn } from '@vueuse/core'
+import { useDebounceFn } from '@vueuse/core'
 import type {
   MapPhotoItem,
   MapPhotosResponse,
@@ -123,7 +123,7 @@ const markers: Record<string, maplibregl.Marker> = {}
 const clusterPreviewCache = new Map<number, SimpleTimelineItem>()
 let popupMarker: maplibregl.Marker | null = null
 
-// Viewport selection state
+// Keep track of active viewport IDs to prevent redundant state updates and re-renders
 const currentVisibleIds = new Set<string>()
 const visibleItems = ref<SimpleTimelineItem[]>([])
 const selectedClusterItems = ref<SimpleTimelineItem[] | null>(null)
@@ -199,13 +199,13 @@ function initializeMap() {
       syncVisibleHeatmapItems(map)
     }
   }
-  const throttledUpdate = useThrottleFn(updateViewportData, 50)
 
-  map.on('zoomend', throttledUpdate)
-  map.on('move', throttledUpdate)
-  map.on('moveend', throttledUpdate)
+  const debouncedUpdate = useDebounceFn(updateViewportData, 80)
+
+  map.on('zoomend', debouncedUpdate)
+  map.on('moveend', debouncedUpdate)
   map.on('data', (e: maplibregl.MapDataEvent & { sourceId?: string; isSourceLoaded?: boolean }) => {
-    if (e.sourceId === 'photos' && e.isSourceLoaded) throttledUpdate()
+    if (e.sourceId === 'photos' && e.isSourceLoaded) debouncedUpdate()
   })
   map.on('click', () => {
     if (mapMode.value === 'markers') clearMarkerSelection()
@@ -221,6 +221,8 @@ function rebuildMapResources(loadedMap: LibreMap) {
   // 1. Clear active selections and UI helpers
   clearMarkerSelection()
   removeAllMarkers()
+  currentVisibleIds.clear()
+  visibleItems.value = []
 
   // 2. Clear pre-existing layers safely
   const layersToRemove = [
@@ -367,6 +369,7 @@ function syncVisibleHeatmapItems(loadedMap: LibreMap) {
     }
   }
 
+  // Skip updates if the on-screen set is identical
   let hasChanged = newIds.size !== currentVisibleIds.size
   if (!hasChanged) {
     for (const id of newIds) {
@@ -466,8 +469,25 @@ async function syncVisibleMarkers(loadedMap: LibreMap) {
     addOrUpdatePhotoMarker(loadedMap, item, getFeatureCoordinates(feature), newMarkers)
   }
 
-  visibleItems.value = [...visibleItemMap.values()]
-  emit('visible-items-changed', visibleItems.value)
+  // Apply deep-diff cache matching for markers to save Vue computation overhead
+  const newIds = new Set(visibleItemMap.keys())
+  let hasChanged = newIds.size !== currentVisibleIds.size
+  if (!hasChanged) {
+    for (const id of newIds) {
+      if (!currentVisibleIds.has(id)) {
+        hasChanged = true
+        break
+      }
+    }
+  }
+
+  if (hasChanged) {
+    currentVisibleIds.clear()
+    newIds.forEach((id) => currentVisibleIds.add(id))
+    visibleItems.value = [...visibleItemMap.values()]
+    emit('visible-items-changed', visibleItems.value)
+  }
+
   removeHiddenMarkers(newMarkers)
   updateSelectedMarkerClasses()
 }

@@ -8,7 +8,6 @@ import type { MapPhotosResponse, SimpleTimelineItem } from '@/scripts/types/gene
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import { useRoute } from 'vue-router'
 
-
 const route = useRoute()
 
 // --- State & Storage ---
