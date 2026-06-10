@@ -92,7 +92,10 @@ function urlParamToISO(param: string | undefined, endOfMonth = false): string | 
   return date.toISOString()
 }
 
-function dateToUrlParam(date: Date | null | undefined, granularity: 'month' | 'day'): string | undefined {
+function dateToUrlParam(
+  date: Date | null | undefined,
+  granularity: 'month' | 'day',
+): string | undefined {
   if (!date) return undefined
   if (granularity === 'day') {
     const y = date.getUTCFullYear()
@@ -108,7 +111,12 @@ function formatDateShort(dateStr: string | undefined, granularity: 'month' | 'da
   if (!dateStr) return ''
   const date = new Date(dateStr)
   if (granularity === 'day') {
-    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+    return date.toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'UTC',
+    })
   }
   return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' })
 }
@@ -142,12 +150,10 @@ watch(
     const startDate = startIso ? new Date(startIso) : null
     const endDate = endIso ? new Date(endIso) : null
 
-    const startGranularity = route.query.start && /^\d{4}-\d{2}-\d{2}/.test(route.query.start as string)
-      ? 'day'
-      : 'month'
-    const endGranularity = route.query.end && /^\d{4}-\d{2}-\d{2}/.test(route.query.end as string)
-      ? 'day'
-      : 'month'
+    const startGranularity =
+      route.query.start && /^\d{4}-\d{2}-\d{2}/.test(route.query.start as string) ? 'day' : 'month'
+    const endGranularity =
+      route.query.end && /^\d{4}-\d{2}-\d{2}/.test(route.query.end as string) ? 'day' : 'month'
 
     dateFilter.value = {
       startDate,
@@ -163,12 +169,14 @@ watch(
 watch(
   dateFilter,
   (newVal) => {
-    const startParam = newVal.active && newVal.startDate
-      ? dateToUrlParam(newVal.startDate, newVal.startGranularity)
-      : undefined
-    const endParam = newVal.active && newVal.endDate
-      ? dateToUrlParam(newVal.endDate, newVal.endGranularity)
-      : undefined
+    const startParam =
+      newVal.active && newVal.startDate
+        ? dateToUrlParam(newVal.startDate, newVal.startGranularity)
+        : undefined
+    const endParam =
+      newVal.active && newVal.endDate
+        ? dateToUrlParam(newVal.endDate, newVal.endGranularity)
+        : undefined
 
     if (startParam !== route.query.start || endParam !== route.query.end) {
       ignoreDateFilterWatch = true
@@ -254,8 +262,10 @@ const activeFilterChips = computed(() => {
 
   // Date Range
   if (route.query.start || route.query.end) {
-    const startGran = route.query.start && /^\d{4}-\d{2}-\d{2}/.test(route.query.start as string) ? 'day' : 'month'
-    const endGran = route.query.end && /^\d{4}-\d{2}-\d{2}/.test(route.query.end as string) ? 'day' : 'month'
+    const startGran =
+      route.query.start && /^\d{4}-\d{2}-\d{2}/.test(route.query.start as string) ? 'day' : 'month'
+    const endGran =
+      route.query.end && /^\d{4}-\d{2}-\d{2}/.test(route.query.end as string) ? 'day' : 'month'
 
     const start = route.query.start
       ? formatDateShort(urlParamToISO(route.query.start as string), startGran)
@@ -293,7 +303,10 @@ const activeFilterChips = computed(() => {
     chips.push({
       id: 'people',
       type: 'People',
-      label: formatPeopleFilterLabel(getNamesFromIds(filterPeople.value), filterPeopleMatchAll.value),
+      label: formatPeopleFilterLabel(
+        getNamesFromIds(filterPeople.value),
+        filterPeopleMatchAll.value,
+      ),
       clear: () => updateURL({ people: undefined, peopleAnd: undefined }),
     })
   }

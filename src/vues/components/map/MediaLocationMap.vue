@@ -60,7 +60,7 @@ function updateMarker() {
       anchor: 'bottom',
     })
       .setLngLat([lon, lat])
-      .addTo(mapInstance.value)
+      .addTo(mapInstance.value as unknown as maplibregl.Map)
   } else {
     markerInstance.setLngLat([lon, lat])
     const circle = markerInstance.getElement().querySelector('.marker-circle') as HTMLElement

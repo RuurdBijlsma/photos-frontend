@@ -306,13 +306,20 @@ function rebuildMapResources(loadedMap: LibreMap) {
     })
   }
 
-  // 4. Attach appropriate configuration layers
+  // 4. Attach appropriate configuration layers and schedule initial sync
   if (mapMode.value === 'markers') {
     addMarkerLayers(loadedMap)
-    syncVisibleMarkers(loadedMap)
+    // Defer sync: MapLibre must finish clustering the new source before
+    // queryRenderedFeatures can return results. 'idle' fires after all
+    // source processing and rendering is complete.
+    loadedMap.once('idle', () => {
+      syncVisibleMarkers(loadedMap)
+    })
   } else {
     addHeatmapLayers(loadedMap)
-    syncVisibleHeatmapItems(loadedMap)
+    loadedMap.once('idle', () => {
+      syncVisibleHeatmapItems(loadedMap)
+    })
   }
 }
 
@@ -497,10 +504,10 @@ async function syncVisibleMarkers(loadedMap: LibreMap) {
     const previewItem = getClusterPreviewItem(clusterId, leaves)
     if (!previewItem) continue
 
-    leaves
-      .map((leaf) => getItemFromProperties(leaf.properties))
-      .filter((item): item is SimpleTimelineItem => !!item)
-      .forEach((item) => visibleItemMap.set(item.id, item))
+    for (const leaf of leaves) {
+      const item = getItemFromProperties(leaf.properties)
+      if (item) visibleItemMap.set(item.id, item)
+    }
 
     addOrUpdateClusterMarker(loadedMap, clusterId, previewItem, count, coords, newMarkers)
   }
@@ -682,9 +689,12 @@ async function selectCluster(clusterId: number) {
 
   try {
     const leaves = await source.getClusterLeaves(clusterId, Number.isFinite(count) ? count : 100, 0)
-    selectedClusterItems.value = leaves
-      .map((leaf) => getItemFromProperties(leaf.properties))
-      .filter((item): item is SimpleTimelineItem => !!item)
+    const items: SimpleTimelineItem[] = []
+    for (const leaf of leaves) {
+      const item = getItemFromProperties(leaf.properties)
+      if (item) items.push(item)
+    }
+    selectedClusterItems.value = items
     selectedPopupItem.value = getClusterPreviewItem(clusterId, leaves)
     if (selectedPopupItem.value && selectedLngLat.value) {
       showPopup(selectedPopupItem.value, selectedLngLat.value)
@@ -784,16 +794,17 @@ function getFeatureCoordinates(feature: maplibregl.MapGeoJSONFeature): [number, 
 
 const getItemFromProperties = (
   properties: maplibregl.GeoJSONFeature['properties'] | null | undefined,
-) => {
+): SimpleTimelineItem | undefined => {
   if (!properties?.id) return undefined
   const ratio = Number(properties.ratio)
+  const durationMs = Number(properties.durationMs)
   return {
     id: String(properties.id),
     isVideo: Boolean(properties.isVideo),
     hasThumbnails: Boolean(properties.hasThumbnails),
-    durationMs: Number(properties.durationMs) || undefined,
+    ...(Number.isFinite(durationMs) && durationMs > 0 ? { durationMs } : {}),
     ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : 1,
-  } satisfies SimpleTimelineItem
+  }
 }
 
 const getThumbnailUrl = (item: SimpleTimelineItem, markerHeight: number) => {
