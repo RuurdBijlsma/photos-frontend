@@ -7,6 +7,7 @@ import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { formatNaiveDate } from '@/scripts/utils.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 
 const props = defineProps<{
   mediaItem: FullMediaItem
@@ -16,6 +17,7 @@ const emit = defineEmits(['closeDialog'])
 const mediaItemStore = useMediaItemStore()
 const dialogs = useDialogStore()
 const snackbars = useSnackbarsStore()
+const timelineStore = useTimelineStore()
 
 const adjustedDate = ref(new Date(props.mediaItem.taken_at_local))
 const originalDate = new Date(props.mediaItem.og_taken_at_local)
@@ -125,6 +127,7 @@ async function save() {
   await mediaItemStore.updateMediaItem(props.mediaItem.id, {
     takenAtLocal: adjustedDateString,
   })
+  requestIdleCallback(() => timelineStore.refresh())
   emit('closeDialog')
 }
 </script>

@@ -43,6 +43,10 @@ function startResize() {
   isResizing = true
 }
 
+function timelineToTop() {
+  timelineStore.refresh().then(() => timelineStore.scrollToTop())
+}
+
 requestIdleCallback(() => {
   albumStore.fetchUserAlbums()
   if (systemStore.stats.hasClusteredPeople) {
@@ -74,7 +78,7 @@ useEventListener(document, 'mousemove', (e) => {
         title="Photos"
         to="/"
         :active="route.path === '/'"
-        @click="route.path === '/' ? timelineStore.scrollToTop() : undefined"
+        @click="route.path === '/' ? timelineToTop() : undefined"
       />
       <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
       <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
@@ -196,7 +200,7 @@ useEventListener(document, 'mousemove', (e) => {
     <div v-else class="collapsed-list">
       <v-btn
         icon="mdi-image-outline"
-        @click="route.path === '/' ? timelineStore.scrollToTop() : undefined"
+        @click="route.path === '/' ? timelineToTop() : undefined"
         :variant="route.path === '/' ? 'tonal' : 'plain'"
         :color="route.path === '/' ? 'primary-darken-1' : undefined"
         to="/"
