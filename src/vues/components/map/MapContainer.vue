@@ -6,7 +6,7 @@ import MapLayerSelector from '@/vues/components/map/MapLayerSelector.vue'
 import MapDateFilter from '@/vues/components/map/MapDateFilter.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { getThumbnailHeight, getVideoHeight } from '@/scripts/utils.ts'
-import { useDebounceFn } from '@vueuse/core'
+import { useDebounceFn, useStorage } from '@vueuse/core'
 import type {
   MapPhotoItem,
   MapPhotosResponse,
@@ -113,7 +113,7 @@ const route = useRoute()
 const router = useRouter()
 
 // --- State & Storage ---
-const mapMode = ref<'markers' | 'heatmap'>('markers')
+const mapMode = useStorage<'markers' | 'heatmap'>('mapLayerMode', 'markers')
 let map: null | maplibregl.Map = null
 let initialized = false
 let updateRun = 0
@@ -140,7 +140,7 @@ const dateFilter = ref<DateFilter>({
 })
 
 const mapOptions = ref<Omit<MapOptions, 'container' | 'style'> | null>(null)
-const currentStyle = ref<StyleName>('LIBERTY')
+const currentStyle = useStorage<StyleName>('mapCurrentStyle', 'LIBERTY')
 
 // --- Computed Properties ---
 const nextStyle = computed(() => {
