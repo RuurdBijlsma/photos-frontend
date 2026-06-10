@@ -1021,8 +1021,7 @@ onUnmounted(() => {
             >
               <!-- Visualization View Selector -->
               <div class="map-mode-selector">
-                <span class="map-mode-title">Layer Mode</span>
-                <v-chip-group v-model="mapMode" color="primary" mandatory column>
+                <v-chip-group v-model="mapMode" color="primary" class="ml-2" mandatory column>
                   <v-chip
                     prepend-icon="mdi-map-marker-multiple-outline"
                     value="markers"
@@ -1559,7 +1558,7 @@ onUnmounted(() => {
   position: absolute;
   top: 2px;
   right: 2px;
-  background: white;
+  background: rgba(var(--v-theme-surface-variant), 1);
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   display: flex;
