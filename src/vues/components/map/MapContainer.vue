@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineExpose, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import maplibregl, { type Map as LibreMap, type MapOptions } from 'maplibre-gl'
 import BaseMap, { type StyleName } from '@/vues/components/map/BaseMap.vue'
 import MapLayerSelector from '@/vues/components/map/MapLayerSelector.vue'

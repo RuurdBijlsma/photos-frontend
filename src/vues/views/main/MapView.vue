@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import MapContainer from '@/vues/components/map/MapContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
