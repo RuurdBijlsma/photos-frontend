@@ -1,37 +1,31 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import type { Album, AlbumSortField, SortDirection } from '@/scripts/types/api/album'
-import albumService from '@/scripts/services/albumService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import { useRouter } from 'vue-router'
-import { MONTHS } from '@/scripts/constants.ts'
 import GlowThumbnail from '@/vues/components/ui/GlowThumbnail.vue'
-import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
-import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
-import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import { useCameraStore } from '@/scripts/stores/cameraStore.ts'
 import { useStorage } from '@vueuse/core'
+import type { CameraInfo } from '@/scripts/types/generated/timeline.ts'
 
 const snackbarStore = useSnackbarsStore()
-const authStore = useAuthStore()
-const dialogs = useDialogStore()
-const router = useRouter()
-const albumStore = useAlbumStore()
+const cameraStore = useCameraStore()
 
 const loading = ref(false)
 const showSkeleton = ref(false)
 let skeletonTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Sorting State
-const currentSortField = useStorage<AlbumSortField>('albumLibrarySortField', 'latestPhoto')
-const currentSortDirection = useStorage<SortDirection>('albumLibrarySortDirection', 'desc')
-const userAlbums = ref<Album[]>([])
+const currentSortField = useStorage<'make' | 'model' | 'photoCount'>(
+  'cameraLibrarySortField',
+  'photoCount',
+)
+const currentSortDirection = useStorage<'asc' | 'desc'>('cameraLibrarySortDirection', 'desc')
 
-// Separated Field Options
+// Sorting Fields
 const sortFields = [
-  { title: 'Name', field: 'name' },
-  { title: 'Content date', field: 'latestPhoto' },
-  { title: 'Updated date', field: 'updatedAt' },
+  { title: 'Brand', field: 'make' },
+  { title: 'Model', field: 'model' },
+  { title: 'Photos count', field: 'photoCount' },
 ]
 
 const currentSortFieldTitle = computed(() => {
@@ -40,48 +34,58 @@ const currentSortFieldTitle = computed(() => {
 
 // Dynamically select the correct icon depending on the field and direction
 const sortDirectionIcon = computed(() => {
-  if (currentSortField.value === 'name') {
+  if (currentSortField.value === 'make' || currentSortField.value === 'model') {
     return currentSortDirection.value === 'asc'
       ? 'mdi-sort-alphabetical-ascending-variant'
       : 'mdi-sort-alphabetical-descending-variant'
   }
-  if (currentSortField.value === 'updatedAt') {
-    return currentSortDirection.value === 'asc'
-      ? 'mdi-sort-clock-ascending-outline'
-      : 'mdi-sort-clock-descending-outline'
-  }
   return currentSortDirection.value === 'asc'
-    ? 'mdi-sort-calendar-ascending'
-    : 'mdi-sort-calendar-descending'
-})
-const sortDirectionTooltip = computed(() => {
-  if (currentSortField.value === 'name') {
-    return currentSortDirection.value === 'asc' ? 'A-Z' : 'Z-A'
-  }
-  return currentSortDirection.value === 'asc' ? 'Old to new' : 'New to old'
+    ? 'mdi-sort-numeric-ascending'
+    : 'mdi-sort-numeric-descending'
 })
 
-async function loadAlbums() {
+const sortDirectionTooltip = computed(() => {
+  if (currentSortField.value === 'make' || currentSortField.value === 'model') {
+    return currentSortDirection.value === 'asc' ? 'A-Z' : 'Z-A'
+  }
+  return currentSortDirection.value === 'asc' ? 'Fewest first' : 'Most first'
+})
+
+// Client-side sorting for the cameras array
+const sortedCameras = computed(() => {
+  const list = [...cameraStore.cameras]
+  const field = currentSortField.value
+  const dir = currentSortDirection.value === 'asc' ? 1 : -1
+
+  return list.sort((a, b) => {
+    const valA = a[field]
+    const valB = b[field]
+
+    if (typeof valA === 'string' && typeof valB === 'string') {
+      return valA.localeCompare(valB) * dir
+    }
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      return (valA - valB) * dir
+    }
+    return 0
+  })
+})
+
+async function loadCameras() {
   loading.value = true
   showSkeleton.value = false
 
-  // Clear any existing timeout to avoid race conditions
   if (skeletonTimeout) clearTimeout(skeletonTimeout)
 
-  // Set skeleton to appear only after 150ms
+  // Set skeleton to appear only after 150ms to prevent brief flashes
   skeletonTimeout = setTimeout(() => {
     showSkeleton.value = true
   }, 150)
 
   try {
-    const { data } = await albumService.getUserAlbums(
-      currentSortField.value,
-      currentSortDirection.value,
-    )
-    console.log(data)
-    userAlbums.value = data
+    await cameraStore.fetchCameras()
   } catch (e) {
-    snackbarStore.error('Could not fetch albums', e)
+    snackbarStore.error('Could not fetch cameras', e)
   } finally {
     loading.value = false
     showSkeleton.value = false
@@ -89,80 +93,24 @@ async function loadAlbums() {
   }
 }
 
-function handleFieldChange(field: AlbumSortField) {
-  if (currentSortField.value !== field) {
-    currentSortField.value = field
-    loadAlbums()
-  }
+function handleFieldChange(field: 'make' | 'model' | 'photoCount') {
+  currentSortField.value = field
 }
 
 function toggleDirection() {
   currentSortDirection.value = currentSortDirection.value === 'asc' ? 'desc' : 'asc'
-  loadAlbums()
 }
 
-async function makeNewAlbum() {
-  await dialogs.alert({
-    title: 'Create album',
-    description: 'Create an album by selecting some photos and clicking "Add to album"',
-    icon: 'mdi-image-album',
-    actions: [
-      {
-        name: 'Go to photos',
-        action: () => {
-          router.push({ path: '/' })
-        },
-      },
-    ],
-  })
-}
-
-function getAlbumTimeSpan(album: Album) {
-  if (!album.earliestMediaItemTimestamp || !album.latestMediaItemTimestamp) return ''
-  const date1 = new Date(album.earliestMediaItemTimestamp)
-  const date2 = new Date(album.latestMediaItemTimestamp)
-  const year1 = date1.getFullYear()
-  const year2 = date2.getFullYear()
-  if (year1 === year2) {
-    const month1 = MONTHS[date1.getMonth()]?.substring(0, 3)
-    const month2 = MONTHS[date2.getMonth()]?.substring(0, 3)
-    if (!month1 || !month2) return year1
-    if (month1 === month2) {
-      return `${month1} ${year1}`
-    }
-    return `${month1} - ${month2} ${year1}`
-  }
-  return `${year1} - ${year2}`
-}
-
-async function renameAlbum(album: Album) {
-  await albumStore.renameAlbum(album.id, album.name)
-  requestIdleCallback(() => loadAlbums())
-}
-
-async function deleteAlbum(albumId: string) {
-  await albumStore.deleteAlbum(albumId)
-  requestIdleCallback(() => loadAlbums())
-}
-
-async function leaveAlbum(albumId: string) {
-  await albumStore.fetchAlbumMedia(albumId)
-  const albumInfo = albumStore.albumMedia.get(albumId)
-  if (!albumInfo) return
-  const collaborators = albumInfo.album?.collaborators
-  if (!collaborators) return
-  const currentUserCollaborator = collaborators.find((c) => c.userId === authStore.user?.id)
-  if (!currentUserCollaborator) return
-  await albumStore.removeCollaborator(albumId, currentUserCollaborator.id, true)
-  requestIdleCallback(() => loadAlbums())
+function getCameraThumbnailId(camera: CameraInfo) {
+  const cameraId = camera.make + camera.model
+  return cameraStore.cameraMedia.get(cameraId)?.items[0]?.id || null
 }
 
 onMounted(() => {
-  loadAlbums()
+  loadCameras()
 })
 
 onUnmounted(() => {
-  // Prevent memory leaks / UI state issues if the component mounts/unmounts quickly
   if (skeletonTimeout) clearTimeout(skeletonTimeout)
 })
 </script>
@@ -172,8 +120,10 @@ onUnmounted(() => {
     <div class="library-container">
       <header class="library-header">
         <div class="header-left">
-          <h1>Albums</h1>
-          <span class="album-count">{{ userAlbums.length }} albums</span>
+          <h1>Cameras</h1>
+          <span class="album-count"
+            >{{ sortedCameras.length }} camera{{ sortedCameras.length === 1 ? '' : 's' }}</span
+          >
         </div>
 
         <div class="header-actions d-flex align-center">
@@ -196,12 +146,12 @@ onUnmounted(() => {
                 :key="index"
                 :title="option.title"
                 :active="currentSortField === option.field"
-                @click="handleFieldChange(option.field as AlbumSortField)"
+                @click="handleFieldChange(option.field as 'make' | 'model' | 'photoCount')"
               />
             </v-list>
           </v-menu>
 
-          <!-- Direction Toggle (Right) -->
+          <!-- Direction Toggle -->
           <v-btn
             variant="text"
             color="primary"
@@ -213,21 +163,10 @@ onUnmounted(() => {
               text: sortDirectionTooltip,
             }"
           />
-
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-plus"
-            rounded
-            variant="flat"
-            class="text-none ml-3 new-album"
-            @click="makeNewAlbum"
-          >
-            New Album
-          </v-btn>
         </div>
       </header>
 
-      <!-- Grid Layout -->
+      <!-- Grid Layout (Skeleton Loaders) -->
       <div v-if="showSkeleton" class="album-grid">
         <div v-for="i in 9" :key="i" class="album-card-skeleton">
           <v-skeleton-loader
@@ -241,99 +180,60 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- Grid Layout (Actual Content) -->
       <div v-else class="album-grid">
         <router-link
-          v-for="album in userAlbums"
-          :key="album.id"
-          :to="`/album/${album.id}`"
+          v-for="camera in sortedCameras"
+          :key="camera.make + camera.model"
+          :to="`/camera/${encodeURIComponent(camera.make)}/${encodeURIComponent(camera.model)}`"
           class="album-card"
-          @mouseenter="albumStore.fetchAlbumMedia(album.id)"
+          @mouseenter="cameraStore.fetchCameraMedia(camera.make, camera.model)"
         >
           <div class="album-image">
+            <!-- Icon placeholder fallback if no thumbnail is preloaded yet -->
+            <div class="camera-thumbnail-placeholder" v-if="!getCameraThumbnailId(camera)">
+              <v-icon icon="mdi-camera" size="50" color="on-surface-variant" />
+            </div>
             <glow-thumbnail
+              v-else
               class="album-glow-image"
-              :media-item-id="album.thumbnailId"
+              :media-item-id="getCameraThumbnailId(camera)"
               :height="200"
               :width="200"
               border-radius="20px"
               :strength="0.7"
             />
-            <v-menu location="bottom end" v-if="album.ownerId === authStore.user?.id">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  v-bind="props"
-                  class="album-options-btn"
-                  icon="mdi-dots-horizontal"
-                  variant="flat"
-                  density="comfortable"
-                  color="primary"
-                  @click.stop.prevent
-                />
-              </template>
-              <v-list density="compact">
-                <v-list-item @click="renameAlbum(album)">
-                  <v-list-item-title>Rename album</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="deleteAlbum(album.id)">
-                  <v-list-item-title>Delete album</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-            <v-menu v-else location="bottom end">
-              <template v-slot:activator="{ props }">
-                <v-avatar
-                  v-tooltip="{
-                    location: 'top',
-                    text: 'Shared album',
-                  }"
-                  size="35"
-                  v-bind="props"
-                  @click.stop.prevent
-                  class="album-shared-avatar"
-                  color="primary"
-                  ><v-icon icon="mdi-share" size="23"></v-icon
-                ></v-avatar>
-              </template>
-              <v-list density="compact">
-                <v-list-item @click="leaveAlbum(album.id)">
-                  <v-list-item-title>Leave shared album</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
           </div>
 
           <div class="album-info">
             <h3
               v-tooltip="{
                 location: 'top',
-                text: album.name || 'Untitled Album',
-                disabled: album.name.length <= 19,
+                text: camera.model || 'Unknown Model',
+                disabled: (camera.model || 'Unknown Model').length <= 19,
               }"
               class="album-name text-truncate"
             >
-              {{ album.name || 'Untitled Album' }}
+              {{ camera.model || 'Unknown Model' }}
             </h3>
             <p class="album-meta">
-              <span
-                >{{ album.mediaCount.toLocaleString() ?? 0 }} item{{
-                  album.mediaCount === 1 ? '' : 's'
-                }}</span
-              >
+              <span>{{ camera.make || 'Unknown Brand' }}</span>
               •
-              <span>{{ getAlbumTimeSpan(album) }}</span>
+              <span>
+                {{ camera.photoCount.toLocaleString() }} item{{
+                  camera.photoCount === 1 ? '' : 's'
+                }}
+              </span>
             </p>
           </div>
         </router-link>
       </div>
 
       <!-- Empty State -->
-      <div v-if="!loading && userAlbums.length === 0" class="empty-state">
-        <v-icon icon="mdi-image-album" size="100" class="mb-4 opacity-20" />
-        <h2>No albums yet</h2>
-        <p>Create your first album to start organizing your memories.</p>
-        <v-btn color="primary" variant="tonal" rounded class="mt-6" @click="makeNewAlbum">
-          Create Album
-        </v-btn>
+      <div v-if="!loading && sortedCameras.length === 0" class="empty-state">
+        <v-icon icon="mdi-camera" size="100" class="mb-4 opacity-20" />
+        <h2>No cameras found</h2>
+        <p>Once you import media with camera metadata, they will appear here.</p>
       </div>
     </div>
   </main-layout-container>
@@ -378,23 +278,17 @@ onUnmounted(() => {
   width: 200px;
 }
 
-.album-shared-avatar {
+.camera-thumbnail-placeholder {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 5;
-}
-
-.album-options-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 5;
-  opacity: 0;
-}
-
-.album-image:hover .album-options-btn {
-  opacity: 1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(var(--v-theme-surface-container-high));
+  border-radius: 20px;
 }
 
 .album-glow-image {
@@ -451,12 +345,7 @@ onUnmounted(() => {
   opacity: 0.6;
 }
 
-/* Custom shadow/glow effect on hover similar to GlowImage's logic */
 .album-card:hover :deep(.glow-image-container) {
   box-shadow: 0 10px 30px -10px rgba(var(--v-theme-primary), 0.3);
-}
-
-.new-album {
-  font-weight: 600 !important;
 }
 </style>

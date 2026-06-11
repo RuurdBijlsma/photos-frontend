@@ -85,27 +85,12 @@ useEventListener(document, 'mousemove', (e) => {
 
       <v-list-subheader class="mt-5">Collections</v-list-subheader>
 
-      <div class="albums-nav">
-        <v-list-item class="albums-nav-item" rounded prepend-icon="mdi-image-album" to="/albums">
-          <v-list-item-title>Albums</v-list-item-title>
-        </v-list-item>
-        <v-btn
-          @click="albumsExpanded = !albumsExpanded"
-          class="albums-nav-btn"
-          density="compact"
-          icon="mdi-menu-down"
-          v-if="userHasAlbums"
-          :class="{
-            'point-down': albumsExpanded,
-          }"
-          variant="plain"
-        ></v-btn>
-      </div>
-
       <NavExpandableList
-        v-if="userHasAlbums"
+        v-model:expanded="albumsExpanded"
+        title="Albums"
+        to="/albums"
+        icon="mdi-image-album"
         :items="albumStore.userAlbums"
-        :expanded="albumsExpanded"
       >
         <template #item="{ item: album }">
           <v-list-item
@@ -144,27 +129,13 @@ useEventListener(document, 'mousemove', (e) => {
         </template>
       </NavExpandableList>
 
-      <div class="albums-nav" v-if="systemStore.stats.hasClusteredPeople">
-        <v-list-item class="albums-nav-item" rounded :prepend-icon="faceIcon" to="/people">
-          <v-list-item-title>People</v-list-item-title>
-        </v-list-item>
-        <v-btn
-          @click="peopleExpanded = !peopleExpanded"
-          class="albums-nav-btn"
-          density="compact"
-          icon="mdi-menu-down"
-          v-if="namedPeople.length > 0"
-          :class="{
-            'point-down': peopleExpanded,
-          }"
-          variant="plain"
-        ></v-btn>
-      </div>
-
       <NavExpandableList
         v-if="systemStore.stats.hasClusteredPeople"
+        v-model:expanded="peopleExpanded"
+        title="People"
+        to="/people"
+        :icon="faceIcon"
         :items="namedPeople"
-        :expanded="peopleExpanded"
       >
         <template #item="{ item: person }">
           <v-list-item
@@ -196,6 +167,8 @@ useEventListener(document, 'mousemove', (e) => {
           </v-list-item>
         </template>
       </NavExpandableList>
+
+      <v-list-item rounded prepend-icon="mdi-camera" title="Cameras" to="/cameras" />
     </v-list>
     <div v-else class="collapsed-list">
       <v-btn
