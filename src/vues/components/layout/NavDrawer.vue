@@ -237,6 +237,13 @@ useEventListener(document, 'mousemove', (e) => {
         to="/people"
         title="People"
       />
+      <v-btn
+        icon="mdi-camera"
+        :variant="route.path.startsWith('/cameras') ? 'tonal' : 'plain'"
+        :color="route.path === '/cameras' ? 'primary-darken-1' : undefined"
+        to="/cameras"
+        title="Cameras"
+      />
     </div>
     <div class="resize-handle" @mousedown="startResize"></div>
   </v-navigation-drawer>

@@ -31,7 +31,7 @@ const router = createRouter({
         {
           path: 'people',
           name: 'people',
-          component: () => import('@/vues/views/library/PeopleView.vue'),
+          component: () => import('@/vues/views/library/PeopleLibrary.vue'),
         },
         {
           path: 'person/:personId',
@@ -41,6 +41,23 @@ const router = createRouter({
             {
               path: 'view/:mediaId',
               name: 'view-photo-person',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
+          path: 'cameras',
+          name: 'cameras',
+          component: () => import('@/vues/views/library/CamerasLibrary.vue'),
+        },
+        {
+          path: 'camera/:cameraMake/:cameraModel',
+          name: 'camera-view',
+          component: () => import('@/vues/views/library/CameraView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-camera',
               component: ViewPhoto,
             },
           ],
