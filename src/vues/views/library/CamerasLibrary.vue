@@ -102,8 +102,13 @@ function toggleDirection() {
 }
 
 function getCameraThumbnailId(camera: CameraInfo) {
-  const cameraId = camera.make + camera.model
-  return cameraStore.cameraMedia.get(cameraId)?.items[0]?.id || null
+  // Use the direct thumbnail ID from the camera item if available;
+  // otherwise, fall back to the first item from preloaded store media.
+  return (
+    camera.thumbnailId ||
+    cameraStore.cameraMedia.get(camera.make + camera.model)?.items[0]?.id ||
+    null
+  )
 }
 
 onMounted(() => {
@@ -197,7 +202,7 @@ onUnmounted(() => {
             <glow-thumbnail
               v-else
               class="album-glow-image"
-              :media-item-id="getCameraThumbnailId(camera)"
+              :media-item-id="getCameraThumbnailId(camera)!"
               :height="200"
               :width="200"
               border-radius="20px"

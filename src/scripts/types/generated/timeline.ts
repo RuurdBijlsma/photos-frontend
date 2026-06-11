@@ -156,6 +156,7 @@ export interface CameraInfo {
   make: string;
   model: string;
   photoCount: number;
+  thumbnailId: string;
 }
 
 export interface ListCameraResponse {
@@ -1815,7 +1816,7 @@ export const FullPersonMediaResponse: MessageFns<FullPersonMediaResponse> = {
 };
 
 function createBaseCameraInfo(): CameraInfo {
-  return { make: "", model: "", photoCount: 0 };
+  return { make: "", model: "", photoCount: 0, thumbnailId: "" };
 }
 
 export const CameraInfo: MessageFns<CameraInfo> = {
@@ -1828,6 +1829,9 @@ export const CameraInfo: MessageFns<CameraInfo> = {
     }
     if (message.photoCount !== 0) {
       writer.uint32(24).int32(message.photoCount);
+    }
+    if (message.thumbnailId !== "") {
+      writer.uint32(34).string(message.thumbnailId);
     }
     return writer;
   },
@@ -1863,6 +1867,14 @@ export const CameraInfo: MessageFns<CameraInfo> = {
           message.photoCount = reader.int32();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.thumbnailId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1881,6 +1893,11 @@ export const CameraInfo: MessageFns<CameraInfo> = {
         : isSet(object.photo_count)
         ? globalThis.Number(object.photo_count)
         : 0,
+      thumbnailId: isSet(object.thumbnailId)
+        ? globalThis.String(object.thumbnailId)
+        : isSet(object.thumbnail_id)
+        ? globalThis.String(object.thumbnail_id)
+        : "",
     };
   },
 
@@ -1895,6 +1912,9 @@ export const CameraInfo: MessageFns<CameraInfo> = {
     if (message.photoCount !== 0) {
       obj.photoCount = Math.round(message.photoCount);
     }
+    if (message.thumbnailId !== "") {
+      obj.thumbnailId = message.thumbnailId;
+    }
     return obj;
   },
 
@@ -1906,6 +1926,7 @@ export const CameraInfo: MessageFns<CameraInfo> = {
     message.make = object.make ?? "";
     message.model = object.model ?? "";
     message.photoCount = object.photoCount ?? 0;
+    message.thumbnailId = object.thumbnailId ?? "";
     return message;
   },
 };
