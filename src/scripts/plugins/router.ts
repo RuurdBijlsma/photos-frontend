@@ -26,6 +26,11 @@ const router = createRouter({
               name: 'view-photo-timeline',
               component: ViewPhoto,
             },
+            {
+              path: 'daily/:cardId',
+              name: 'daily-card-viewer',
+              component: () => import('@/vues/components/timeline/daily-cards/DailyViewer.vue'),
+            },
           ],
         },
         {

@@ -14,7 +14,7 @@ function isGame(cardType: string) {
 
 <template>
   <v-theme-provider theme="dark" with-background class="theme-prov">
-    <div class="daily-card" v-ripple>
+    <router-link :to="`daily/${card.id}`" class="daily-card" v-ripple>
       <thumbnail-img
         v-if="card.thumbnailMediaItemId"
         :media-item-id="card.thumbnailMediaItemId"
@@ -41,7 +41,7 @@ function isGame(cardType: string) {
           </div>
         </div>
       </div>
-    </div>
+    </router-link>
   </v-theme-provider>
 </template>
 
@@ -51,6 +51,7 @@ function isGame(cardType: string) {
 }
 
 .daily-card {
+  display: block;
   height: 100%;
   width: calc(v-bind(width) * 1px);
   border-radius: 40px;
@@ -59,6 +60,7 @@ function isGame(cardType: string) {
   position: relative;
   cursor: pointer;
   transition: filter 0.2s;
+  color: inherit;
 }
 
 .daily-card:hover {

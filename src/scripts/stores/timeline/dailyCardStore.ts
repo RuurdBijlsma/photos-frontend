@@ -5,27 +5,38 @@ import type { AxiosResponse } from 'axios'
 import dailyCardService from '@/scripts/services/dailyCardService.ts'
 import { useObjStorage } from '@/scripts/utils.ts'
 
+export interface CollectionMediaItem {
+  id: string
+  width: number
+  height: number
+  is_video: boolean
+  is_panorama: boolean
+}
+
+interface CardCollectionPayload {
+  media_items: CollectionMediaItem[]
+}
+
 export const useDailyCardStore = defineStore('dailyCard', () => {
   const cardsByDate = useObjStorage<Record<string, DailyCardResponse[]>>('dailyCardsByDate', {})
   const cardsPromises = new Map<string, Promise<AxiosResponse<DailyCardResponse[]>>>()
+  const cardsById = computed(() => {
+    const allCards = Object.values(cardsByDate.value).flat()
+    const result = new Map<number, DailyCardResponse>()
+    for (const card of allCards) {
+      result.set(card.id, card)
+    }
+    return result
+  })
 
   const todayDate = ref(new Date().toISOString().substring(0, 10))
   const todayCards = computed(() => cardsByDate.value[todayDate.value])
 
-  // Delete old daily cards from cache
-  requestIdleCallback(() => {
-    const currentCards = cardsByDate.value
-    const keys = Object.keys(currentCards)
-    const keysToKeep = keys.filter((key) => key >= todayDate.value)
-
-    if (keysToKeep.length < keys.length) {
-      const updatedCards: Record<string, DailyCardResponse[]> = {}
-      for (const key of keysToKeep) {
-        updatedCards[key] = currentCards[key]
-      }
-      cardsByDate.value = updatedCards
-    }
-  })
+  function getPayloadItems(card: DailyCardResponse): CollectionMediaItem[] {
+    const payload = card.payload as unknown as CardCollectionPayload
+    console.log('collection', payload)
+    return payload.media_items
+  }
 
   async function fetchDailyCards() {
     const today = new Date().toISOString().substring(0, 10)
@@ -56,10 +67,29 @@ export const useDailyCardStore = defineStore('dailyCard', () => {
     }
   }
 
+  function cleanOldCache() {
+    // Delete old daily cards from cache
+    const currentCards = cardsByDate.value
+    const keys = Object.keys(currentCards)
+    const keysToKeep = keys.filter((key) => key >= todayDate.value)
+
+    if (keysToKeep.length < keys.length) {
+      const updatedCards: Record<string, DailyCardResponse[]> = {}
+      for (const key of keysToKeep) {
+        updatedCards[key] = currentCards[key]
+      }
+      cardsByDate.value = updatedCards
+    }
+  }
+
+  requestIdleCallback(cleanOldCache)
+
   return {
     cardsByDate,
     todayDate,
     todayCards,
+    getPayloadItems,
+    cardsById,
 
     fetchDailyCards,
   }

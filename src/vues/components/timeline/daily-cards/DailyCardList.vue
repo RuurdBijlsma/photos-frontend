@@ -2,7 +2,7 @@
 import { useDailyCardStore } from '@/scripts/stores/timeline/dailyCardStore.ts'
 import { computed, onMounted, watch, ref, nextTick } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
-import DailyCard from '@/vues/components/timeline/main-timeline/DailyCard.vue'
+import DailyCard from '@/vues/components/timeline/daily-cards/DailyCard.vue'
 
 defineProps<{
   width: number
