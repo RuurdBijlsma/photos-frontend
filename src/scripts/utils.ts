@@ -122,6 +122,17 @@ export function getWeatherIcon(condition: string, isDaytime: boolean): string {
   return isDaytime ? icon.day : icon.night
 }
 
+export function makeDateTimeString(date:Date){
+  const day = date.getDate()
+  const month = date.toLocaleString('en-GB', { month: 'long' })
+  const year = date.getFullYear()
+
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${day} ${month} ${year} at ${hours}:${minutes}`
+}
+
 export function makeLocationString(location: Location, components = 2) {
   let finalParts
   if (components === 3 && location.name && location.admin1 && location.country_name) {

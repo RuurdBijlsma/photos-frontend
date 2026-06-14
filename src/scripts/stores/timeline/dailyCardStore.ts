@@ -10,6 +10,7 @@ export interface CollectionMediaItem extends SimpleTimelineItem {
   width: number
   height: number
   isPanorama: boolean
+  takenAtLocal?: string
 }
 
 interface CardCollectionPayload {

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useWindowSize } from '@vueuse/core'
 import type { DailyCardResponse } from '@/scripts/types/api/dailyCards.ts'
 import { useDailyCardStore } from '@/scripts/stores/timeline/dailyCardStore.ts'
-import { getThumbnailHeight, getVideoHeight } from '@/scripts/utils.ts'
+import { getThumbnailHeight, getVideoHeight, makeDateTimeString } from '@/scripts/utils.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 
@@ -59,6 +59,12 @@ const currentImageUrl = computed(() => {
     getThumbnailHeight(windowSize.height.value),
     !item.hasThumbnails,
   )
+})
+
+const itemDateString = computed(() => {
+  const item = currentItem.value
+  if (!item || !item.takenAtLocal) return null
+  return makeDateTimeString(new Date(item.takenAtLocal))
 })
 
 const nextImageUrl = computed(() => {
@@ -294,6 +300,9 @@ onUnmounted(() => {
             <!-- Right Column: Empty Spacer to maintain center alignment -->
             <div class="control-right"></div>
           </div>
+          <div class="story-top-subline" v-if="itemDateString">
+            <span>{{ itemDateString }}</span>
+          </div>
         </div>
 
         <!-- Slideshow Player -->
@@ -427,6 +436,12 @@ onUnmounted(() => {
   align-items: center;
   padding: 0 16px;
   width: 100%;
+}
+
+.story-top-subline {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .control-left {

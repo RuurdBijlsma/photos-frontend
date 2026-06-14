@@ -11,7 +11,7 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import type { PhotoViewerType } from '@/scripts/types/viewerType'
 import { useEventListener } from '@vueuse/core'
 import MediaInfoPanel from '@/vues/components/viewer/MediaInfoPanel.vue'
-import { makeLocationString } from '@/scripts/utils.ts'
+import { makeDateTimeString, makeLocationString } from '@/scripts/utils.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { useTheme } from 'vuetify/framework'
@@ -97,15 +97,7 @@ const prevId = computed(() => orderedIds.value[currentIndex.value - 1] ?? null)
 const timestampString = computed(() => {
   const dateStr = fullImage.value?.taken_at_local
   if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const day = date.getDate()
-  const month = date.toLocaleString('en-GB', { month: 'long' })
-  const year = date.getFullYear()
-
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-
-  return `${day} ${month} ${year} at ${hours}:${minutes}`
+  return makeDateTimeString(new Date(dateStr))
 })
 
 const locationString = computed(() => {
