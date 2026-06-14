@@ -24,6 +24,7 @@ import DateOverlay from '@/vues/components/timeline/timeline-components/DateOver
 import { useRoute, useRouter } from 'vue-router'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import DailyCardList from '@/vues/components/timeline/main-timeline/DailyCardList.vue'
 
 const timelineStore = useTimelineStore()
 const selectionStore = useSelectionStore()
@@ -758,6 +759,7 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
         @scroll.passive="onScroll"
         v-show="!isEmpty"
       >
+        <daily-card-list :width="containerSize.width" />
         <div
           :style="{
             height: `${rowVirtualizer.getTotalSize()}px`,
