@@ -1,21 +1,13 @@
 import { defineStore } from 'pinia'
-import type { DailyCardResponse } from '@/scripts/types/api/dailyCards.ts'
+import type {
+  CardCollectionPayload,
+  CollectionMediaItem,
+  DailyCardResponse,
+} from '@/scripts/types/api/dailyCards.ts'
 import { computed, ref } from 'vue'
 import type { AxiosResponse } from 'axios'
 import dailyCardService from '@/scripts/services/dailyCardService.ts'
 import { useObjStorage } from '@/scripts/utils.ts'
-import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
-
-export interface CollectionMediaItem extends SimpleTimelineItem {
-  width: number
-  height: number
-  isPanorama: boolean
-  takenAtLocal?: string
-}
-
-interface CardCollectionPayload {
-  mediaItems: CollectionMediaItem[]
-}
 
 export const useDailyCardStore = defineStore('dailyCard', () => {
   const cardsByDate = useObjStorage<Record<string, DailyCardResponse[]>>('dailyCardsByDate', {})

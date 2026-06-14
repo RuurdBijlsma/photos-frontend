@@ -4,6 +4,7 @@ import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import DailyCollectionViewer from '@/vues/components/timeline/daily-cards/DailyCollectionViewer.vue'
+import LocationEstimatr from '@/vues/components/timeline/daily-cards/LocationEstimatr.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -42,9 +43,11 @@ watch(
 <template>
   <div class="collection-viewer" v-if="card">
     <daily-collection-viewer
+      v-slot:default
       v-if="card.cardType === 'on_this_day' || card.cardType === 'cluster'"
       :card="card"
     />
+    <location-estimatr v-else-if="card.cardType === 'estimatr'" :card="card" />
   </div>
 </template>
 
