@@ -4,17 +4,16 @@ import { computed, ref } from 'vue'
 import type { AxiosResponse } from 'axios'
 import dailyCardService from '@/scripts/services/dailyCardService.ts'
 import { useObjStorage } from '@/scripts/utils.ts'
+import type { SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 
-export interface CollectionMediaItem {
-  id: string
+export interface CollectionMediaItem extends SimpleTimelineItem {
   width: number
   height: number
-  is_video: boolean
-  is_panorama: boolean
+  isPanorama: boolean
 }
 
 interface CardCollectionPayload {
-  media_items: CollectionMediaItem[]
+  mediaItems: CollectionMediaItem[]
 }
 
 export const useDailyCardStore = defineStore('dailyCard', () => {
@@ -35,7 +34,7 @@ export const useDailyCardStore = defineStore('dailyCard', () => {
   function getPayloadItems(card: DailyCardResponse): CollectionMediaItem[] {
     const payload = card.payload as unknown as CardCollectionPayload
     console.log('collection', payload)
-    return payload.media_items
+    return payload.mediaItems
   }
 
   async function fetchDailyCards() {

@@ -14,7 +14,7 @@ function isGame(cardType: string) {
 
 <template>
   <v-theme-provider theme="dark" with-background class="theme-prov">
-    <router-link :to="`daily/${card.id}`" class="daily-card" v-ripple>
+    <router-link :to="`/daily/${card.id}`" class="daily-card" v-ripple>
       <thumbnail-img
         v-if="card.thumbnailMediaItemId"
         :media-item-id="card.thumbnailMediaItemId"
