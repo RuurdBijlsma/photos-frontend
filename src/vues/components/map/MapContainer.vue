@@ -113,7 +113,7 @@ const route = useRoute()
 const router = useRouter()
 
 // --- State & Storage ---
-const mapMode = useStorage<'markers' | 'heatmap'>('mapLayerMode', 'markers')
+const mapMode = useStorage<'markers' | 'heatmap'>('mapLayerMode', 'heatmap')
 let map: null | maplibregl.Map = null
 let initialized = false
 let updateRun = 0
@@ -171,8 +171,8 @@ function handleMapLoad(loadedMap: LibreMap) {
   initializeMap()
 }
 
-function handleStyleLoad(loadedMap: LibreMap) {
-  if (props.mapPhotos === null) return
+function handleStyleLoad(loadedMap: LibreMap | undefined) {
+  if (props.mapPhotos === null || !loadedMap) return
   rebuildMapResources(loadedMap)
 }
 

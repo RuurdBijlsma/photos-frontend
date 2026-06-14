@@ -54,7 +54,7 @@ onMounted(() => cardStore.fetchDailyCards())
 </script>
 
 <template>
-  <div class="daily-cards-wrapper" v-if="cards.length > 0">
+  <div class="daily-cards-wrapper" v-if="cards && cards.length > 0">
     <!-- Scroll Left Button -->
     <transition name="fade">
       <v-btn
