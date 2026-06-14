@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWindowSize } from '@vueuse/core'
 import type { DailyCardResponse } from '@/scripts/types/api/dailyCards.ts'
@@ -16,7 +16,6 @@ const props = defineProps<{
 const router = useRouter()
 const windowSize = useWindowSize()
 
-// Payload & Game configuration structures
 export interface EstimatrRound {
   latitude: number
   longitude: number
@@ -58,7 +57,7 @@ const payload = computed(() => props.card.payload as unknown as EstimatrPayload)
 const rounds = computed(() => payload.value?.rounds || [])
 const areaKm2 = computed(() => payload.value?.areaKm2 || 0)
 
-// Game State persisted across reloads using user utility
+// Game State persisted via local storage
 const gameState = useObjStorage<GameState>(`estimatr_state_${props.card.id}`, {
   cardId: props.card.id,
   currentRoundIndex: 0,
@@ -66,7 +65,6 @@ const gameState = useObjStorage<GameState>(`estimatr_state_${props.card.id}`, {
   guesses: [],
 })
 
-// Initialize state to empty templates if it was uninitialized or key mismatch
 if (!gameState.value || gameState.value.cardId !== props.card.id) {
   gameState.value = {
     cardId: props.card.id,
@@ -76,21 +74,42 @@ if (!gameState.value || gameState.value.cardId !== props.card.id) {
   }
 }
 
-// Temporary marker coordinates chosen during active guessing
+// User active marker guess coordinates
 const tempGuess = ref<{ lat: number; lng: number } | null>(null)
 
-// Map-related refs and layout state
+// Map parameters and reactive drag-resize coordinates
 const mapInstance = ref<maplibregl.Map | null>(null)
 const mapStyle = ref<StyleName>('LIBERTY')
-const mapExpanded = ref(false)
 
-// Active markers reference handlers
+const mapWidth = ref(440) // Generous starting map size
+const mapHeight = ref(330)
+
+const minWidth = 320
+const maxWidth = 800
+const minHeight = 240
+const maxHeight = 600
+
+let isResizing = false
+let startX = 0
+let startY = 0
+let startWidth = 0
+let startHeight = 0
+
+// Stable map options to prevent viewport resets when switching style layers
+const stableMapOptions = {
+  center: { lon: 0, lat: 0 },
+  zoom: 1.5,
+  attributionControl: {
+    compact: true,
+  },
+}
+
+// Marker handles
 let guessMarker: maplibregl.Marker | null = null
 let actualMarker: maplibregl.Marker | null = null
 const summaryMarkers: maplibregl.Marker[] = []
 const summaryLineLayers: string[] = []
 
-// Current round definitions
 const currentRound = computed<EstimatrRound | null>(() => {
   if (rounds.value.length === 0) return null
   return rounds.value[gameState.value.currentRoundIndex] || null
@@ -126,7 +145,119 @@ const currentRoundGuess = computed(() => {
   return gameState.value.guesses[gameState.value.currentRoundIndex]
 })
 
-// Distance & Score calculations
+// Geodesic Interpolation helper for curved lines (Great Circle paths)
+function getGreatCircleRoute(
+  startLat: number,
+  startLng: number,
+  endLat: number,
+  endLng: number,
+  pointsCount = 60,
+): [number, number][] {
+  const coords: [number, number][] = []
+
+  const lat1 = (startLat * Math.PI) / 180
+  const lon1 = (startLng * Math.PI) / 180
+  const lat2 = (endLat * Math.PI) / 180
+  const lon2 = (endLng * Math.PI) / 180
+
+  const dLon = lon2 - lon1
+  const dLat = lat2 - lat1
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const g = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+  if (g === 0) {
+    return [
+      [startLng, startLat],
+      [endLng, endLat],
+    ]
+  }
+
+  for (let i = 0; i <= pointsCount; i++) {
+    const f = i / pointsCount
+    const A = Math.sin((1 - f) * g) / Math.sin(g)
+    const B = Math.sin(f * g) / Math.sin(g)
+
+    const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2)
+    const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2)
+    const z = A * Math.sin(lat1) + B * Math.sin(lat2)
+
+    const lat = Math.atan2(z, Math.sqrt(x * x + y * y))
+    const lon = Math.atan2(y, x)
+
+    coords.push([(lon * 180) / Math.PI, (lat * 180) / Math.PI])
+  }
+
+  return coords
+}
+
+// Drag Resizing Logic for Bottom-Left Anchored Map
+function startResize(e: MouseEvent) {
+  isResizing = true
+  startX = e.clientX
+  startY = e.clientY
+  startWidth = mapWidth.value
+  startHeight = mapHeight.value
+
+  document.addEventListener('mousemove', handleResize)
+  document.addEventListener('mouseup', stopResize)
+  e.preventDefault()
+}
+
+function handleResize(e: MouseEvent) {
+  if (!isResizing) return
+  const dx = e.clientX - startX
+  const dy = startY - e.clientY // Dragging upwards increases height
+
+  mapWidth.value = Math.max(minWidth, Math.min(maxWidth, startWidth + dx))
+  mapHeight.value = Math.max(minHeight, Math.min(maxHeight, startHeight + dy))
+
+  if (mapInstance.value) {
+    mapInstance.value.resize()
+  }
+}
+
+function stopResize() {
+  isResizing = false
+  document.removeEventListener('mousemove', handleResize)
+  document.removeEventListener('mouseup', stopResize)
+}
+
+function startResizeTouch(e: TouchEvent) {
+  if (e.touches.length !== 1) return
+  isResizing = true
+  startX = e.touches[0].clientX
+  startY = e.touches[0].clientY
+  startWidth = mapWidth.value
+  startHeight = mapHeight.value
+
+  document.addEventListener('touchmove', handleResizeTouch)
+  document.addEventListener('touchend', stopResizeTouch)
+  e.preventDefault()
+}
+
+function handleResizeTouch(e: TouchEvent) {
+  if (!isResizing || e.touches.length !== 1) return
+  const dx = e.touches[0].clientX - startX
+  const dy = startY - e.touches[0].clientY
+
+  mapWidth.value = Math.max(minWidth, Math.min(maxWidth, startWidth + dx))
+  mapHeight.value = Math.max(minHeight, Math.min(maxHeight, startHeight + dy))
+
+  if (mapInstance.value) {
+    mapInstance.value.resize()
+  }
+}
+
+function stopResizeTouch() {
+  isResizing = false
+  document.removeEventListener('touchmove', handleResizeTouch)
+  document.removeEventListener('touchend', stopResizeTouch)
+}
+
+// Distance & Score Calculations
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371
   const dLat = ((lat2 - lat1) * Math.PI) / 180
@@ -134,17 +265,16 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2)
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
 
 function calculateScore(distanceKm: number, areaKm2Value: number): number {
-  let k = 2000 // default decay factor at global scale
+  let k = 2000
   if (areaKm2Value && areaKm2Value > 0) {
-    // adapts decay to match bounding diameter context of smaller scope areas
     k = Math.max(1, Math.sqrt(areaKm2Value) * 0.15)
   }
   const score = Math.round(5000 * Math.exp(-distanceKm / k))
@@ -158,7 +288,7 @@ function formatDistance(distKm: number): string {
   return `${distKm.toFixed(1)} km`
 }
 
-// Map Event Handlers & Drawers
+// Map Loading & Drawing Trigger handlers
 function handleMapLoad(loadedMap: maplibregl.Map) {
   mapInstance.value = loadedMap
 
@@ -180,10 +310,6 @@ function handleStyleLoad() {
 
 function toggleMapStyle() {
   mapStyle.value = mapStyle.value === 'LIBERTY' ? 'SATELLITE' : 'LIBERTY'
-}
-
-function toggleMapExpanded() {
-  mapExpanded.value = !mapExpanded.value
 }
 
 function updateGuessMarker(lat: number, lng: number) {
@@ -249,12 +375,14 @@ function drawDottedLine(coord1: [number, number], coord2: [number, number]) {
   if (!mapInstance.value) return
   const map = mapInstance.value
 
+  const curvedCoordinates = getGreatCircleRoute(coord1[1], coord1[0], coord2[1], coord2[0])
+
   const geojson = {
     type: 'Feature',
     properties: {},
     geometry: {
       type: 'LineString',
-      coordinates: [coord1, coord2],
+      coordinates: curvedCoordinates,
     },
   }
 
@@ -276,7 +404,7 @@ function drawDottedLine(coord1: [number, number], coord2: [number, number]) {
       },
       paint: {
         'line-color': '#ff9f0a',
-        'line-width': 3,
+        'line-width': 3.5,
         'line-dasharray': [2, 2],
       },
     })
@@ -332,7 +460,7 @@ function drawAllOnMap() {
       const bounds = new maplibregl.LngLatBounds()
       bounds.extend([currentGuess.guessedLng, currentGuess.guessedLat])
       bounds.extend([currentGuess.actualLng, currentGuess.actualLat])
-      map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 1000 })
+      map.fitBounds(bounds, { padding: 80, maxZoom: 14, duration: 1000 })
     }
   } else if (gameState.value.status === 'finished') {
     const bounds = new maplibregl.LngLatBounds()
@@ -342,7 +470,6 @@ function drawAllOnMap() {
       if (!g) return
       validGuesses++
 
-      // Guess Pin representation
       const gEl = document.createElement('div')
       gEl.className = 'summary-marker guess-summary'
       gEl.innerHTML = `<span class="marker-label">${idx + 1}</span>`
@@ -352,7 +479,6 @@ function drawAllOnMap() {
       summaryMarkers.push(gMarker)
       bounds.extend([g.guessedLng, g.guessedLat])
 
-      // Actual Pin representation
       const aEl = document.createElement('div')
       aEl.className = 'summary-marker actual-summary'
       aEl.innerHTML = `<span class="marker-label">${idx + 1}</span>`
@@ -362,8 +488,10 @@ function drawAllOnMap() {
       summaryMarkers.push(aMarker)
       bounds.extend([g.actualLng, g.actualLat])
 
-      // Dotted Connector
+      // Great Circle curved connectors on final view
       const lineId = `line-summary-${idx}`
+      const curveCoords = getGreatCircleRoute(g.guessedLat, g.guessedLng, g.actualLat, g.actualLng)
+
       map.addSource(lineId, {
         type: 'geojson',
         data: {
@@ -371,10 +499,7 @@ function drawAllOnMap() {
           properties: {},
           geometry: {
             type: 'LineString',
-            coordinates: [
-              [g.guessedLng, g.guessedLat],
-              [g.actualLng, g.actualLat],
-            ],
+            coordinates: curveCoords,
           },
         },
       })
@@ -397,13 +522,17 @@ function drawAllOnMap() {
 
     if (validGuesses > 0) {
       nextTick(() => {
-        map.fitBounds(bounds, { padding: 80, maxZoom: 12, duration: 1200 })
+        // Obscured markers solved by allocating large left padding to accommodate summary overlay
+        map.fitBounds(bounds, {
+          padding: { top: 100, bottom: 100, left: 520, right: 100 },
+          maxZoom: 12,
+          duration: 1200,
+        })
       })
     }
   }
 }
 
-// Game Progression Trigger Handlers
 function handleGuessClick() {
   if (!tempGuess.value || !currentRound.value) return
 
@@ -446,7 +575,7 @@ function nextRound() {
     clearMapDrawings()
 
     if (mapInstance.value) {
-      mapInstance.value.setZoom(2)
+      mapInstance.value.setZoom(1.5)
       mapInstance.value.setCenter([0, 0])
     }
   } else {
@@ -458,26 +587,10 @@ function nextRound() {
   }
 }
 
-function resetGame() {
-  gameState.value = {
-    cardId: props.card.id,
-    currentRoundIndex: 0,
-    status: 'playing',
-    guesses: Array(rounds.value.length).fill(null),
-  }
-  tempGuess.value = null
-  clearMapDrawings()
-  if (mapInstance.value) {
-    mapInstance.value.setZoom(2)
-    mapInstance.value.setCenter([0, 0])
-  }
-}
-
 function goBack() {
   router.push('/')
 }
 
-// Watch state changes to handle UI redrawing contextually
 watch(
   () => gameState.value.currentRoundIndex,
   () => {
@@ -500,17 +613,17 @@ onUnmounted(() => {
 <template>
   <div class="estimatr-container" :class="{ 'finished-mode': gameState.status === 'finished' }">
     <!-- Top HUD Bar -->
-    <div class="estimatr-header">
+    <div class="estimatr-header py-2">
       <div class="header-left">
         <v-btn icon="mdi-close" variant="text" color="white" size="small" @click="goBack" />
-        <div class="header-titles ml-3">
+        <div class="header-titles ml-4">
           <h3>{{ card.title }}</h3>
           <p class="subtitle" v-if="card.subtitle">{{ card.subtitle }}</p>
         </div>
       </div>
 
-      <div class="header-center" v-if="gameState.status !== 'finished'">
-        <v-chip color="primary" variant="flat" size="medium" class="font-weight-bold">
+      <div class="header-center py-2" v-if="gameState.status !== 'finished'">
+        <v-chip color="primary" variant="flat" class="font-weight-bold px-6 py-4 chip-spacer">
           Round {{ gameState.currentRoundIndex + 1 }} / {{ rounds.length }}
         </v-chip>
       </div>
@@ -540,24 +653,30 @@ onUnmounted(() => {
       </div>
 
       <!-- Corner Map Placement Overlay -->
-      <div class="map-wrapper" :class="{ expanded: mapExpanded }">
+      <div
+        class="map-wrapper"
+        :style="{ width: `${mapWidth}px`, height: `${mapHeight}px` }"
+      >
         <div class="map-inner-container">
           <base-map
-            v-if="mapStyle"
             class="base-map"
             :map-style="mapStyle"
-            :map-options="{
-              center: { lat: 0, lon: 0 },
-              zoom: 1.5,
-              attributionControl: {
-                compact: true,
-              },
-            }"
+            :map-options="stableMapOptions"
             @load="handleMapLoad"
             @style-load="handleStyleLoad"
           />
 
-          <!-- Floating Map Auxiliary Actions -->
+          <!-- Custom Resizer drag Handle Anchor -->
+          <div
+            class="resize-handle"
+            @mousedown="startResize"
+            @touchstart="startResizeTouch"
+            title="Drag to resize map"
+          >
+            <v-icon size="14" color="white">mdi-resize-bottom-right</v-icon>
+          </div>
+
+          <!-- Floating Map Style controls -->
           <div class="map-floating-controls">
             <v-btn
               size="x-small"
@@ -566,14 +685,6 @@ onUnmounted(() => {
               class="ma-1"
               :icon="mapStyle === 'SATELLITE' ? 'mdi-map' : 'mdi-earth'"
               @click="toggleMapStyle"
-            />
-            <v-btn
-              size="x-small"
-              color="surface"
-              elevation="3"
-              class="ma-1"
-              :icon="mapExpanded ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
-              @click="toggleMapExpanded"
             />
           </div>
 
@@ -594,7 +705,9 @@ onUnmounted(() => {
             <template v-else-if="gameState.status === 'guessed'">
               <v-btn block color="success" rounded="lg" height="44" @click="nextRound">
                 {{
-                  gameState.currentRoundIndex + 1 === rounds.length ? 'View Results' : 'Next Round'
+                  gameState.currentRoundIndex + 1 === rounds.length
+                    ? 'View Results'
+                    : 'Next Round'
                 }}
               </v-btn>
             </template>
@@ -609,8 +722,8 @@ onUnmounted(() => {
             <div class="result-metric">
               <span class="metric-label">Distance</span>
               <span class="metric-value text-amber-accent-3">{{
-                formatDistance(currentRoundGuess.distanceKm)
-              }}</span>
+                  formatDistance(currentRoundGuess.distanceKm)
+                }}</span>
             </div>
             <v-divider vertical class="mx-4 border-opacity-50" />
             <div class="result-metric">
@@ -634,14 +747,9 @@ onUnmounted(() => {
       <!-- Background Map takes full screen -->
       <div class="full-summary-map-container">
         <base-map
-          v-if="mapStyle"
           class="base-map"
           :map-style="mapStyle"
-          :map-options="{
-            center: { lat: 0, lon: 0 },
-            zoom: 1.5,
-            attributionControl: { compact: true },
-          }"
+          :map-options="stableMapOptions"
           @load="handleMapLoad"
           @style-load="handleStyleLoad"
         />
@@ -661,11 +769,9 @@ onUnmounted(() => {
       <div class="summary-details-panel">
         <v-card class="summary-details-card pa-6" elevation="10" rounded="xl" width="100%">
           <div class="text-center mb-6">
-            <v-icon size="50" color="warning" class="mb-2">mdi-trophy-outline</v-icon>
-            <h2>Game Completed!</h2>
-            <p class="text-subtitle-2 text-disabled">
-              Awesome job guessing where your photos were taken
-            </p>
+            <v-icon size="48" color="success" class="mb-2">mdi-check-circle-outline</v-icon>
+            <h2>Challenge Completed!</h2>
+            <p class="text-subtitle-2 text-disabled">Great work. Your daily score has been registered.</p>
           </div>
 
           <!-- Total Score Ring representation -->
@@ -685,7 +791,7 @@ onUnmounted(() => {
               v-if="guess"
             >
               <div class="round-number">
-                <v-avatar color="primary" size="26" class="text-subtitle-2 font-weight-bold">
+                <v-avatar color="primary" size="26" class="text-subtitle-2 font-weight-bold text-white">
                   {{ index + 1 }}
                 </v-avatar>
               </div>
@@ -716,26 +822,8 @@ onUnmounted(() => {
 
           <!-- Bottom Action Row -->
           <div class="summary-actions">
-            <v-btn
-              block
-              color="primary"
-              variant="flat"
-              size="large"
-              rounded="lg"
-              class="mb-2"
-              @click="resetGame"
-            >
-              Play Again
-            </v-btn>
-            <v-btn
-              block
-              color="surface"
-              variant="outlined"
-              size="large"
-              rounded="lg"
-              @click="goBack"
-            >
-              Exit to Timeline
+            <v-btn block color="primary" size="large" rounded="lg" class="mb-2" @click="goBack">
+              Complete & Return
             </v-btn>
           </div>
         </v-card>
@@ -761,12 +849,12 @@ onUnmounted(() => {
 
 /* Header HUD Styling */
 .estimatr-header {
-  height: 64px;
+  height: 72px;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 24px;
   z-index: 101;
 }
 
@@ -785,6 +873,11 @@ onUnmounted(() => {
   margin: 0;
   font-size: 0.85rem;
   opacity: 0.7;
+}
+
+.chip-spacer {
+  margin: 4px 12px;
+  letter-spacing: 0.5px;
 }
 
 .score-display {
@@ -814,7 +907,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: calc(100% - 64px);
+  height: calc(100% - 72px);
 }
 
 .media-viewport {
@@ -827,7 +920,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 1;
-  padding: 20px;
+  padding: 24px;
 }
 
 .media-frame {
@@ -850,25 +943,18 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
-/* Floating Corner Map CSS Configuration */
+/* Draggable Map Wrapper Base Box */
 .map-wrapper {
   position: absolute;
   bottom: 24px;
   left: 24px;
-  width: 320px;
-  height: 240px;
   z-index: 10;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65);
   background-color: rgb(var(--v-theme-surface));
   border: 1.5px solid rgba(255, 255, 255, 0.15);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.map-wrapper.expanded {
-  width: 550px;
-  height: 400px;
+  box-sizing: border-box;
 }
 
 .map-inner-container {
@@ -885,9 +971,34 @@ onUnmounted(() => {
   height: 100%;
 }
 
+/* Top Right Corner Resizer Handle style */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  background-color: rgba(var(--v-theme-surface), 0.95);
+  border-bottom-left-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ne-resize;
+  z-index: 15;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: -2px 2px 6px rgba(0, 0, 0, 0.35);
+  touch-action: none;
+  transition: background-color 0.2s;
+}
+
+.resize-handle:hover {
+  background-color: rgba(var(--v-theme-primary), 0.95);
+}
+
 .map-floating-controls {
   position: absolute;
-  top: 8px;
+  top: 36px; /* Offset to clear resize handle */
   right: 8px;
   display: flex;
   flex-direction: column;
@@ -947,7 +1058,7 @@ onUnmounted(() => {
   position: relative;
   display: flex;
   width: 100%;
-  height: calc(100% - 64px);
+  height: calc(100% - 72px);
 }
 
 .full-summary-map-container {
@@ -988,18 +1099,18 @@ onUnmounted(() => {
   width: 130px;
   height: 130px;
   border-radius: 50%;
-  border: 4px solid #ff9f0a;
+  border: 4px solid #30d158;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 8px rgba(255, 159, 10, 0.15);
+  box-shadow: 0 0 0 8px rgba(48, 209, 88, 0.15);
 }
 
 .score-num {
   font-size: 2.1rem;
   font-weight: 800;
-  color: #ff9f0a;
+  color: #30d158;
   line-height: 1;
 }
 
@@ -1077,14 +1188,10 @@ onUnmounted(() => {
 
 @media (max-width: 600px) {
   .map-wrapper {
-    width: 240px;
-    height: 180px;
+    width: 280px !important;
+    height: 220px !important;
     bottom: 12px;
     left: 12px;
-  }
-  .map-wrapper.expanded {
-    width: calc(100% - 24px);
-    height: 250px;
   }
   .round-result-card {
     width: calc(100% - 24px);
@@ -1095,7 +1202,10 @@ onUnmounted(() => {
 </style>
 
 <style>
-/* Style for custom DOM marker */
+/*
+  UNSCOPED STYLES
+  Crucial for programmatically generated MapLibre GL Markers
+*/
 .actual-pin-marker {
   width: 52px;
   height: 60px;
@@ -1103,8 +1213,9 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
   pointer-events: none;
+  box-sizing: border-box;
 }
 
 .marker-circle {
@@ -1137,6 +1248,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 
 .pin-ring {
@@ -1168,7 +1280,7 @@ onUnmounted(() => {
   }
 }
 
-/* Summary pins */
+/* Game summary pinpoint stylings */
 .summary-marker {
   width: 28px;
   height: 28px;
@@ -1178,9 +1290,10 @@ onUnmounted(() => {
   justify-content: center;
   font-weight: bold;
   font-size: 0.8rem;
-  color: #ffffff;
+  color: #ffffff !important;
   border: 2px solid #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
 }
 
 .guess-summary {
@@ -1193,5 +1306,6 @@ onUnmounted(() => {
 
 .marker-label {
   line-height: 1;
+  color: #ffffff !important;
 }
 </style>
