@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize } from '@vueuse/core'
 import type { DailyCardResponse } from '@/scripts/types/api/dailyCards.ts'
@@ -13,7 +13,6 @@ const props = defineProps<{
 }>()
 
 const cardStore = useDailyCardStore()
-const route = useRoute()
 const router = useRouter()
 const windowSize = useWindowSize()
 
@@ -23,7 +22,14 @@ const mediaItems = computed(() => cardStore.getPayloadItems(props.card) || [])
 const currentIndex = ref(0)
 const progress = ref(0)
 const isPaused = ref(false)
+const pausedByScroll = ref(false)
 let timerId: any = null
+
+// Precise timer tracking for pausing/resuming
+const elapsedTimeMs = ref(0)
+let currentIntervalStartTime = 0
+
+const videoRef = ref<HTMLVideoElement | null>(null)
 
 const currentItem = computed(() => {
   if (mediaItems.value.length === 0) return null
@@ -51,7 +57,7 @@ const currentImageUrl = computed(() => {
   return mediaItemService.getPhotoThumbnail(
     item.id,
     getThumbnailHeight(windowSize.height.value),
-    false,
+    !item.hasThumbnails,
   )
 })
 
@@ -61,29 +67,40 @@ const nextImageUrl = computed(() => {
   return mediaItemService.getPhotoThumbnail(
     item.id,
     getThumbnailHeight(windowSize.height.value),
-    false,
+    !item.hasThumbnails,
   )
 })
 
 const currentVideoUrl = computed(() => {
   const item = currentItem.value
   if (!item) return ''
-  return mediaItemService.getVideo(item.id, getVideoHeight(windowSize.height.value), false)
+  return mediaItemService.getVideo(
+    item.id,
+    getVideoHeight(windowSize.height.value),
+    !item.hasThumbnails,
+  )
 })
 
 // Slideshow Control
-function startTimer() {
+function startTimer(isResume = false) {
   stopTimer()
   if (isPaused.value || mediaItems.value.length === 0) return
 
-  progress.value = 0
+  if (!isResume) {
+    elapsedTimeMs.value = 0
+    progress.value = 0
+  }
+
   const duration = currentDuration.value
-  const startTime = Date.now()
+  currentIntervalStartTime = Date.now()
 
   timerId = setInterval(() => {
-    const elapsed = Date.now() - startTime
-    progress.value = Math.min((elapsed / duration) * 100, 100)
-    if (elapsed >= duration) {
+    const sessionElapsed = Date.now() - currentIntervalStartTime
+    const totalElapsed = elapsedTimeMs.value + sessionElapsed
+    progress.value = Math.min((totalElapsed / duration) * 100, 100)
+
+    if (totalElapsed >= duration) {
+      elapsedTimeMs.value = 0
       nextSlide()
     }
   }, 30)
@@ -93,6 +110,21 @@ function stopTimer() {
   if (timerId) {
     clearInterval(timerId)
     timerId = null
+  }
+  if (currentIntervalStartTime > 0) {
+    elapsedTimeMs.value += Date.now() - currentIntervalStartTime
+    currentIntervalStartTime = 0
+  }
+}
+
+function togglePause() {
+  isPaused.value = !isPaused.value
+  if (isPaused.value) {
+    stopTimer()
+    videoRef.value?.pause()
+  } else {
+    startTimer(true)
+    videoRef.value?.play().catch(() => {})
   }
 }
 
@@ -131,40 +163,32 @@ function onScroll(event: Event) {
   if (target.scrollTop > 100) {
     if (!isPaused.value) {
       isPaused.value = true
+      pausedByScroll.value = true
       stopTimer()
+      videoRef.value?.pause()
     }
   } else {
-    if (isPaused.value) {
+    if (pausedByScroll.value) {
       isPaused.value = false
-      startTimer()
+      pausedByScroll.value = false
+      startTimer(true)
+      videoRef.value?.play().catch(() => {})
     }
   }
 }
 
-// Intercept grid clicks using route parameters
-const routeMediaId = computed(() => {
-  const param = route.params.mediaId
-  return Array.isArray(param) ? param[0] : param || ''
-})
-
-watch(routeMediaId, (mediaId) => {
-  if (mediaId) {
-    const idx = mediaItems.value.findIndex((item) => item.id === mediaId)
-    if (idx !== -1) {
-      currentIndex.value = idx
-      const container = document.querySelector('.collection-container')
-      if (container) {
-        container.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    }
-    // Restore the base daily card path to continue slideshow flow
-    router.replace(`/daily/${props.card.id}`)
-  }
-})
-
 // State Watchers
 watch(currentIndex, () => {
   startTimer()
+  nextTick(() => {
+    if (videoRef.value) {
+      if (isPaused.value) {
+        videoRef.value.pause()
+      } else {
+        videoRef.value.play().catch(() => {})
+      }
+    }
+  })
 })
 
 watch(
@@ -186,13 +210,7 @@ function handleKeyDown(event: KeyboardEvent) {
     nextSlide()
   } else if (event.key === ' ') {
     event.preventDefault()
-    if (isPaused.value) {
-      isPaused.value = false
-      startTimer()
-    } else {
-      isPaused.value = true
-      stopTimer()
-    }
+    togglePause()
   }
 }
 
@@ -218,32 +236,63 @@ onUnmounted(() => {
     <template v-else>
       <!-- Story Slideshow Section -->
       <div class="story-section">
-        <!-- Progress Bars & Header -->
+        <!-- Controls & Indicators Up Top -->
         <div class="story-header">
-          <div class="story-progress-container">
-            <div v-for="(item, index) in mediaItems" :key="item.id" class="story-progress-bar-bg">
-              <div
-                class="story-progress-bar-fill"
-                :style="{
-                  width:
-                    index < currentIndex ? '100%' : index === currentIndex ? `${progress}%` : '0%',
-                }"
-              ></div>
+          <div class="story-top-controls">
+            <!-- Left Column: Close Button on top left -->
+            <div class="control-left">
+              <v-btn
+                icon="mdi-close"
+                variant="text"
+                color="white"
+                size="small"
+                class="close-btn"
+                @click="goBack"
+              />
+              <div class="story-title-bar">
+                <div class="story-card-info">
+                  <h3>{{ card.title }}</h3>
+                  <p v-if="card.subtitle" class="subtitle">{{ card.subtitle }}</p>
+                  <!--                  <p class="subtitle">What's up gang, how you doing?</p>-->
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div class="story-title-bar">
-            <div class="story-card-info">
-              <h3>{{ card.title }}</h3>
-              <p v-if="card.subtitle" class="subtitle">{{ card.subtitle }}</p>
+            <!-- Center Column: Centered Play/Pause Button and compact progress bars -->
+            <div class="control-center">
+              <div class="story-progress-wrapper">
+                <v-btn
+                  :icon="isPaused ? 'mdi-play' : 'mdi-pause'"
+                  variant="text"
+                  color="white"
+                  size="small"
+                  class="pause-btn"
+                  @click="togglePause"
+                />
+                <div class="story-progress-container">
+                  <div
+                    v-for="(item, index) in mediaItems"
+                    :key="item.id"
+                    class="story-progress-bar-bg"
+                  >
+                    <div
+                      class="story-progress-bar-fill"
+                      :style="{
+                        width:
+                          index < currentIndex
+                            ? '100%'
+                            : index === currentIndex
+                              ? `${progress}%`
+                              : '0%',
+                      }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <v-btn
-              icon="mdi-close"
-              variant="text"
-              color="white"
-              class="close-btn"
-              @click="goBack"
-            />
+
+            <!-- Right Column: Empty Spacer to maintain center alignment -->
+            <div class="control-right"></div>
           </div>
         </div>
 
@@ -259,12 +308,13 @@ onUnmounted(() => {
           ></div>
 
           <!-- Touch/Click Zones -->
-          <div class="click-overlay-left" @click="prevSlide" title="Previous Slide"></div>
-          <div class="click-overlay-right" @click="nextSlide" title="Next Slide"></div>
+          <div class="click-overlay-left" @click="prevSlide"></div>
+          <div class="click-overlay-right" @click="nextSlide"></div>
 
           <div class="media-wrapper">
             <video
-              @click="e => e.target.paused ? e.target.play() : e.target.pause()"
+              ref="videoRef"
+              @click="togglePause"
               v-if="currentItem.isVideo"
               :src="currentVideoUrl"
               autoplay
@@ -302,6 +352,7 @@ onUnmounted(() => {
         </div>
 
         <simple-timeline
+          class="daily-timeline"
           hide-scroll-bar
           :timeline-items="mediaItems"
           :view-link="`/daily/${card.id}/view/`"
@@ -360,14 +411,53 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   z-index: 20;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.95) 0%,
+    rgba(0, 0, 0, 0.5) 70%,
+    rgba(0, 0, 0, 0) 100%
+  );
   padding-top: 15px;
+  padding-bottom: 25px;
+}
+
+.story-top-controls {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px;
+  align-items: center;
+  padding: 0 16px;
+  width: 100%;
+}
+
+.control-left {
+  display: flex;
+  justify-content: flex-start;
+  width: 300px;
+}
+
+.control-center {
+  display: flex;
+  justify-content: center;
+}
+
+.control-right {
+  display: flex;
+  justify-content: flex-end;
+  width: 80px;
+}
+
+.story-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 720px;
 }
 
 .story-progress-container {
   display: flex;
   gap: 5px;
-  padding: 0 16px 10px 16px;
+  flex-grow: 1;
 }
 
 .story-progress-bar-bg {
@@ -385,11 +475,23 @@ onUnmounted(() => {
   transition: width 0.03s linear;
 }
 
+.close-btn {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.pause-btn {
+  background-color: rgba(0, 0, 0, 0.4);
+  min-width: unset;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+}
+
 .story-title-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  padding: 0 16px 10px 16px;
+  margin-left: 15px;
 }
 
 .story-card-info h3 {
@@ -404,10 +506,6 @@ onUnmounted(() => {
   font-size: 0.85rem;
   opacity: 0.8;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-}
-
-.close-btn {
-  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .story-media-container {
@@ -448,7 +546,7 @@ onUnmounted(() => {
   position: absolute;
   top: 0;
   right: 0;
-  width: 40%;
+  width: 60%;
   height: 100%;
   z-index: 15;
   cursor: pointer;
@@ -509,9 +607,8 @@ onUnmounted(() => {
 }
 
 .grid-section {
-  padding: 30px 20px 80px 20px;
+  padding: 30px 20px 0;
   background-color: rgb(var(--v-theme-background));
-  min-height: 100vh;
 }
 
 .grid-header {
@@ -536,5 +633,9 @@ onUnmounted(() => {
   font-size: 0.9rem;
   opacity: 0.5;
   color: rgb(var(--v-theme-on-background));
+}
+
+.daily-timeline {
+  height: 75vh;
 }
 </style>
