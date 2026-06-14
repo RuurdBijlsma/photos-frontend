@@ -209,7 +209,7 @@ function startResize(e: MouseEvent) {
 function handleResize(e: MouseEvent) {
   if (!isResizing) return
   const dx = e.clientX - startX
-  const dy = startY - e.clientY // Dragging upwards increases height
+  const dy = startY - e.clientY
 
   mapWidth.value = Math.max(minWidth, Math.min(maxWidth, startWidth + dx))
   mapHeight.value = Math.max(minHeight, Math.min(maxHeight, startHeight + dy))
@@ -265,9 +265,9 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLon / 2) *
-    Math.sin(dLon / 2)
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
@@ -286,6 +286,41 @@ function formatDistance(distKm: number): string {
     return `${Math.round(distKm * 1000)} m`
   }
   return `${distKm.toFixed(1)} km`
+}
+
+// Map Fitting bounds safety calculator (prevents crashes from extreme padding / small canvas)
+function safeFitBounds(bounds: maplibregl.LngLatBounds, isFinishedState = false) {
+  if (!mapInstance.value) return
+  const map = mapInstance.value
+  const canvas = map.getCanvas()
+  if (!canvas) return
+
+  const width = canvas.clientWidth
+  const height = canvas.clientHeight
+
+  if (isFinishedState) {
+    // Finished state: Full-screen canvas. Use horizontal offset to avoid left-panel overlap
+    const leftPad = width > 800 ? 480 : Math.round(width * 0.1)
+    const rightPad = Math.round(width * 0.1)
+    const topPad = Math.round(height * 0.12)
+    const bottomPad = Math.round(height * 0.12)
+
+    map.fitBounds(bounds, {
+      padding: { top: topPad, bottom: bottomPad, left: leftPad, right: rightPad },
+      maxZoom: 10,
+      duration: 1200,
+    })
+  } else {
+    // In-game state: Compact map container size. Keep padding safe and proportional
+    const hPad = Math.min(50, Math.round(width * 0.12))
+    const vPad = Math.min(50, Math.round(height * 0.12))
+
+    map.fitBounds(bounds, {
+      padding: { top: vPad, bottom: vPad, left: hPad, right: hPad },
+      maxZoom: 14,
+      duration: 1000,
+    })
+  }
 }
 
 // Map Loading & Drawing Trigger handlers
@@ -356,9 +391,11 @@ function updateActualMarker(lat: number, lng: number) {
     el.appendChild(circle)
     el.appendChild(triangle)
 
+    // offset [0, -12] lifts the pin up so guess marker underneath is clearly visible
     actualMarker = new maplibregl.Marker({
       element: el,
       anchor: 'bottom',
+      offset: [0, -25],
     })
       .setLngLat([lng, lat])
       .addTo(mapInstance.value)
@@ -426,13 +463,15 @@ function clearMapDrawings() {
 
   if (mapInstance.value) {
     const map = mapInstance.value
-    if (map.getLayer('route')) map.removeLayer('route')
-    if (map.getSource('route')) map.removeSource('route')
+    if (map.style) {
+      if (map.getLayer('route')) map.removeLayer('route')
+      if (map.getSource('route')) map.removeSource('route')
 
-    summaryLineLayers.forEach((lineId) => {
-      if (map.getLayer(lineId)) map.removeLayer(lineId)
-      if (map.getSource(lineId)) map.removeSource(lineId)
-    })
+      summaryLineLayers.forEach((lineId) => {
+        if (map.getLayer(lineId)) map.removeLayer(lineId)
+        if (map.getSource(lineId)) map.removeSource(lineId)
+      })
+    }
     summaryLineLayers.length = 0
   }
 }
@@ -522,12 +561,7 @@ function drawAllOnMap() {
 
     if (validGuesses > 0) {
       nextTick(() => {
-        // Obscured markers solved by allocating large left padding to accommodate summary overlay
-        map.fitBounds(bounds, {
-          padding: { top: 100, bottom: 100, left: 520, right: 100 },
-          maxZoom: 12,
-          duration: 1200,
-        })
+        safeFitBounds(bounds, true)
       })
     }
   }
@@ -602,9 +636,19 @@ watch(
 )
 
 onUnmounted(() => {
-  clearMapDrawings()
+  // Try...catch wrapping ensures unmount hooks never freeze virtual routers
+  try {
+    clearMapDrawings()
+  } catch (err) {
+    console.error('Error clearing drawings on unmount:', err)
+  }
+
   if (mapInstance.value) {
-    mapInstance.value.remove()
+    try {
+      mapInstance.value.remove()
+    } catch (err) {
+      console.error('Error removing map instance:', err)
+    }
     mapInstance.value = null
   }
 })
@@ -653,10 +697,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Corner Map Placement Overlay -->
-      <div
-        class="map-wrapper"
-        :style="{ width: `${mapWidth}px`, height: `${mapHeight}px` }"
-      >
+      <div class="map-wrapper" :style="{ width: `${mapWidth}px`, height: `${mapHeight}px` }">
         <div class="map-inner-container">
           <base-map
             class="base-map"
@@ -705,9 +746,7 @@ onUnmounted(() => {
             <template v-else-if="gameState.status === 'guessed'">
               <v-btn block color="success" rounded="lg" height="44" @click="nextRound">
                 {{
-                  gameState.currentRoundIndex + 1 === rounds.length
-                    ? 'View Results'
-                    : 'Next Round'
+                  gameState.currentRoundIndex + 1 === rounds.length ? 'View Results' : 'Next Round'
                 }}
               </v-btn>
             </template>
@@ -722,8 +761,8 @@ onUnmounted(() => {
             <div class="result-metric">
               <span class="metric-label">Distance</span>
               <span class="metric-value text-amber-accent-3">{{
-                  formatDistance(currentRoundGuess.distanceKm)
-                }}</span>
+                formatDistance(currentRoundGuess.distanceKm)
+              }}</span>
             </div>
             <v-divider vertical class="mx-4 border-opacity-50" />
             <div class="result-metric">
@@ -771,7 +810,9 @@ onUnmounted(() => {
           <div class="text-center mb-6">
             <v-icon size="48" color="success" class="mb-2">mdi-check-circle-outline</v-icon>
             <h2>Challenge Completed!</h2>
-            <p class="text-subtitle-2 text-disabled">Great work. Your daily score has been registered.</p>
+            <p class="text-subtitle-2 text-disabled">
+              Great work. Your daily score has been registered.
+            </p>
           </div>
 
           <!-- Total Score Ring representation -->
@@ -785,13 +826,16 @@ onUnmounted(() => {
           <!-- Individual Rounds Breakdowns lists -->
           <div class="rounds-summary-list mb-6">
             <div
-              v-for="(guess, index) in gameState.guesses"
+              v-for="(guess, index) in gameState.guesses.filter((g) => g)"
               :key="index"
               class="round-row pa-3 mb-2"
-              v-if="guess"
             >
               <div class="round-number">
-                <v-avatar color="primary" size="26" class="text-subtitle-2 font-weight-bold text-white">
+                <v-avatar
+                  color="primary"
+                  size="26"
+                  class="text-subtitle-2 font-weight-bold text-white"
+                >
                   {{ index + 1 }}
                 </v-avatar>
               </div>
@@ -802,7 +846,7 @@ onUnmounted(() => {
                   :src="
                     mediaItemService.getPhotoThumbnail(
                       rounds[index].mediaItem.id,
-                      120,
+                      144,
                       !rounds[index].mediaItem.hasThumbnails,
                     )
                   "
@@ -998,7 +1042,7 @@ onUnmounted(() => {
 
 .map-floating-controls {
   position: absolute;
-  top: 36px; /* Offset to clear resize handle */
+  top: 36px;
   right: 8px;
   display: flex;
   flex-direction: column;
@@ -1203,8 +1247,7 @@ onUnmounted(() => {
 
 <style>
 /*
-  UNSCOPED STYLES
-  Crucial for programmatically generated MapLibre GL Markers
+  For generated MapLibre GL Markers
 */
 .actual-pin-marker {
   width: 52px;

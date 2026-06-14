@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { useDailyCardStore } from '@/scripts/stores/timeline/dailyCardStore.ts'
-import { computed, watch } from 'vue'
+import { computed, defineAsyncComponent, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import DailyCollectionViewer from '@/vues/components/timeline/daily-cards/DailyCollectionViewer.vue'
-import LocationEstimatr from '@/vues/components/timeline/daily-cards/LocationEstimatr.vue'
+
+const LocationEstimatr = defineAsyncComponent(
+  () => import('@/vues/components/timeline/daily-cards/LocationEstimatr.vue'),
+)
 
 const route = useRoute()
 const router = useRouter()
@@ -43,7 +46,6 @@ watch(
 <template>
   <div class="collection-viewer" v-if="card">
     <daily-collection-viewer
-      v-slot:default
       v-if="card.cardType === 'on_this_day' || card.cardType === 'cluster'"
       :card="card"
     />
