@@ -35,6 +35,7 @@ onMounted(() => cardStore.fetchDailyCards())
   display: flex;
   gap: 20px;
   padding: 15px;
+  padding-bottom: 0;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;

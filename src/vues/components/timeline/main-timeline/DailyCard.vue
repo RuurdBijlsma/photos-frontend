@@ -13,46 +13,50 @@ function isGame(cardType: string) {
 </script>
 
 <template>
-  <div class="daily-card" v-ripple>
-    <thumbnail-img
-      v-if="card.thumbnailMediaItemId"
-      :media-item-id="card.thumbnailMediaItemId"
-      class="card-thumb"
-      cover
-    />
-    <div class="card-thumb fake-thumb" v-else>
-      <v-icon icon="mdi-image-area" color="primary" size="150"></v-icon>
-    </div>
-    <div class="card-content">
-      <v-spacer />
-      <div class="card-bottom">
-        <div class="card-info">
-          <h2>{{ card.title }}</h2>
-          <p>{{ card.subtitle }}</p>
-        </div>
-        <div class="card-icon-container">
-          <v-icon
-            size="40"
-            icon="mdi-controller"
-            color="on-surface-variant"
-            v-if="isGame(card.cardType)"
-          />
+  <v-theme-provider theme="dark" with-background class="theme-prov">
+    <div class="daily-card" v-ripple>
+      <thumbnail-img
+        v-if="card.thumbnailMediaItemId"
+        :media-item-id="card.thumbnailMediaItemId"
+        class="card-thumb"
+        cover
+      />
+      <div class="card-thumb fake-thumb" v-else>
+        <v-icon icon="mdi-image-area" color="primary" size="150"></v-icon>
+      </div>
+      <div class="card-content">
+        <v-spacer />
+        <div class="card-bottom">
+          <div class="card-info">
+            <h2>{{ card.title }}</h2>
+            <p>{{ card.subtitle }}</p>
+          </div>
+          <div class="card-icon-container">
+            <v-icon
+              size="40"
+              icon="mdi-controller"
+              color="on-surface-variant"
+              v-if="isGame(card.cardType)"
+            />
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </v-theme-provider>
 </template>
 
 <style scoped>
+.theme-prov {
+  background-color: transparent;
+}
+
 .daily-card {
-  background-color: rgb(var(--v-theme-surface-variant));
   height: 100%;
   width: calc(v-bind(width) * 1px);
   border-radius: 40px;
   flex-shrink: 0;
   flex-grow: 0;
   position: relative;
-  box-shadow: 0 5px 15px rgba(var(--v-theme-scrim), 0.2);
   cursor: pointer;
   transition: filter 0.2s;
 }
