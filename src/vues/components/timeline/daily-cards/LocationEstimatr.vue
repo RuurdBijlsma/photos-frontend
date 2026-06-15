@@ -97,8 +97,8 @@ let startHeight = 0
 
 // Stable map options to prevent viewport resets when switching style layers
 const stableMapOptions = {
-  center: { lon: 0, lat: 0 },
-  zoom: 1.5,
+  center: { lon: 5, lat: 20 },
+  zoom: 0,
   attributionControl: {
     compact: true,
   },
@@ -609,8 +609,8 @@ function nextRound() {
     clearMapDrawings()
 
     if (mapInstance.value) {
-      mapInstance.value.setZoom(1.5)
-      mapInstance.value.setCenter([0, 0])
+      mapInstance.value.setZoom(0)
+      mapInstance.value.setCenter([5, 20])
     }
   } else {
     gameState.value = {
@@ -636,7 +636,6 @@ watch(
 )
 
 onUnmounted(() => {
-  // Try...catch wrapping ensures unmount hooks never freeze virtual routers
   try {
     clearMapDrawings()
   } catch (err) {
@@ -657,17 +656,17 @@ onUnmounted(() => {
 <template>
   <div class="estimatr-container" :class="{ 'finished-mode': gameState.status === 'finished' }">
     <!-- Top HUD Bar -->
-    <div class="estimatr-header py-2">
+    <div class="estimatr-header">
       <div class="header-left">
-        <v-btn icon="mdi-close" variant="text" color="white" size="small" @click="goBack" />
-        <div class="header-titles ml-4">
+        <v-btn icon="mdi-close" variant="text" color="on-surface" size="small" @click="goBack" />
+        <div class="header-titles">
           <h3>{{ card.title }}</h3>
           <p class="subtitle" v-if="card.subtitle">{{ card.subtitle }}</p>
         </div>
       </div>
 
-      <div class="header-center py-2" v-if="gameState.status !== 'finished'">
-        <v-chip color="primary" variant="flat" class="font-weight-bold px-6 py-4 chip-spacer">
+      <div class="header-center" v-if="gameState.status !== 'finished'">
+        <v-chip color="primary" variant="flat" class="round-chip">
           Round {{ gameState.currentRoundIndex + 1 }} / {{ rounds.length }}
         </v-chip>
       </div>
@@ -714,16 +713,15 @@ onUnmounted(() => {
             @touchstart="startResizeTouch"
             title="Drag to resize map"
           >
-            <v-icon size="14" color="white">mdi-resize-bottom-right</v-icon>
+            <v-icon size="14" color="on-surface">mdi-resize-bottom-right</v-icon>
           </div>
 
           <!-- Floating Map Style controls -->
           <div class="map-floating-controls">
             <v-btn
-              size="x-small"
-              color="surface"
+              color="primary"
+              density="compact"
               elevation="3"
-              class="ma-1"
               :icon="mapStyle === 'SATELLITE' ? 'mdi-map' : 'mdi-earth'"
               @click="toggleMapStyle"
             />
@@ -760,21 +758,21 @@ onUnmounted(() => {
           <div class="result-box">
             <div class="result-metric">
               <span class="metric-label">Distance</span>
-              <span class="metric-value text-amber-accent-3">{{
+              <span class="metric-value warning-color">{{
                 formatDistance(currentRoundGuess.distanceKm)
               }}</span>
             </div>
-            <v-divider vertical class="mx-4 border-opacity-50" />
+            <v-divider vertical class="result-divider" />
             <div class="result-metric">
               <span class="metric-label">Score</span>
-              <span class="metric-value text-success">+{{ currentRoundGuess.score }}</span>
+              <span class="metric-value success-color">+{{ currentRoundGuess.score }}</span>
             </div>
           </div>
           <v-progress-linear
             color="success"
             height="6"
             rounded
-            class="mt-3"
+            class="result-progress"
             :model-value="(currentRoundGuess.score / 5000) * 100"
           />
         </div>
@@ -797,7 +795,6 @@ onUnmounted(() => {
             size="x-small"
             color="surface"
             elevation="3"
-            class="ma-1"
             :icon="mapStyle === 'SATELLITE' ? 'mdi-map' : 'mdi-earth'"
             @click="toggleMapStyle"
           />
@@ -806,40 +803,42 @@ onUnmounted(() => {
 
       <!-- Floating summary statistics panel on left hand side -->
       <div class="summary-details-panel">
-        <v-card class="summary-details-card pa-6" elevation="10" rounded="xl" width="100%">
-          <div class="text-center mb-6">
-            <v-icon size="48" color="success" class="mb-2">mdi-check-circle-outline</v-icon>
+        <v-card class="summary-details-card" flat border>
+          <div class="summary-card-header">
+            <v-icon size="48" color="success" class="success-icon">mdi-check-circle-outline</v-icon>
             <h2>Challenge Completed!</h2>
-            <p class="text-subtitle-2 text-disabled">
-              Great work. Your daily score has been registered.
-            </p>
+            <p class="summary-desc">Come back tomorrow for another game.</p>
           </div>
 
           <!-- Total Score Ring representation -->
-          <div class="score-circle-container mb-6">
+          <v-progress-circular
+            class="score-circle-container"
+            size="150"
+            width="7"
+            :model-value="(totalScore / (rounds.length * 5000)) * 100"
+            color="success"
+          >
             <div class="score-ring">
               <span class="score-num">{{ totalScore }}</span>
-              <span class="score-label">pts total</span>
+              <span class="score-label">Out of {{ (rounds.length * 5000).toLocaleString() }}</span>
             </div>
-          </div>
+          </v-progress-circular>
 
           <!-- Individual Rounds Breakdowns lists -->
-          <div class="rounds-summary-list mb-6">
-            <div
+          <div class="rounds-summary-list">
+            <a
               v-for="(guess, index) in gameState.guesses.filter((g) => g)"
               :key="index"
-              class="round-row pa-3 mb-2"
+              class="round-row"
+              :href="`/view/${rounds[index].mediaItem.id}`"
+              target="_blank"
             >
               <div class="round-number">
-                <v-avatar
-                  color="primary"
-                  size="26"
-                  class="text-subtitle-2 font-weight-bold text-white"
-                >
+                <v-avatar color="primary" size="26" class="round-avatar">
                   {{ index + 1 }}
                 </v-avatar>
               </div>
-              <div class="round-thumbnail-wrapper mx-3">
+              <div class="round-thumbnail-wrapper">
                 <img
                   v-if="rounds[index]"
                   class="round-thumb"
@@ -852,22 +851,20 @@ onUnmounted(() => {
                   "
                 />
               </div>
-              <div class="round-data flex-grow-1">
-                <div class="text-caption text-disabled">Round {{ index + 1 }}</div>
-                <div class="text-body-2 font-weight-bold">
-                  {{ formatDistance(guess.distanceKm) }} away
+              <template v-if="guess">
+                <div class="round-data">
+                  <div class="round-caption">Round {{ index + 1 }}</div>
+                  <div class="round-distance">{{ formatDistance(guess.distanceKm) }} away</div>
                 </div>
-              </div>
-              <div class="round-pts text-success font-weight-bold text-body-1">
-                +{{ guess.score }}
-              </div>
-            </div>
+                <div class="round-pts success-color">+{{ guess.score }}</div>
+              </template>
+            </a>
           </div>
 
           <!-- Bottom Action Row -->
           <div class="summary-actions">
-            <v-btn block color="primary" size="large" rounded="lg" class="mb-2" @click="goBack">
-              Complete & Return
+            <v-btn block color="primary" variant="tonal" size="large" rounded="lg" @click="goBack">
+              Return Home
             </v-btn>
           </div>
         </v-card>
@@ -883,8 +880,8 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #0c0c0e;
-  color: #ffffff;
+  background-color: rgb(var(--v-theme-background));
+  color: rgb(var(--v-theme-on-background));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -894,7 +891,9 @@ onUnmounted(() => {
 /* Header HUD Styling */
 .estimatr-header {
   height: 72px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
+  background-color: rgba(var(--v-theme-surface-container-low), 0.85);
+  backdrop-filter: saturate(150%) blur(12px);
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -907,21 +906,31 @@ onUnmounted(() => {
   align-items: center;
 }
 
+.header-titles {
+  margin-left: 16px;
+}
+
 .header-titles h3 {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 600;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .header-titles .subtitle {
   margin: 0;
   font-size: 0.85rem;
-  opacity: 0.7;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 
-.chip-spacer {
-  margin: 4px 12px;
-  letter-spacing: 0.5px;
+.header-center {
+  display: flex;
+  align-items: center;
+}
+
+.round-chip {
+  font-weight: 700;
+  padding: 16px 20px !important;
 }
 
 .score-display {
@@ -933,14 +942,14 @@ onUnmounted(() => {
 .score-display .label {
   font-size: 0.75rem;
   text-transform: uppercase;
-  opacity: 0.6;
+  color: rgb(var(--v-theme-on-surface-variant));
   letter-spacing: 0.5px;
 }
 
 .score-display .value {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #ff9f0a;
+  color: rgb(var(--v-theme-primary));
 }
 
 /* Playing Mode Screen Framework */
@@ -970,15 +979,15 @@ onUnmounted(() => {
 .media-frame {
   width: 100%;
   height: 100%;
-  max-width: 1000px;
   max-height: calc(100% - 40px);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
+  border-radius: 24px; /* very rounded corners */
   overflow: hidden;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-  background-color: #000;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+  background-color: rgb(var(--v-theme-surface-container-low));
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .media-content {
@@ -993,11 +1002,11 @@ onUnmounted(() => {
   bottom: 24px;
   left: 24px;
   z-index: 10;
-  border-radius: 20px;
+  border-radius: 24px; /* very rounded corners */
   overflow: hidden;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65);
-  background-color: rgb(var(--v-theme-surface));
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  background-color: rgb(var(--v-theme-surface-container-high));
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   box-sizing: border-box;
 }
 
@@ -1022,22 +1031,26 @@ onUnmounted(() => {
   right: 0;
   width: 28px;
   height: 28px;
-  background-color: rgba(var(--v-theme-surface), 0.95);
+  background-color: rgb(var(--v-theme-surface-container-high));
   border-bottom-left-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: ne-resize;
   z-index: 15;
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: -2px 2px 6px rgba(0, 0, 0, 0.35);
+  border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  box-shadow: -2px 2px 6px rgba(0, 0, 0, 0.1);
   touch-action: none;
   transition: background-color 0.2s;
 }
 
 .resize-handle:hover {
-  background-color: rgba(var(--v-theme-primary), 0.95);
+  background-color: rgb(var(--v-theme-primary));
+}
+
+.resize-handle:hover .v-icon {
+  color: rgb(var(--v-theme-on-primary)) !important;
 }
 
 .map-floating-controls {
@@ -1047,12 +1060,13 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   z-index: 5;
+  gap: 8px;
 }
 
 .map-bottom-actions {
-  padding: 10px 14px;
-  background-color: rgba(var(--v-theme-surface), 0.95);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 16px;
+  background-color: rgb(var(--v-theme-surface-container-high));
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 /* Floating Banner showing round accuracy statistics */
@@ -1061,13 +1075,13 @@ onUnmounted(() => {
   bottom: 24px;
   right: 24px;
   width: 340px;
-  background-color: rgba(var(--v-theme-surface), 0.95);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
+  background-color: rgba(var(--v-theme-surface-container-high), 0.85);
+  backdrop-filter: saturate(150%) blur(12px);
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 24px; /* very rounded corners */
   padding: 16px;
   z-index: 10;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 .result-box {
@@ -1087,13 +1101,31 @@ onUnmounted(() => {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  opacity: 0.6;
+  color: rgb(var(--v-theme-on-surface-variant));
+  opacity: 0.8;
   margin-bottom: 2px;
 }
 
 .metric-value {
   font-size: 1.25rem;
   font-weight: 700;
+}
+
+.warning-color {
+  color: rgb(var(--v-theme-warning)) !important;
+}
+
+.success-color {
+  color: rgb(var(--v-theme-success)) !important;
+}
+
+.result-divider {
+  margin: 0 16px;
+  opacity: 0.3;
+}
+
+.result-progress {
+  margin-top: 12px;
 }
 
 /* Game Completed Summary mode Layout CSS */
@@ -1119,68 +1151,103 @@ onUnmounted(() => {
   top: 24px;
   left: 24px;
   bottom: 24px;
-  width: 440px;
   z-index: 2;
   display: flex;
 }
 
 .summary-details-card {
-  background-color: rgba(var(--v-theme-surface), 0.95) !important;
-  backdrop-filter: blur(12px);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(var(--v-theme-surface-container-high), 0.85) !important;
+  backdrop-filter: saturate(150%) blur(12px);
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+  border-radius: 24px !important; /* very rounded corners */
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   max-height: 100%;
+  padding: 24px;
+  width: 440px;
+}
+
+.summary-card-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.success-icon {
+  margin-bottom: 8px;
+}
+
+.summary-card-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 8px;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.summary-desc {
+  font-size: 0.875rem;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 
 .score-circle-container {
   display: flex;
   justify-content: center;
+  margin: 30px auto;
+  margin-top: 0;
 }
 
 .score-ring {
   width: 130px;
   height: 130px;
   border-radius: 50%;
-  border: 4px solid #30d158;
+  border: 4px solid rgb(var(--v-theme-success));
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 8px rgba(48, 209, 88, 0.15);
 }
 
 .score-num {
   font-size: 2.1rem;
   font-weight: 800;
-  color: #30d158;
+  color: rgb(var(--v-theme-success));
   line-height: 1;
 }
 
 .score-label {
   font-size: 0.75rem;
-  text-transform: uppercase;
   letter-spacing: 0.5px;
-  opacity: 0.6;
+  color: rgb(var(--v-theme-on-surface-variant));
+  opacity: 0.8;
 }
 
 .rounds-summary-list {
   flex-grow: 1;
+  margin-bottom: 24px;
 }
 
 .round-row {
   display: flex;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: transform 0.2s;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  border-radius: 16px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  padding: 12px;
+  margin-bottom: 8px;
+  transition:
+    transform 0.2s,
+    background-color 0.2s;
+  text-decoration: none;
 }
 
 .round-row:hover {
   transform: translateX(4px);
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
+}
+
+.round-avatar {
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .round-thumbnail-wrapper {
@@ -1188,16 +1255,37 @@ onUnmounted(() => {
   height: 44px;
   border-radius: 8px;
   overflow: hidden;
-  background-color: #000;
+  background-color: rgb(var(--v-theme-surface-container-low));
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0 12px;
 }
 
 .round-thumb {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.round-data {
+  flex-grow: 1;
+}
+
+.round-caption {
+  font-size: 0.75rem;
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+
+.round-distance {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.round-pts {
+  font-weight: 700;
+  font-size: 1rem;
 }
 
 /* Animations for result cards transitions */
@@ -1256,7 +1344,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
   pointer-events: none;
   box-sizing: border-box;
 }
@@ -1265,13 +1353,13 @@ onUnmounted(() => {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: 2px solid #30d158;
-  background-color: rgba(20, 20, 24, 0.65);
+  border: 2px solid rgb(var(--v-theme-success));
+  background-color: rgba(var(--v-theme-surface), 0.65);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   box-sizing: border-box;
-  box-shadow: 0 0 0 4px rgba(48, 209, 88, 0.25);
+  box-shadow: 0 0 0 4px rgba(var(--v-theme-success), 0.25);
 }
 
 .marker-triangle {
@@ -1279,7 +1367,7 @@ onUnmounted(() => {
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 8px solid #30d158;
+  border-top: 8px solid rgb(var(--v-theme-success));
   margin-top: -1px;
 }
 
@@ -1299,8 +1387,8 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 2px solid #ff9f0a;
-  background-color: rgba(255, 159, 10, 0.25);
+  border: 2px solid orange;
+  background-color: rgb(255 144 0 / 0.37);
   animation: markerPulse 1.5s infinite ease-in-out;
 }
 
@@ -1308,8 +1396,8 @@ onUnmounted(() => {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: #ff9f0a;
-  border: 1px solid #ffffff;
+  background-color: #ffe7b9;
+  border: 1px solid #ff6b02;
 }
 
 @keyframes markerPulse {
@@ -1335,16 +1423,16 @@ onUnmounted(() => {
   font-size: 0.8rem;
   color: #ffffff !important;
   border: 2px solid #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   box-sizing: border-box;
 }
 
 .guess-summary {
-  background-color: #ff9f0a;
+  background-color: #c88202;
 }
 
 .actual-summary {
-  background-color: #30d158;
+  background-color: green;
 }
 
 .marker-label {

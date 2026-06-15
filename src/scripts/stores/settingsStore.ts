@@ -4,7 +4,7 @@ import type { ThemeType, ThemeVariant } from '@/scripts/constants.ts'
 
 export const USE_IMAGE_GLOW = false
 export const DARK_PHOTO_VIEWER = true
-export const LIGHT_PHOTO_VIEWER_MAP = false
+export const LIGHT_PHOTO_VIEWER_MAP = true
 export const USE_BACKDROP_BLUR = true
 export const TIMELINE_ROW_HEIGHT = 320
 export const TIMELINE_USE_DAY_LABELS = false
