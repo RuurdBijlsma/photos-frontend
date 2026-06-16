@@ -40,5 +40,6 @@ defineProps<{
   display: flex;
   gap: var(--item-gap);
   overflow: hidden;
+  contain: paint;
 }
 </style>

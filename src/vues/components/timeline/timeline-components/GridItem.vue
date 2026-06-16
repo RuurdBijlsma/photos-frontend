@@ -145,6 +145,8 @@ function selectItem(e: PointerEvent) {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+  contain: strict;
+  will-change: transform;
 }
 
 .virtual-scroll-item.selected {
@@ -272,10 +274,9 @@ function selectItem(e: PointerEvent) {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   padding: 2px 6px;
   border-radius: 4px;
-  backdrop-filter: blur(4px);
 }
 
 .video-info span {
