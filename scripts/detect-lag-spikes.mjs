@@ -234,7 +234,7 @@ async function main() {
             return
           }
 
-          const scrollStep = 200 // pixels per tick
+          const scrollStep = 150 // pixels per tick
           const scrollInterval = 16 // ~60fps tick rate
           const totalTicks = Math.floor(scrollDuration / scrollInterval)
           let tick = 0

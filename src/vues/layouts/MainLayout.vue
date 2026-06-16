@@ -4,14 +4,11 @@ import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import NavDrawer from '@/vues/components/layout/NavDrawer.vue'
 import AppBar from '@/vues/components/layout/AppBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
-import { computed } from 'vue'
 
 // Instantiate stores
 const backgroundStore = useBackgroundStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
-
-const isMonochrome = computed(() => settings.customThemeVariant === 'Monochrome')
 
 // Initialize the stores.
 backgroundStore.initialize()
@@ -20,16 +17,15 @@ backgroundStore.initialize()
 <template>
   <div class="blurred-background">
     <div
-      v-if="settings.useImageBackground"
-      class="blur-filter"
-      :class="{ 'monochrome-filter': isMonochrome }"
-    ></div>
-    <div
       class="background-image"
       :style="{
         backgroundImage: settings.useImageBackground ? `url(${backgroundStore.backgroundUrl})` : '',
+        filter: settings.useImageBackground
+          ? 'saturate(150%) brightness(70%) blur(25px) contrast(100%)'
+          : '',
       }"
     ></div>
+    <div v-if="settings.useImageBackground" class="gradient-overlay"></div>
   </div>
 
   <v-layout>
@@ -68,18 +64,16 @@ backgroundStore.initialize()
   background-color: rgb(var(--v-theme-surface-container-high));
 }
 
-.blur-filter {
+.gradient-overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
   background-image: linear-gradient(
     180deg,
     rgba(var(--v-theme-background), 0.95) 0%,
     rgba(var(--v-theme-background), 0.4) 100%
   );
-  backdrop-filter: saturate(150%) brightness(70%) blur(25px) contrast(100%);
   z-index: 1;
-}
-
-.blur-filter.monochrome-filter {
-  backdrop-filter: saturate(0%) brightness(100%) blur(25px) contrast(100%);
 }
 
 .layout-body {

@@ -90,10 +90,9 @@ img {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   padding: 2px 6px;
   border-radius: 4px;
-  backdrop-filter: blur(4px);
 }
 
 .video-info span {
