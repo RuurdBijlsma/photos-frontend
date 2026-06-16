@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import type { DailyCardResponse } from '@/scripts/types/api/dailyCards.ts'
+import { useDailyCardStore } from '@/scripts/stores/timeline/dailyCardStore.ts'
+
+const cardStore = useDailyCardStore()
 
 defineProps<{
   card: DailyCardResponse
@@ -34,7 +37,7 @@ function isGame(cardType: string) {
           <div class="card-icon-container">
             <v-icon
               size="40"
-              icon="mdi-controller"
+              :icon="cardStore.completedCards.includes(card.id) ? `mdi-check` : `mdi-controller`"
               color="on-surface-variant"
               v-if="isGame(card.cardType)"
             />

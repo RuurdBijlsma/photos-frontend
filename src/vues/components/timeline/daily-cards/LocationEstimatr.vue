@@ -8,6 +8,7 @@ import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import BaseMap from '@/vues/components/map/BaseMap.vue'
 import type { StyleName } from '@/vues/components/map/BaseMap.vue'
 import maplibregl from 'maplibre-gl'
+import { useDailyCardStore } from '@/scripts/stores/timeline/dailyCardStore.ts'
 
 const props = defineProps<{
   card: DailyCardResponse
@@ -15,6 +16,7 @@ const props = defineProps<{
 
 const router = useRouter()
 const windowSize = useWindowSize()
+const cardStore = useDailyCardStore()
 
 export interface EstimatrRound {
   latitude: number
@@ -617,6 +619,7 @@ function nextRound() {
       ...gameState.value,
       status: 'finished',
     }
+    cardStore.completedCards.push(props.card.id)
     drawAllOnMap()
   }
 }

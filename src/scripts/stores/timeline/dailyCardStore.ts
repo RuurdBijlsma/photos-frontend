@@ -20,6 +20,7 @@ export const useDailyCardStore = defineStore('dailyCard', () => {
     }
     return result
   })
+  const completedCards = useObjStorage<number[]>('dailyCompletedCards', [])
 
   const todayDate = ref(new Date().toISOString().substring(0, 10))
   const todayCards = computed(() => cardsByDate.value[todayDate.value])
@@ -72,6 +73,10 @@ export const useDailyCardStore = defineStore('dailyCard', () => {
       }
       cardsByDate.value = updatedCards
     }
+    // Delete memory of completed cards
+    if (completedCards.value.length > 10) {
+      completedCards.value.splice(0, completedCards.value.length - 10)
+    }
   }
 
   requestIdleCallback(cleanOldCache)
@@ -82,6 +87,7 @@ export const useDailyCardStore = defineStore('dailyCard', () => {
     todayCards,
     getPayloadItems,
     cardsById,
+    completedCards,
 
     fetchDailyCards,
   }
