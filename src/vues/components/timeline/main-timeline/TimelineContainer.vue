@@ -785,6 +785,7 @@ if (!timelineStore.isInitialized) timelineStore.initialize()
               :container-width="containerSize.width"
               :item-gap="ITEM_GAP"
               :is-scrolling-fast="isScrollingFast"
+              :async-decoding="settings.asyncImageDecoding"
             />
           </div>
         </div>

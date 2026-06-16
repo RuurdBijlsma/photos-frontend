@@ -8,6 +8,7 @@ export const LIGHT_PHOTO_VIEWER_MAP = true
 export const USE_BACKDROP_BLUR = true
 export const TIMELINE_ROW_HEIGHT = 320
 export const TIMELINE_USE_DAY_LABELS = false
+export const TIMELINE_ASYNC_IMAGE_DECODING = false
 export const THEME_STRING: ThemeType = 'system'
 export const ENABLE_LIGHT_THEME_TIME = '07:00'
 export const ENABLE_DARK_THEME_TIME = '19:00'
@@ -35,6 +36,7 @@ export const useSettingStore = defineStore('settings', () => {
   // UI -> Timeline
   const timelineRowHeight = useStorage('timelineRowHeight', TIMELINE_ROW_HEIGHT)
   const timelineUseDayLabels = useStorage('timelineUseDayLabels', TIMELINE_USE_DAY_LABELS)
+  const asyncImageDecoding = useStorage('timelineAsyncImageDecoding', TIMELINE_ASYNC_IMAGE_DECODING)
 
   return {
     useImageGlow,
@@ -44,6 +46,7 @@ export const useSettingStore = defineStore('settings', () => {
     customThemeVariant,
     timelineRowHeight,
     timelineUseDayLabels,
+    asyncImageDecoding,
     darkPhotoViewer,
     lightPhotoViewerMap,
     themeString,

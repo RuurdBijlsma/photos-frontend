@@ -129,7 +129,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
 
           <!-- Section: General Aesthetics -->
           <div class="section-divider mt-6">
-            <span class="section-label">General Aesthetics</span>
+            <span class="section-label">Performance</span>
             <v-divider class="divider-line" />
           </div>
 
@@ -138,6 +138,16 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
               v-model="settings.useBackdropBlur"
               label="Backdrop Blur Effects"
               hint="Enables blur on sidebars, dialogs, and headers. Disabling can improve UI performance."
+              persistent-hint
+              color="primary"
+              inset
+              density="comfortable"
+              class="setting-switch"
+            />
+            <v-switch
+              v-model="settings.asyncImageDecoding"
+              label="Asynchronous image decoding"
+              hint="Images are decoded in the background to reduce stuttering while browsing. This will make photos appear slower, but improves performance while scrolling through the timeline."
               persistent-hint
               color="primary"
               inset

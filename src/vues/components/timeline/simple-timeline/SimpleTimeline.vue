@@ -11,6 +11,7 @@ import SelectionOverlay from '@/vues/components/timeline/timeline-components/Sel
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import ReorderGridRow from '@/vues/components/timeline/simple-timeline/ReorderGridRow.vue'
+import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 
 const props = withDefaults(
   defineProps<{
@@ -36,6 +37,7 @@ const emit = defineEmits(['loadMore', 'reorder'])
 
 const viewPhotoStore = useViewPhotoStore()
 const selectionStore = useSelectionStore()
+const settings = useSettingStore()
 
 const localItemsOrder = ref<SimpleTimelineItem[]>([])
 let scrollInterval: number | null = null
@@ -408,6 +410,7 @@ useEventListener(window, 'mouseup', () => {
               :item-gap="ITEM_GAP"
               :is-scrolling-fast="isScrollingFast"
               :view-link="viewLink"
+              :async-decoding="settings.asyncImageDecoding"
             />
           </div>
           <div v-if="loadingMore" class="loading-more">

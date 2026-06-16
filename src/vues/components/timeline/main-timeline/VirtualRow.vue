@@ -4,6 +4,7 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import type { LayoutRow } from '@/scripts/types/timeline/layout.ts'
 import { computed } from 'vue'
 import GridItem from '@/vues/components/timeline/timeline-components/GridItem.vue'
+import AsyncGridItem from '@/vues/components/timeline/timeline-components/AsyncGridItem.vue'
 
 const timelineStore = useTimelineStore()
 
@@ -12,6 +13,7 @@ const props = defineProps<{
   containerWidth: number
   itemGap: number
   isScrollingFast: boolean
+  asyncDecoding: boolean
 }>()
 
 const monthItems = computed(() => timelineStore.monthItems.get(props.item.monthId) ?? [])
@@ -37,16 +39,30 @@ const monthItems = computed(() => timelineStore.monthItems.get(props.item.monthI
         marginBottom: item.lastOfTheMonth ? '0px' : `${itemGap}px`,
       }"
     >
-      <grid-item
-        v-for="mediaItem in item.items"
-        :key="mediaItem.index"
-        :width="Math.round(mediaItem.ratio * item.height)"
-        :height="Math.round(item.height)"
-        :thumbnail-size="item.thumbnailSize"
-        :media-item="monthItems[mediaItem.index]"
-        :is-scrolling-fast="isScrollingFast"
-        view-link="/view/"
-      />
+      <template v-if="asyncDecoding">
+        <async-grid-item
+          v-for="mediaItem in item.items"
+          :key="mediaItem.index"
+          :width="Math.round(mediaItem.ratio * item.height)"
+          :height="Math.round(item.height)"
+          :thumbnail-size="item.thumbnailSize"
+          :media-item="monthItems[mediaItem.index]"
+          :is-scrolling-fast="isScrollingFast"
+          view-link="/view/"
+        />
+      </template>
+      <template v-else>
+        <grid-item
+          v-for="mediaItem in item.items"
+          :key="mediaItem.index"
+          :width="Math.round(mediaItem.ratio * item.height)"
+          :height="Math.round(item.height)"
+          :thumbnail-size="item.thumbnailSize"
+          :media-item="monthItems[mediaItem.index]"
+          :is-scrolling-fast="isScrollingFast"
+          view-link="/view/"
+        />
+      </template>
     </div>
   </div>
 </template>
@@ -56,6 +72,7 @@ const monthItems = computed(() => timelineStore.monthItems.get(props.item.monthI
   display: flex;
   gap: var(--item-gap);
   overflow: hidden;
+  contain: paint;
 }
 
 .first-of-the-month-row {
