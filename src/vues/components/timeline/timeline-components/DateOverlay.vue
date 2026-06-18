@@ -50,7 +50,6 @@ watch(pickedDate, () => {
 <style scoped>
 .date-picker {
   background-color: rgba(var(--v-theme-surface-container-high), 0.8);
-  backdrop-filter: saturate(250%) blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
