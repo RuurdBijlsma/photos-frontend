@@ -4,7 +4,7 @@ import { useAdminStore } from '@/scripts/stores/adminStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import { prettyBytes } from '@/scripts/utils.ts'
-import type { AdminUserInfo } from '@/scripts/types/api/onboarding.ts'
+import type { AdminUserInfo } from '@/scripts/types/api/admin.js'
 
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import FullFolderPicker from '@/vues/components/onboarding/FullFolderPicker.vue'
@@ -75,8 +75,6 @@ async function deleteUser(user: AdminUserInfo) {
   try {
     await adminStore.deleteUser(user.id)
     userToDelete.value = null
-  } catch {
-    // Error is caught and reported by the store
   } finally {
     deletingUser.value = false
   }

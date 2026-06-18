@@ -7,7 +7,7 @@ import type {
   StartProcessingBody,
   UnsupportedFilesResponse,
   AdminUserInfo,
-} from '@/scripts/types/api/onboarding.ts'
+} from '@/scripts/types/api/admin.ts'
 
 const adminService = {
   /**

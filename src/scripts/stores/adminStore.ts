@@ -6,7 +6,7 @@ import type {
   MediaSampleResponse,
   UnsupportedFilesResponse,
   AdminUserInfo,
-} from '@/scripts/types/api/onboarding.ts'
+} from '@/scripts/types/api/admin.ts'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'

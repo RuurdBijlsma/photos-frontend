@@ -5,7 +5,7 @@ import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type {
   MediaSampleResponse,
   UnsupportedFilesResponse,
-} from '@/scripts/types/api/onboarding.ts'
+} from '@/scripts/types/api/admin.ts'
 import { useDebounceFn } from '@vueuse/core'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 

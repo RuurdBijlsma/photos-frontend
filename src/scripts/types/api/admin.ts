@@ -45,17 +45,11 @@ export interface UnsupportedFilesResponse {
 
 // --- Admin-specific types ---
 
-export interface UserStorageInfo {
-  mainDriveUsed: number
-  thumbDriveUsed: number
-  sameDrive: boolean
-}
-
 export interface AdminUserInfo {
   id: number
   username: string
   email: string
   avatarId: string | null
-  mediaFolder: string
-  storage: UserStorageInfo
+  mediaFolder: string | null
+  mainDriveUsed: number
 }

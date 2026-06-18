@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { UnsupportedFilesResponse } from '@/scripts/types/api/onboarding.ts'
+import type { UnsupportedFilesResponse } from '@/scripts/types/api/admin.js'
 
 const props = defineProps<{
   summary: UnsupportedFilesResponse
