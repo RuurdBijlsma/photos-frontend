@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
-import onboardingService from '@/scripts/services/onboardingService.ts'
+import adminService from '@/scripts/services/adminService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type {
   MediaSampleResponse,
@@ -40,7 +40,7 @@ export const usePickFolderStore = defineStore('pickFolder', () => {
   async function refreshFolders() {
     const folder = viewedFolder.value.join('/')
     try {
-      const response = await onboardingService.getFolders(folder)
+      const response = await adminService.getFolders(folder)
       folderList.value = response.data
     } catch (e) {
       await truncateViewed(viewedFolder.value.length - 2)
@@ -62,7 +62,7 @@ export const usePickFolderStore = defineStore('pickFolder', () => {
     const requestFolder = viewedFolder.value.join('/')
 
     mediaSampleLoading.value = true
-    const response = await onboardingService.getMediaSample(requestFolder)
+    const response = await adminService.getMediaSample(requestFolder)
     mediaSampleLoading.value = false
     // Ignore result if the viewed folder has changed since making the request
     if (viewedFolder.value.join('/') !== requestFolder) return
@@ -90,7 +90,7 @@ export const usePickFolderStore = defineStore('pickFolder', () => {
     const requestFolder = viewedFolder.value.join('/')
 
     unsupportedFilesLoading.value = true
-    const response = await onboardingService.getUnsupportedFiles(requestFolder)
+    const response = await adminService.getUnsupportedFiles(requestFolder)
     unsupportedFilesLoading.value = false
     // Ignore result if the viewed folder has changed since making the request
     if (viewedFolder.value.join('/') !== requestFolder) return
@@ -103,7 +103,7 @@ export const usePickFolderStore = defineStore('pickFolder', () => {
     const baseFolder = viewedFolder.value.join('/')
 
     try {
-      await onboardingService.makeFolder({ baseFolder, newName: folderName })
+      await adminService.makeFolder({ baseFolder, newName: folderName })
     } catch (e) {
       snackbarStore.error("Can't make folder", e)
     } finally {

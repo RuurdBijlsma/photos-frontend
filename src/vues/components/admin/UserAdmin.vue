@@ -1,273 +1,270 @@
 <script setup lang="ts">
-import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import { useSunStore } from '@/scripts/stores/sunStore.ts'
-import { useBackgroundStore } from '@/scripts/stores/backgroundStore.ts'
-import { computed } from 'vue'
-import { themeOptions, themeVariantOptions } from '@/scripts/constants.ts'
-import { caps } from '@/scripts/utils.ts'
+import { ref, onMounted } from 'vue'
+import { useAdminStore } from '@/scripts/stores/adminStore.ts'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
+import { prettyBytes } from '@/scripts/utils.ts'
+import type { AdminUserInfo } from '@/scripts/types/api/onboarding.ts'
 
-const settings = useSettingStore()
-const sun = useSunStore()
-const backgroundStore = useBackgroundStore()
+import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
+import FullFolderPicker from '@/vues/components/onboarding/FullFolderPicker.vue'
 
-const sunString = computed(() => {
-  if (!sun.sunset || !sun.sunrise) {
-    return ''
-  }
-  return ` (${sun.sunrise.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} - ${sun.sunset.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })})`
+const adminStore = useAdminStore()
+const authStore = useAuthStore()
+const pickFolderStore = usePickFolderStore()
+
+// State for folder modification dialog
+const folderPickerDialog = ref(false)
+const editingUser = ref<AdminUserInfo | null>(null)
+const savingFolder = ref(false)
+
+// State for deletion dialog
+const deleteConfirmDialog = ref(false)
+const userToDelete = ref<AdminUserInfo | null>(null)
+const deletingUser = ref(false)
+
+onMounted(() => {
+  adminStore.fetchUsers()
 })
 
-// Swatches to visualize semantic theme colors mapped to current theme formulas
-const previewSwatches = [
-  { name: 'Primary', bg: 'bg-primary', text: 'text-on-primary', desc: 'Main accent' },
-  {
-    name: 'Primary Container',
-    bg: 'bg-primary-container',
-    text: 'text-on-primary-container',
-    desc: 'Primary container',
-  },
-  {
-    name: 'Secondary',
-    bg: 'bg-secondary',
-    text: 'text-on-secondary',
-    desc: 'Less prominent accent',
-  },
-  {
-    name: 'Secondary Container',
-    bg: 'bg-secondary-container',
-    text: 'text-on-secondary-container',
-    desc: 'Secondary container',
-  },
-  { name: 'Tertiary', bg: 'bg-tertiary', text: 'text-on-tertiary', desc: 'Contrasting accent' },
-  {
-    name: 'Tertiary Container',
-    bg: 'bg-tertiary-container',
-    text: 'text-on-tertiary-container',
-    desc: 'Tertiary container',
-  },
-  {
-    name: 'Surface Low',
-    bg: 'bg-surface-container-low',
-    text: 'text-on-surface',
-    desc: 'Lowest emphasis card background',
-  },
-  {
-    name: 'Surface High',
-    bg: 'bg-surface-container-high',
-    text: 'text-on-surface',
-    desc: 'Highest emphasis card background',
-  },
-]
+const isCurrentUser = (user: AdminUserInfo): boolean => {
+  return authStore.user?.id === user.id || authStore.user?.name === user.username
+}
+
+// Dialog management for changing user folders
+const openFolderPicker = (user: AdminUserInfo) => {
+  editingUser.value = user
+  pickFolderStore.viewedFolder = user.mediaFolder ? user.mediaFolder.split('/') : []
+  pickFolderStore.refreshFolders()
+  folderPickerDialog.value = true
+}
+
+const closeFolderPicker = () => {
+  folderPickerDialog.value = false
+  editingUser.value = null
+}
+
+const saveUserFolder = async () => {
+  if (!editingUser.value) return
+  savingFolder.value = true
+  try {
+    const selectedFolder = pickFolderStore.viewedFolder.join('/')
+    await adminStore.updateUserMediaFolder(editingUser.value.id, selectedFolder)
+    closeFolderPicker()
+  } catch {
+    // Error feedback is handled in the store using the snackbars store
+  } finally {
+    savingFolder.value = false
+  }
+}
+
+// Dialog management for deleting users
+const promptDeleteUser = (user: AdminUserInfo) => {
+  userToDelete.value = user
+  deleteConfirmDialog.value = true
+}
+
+const confirmDeleteUser = async () => {
+  if (!userToDelete.value) return
+  deletingUser.value = true
+  try {
+    await adminStore.deleteUser(userToDelete.value.id)
+    deleteConfirmDialog.value = false
+    userToDelete.value = null
+  } catch {
+    // Error is caught and reported by the store
+  } finally {
+    deletingUser.value = false
+  }
+}
 </script>
 
 <template>
-  <div class="theme-settings-layout">
-    <!-- Settings Configuration Panel -->
+  <div class="admin-settings-layout">
+    <!-- Main User List Section -->
     <section class="config-panel">
       <v-card class="settings-card" flat border>
-        <!-- Card Header -->
         <div class="card-header">
-          <span class="card-title">Theme Configuration</span>
-          <v-icon color="primary" size="large">mdi-palette-outline</v-icon>
+          <span class="card-title">User Accounts</span>
+          <v-icon color="primary" size="large">mdi-account-multiple-outline</v-icon>
         </div>
 
         <div class="card-body">
-          <!-- Section: Mode Settings -->
-          <div class="section-divider">
-            <span class="section-label">Mode</span>
-            <v-divider class="divider-line" />
+          <!-- Loading State -->
+          <div v-if="adminStore.isUsersLoading" class="loading-state">
+            <v-progress-circular indeterminate color="primary" size="48" />
+            <p class="loading-text">Loading users list...</p>
           </div>
 
-          <div class="chip-group-wrapper">
-            <v-chip-group v-model="settings.themeString" color="primary" mandatory>
-              <v-chip
-                v-for="opt in themeOptions"
-                :value="opt"
-                :key="opt"
-                variant="flat"
-                class="theme-chip"
-              >
-                {{ caps(opt) }}
-              </v-chip>
-            </v-chip-group>
+          <!-- Empty State -->
+          <div v-else-if="adminStore.users.length === 0" class="empty-state">
+            <v-icon size="64" color="on-surface-variant">mdi-account-search-outline</v-icon>
+            <p class="empty-text">No registered users found on this server.</p>
           </div>
 
-          <!-- Subsection: Schedule Options -->
-          <v-expand-transition>
-            <div v-if="settings.themeString === 'schedule'" class="schedule-settings">
-              <span class="schedule-title">Schedule Theme Settings</span>
-              <v-switch
-                v-model="settings.useSunSchedule"
-                :label="`Sunrise to sunset${sunString}`"
-                hide-details
-                color="primary"
-                inset
-                density="comfortable"
-                class="schedule-switch"
-              />
-
-              <v-expand-transition>
-                <div v-if="!settings.useSunSchedule" class="time-picker-grid">
-                  <v-card class="time-picker-card" flat border>
-                    <div class="time-picker-header">
-                      <v-icon color="warning">mdi-white-balance-sunny</v-icon>
-                      <span class="time-picker-label">Turn on light theme</span>
-                    </div>
-                    <div class="time-picker-body">
-                      <v-time-picker
-                        rounded="lg"
-                        bg-color="surface-container"
-                        v-model="settings.enableLightThemeTime"
-                        format="24hr"
-                        scrollable
-                        elevation="0"
-                      />
-                    </div>
-                  </v-card>
-
-                  <v-card class="time-picker-card" flat border>
-                    <div class="time-picker-header">
-                      <v-icon color="primary">mdi-weather-night</v-icon>
-                      <span class="time-picker-label">Turn on dark theme</span>
-                    </div>
-                    <div class="time-picker-body">
-                      <v-time-picker
-                        rounded="lg"
-                        bg-color="surface-container"
-                        v-model="settings.enableDarkThemeTime"
-                        format="24hr"
-                        scrollable
-                        elevation="0"
-                      />
-                    </div>
-                  </v-card>
-                </div>
-              </v-expand-transition>
-            </div>
-          </v-expand-transition>
-
-          <!-- Section: Color Settings -->
-          <div class="section-divider color-section-divider">
-            <span class="section-label">Color</span>
-            <v-divider class="divider-line" />
-          </div>
-
-          <div class="color-settings-content">
-            <v-switch
-              color="primary"
-              v-model="settings.useImageBackground"
-              label="Use random photo as background"
-              hide-details
-              inset
-              density="comfortable"
-              class="background-switch"
-            />
-
-            <v-btn
-              v-if="settings.useImageBackground"
-              rounded
-              variant="text"
-              prepend-icon="mdi-shuffle-variant"
-              @click="backgroundStore.newBackgroundTheme"
-              color="primary"
-              class="new-background-btn"
-            >
-              New background
-            </v-btn>
-
-            <v-slide-y-transition>
-              <div v-if="!settings.useImageBackground" class="color-picker-wrapper">
-                <span class="color-picker-title">Pick a Theme Seed Color</span>
-                <v-card class="color-picker-card" flat border>
-                  <v-color-picker
-                    bg-color="transparent"
-                    v-model="settings.customThemeColor"
-                    hide-inputs
-                    flat
+          <!-- Users Directory List -->
+          <div v-else class="user-list">
+            <div v-for="user in adminStore.users" :key="user.id" class="user-item">
+              <!-- Avatar & Details -->
+              <div class="user-info-section">
+                <div class="avatar-container">
+                  <thumbnail-img
+                    v-if="user.avatarId"
+                    :media-item-id="user.avatarId"
+                    class="user-avatar-thumb"
+                    cover
                   />
-                </v-card>
-              </div>
-            </v-slide-y-transition>
-          </div>
+                  <v-avatar
+                    v-else
+                    color="surface-container-highest"
+                    size="52"
+                    class="border-fallback"
+                  >
+                    <v-icon color="primary" size="x-large">mdi-account-outline</v-icon>
+                  </v-avatar>
+                </div>
 
-          <!-- Section: Variant Options -->
-          <div class="variant-settings">
-            <span class="variant-title">Pick a Theme Variant</span>
-            <v-chip-group v-model="settings.customThemeVariant" color="primary" mandatory column>
-              <v-chip
-                v-for="opt in themeVariantOptions"
-                :value="opt"
-                :key="opt"
-                variant="flat"
-                class="theme-chip"
-              >
-                {{ caps(opt) }}
-              </v-chip>
-            </v-chip-group>
+                <div class="user-details">
+                  <div class="username-row">
+                    <span class="username-text">{{ user.username }}</span>
+                    <v-chip
+                      v-if="isCurrentUser(user)"
+                      color="primary"
+                      size="x-small"
+                      class="ml-2 px-2"
+                      variant="tonal"
+                    >
+                      Active
+                    </v-chip>
+                  </div>
+                  <span class="email-text">{{ user.email }}</span>
+                </div>
+              </div>
+
+              <!-- Media Directory Selector -->
+              <div class="user-folder-section">
+                <span class="section-subtitle">Media Directory</span>
+                <div class="folder-display-row">
+                  <v-icon icon="mdi-folder-outline" size="small" class="mr-1 color-primary" />
+                  <span class="folder-path" :title="user.mediaFolder || 'Root'">
+                    {{ user.mediaFolder || 'Root' }}
+                  </span>
+                  <v-btn
+                    icon="mdi-folder-edit-outline"
+                    variant="text"
+                    density="comfortable"
+                    color="primary"
+                    class="ml-1 change-folder-btn"
+                    title="Change Media Folder"
+                    @click="openFolderPicker(user)"
+                  />
+                </div>
+              </div>
+
+              <!-- Disk Storage Usage Info -->
+              <div class="user-storage-section">
+                <span class="section-subtitle">Storage Footprint</span>
+
+                <!-- Shared Drive Logic: Sum of thumbnail and main media paths -->
+                <div v-if="user.storage.sameDrive" class="storage-row">
+                  <v-icon icon="mdi-harddisk" size="small" class="mr-2" color="primary" />
+                  <span class="storage-text font-weight-bold">
+                    {{ prettyBytes(user.storage.mainDriveUsed + user.storage.thumbDriveUsed) }}
+                  </span>
+                </div>
+
+                <!-- Multi-Drive Logic: Render both outputs individually -->
+                <div v-else class="storage-multidrive">
+                  <div class="drive-info">
+                    <v-icon icon="mdi-folder-image" size="small" class="mr-2" color="primary" />
+                    <span class="storage-text">
+                      Media:
+                      <strong class="storage-strong">{{
+                        prettyBytes(user.storage.mainDriveUsed)
+                      }}</strong>
+                    </span>
+                  </div>
+                  <div class="drive-info mt-1">
+                    <v-icon
+                      icon="mdi-image-multiple-outline"
+                      size="small"
+                      class="mr-2"
+                      color="secondary"
+                    />
+                    <span class="storage-text">
+                      Thumbs:
+                      <strong class="storage-strong">{{
+                        prettyBytes(user.storage.thumbDriveUsed)
+                      }}</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Delete Actions (Prevent deleting current session user) -->
+              <div class="user-actions-section">
+                <v-btn
+                  v-if="!isCurrentUser(user)"
+                  icon="mdi-delete-outline"
+                  variant="text"
+                  color="error"
+                  density="comfortable"
+                  title="Delete User"
+                  @click="promptDeleteUser(user)"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </v-card>
     </section>
 
-    <!-- Active Theme Palette Visualizer -->
-    <aside class="palette-visualizer">
-      <v-card class="settings-card height-100" flat border>
-        <div class="card-header">
-          <span class="card-title">Active Swatches</span>
-          <v-icon color="secondary" size="large">mdi-eyedropper</v-icon>
-        </div>
-
-        <div class="card-body">
-          <p class="visualizer-desc">
-            This visualization shows how your currently active scheme translates to different UI
-            elements within the app.
-          </p>
-
-          <div class="swatch-grid">
-            <v-card
-              v-for="swatch in previewSwatches"
-              :key="swatch.name"
-              :class="[swatch.bg, swatch.text, 'swatch-card']"
-              flat
-            >
-              <div class="swatch-content">
-                <div class="swatch-header">
-                  <div class="swatch-name">{{ swatch.name }}</div>
-                  <div class="swatch-class-label">{{ swatch.bg }}</div>
-                </div>
-                <div class="swatch-desc-container">
-                  {{ swatch.desc }}
-                </div>
-              </div>
-            </v-card>
+    <!-- Dialog: Interactive Directory Chooser -->
+    <v-dialog v-model="folderPickerDialog" max-width="850" persistent>
+      <v-card class="pick-folder-dialog" rounded="xl" color="surface-container-highest">
+        <v-card-title class="dialog-header-row">
+          <div class="dialog-title">
+            <v-icon icon="mdi-folder-edit-outline" class="mr-2" color="primary" />
+            Update Media Folder for: {{ editingUser?.username }}
           </div>
-        </div>
+        </v-card-title>
+        <v-card-text class="dialog-scroll-body">
+          <p class="dialog-desc">
+            Pick a default media subdirectory below to scan images. A preview of compatible elements
+            will load automatically.
+          </p>
+          <full-folder-picker />
+        </v-card-text>
+        <v-card-actions class="px-6 pb-6">
+          <v-spacer />
+          <v-btn variant="text" rounded @click="closeFolderPicker" class="px-5">Cancel</v-btn>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            rounded
+            class="px-5"
+            :loading="savingFolder"
+            @click="saveUserFolder"
+          >
+            Confirm Path
+          </v-btn>
+        </v-card-actions>
       </v-card>
-    </aside>
+    </v-dialog>
   </div>
 </template>
 
 <style scoped>
-.theme-settings-layout {
+.admin-settings-layout {
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
-}
-
-@media (min-width: 1280px) {
-  .theme-settings-layout {
-    grid-template-columns: 7fr 5fr;
-  }
 }
 
 .settings-card {
   background-color: rgb(var(--v-theme-surface-container-low)) !important;
   border-radius: 24px !important;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
-}
-
-.height-100 {
-  height: 100%;
 }
 
 .card-header {
@@ -291,188 +288,219 @@ const previewSwatches = [
   padding: 24px;
 }
 
-.section-divider {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.color-section-divider {
-  margin-top: 24px;
-}
-
-.section-label {
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: rgb(var(--v-theme-primary));
-}
-
-.divider-line {
-  margin-left: 16px;
-  opacity: 0.3;
-}
-
-.chip-group-wrapper {
-  margin-bottom: 24px;
-}
-
-.theme-chip {
-  padding: 16px 20px !important;
-}
-
-.schedule-settings {
-  margin-bottom: 24px;
-  background-color: rgb(var(--v-theme-surface-container-highest));
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.schedule-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: rgb(var(--v-theme-on-surface));
-  display: block;
-  margin-bottom: 8px;
-}
-
-.schedule-switch {
-  margin-bottom: 16px;
-}
-
-.time-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.time-picker-card {
-  background-color: rgb(var(--v-theme-surface-container-high)) !important;
-  border-radius: 16px !important;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
-}
-
-.time-picker-header {
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.time-picker-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.time-picker-body {
-  padding: 12px;
-  display: flex;
-  justify-content: center;
-}
-
-.color-settings-content {
-  margin-bottom: 24px;
-}
-
-.background-switch {
-  margin-bottom: 16px;
-}
-
-.new-background-btn {
-  margin-bottom: 16px;
-}
-
-.color-picker-wrapper {
-  margin-bottom: 24px;
-}
-
-.color-picker-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: rgb(var(--v-theme-on-surface));
-  display: block;
-  margin-bottom: 12px;
-}
-
-.color-picker-card {
-  background-color: rgb(var(--v-theme-surface-container-high)) !important;
-  display: inline-block !important;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
-  padding: 8px;
-  border-radius: 24px !important;
-}
-
-.variant-settings {
-  margin-bottom: 16px;
-}
-
-.variant-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: rgb(var(--v-theme-on-surface));
-  display: block;
-  margin-bottom: 8px;
-}
-
 .visualizer-desc {
   font-size: 0.875rem;
   color: rgb(var(--v-theme-on-surface-variant));
   margin-bottom: 16px;
 }
 
-.swatch-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-}
-
-.swatch-card {
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-  min-height: 100px;
-  border-radius: 8px !important;
-  border: 1px solid rgba(var(--v-border-color), 0.1) !important;
-}
-
-.swatch-card:hover {
-  transform: translateY(-2px);
-}
-
-.swatch-content {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-}
-
-.swatch-header {
+/* User List Item Styling */
+.user-list {
   display: flex;
   flex-direction: column;
 }
 
-.swatch-name {
-  font-size: 1rem;
-  font-weight: 900;
-  line-height: 1.2;
+.user-item {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.15);
 }
 
-.swatch-class-label {
+.user-item:first-child {
+  padding-top: 0;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .user-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* User details */
+.user-info-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1.2;
+  min-width: 220px;
+}
+
+.avatar-container {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+
+.user-avatar-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid rgb(var(--v-theme-primary));
+  object-fit: cover;
+}
+
+.border-fallback {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.username-row {
+  display: flex;
+  align-items: center;
+}
+
+.username-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.email-text {
+  font-size: 0.85rem;
+  color: rgb(var(--v-theme-on-surface-variant));
+  word-break: break-all;
+}
+
+/* User Directory Section */
+.user-folder-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 200px;
+}
+
+.section-subtitle {
+  font-size: 0.725rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgb(var(--v-theme-secondary));
+  margin-bottom: 4px;
+}
+
+.folder-display-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.folder-path {
   font-family: monospace;
   font-size: 0.85rem;
-  margin-top: 4px;
-  text-transform: lowercase;
+  color: rgb(var(--v-theme-on-surface));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
 }
 
-.swatch-desc-container {
-  text-align: right;
-  font-size: 0.72rem;
-  margin-top: 12px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(var(--v-border-color), 0.1);
+.change-folder-btn {
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.change-folder-btn:hover {
+  opacity: 1;
+}
+
+/* User Storage Footprint */
+.user-storage-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 180px;
+}
+
+.storage-row {
+  display: flex;
+  align-items: center;
+}
+
+.storage-text {
+  font-size: 0.85rem;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.storage-strong {
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.storage-multidrive {
+  display: flex;
+  flex-direction: column;
+}
+
+.drive-info {
+  display: flex;
+  align-items: center;
+}
+
+/* User actions column */
+.user-actions-section {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 50px;
+}
+
+/* loading / empty generic modules */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.loading-text,
+.empty-text {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+
+/* Dialog customizations */
+.pick-folder-dialog {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+}
+
+.dialog-header-row {
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.15);
+  padding: 20px 24px !important;
+}
+
+.dialog-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.dialog-scroll-body {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 24px !important;
+}
+
+.dialog-desc {
+  font-size: 0.875rem;
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin-bottom: 16px;
 }
 </style>

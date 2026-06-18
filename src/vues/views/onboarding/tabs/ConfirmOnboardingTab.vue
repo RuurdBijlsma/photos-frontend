@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useOnboardingStore } from '@/scripts/stores/onboardingStore.ts'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
+import { useAdminStore } from '@/scripts/stores/adminStore.ts'
 
-const onboardingStore = useOnboardingStore()
+const adminStore = useAdminStore()
 const pickFolderStore = usePickFolderStore()
 </script>
 
@@ -17,11 +17,11 @@ const pickFolderStore = usePickFolderStore()
         <tbody>
           <tr>
             <td class="table-left">Media folder</td>
-            <td class="table-right">{{ onboardingStore.disks?.mediaFolder?.folder }}</td>
+            <td class="table-right">{{ adminStore.disks?.mediaFolder?.folder }}</td>
           </tr>
           <tr>
             <td class="table-left">Thumbnails folder</td>
-            <td class="table-right">{{ onboardingStore.disks?.thumbnailsFolder?.folder }}</td>
+            <td class="table-right">{{ adminStore.disks?.thumbnailsFolder?.folder }}</td>
           </tr>
           <tr>
             <td class="table-left">User folder</td>
