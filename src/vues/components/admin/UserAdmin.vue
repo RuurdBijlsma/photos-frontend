@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAdminStore } from '@/scripts/stores/adminStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import { prettyBytes } from '@/scripts/utils.ts'
-import type { AdminUserInfo } from '@/scripts/types/api/admin.js'
+import type { AdminUserInfo } from '@/scripts/types/api/admin.ts'
 
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import FullFolderPicker from '@/vues/components/onboarding/FullFolderPicker.vue'
@@ -30,6 +30,17 @@ onMounted(() => {
 
 const isCurrentUser = (user: AdminUserInfo): boolean => {
   return authStore.user?.id === user.id || authStore.user?.name === user.username
+}
+
+// Compute the sum of all users' main drive storage
+const totalStorage = computed(() => {
+  return adminStore.users.reduce((sum, user) => sum + (user.mainDriveUsed || 0), 0)
+})
+
+// Helper to determine percentage of overall storage used
+const getStoragePercentage = (used: number) => {
+  if (!totalStorage.value) return 0
+  return (used / totalStorage.value) * 100
 }
 
 // Dialog management for changing user folders
@@ -167,40 +178,24 @@ async function deleteUser(user: AdminUserInfo) {
               <div class="user-storage-section">
                 <span class="section-subtitle">Storage Footprint</span>
 
-                <!-- Shared Drive Logic: Sum of thumbnail and main media paths -->
-                <div v-if="user.storage.sameDrive" class="storage-row">
+                <div class="storage-row">
                   <v-icon icon="mdi-harddisk" size="small" class="mr-2" color="primary" />
                   <span class="storage-text font-weight-bold">
-                    {{ prettyBytes(user.storage.mainDriveUsed + user.storage.thumbDriveUsed) }}
+                    {{ prettyBytes(user.mainDriveUsed) }}
+                  </span>
+                  <span class="storage-percentage ml-2 text-caption text-medium-emphasis">
+                    ({{ getStoragePercentage(user.mainDriveUsed).toFixed(1) }}%)
                   </span>
                 </div>
 
-                <!-- Multi-Drive Logic: Render both outputs individually -->
-                <div v-else class="storage-multidrive">
-                  <div class="drive-info">
-                    <v-icon icon="mdi-folder-image" size="small" class="mr-2" color="primary" />
-                    <span class="storage-text">
-                      Media:
-                      <strong class="storage-strong">{{
-                        prettyBytes(user.storage.mainDriveUsed)
-                      }}</strong>
-                    </span>
-                  </div>
-                  <div class="drive-info mt-1">
-                    <v-icon
-                      icon="mdi-image-multiple-outline"
-                      size="small"
-                      class="mr-2"
-                      color="secondary"
-                    />
-                    <span class="storage-text">
-                      Thumbs:
-                      <strong class="storage-strong">{{
-                        prettyBytes(user.storage.thumbDriveUsed)
-                      }}</strong>
-                    </span>
-                  </div>
-                </div>
+                <!-- Horizontal bar indicating portion of total storage -->
+                <v-progress-linear
+                  :model-value="getStoragePercentage(user.mainDriveUsed)"
+                  color="primary"
+                  height="6"
+                  rounded
+                  class="mt-2"
+                />
               </div>
 
               <!-- Delete Actions (Prevent deleting current session user) -->
@@ -288,12 +283,6 @@ async function deleteUser(user: AdminUserInfo) {
 
 .card-body {
   padding: 24px;
-}
-
-.visualizer-desc {
-  font-size: 0.875rem;
-  color: rgb(var(--v-theme-on-surface-variant));
-  margin-bottom: 16px;
 }
 
 /* User List Item Styling */
@@ -436,18 +425,8 @@ async function deleteUser(user: AdminUserInfo) {
   color: rgb(var(--v-theme-on-surface));
 }
 
-.storage-strong {
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.storage-multidrive {
-  display: flex;
-  flex-direction: column;
-}
-
-.drive-info {
-  display: flex;
-  align-items: center;
+.storage-percentage {
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 
 /* User actions column */
