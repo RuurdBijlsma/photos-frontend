@@ -8,9 +8,11 @@ import type { AdminUserInfo } from '@/scripts/types/api/onboarding.ts'
 
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import FullFolderPicker from '@/vues/components/onboarding/FullFolderPicker.vue'
+import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 
 const adminStore = useAdminStore()
 const authStore = useAuthStore()
+const dialogs = useDialogStore()
 const pickFolderStore = usePickFolderStore()
 
 // State for folder modification dialog
@@ -19,7 +21,6 @@ const editingUser = ref<AdminUserInfo | null>(null)
 const savingFolder = ref(false)
 
 // State for deletion dialog
-const deleteConfirmDialog = ref(false)
 const userToDelete = ref<AdminUserInfo | null>(null)
 const deletingUser = ref(false)
 
@@ -58,18 +59,21 @@ const saveUserFolder = async () => {
   }
 }
 
-// Dialog management for deleting users
-const promptDeleteUser = (user: AdminUserInfo) => {
-  userToDelete.value = user
-  deleteConfirmDialog.value = true
-}
-
-const confirmDeleteUser = async () => {
-  if (!userToDelete.value) return
+async function deleteUser(user: AdminUserInfo) {
+  console.log(user)
+  const confirmed = await dialogs.confirm({
+    title: 'Are you sure',
+    description: `Are you sure you want to delete:<pre>${user.email}</pre>
+    You will not be able to recover this user, their albums, or their photo/video metadata.
+    Their files will remain on your filesystem until you manually delete them.
+    `,
+    confirmText: 'Delete',
+    color: 'error',
+  })
+  if (!confirmed) return
   deletingUser.value = true
   try {
-    await adminStore.deleteUser(userToDelete.value.id)
-    deleteConfirmDialog.value = false
+    await adminStore.deleteUser(user.id)
     userToDelete.value = null
   } catch {
     // Error is caught and reported by the store
@@ -210,7 +214,7 @@ const confirmDeleteUser = async () => {
                   color="error"
                   density="comfortable"
                   title="Delete User"
-                  @click="promptDeleteUser(user)"
+                  @click="deleteUser(user)"
                 />
               </div>
             </div>
