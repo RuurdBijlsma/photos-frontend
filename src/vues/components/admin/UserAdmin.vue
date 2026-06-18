@@ -3,8 +3,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useAdminStore } from '@/scripts/stores/adminStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
-import { prettyBytes } from '@/scripts/utils.ts'
+import { prettyBytes, copyToClipboard } from '@/scripts/utils.ts'
 import type { AdminUserInfo } from '@/scripts/types/api/admin.ts'
+import authService from '@/scripts/services/authService.ts'
 
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import FullFolderPicker from '@/vues/components/onboarding/FullFolderPicker.vue'
@@ -23,6 +24,10 @@ const savingFolder = ref(false)
 // State for deletion dialog
 const userToDelete = ref<AdminUserInfo | null>(null)
 const deletingUser = ref(false)
+
+// State for invite dialog
+const inviteDialog = ref(false)
+const generatingInvite = ref(false)
 
 onMounted(() => {
   adminStore.fetchUsers()
@@ -70,6 +75,51 @@ const saveUserFolder = async () => {
   }
 }
 
+// Dialog management for inviting new users
+const openInviteDialog = () => {
+  pickFolderStore.viewedFolder = []
+  pickFolderStore.refreshFolders()
+  inviteDialog.value = true
+}
+
+const closeInviteDialog = () => {
+  inviteDialog.value = false
+}
+
+const userFolder = computed(() => pickFolderStore.viewedFolder.join('/'))
+const invalidFolderSelected = computed(() => userFolder.value === authStore.user?.mediaFolder)
+
+async function generateInvite() {
+  if (invalidFolderSelected.value) return
+  generatingInvite.value = true
+  try {
+    const invite = await authService.generateInvite(userFolder.value)
+    const inviteUrl = `${window.location.origin}/register?token=${invite.data.token}`
+
+    closeInviteDialog()
+
+    await dialogs.alert({
+      title: 'Invite Link Generated',
+      description: `Share this registration link with your friend:
+      <br><br>
+      <pre style="background: rgba(var(--v-theme-on-surface), 0.05); padding: 12px; border-radius: 12px; word-break: break-all; white-space: pre-wrap; font-family: monospace; font-size: 0.85rem;">${inviteUrl}</pre>`,
+      actions: [
+        {
+          action: async () => {
+            await copyToClipboard(inviteUrl)
+          },
+          name: 'Copy invite',
+        },
+        { action: () => ({}), name: 'Done' },
+      ],
+    })
+  } catch {
+    // Error feedback is handled globally
+  } finally {
+    generatingInvite.value = false
+  }
+}
+
 async function deleteUser(user: AdminUserInfo) {
   console.log(user)
   const confirmed = await dialogs.confirm({
@@ -98,8 +148,19 @@ async function deleteUser(user: AdminUserInfo) {
     <section class="config-panel">
       <v-card class="settings-card" flat border>
         <div class="card-header">
-          <span class="card-title">User Accounts</span>
-          <v-icon color="primary" size="large">mdi-account-multiple-outline</v-icon>
+          <div class="card-title-group">
+            <span class="card-title">User Accounts</span>
+            <v-icon color="primary" size="large" class="ml-2">mdi-account-multiple-outline</v-icon>
+          </div>
+          <v-btn
+            prepend-icon="mdi-account-plus-outline"
+            color="primary"
+            variant="tonal"
+            rounded
+            @click="openInviteDialog"
+          >
+            Invite User
+          </v-btn>
         </div>
 
         <div class="card-body">
@@ -248,6 +309,67 @@ async function deleteUser(user: AdminUserInfo) {
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Dialog: Invite a Friend -->
+    <v-dialog v-model="inviteDialog" max-width="850" persistent>
+      <v-card class="pick-folder-dialog" rounded="xl" color="surface-container-highest">
+        <v-card-title class="dialog-header-row">
+          <div class="dialog-title">
+            <v-icon icon="mdi-account-plus-outline" class="mr-2" color="primary" />
+            Invite a Friend
+          </div>
+        </v-card-title>
+        <v-card-text class="dialog-scroll-body">
+          <template v-if="authStore.user?.mediaFolder === ''">
+            <div class="alert-warning-box pa-4">
+              <div class="d-flex align-start">
+                <v-icon icon="mdi-alert" color="error" class="mr-3 mt-1" />
+                <div>
+                  <div class="text-subtitle-1 font-weight-bold">Cannot Invite Users</div>
+                  <p class="text-body-2 mb-0 text-medium-emphasis">
+                    You cannot invite someone else if your media folder is set to the root of the
+                    mounted drive. To invite someone, change your media folder to a subfolder first.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <p class="dialog-desc">
+              When inviting a user, you need to pick a folder for their media to be stored. It must
+              be a different folder than your media folder.
+            </p>
+            <full-folder-picker />
+            <v-alert
+              v-if="invalidFolderSelected"
+              rounded="xl"
+              type="error"
+              variant="tonal"
+              class="mt-4"
+              text="Media folder is already in use by your account."
+            />
+          </template>
+        </v-card-text>
+        <v-card-actions class="px-6 pb-6">
+          <v-spacer />
+          <v-btn variant="text" rounded @click="closeInviteDialog" class="px-5">
+            {{ authStore.user?.mediaFolder === '' ? 'Close' : 'Cancel' }}
+          </v-btn>
+          <v-btn
+            v-if="authStore.user?.mediaFolder !== ''"
+            color="primary"
+            variant="tonal"
+            rounded
+            class="px-5"
+            :disabled="invalidFolderSelected"
+            :loading="generatingInvite"
+            @click="generateInvite"
+          >
+            Generate Invite
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -273,6 +395,11 @@ async function deleteUser(user: AdminUserInfo) {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.card-title-group {
+  display: flex;
+  align-items: center;
 }
 
 .card-title {
@@ -483,5 +610,12 @@ async function deleteUser(user: AdminUserInfo) {
   font-size: 0.875rem;
   color: rgb(var(--v-theme-on-surface-variant));
   margin-bottom: 16px;
+}
+
+/* Warning alert box styling */
+.alert-warning-box {
+  border: 1px solid rgba(var(--v-theme-error), 0.3);
+  background-color: rgba(var(--v-theme-error), 0.05);
+  border-radius: 16px;
 }
 </style>
