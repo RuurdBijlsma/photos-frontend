@@ -1,90 +1,79 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import authService from '@/scripts/services/authService.ts'
-import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
-import FullFolderPicker from '@/vues/components/onboarding/FullFolderPicker.vue'
-import { computed } from 'vue'
-import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
-import { useAuthStore } from '@/scripts/stores/authStore.ts'
-import { copyToClipboard } from '@/scripts/utils.ts'
+import UserAdmin from '@/vues/components/admin/UserAdmin.vue'
 
-const dialogs = useDialogStore()
-const folderStore = usePickFolderStore()
-const authStore = useAuthStore()
-
-const userFolder = computed(() => folderStore.viewedFolder.join('/'))
-const invalidFolderSelected = computed(() => userFolder.value === authStore.user?.mediaFolder)
-
-async function generateInvite() {
-  if (invalidFolderSelected.value) return
-  const invite = await authService.generateInvite(userFolder.value)
-  const inviteUrl = `${location.origin}/register?token=${invite.data.token}`
-  await dialogs.alert({
-    title: 'Invite a friend',
-    description: `Share this token with someone to let them create an account on this server.
-    <br>
-    <br>
-    <a href="${inviteUrl}" target="_blank">${inviteUrl}</a>
-    `,
-    actions: [
-      { action: () => copyToClipboard(inviteUrl), name: 'Copy invite' },
-      { action: () => ({}), name: 'Done' },
-    ],
-  })
-  console.log(invite)
-}
 </script>
 
 <template>
-  <main-layout-container class="admin">
-    <h1>Admin!</h1>
+  <main-layout-container class="settings">
+    <div class="settings-content">
+      <h1 class="settings-title">Administration</h1>
 
-    <v-dialog max-width="1000">
-      <template v-slot:activator="{ props: activatorProps }">
-        <v-btn variant="tonal" color="primary" rounded v-bind="activatorProps"
-          >Invite a friend to this server</v-btn
-        >
-      </template>
+      <div class="divider-flex">
+        <v-divider />
+        <span>Users</span>
+        <v-divider />
+      </div>
+      <user-admin />
 
-      <template v-slot:default="{ isActive }">
-        <v-card class="pick-folder-ui" rounded="xl" color="surface-container-highest">
-          <v-card-title>Invite a friend</v-card-title>
-          <p class="text-body-medium pick-folder-text">
-            When inviting a user, you need to pick a folder for their media to be stored. It must be
-            a different folder than your media folder.
-          </p>
-          <full-folder-picker />
-          <v-alert
-            v-if="invalidFolderSelected"
-            type="error"
-            text="Media folder is already in use."
-          ></v-alert>
-          <v-card-actions v-else>
-            <v-btn @click="isActive.value = false" class="mr-3" variant="plain" rounded>
-              Cancel
-            </v-btn>
-            <v-btn
-              color="primary"
-              variant="tonal"
-              rounded
-              prepend-icon="mdi-share"
-              @click="generateInvite"
-              >Generate Invite</v-btn
-            >
-          </v-card-actions>
-        </v-card>
-      </template>
-    </v-dialog>
+      <!-- Section: Placeholder Other Settings -->
+      <section class="placeholder-section">
+        <h3 class="placeholder-title">Other Admin stuff Placeholder</h3>
+        <p class="placeholder-desc">Hello world</p>
+      </section>
+    </div>
   </main-layout-container>
 </template>
 
 <style scoped>
-.pick-folder-ui {
-  max-width: 700px;
-  padding: 20px;
+.settings {
+  overflow-y: auto;
 }
 
-.pick-folder-text {
-  margin: 10px 20px;
+.settings-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.settings-title {
+  font-size: 2.125rem;
+  font-weight: 700;
+  margin-bottom: 32px;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.divider-flex {
+  display: flex;
+  gap: 30px;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  margin-left: 50px;
+  margin-right: 50px;
+  align-items: center;
+}
+
+.divider-flex span {
+  font-size: 25px;
+  white-space: nowrap;
+  color: rgba(var(--v-theme-on-surface-variant), 0.8);
+}
+
+.placeholder-section {
+  margin-top: 32px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  padding-top: 24px;
+}
+
+.placeholder-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin-bottom: 8px;
+}
+
+.placeholder-desc {
+  font-size: 0.875rem;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 </style>
