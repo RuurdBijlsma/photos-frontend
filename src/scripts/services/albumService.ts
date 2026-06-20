@@ -9,6 +9,7 @@ import type {
   AlbumSort,
   AlbumSortField,
   AlbumSummary,
+  BackupInfo,
   CheckInviteRequest,
   CreateAlbumRequest,
   SharedMediaItem,
@@ -120,6 +121,14 @@ const albumService = {
     mediaItemId: string,
   ): Promise<AxiosResponse<SharedMediaItem>> {
     return apiClient.get<SharedMediaItem>(`/album/${albumId}/item/${mediaItemId}`)
+  },
+
+  listBackups(): Promise<AxiosResponse<BackupInfo[]>> {
+    return apiClient.get<BackupInfo[]>('/album/backup/list')
+  },
+
+  restoreBackup(backupFilename: string): Promise<AxiosResponse<void>> {
+    return apiClient.post<void>(`/album/restore/${backupFilename}`)
   },
 }
 

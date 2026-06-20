@@ -122,3 +122,9 @@ export interface SharedMediaItem {
   user_caption: string | null
   gps: null
 }
+
+export interface BackupInfo {
+  filename: string
+  sizeBytes: number
+  createdAt: string // ISO Date string
+}
