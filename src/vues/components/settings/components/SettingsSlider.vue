@@ -86,7 +86,6 @@ const reset = () => {
   padding: 16px;
   border-radius: 12px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  margin-bottom: 12px;
 }
 
 .slider-label {
