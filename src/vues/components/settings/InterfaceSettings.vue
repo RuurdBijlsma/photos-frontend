@@ -7,6 +7,7 @@ import searchService from '@/scripts/services/searchService.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import { useEventListener } from '@vueuse/core'
+import SettingsSlider from '@/vues/components/settings/components/SettingsSlider.vue'
 
 const settings = useSettingStore()
 
@@ -88,32 +89,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
           </div>
 
           <div class="settings-group">
-            <div class="slider-wrapper">
-              <span class="slider-label"
-                >Timeline Row Height: {{ settings.timelineRowHeight }}px</span
-              >
-              <div class="slider-flex">
-                <v-slider
-                  v-model="settings.timelineRowHeight"
-                  @mousedown="rowHeightEditing = true"
-                  :min="50"
-                  :max="1000"
-                  :step="5"
-                  color="primary"
-                  hide-details
-                  class="mt-2"
-                />
-                <v-btn
-                  class="slider-reset-button"
-                  color="tertiary"
-                  @click="settings.timelineRowHeight = TIMELINE_ROW_HEIGHT"
-                  rounded
-                  density="compact"
-                  variant="plain"
-                  >Reset</v-btn
-                >
-              </div>
-            </div>
+            <settings-slider @row-height-editing="rowHeightEditing = true" />
 
             <v-switch
               v-model="settings.timelineUseDayLabels"
@@ -307,31 +283,6 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
   flex-direction: column;
 }
 
-.slider-wrapper {
-  background-color: rgb(var(--v-theme-surface-container-high));
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  margin-bottom: 12px;
-}
-
-.slider-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: rgb(var(--v-theme-on-surface));
-  display: block;
-}
-
-.slider-flex {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.slider-reset-button {
-  transform: translateY(3px);
-}
-
 .preview-desc {
   font-size: 0.875rem;
   color: rgb(var(--v-theme-on-surface-variant));
@@ -347,7 +298,6 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
 .preview-element-title {
   font-size: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   color: rgb(var(--v-theme-secondary));
 }

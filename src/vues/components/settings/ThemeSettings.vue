@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import {
+  CUSTOM_THEME_CONTRAST,
+  TIMELINE_ROW_HEIGHT,
+  useSettingStore,
+} from '@/scripts/stores/settingsStore.ts'
 import { useSunStore } from '@/scripts/stores/sunStore.ts'
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore.ts'
 import { computed } from 'vue'
 import { themeOptions, themeVariantOptions } from '@/scripts/constants.ts'
 import { caps } from '@/scripts/utils.ts'
+import SettingsSlider2 from '@/vues/components/settings/components/SettingsSlider2.vue'
 
 const settings = useSettingStore()
 const sun = useSunStore()
@@ -205,6 +210,8 @@ const previewSwatches = [
               </v-chip>
             </v-chip-group>
           </div>
+          <!-- Section: Contrast Settings -->
+          <settings-slider2/>
         </div>
       </v-card>
     </section>
@@ -319,6 +326,10 @@ const previewSwatches = [
 
 .theme-chip {
   padding: 16px 20px !important;
+}
+
+:deep(.v-chip--selected) {
+  font-weight: 600;
 }
 
 .schedule-settings {
