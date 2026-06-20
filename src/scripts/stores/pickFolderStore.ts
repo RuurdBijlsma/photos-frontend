@@ -2,10 +2,7 @@ import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
 import adminService from '@/scripts/services/adminService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import type {
-  MediaSampleResponse,
-  UnsupportedFilesResponse,
-} from '@/scripts/types/api/admin.ts'
+import type { MediaSampleResponse, UnsupportedFilesResponse } from '@/scripts/types/api/admin.ts'
 import { useDebounceFn } from '@vueuse/core'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 
@@ -51,14 +48,10 @@ export const usePickFolderStore = defineStore('pickFolder', () => {
 
   async function getImageUrl(relative_path: string): Promise<string> {
     const url = await mediaBlobUrl(relative_path)
-    if (url !== null) {
-      return url
-    }
-    return 'img/placeholder.svg'
+    return url ?? 'img/placeholder.svg'
   }
 
   async function refreshMediaSample() {
-    console.warn('Refreshing media samples')
     const requestFolder = viewedFolder.value.join('/')
 
     mediaSampleLoading.value = true

@@ -10,10 +10,13 @@ import authService from '@/scripts/services/authService.ts'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import FullFolderPicker from '@/vues/components/onboarding/FullFolderPicker.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
+import ShowSelectedFolder from '@/vues/components/onboarding/ShowSelectedFolder.vue'
+import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 
 const adminStore = useAdminStore()
 const authStore = useAuthStore()
 const dialogs = useDialogStore()
+const snackbarStore = useSnackbarsStore()
 const pickFolderStore = usePickFolderStore()
 
 // State for folder modification dialog
@@ -113,8 +116,8 @@ async function generateInvite() {
         { action: () => ({}), name: 'Done' },
       ],
     })
-  } catch {
-    // Error feedback is handled globally
+  } catch(e) {
+    snackbarStore.error("Could not create invite link", e);
   } finally {
     generatingInvite.value = false
   }
@@ -205,10 +208,10 @@ async function deleteUser(user: AdminUserInfo) {
                       v-if="isCurrentUser(user)"
                       color="primary"
                       size="x-small"
-                      class="ml-2 px-2"
+                      class="ml-2"
                       variant="tonal"
                     >
-                      Active
+                      You
                     </v-chip>
                   </div>
                   <span class="email-text">{{ user.email }}</span>
@@ -219,18 +222,13 @@ async function deleteUser(user: AdminUserInfo) {
               <div class="user-folder-section">
                 <span class="section-subtitle">Media Directory</span>
                 <div class="folder-display-row">
-                  <v-icon icon="mdi-folder-outline" size="small" class="mr-1 color-primary" />
-                  <span class="folder-path" :title="user.mediaFolder || 'Root'">
-                    {{ user.mediaFolder || 'Root' }}
-                  </span>
-                  <v-btn
-                    icon="mdi-folder-edit-outline"
-                    variant="text"
-                    density="comfortable"
-                    color="primary"
-                    class="ml-1 change-folder-btn"
-                    title="Change Media Folder"
+                  <show-selected-folder
+                    class="show-selected-folder"
                     @click="openFolderPicker(user)"
+                    v-ripple
+                    :pill="false"
+                    v-if="user.mediaFolder !== null"
+                    :folder="user.mediaFolder.split('/')"
                   />
                 </div>
               </div>
@@ -279,7 +277,7 @@ async function deleteUser(user: AdminUserInfo) {
 
     <!-- Dialog: Interactive Directory Chooser -->
     <v-dialog v-model="folderPickerDialog" max-width="850" persistent>
-      <v-card class="pick-folder-dialog" rounded="xl" color="surface-container-highest">
+      <v-card class="pick-folder-dialog" rounded="xl" variant="flat" elevation="0" color="surface-container-highest">
         <v-card-title class="dialog-header-row">
           <div class="dialog-title">
             <v-icon icon="mdi-folder-edit-outline" class="mr-2" color="primary" />
@@ -503,7 +501,6 @@ async function deleteUser(user: AdminUserInfo) {
 .section-subtitle {
   font-size: 0.725rem;
   font-weight: 800;
-  text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgb(var(--v-theme-secondary));
   margin-bottom: 4px;
@@ -515,23 +512,8 @@ async function deleteUser(user: AdminUserInfo) {
   gap: 6px;
 }
 
-.folder-path {
-  font-family: monospace;
-  font-size: 0.85rem;
-  color: rgb(var(--v-theme-on-surface));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 170px;
-}
-
-.change-folder-btn {
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-
-.change-folder-btn:hover {
-  opacity: 1;
+.show-selected-folder {
+  cursor: pointer;
 }
 
 /* User Storage Footprint */
@@ -584,7 +566,10 @@ async function deleteUser(user: AdminUserInfo) {
 
 /* Dialog customizations */
 .pick-folder-dialog {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+  //border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+  backdrop-filter: blur(15px) saturate(150%) brightness(90%) contrast(110%);
+  background-color: rgba(var(--v-theme-surface-container-highest), 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dialog-header-row {

@@ -39,40 +39,52 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
       @mouseenter="onMouseEnter(snack.id)"
       @mouseleave="onMouseLeave(snack.id)"
     >
-      <v-snackbar
+      <v-alert
         :color="snack.color"
-        :prepend-icon="snack.icon"
-        :text="snack.message"
-        variant="tonal"
-        contained
-        :timeout="-1"
+        :icon="snack.icon || false"
+        variant="flat"
         rounded="xl"
-        :model-value="true"
+        class="snack-alert"
       >
-        <template v-slot:actions>
-          <v-btn
-            v-if="snack.error || snack.errorData"
-            icon="mdi-information-outline"
-            variant="text"
-            density="comfortable"
-            @click.stop="showErrorDetails(snack)"
-          />
-          <v-btn
-            v-if="snack.action"
-            :text="snack.action.label"
-            @click.stop="handleAction(snack)"
-            density="comfortable"
-            rounded="lg"
-            variant="tonal"
-          />
-          <v-btn
-            icon="mdi-close"
-            variant="text"
-            density="comfortable"
-            @click.stop="store.remove(snack.id)"
-          />
-        </template>
-      </v-snackbar>
+        <div class="snack-content-wrapper">
+          <div class="snack-message">
+            {{ snack.message }}
+          </div>
+
+          <div class="snack-actions">
+            <!-- Detailed Error Button -->
+            <v-btn
+              v-if="snack.error || snack.errorData"
+              icon="mdi-information-outline"
+              variant="text"
+              density="comfortable"
+              size="small"
+              class="action-btn"
+              @click.stop="showErrorDetails(snack)"
+            />
+            <!-- Custom CTA Action -->
+            <v-btn
+              v-if="snack.action"
+              :text="snack.action.label"
+              @click.stop="handleAction(snack)"
+              density="comfortable"
+              size="small"
+              rounded="lg"
+              variant="tonal"
+              class="action-btn px-3 text-caption font-weight-bold"
+            />
+            <!-- Dismiss Button -->
+            <v-btn
+              icon="mdi-close"
+              variant="text"
+              density="comfortable"
+              size="small"
+              class="action-btn close-btn"
+              @click.stop="store.remove(snack.id)"
+            />
+          </div>
+        </div>
+      </v-alert>
     </div>
   </TransitionGroup>
 
@@ -130,51 +142,84 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 2000;
-  pointer-events: none; /* Let clicks pass through empty areas */
-  width: auto;
+  z-index: 6000;
+  pointer-events: none;
+  width: 100%;
+  max-width: 500px;
+  padding: 0 16px;
   display: flex;
-  flex-direction: column-reverse; /* Stacks items from bottom to top */
+  flex-direction: column-reverse; /* Newest notifications stack at the bottom, older ones slide up */
   gap: 8px;
-  align-items: center;
 }
 
 .snack-wrapper {
-  pointer-events: auto; /* Re-enable clicks on the specific cards */
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  pointer-events: auto; /* Re-enable clicks on the specific alert elements */
   width: 100%;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.snack-alert {
+  margin: 0 !important;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+}
+
+/* Ensure Vuetify's layout contents expand horizontally to fill alert */
+.snack-alert :deep(.v-alert__content) {
+  width: 100%;
+}
+
+/* Flex layout inside alert message container */
+.snack-content-wrapper {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
 }
 
-/*
-  Override Vuetify's absolute positioning for contained snackbars.
-  This allows them to flow naturally in the flex container.
-*/
-.snack-wrapper :deep(.v-snackbar) {
-  position: relative !important;
-  display: flex !important;
-  top: auto !important;
-  bottom: auto !important;
-  left: auto !important;
-  right: auto !important;
-  transform: none !important;
-  width: auto !important;
-  margin: 0 !important;
+.snack-message {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
-.snack-wrapper :deep(.v-snackbar__wrapper) {
-  position: relative !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: none !important;
-  margin: 0 !important;
-  min-width: 344px;
-  max-width: 672px;
+.snack-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
+.action-btn {
+  letter-spacing: 0.05em;
+}
+
+/* --- Transition Animations --- */
+
+.snack-enter-from {
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+}
+
+.snack-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.9);
+}
+
+/* Absolute position layout rules for the disappearing item so remaining items slide up smoothly */
+.snack-leave-active {
+  position: absolute !important;
+  left: 16px;
+  right: 16px;
+  margin: 0 auto;
+}
+
+.snack-move {
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Error Dialog Stack Trace styles */
 .stack-trace {
   font-family: monospace;
   white-space: pre-wrap;

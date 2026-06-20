@@ -58,7 +58,7 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
     const snack: Snack = {
       id,
       message: options.message,
-      color: options.color || 'white',
+      color: options.color || 'surface-variant', // Changed from 'white' to adapt dynamically to light/dark themes
       timeout: options.timeout ?? defaultTimeout,
       action: options.action,
       icon: options.icon,
@@ -123,7 +123,8 @@ export const useSnackbarsStore = defineStore('snackbars', () => {
   // --- Convenience Helpers ---
 
   function info(message: string, action?: SnackAction) {
-    enqueue({ message, color: 'white', icon: 'mdi-information-outline', action })
+    // Changed color from 'white' to 'info' to ensure dynamic, high-contrast theme compliance
+    enqueue({ message, color: 'info', icon: 'mdi-information-outline', action })
   }
 
   function success(message: string, action?: SnackAction) {

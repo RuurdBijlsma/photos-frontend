@@ -26,9 +26,9 @@ const cardCaption = computed(() => {
   const photoText = `${photoCount.toLocaleString()} photos`
   const videoText = `${videoCount.toLocaleString()} videos`
 
-  let caption = `We've found ${photoText} and ${videoText} in your library.`
+  let caption = `There's ${photoText} and ${videoText} in your library.`
   if (photoCount > 0) {
-    caption += ' Here’s a preview of your collection:'
+    caption += ' Here’s a sample:'
   }
   return caption
 })

@@ -14,14 +14,14 @@ const adminService = {
    * Get information about the configured media and thumbnail disks.
    */
   getDisks(): Promise<AxiosResponse<DiskResponse>> {
-    return apiClient.get<DiskResponse>('/onboarding/disk-info')
+    return apiClient.get<DiskResponse>('/admin/disk-info')
   },
 
   /**
    * List the subfolders within a given folder.
    */
   getFolders(folder: string): Promise<AxiosResponse<string[]>> {
-    return apiClient.get<string[]>('/onboarding/folders', {
+    return apiClient.get<string[]>('/admin/folders', {
       params: { folder },
     })
   },
@@ -30,14 +30,14 @@ const adminService = {
    * Create a new folder.
    */
   makeFolder(data: MakeFolderBody): Promise<AxiosResponse<void>> {
-    return apiClient.post<void>('/onboarding/make-folder', data)
+    return apiClient.post<void>('/admin/make-folder', data)
   },
 
   /**
    * Get a sample of media files from a specific folder.
    */
   getMediaSample(folder: string): Promise<AxiosResponse<MediaSampleResponse>> {
-    return apiClient.get<MediaSampleResponse>('/onboarding/media-sample', {
+    return apiClient.get<MediaSampleResponse>('/admin/media-sample', {
       params: { folder },
     })
   },
@@ -46,7 +46,7 @@ const adminService = {
    * Get a list of unsupported files in a specific folder.
    */
   getUnsupportedFiles(folder: string): Promise<AxiosResponse<UnsupportedFilesResponse>> {
-    return apiClient.get<UnsupportedFilesResponse>('/onboarding/unsupported-files', {
+    return apiClient.get<UnsupportedFilesResponse>('/admin/unsupported-files', {
       params: { folder },
     })
   },
