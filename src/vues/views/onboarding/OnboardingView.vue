@@ -122,7 +122,7 @@ setStepFromRoute()
             rounded
             v-else
             @click="startProcessing"
-            >Start</v-btn
+            >Start processing</v-btn
           >
         </div>
       </template>

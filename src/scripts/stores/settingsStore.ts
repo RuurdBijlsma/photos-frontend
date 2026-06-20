@@ -16,6 +16,7 @@ export const USE_SUN_SCHEDULE = false
 export const USE_IMAGE_BACKGROUND = true
 export const CUSTOM_THEME_COLOR = '#462de8'
 export const CUSTOM_THEME_VARIANT: ThemeVariant = 'Expressive'
+export const CUSTOM_THEME_CONTRAST = 0.2
 
 export const useSettingStore = defineStore('settings', () => {
   // Theme -> Mode
@@ -27,6 +28,7 @@ export const useSettingStore = defineStore('settings', () => {
   const useImageBackground = useStorage('useImageBackground', USE_IMAGE_BACKGROUND)
   const customThemeColor = useStorage('customThemeColor', CUSTOM_THEME_COLOR)
   const customThemeVariant = useStorage<ThemeVariant>('customThemeVariant', CUSTOM_THEME_VARIANT)
+  const customThemeContrast = useStorage<number>('customThemeContrast', CUSTOM_THEME_CONTRAST)
   // UI -> Photo Viewer
   const useImageGlow = useStorage('imageGlow', USE_IMAGE_GLOW)
   const darkPhotoViewer = useStorage('darkPhotoViewer', DARK_PHOTO_VIEWER)
@@ -44,6 +46,7 @@ export const useSettingStore = defineStore('settings', () => {
     useImageBackground,
     customThemeColor,
     customThemeVariant,
+    customThemeContrast,
     timelineRowHeight,
     timelineUseDayLabels,
     asyncImageDecoding,

@@ -34,16 +34,21 @@ const mediaItemService = {
   },
 
   getRandomPhoto(
-    variant: ThemeVariant = 'Vibrant',
+    variant: ThemeVariant = 'Expressive',
+    contrast: number = 0.2,
   ): Promise<AxiosResponse<RandomPhotoResponse | null>> {
     return apiClient.get<RandomPhotoResponse | null>('/theme/random-photo', {
-      params: { variant },
+      params: { variant, contrast },
     })
   },
 
-  getTheme(color: string, variant: ThemeVariant = 'Vibrant'): Promise<AxiosResponse<Theme>> {
+  getTheme(
+    color: string,
+    variant: ThemeVariant = 'Expressive',
+    contrast: number = 0.2,
+  ): Promise<AxiosResponse<Theme>> {
     return apiClient.get<Theme>('/theme/by-color', {
-      params: { color, variant },
+      params: { color, variant, contrast },
     })
   },
 

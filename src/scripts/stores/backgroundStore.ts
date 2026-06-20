@@ -10,32 +10,33 @@ import type { ThemeVariant } from '@/scripts/constants.ts'
 import { useThrottleFn } from '@vueuse/core'
 import type { RandomPhotoResponse } from '@/scripts/types/api/photos.ts'
 
-// The single key we will use for localStorage
 const BG_CACHE_KEY = 'cachedBackgroundData'
 export const DEFAULT_BG_URL = '/img/etna.jpg'
-type CachedBackgroundData = { url: string; theme: Theme; variant: ThemeVariant }
+
+type CachedBackgroundData = {
+  url: string
+  theme: Theme
+  variant: ThemeVariant
+  contrast: number
+}
 
 export const useBackgroundStore = defineStore('background', () => {
-  // --- STATE ---
   const backgroundUrl = ref(DEFAULT_BG_URL)
   const hasFetchedForThisSession = ref(false)
   const backgroundTheme = shallowRef<Theme | null>(null)
   const colorTheme = shallowRef<Theme | null>(null)
 
-  // --- STORES ---
   const themeStore = useThemeStore()
   const authStore = useAuthStore()
   const settings = useSettingStore()
   const snackbarStore = useSnackbarsStore()
-
-  // --- PRIVATE HELPERS ---
 
   function getCachedBackgroundData() {
     const localItem = localStorage.getItem(BG_CACHE_KEY)
     if (localItem === null) return null
 
     try {
-      return JSON.parse(localItem) as CachedBackgroundData | { url: string; theme: Theme }
+      return JSON.parse(localItem) as CachedBackgroundData
     } catch {
       localStorage.removeItem(BG_CACHE_KEY)
       return null
@@ -48,7 +49,8 @@ export const useBackgroundStore = defineStore('background', () => {
 
     try {
       const variant = settings.customThemeVariant
-      const response = await mediaItemService.getRandomPhoto(variant)
+      const contrast = settings.customThemeContrast
+      const response = await mediaItemService.getRandomPhoto(variant, contrast)
       const photo = response.data
       if (photo === null) {
         console.warn('getRandomPhoto returned null, probably no photos in DB with color data.')
@@ -59,11 +61,11 @@ export const useBackgroundStore = defineStore('background', () => {
       const newTheme = photo.theme
 
       if (newTheme) {
-        // Create a single object containing the coupled data
         const newCachedData: CachedBackgroundData = {
           url: newBgUrl,
           theme: newTheme,
           variant,
+          contrast,
         }
         localStorage.setItem(BG_CACHE_KEY, JSON.stringify(newCachedData))
         console.log('Fetched and cached new background object for next session.')
@@ -78,26 +80,25 @@ export const useBackgroundStore = defineStore('background', () => {
   async function fetchColorTheme(
     color = settings.customThemeColor,
     variant = settings.customThemeVariant,
+    contrast = settings.customThemeContrast ?? 0.0,
   ) {
-    // Check variable
     if (
       colorTheme.value &&
-      colorTheme.value.source_color == color &&
-      colorTheme.value.variant === variant
+      colorTheme.value.source_color === color &&
+      colorTheme.value.variant === variant &&
+      colorTheme.value.contrast_level === contrast
     ) {
       return colorTheme.value
     }
 
-    // Get from API
     try {
-      const { data } = await mediaItemService.getTheme(color, variant)
+      const { data } = await mediaItemService.getTheme(color, variant, contrast)
       colorTheme.value = data
       return data
     } catch (e) {
       snackbarStore.error('Could not get theme from color', e)
     }
 
-    // Fail
     return null
   }
 
@@ -108,7 +109,11 @@ export const useBackgroundStore = defineStore('background', () => {
     }
 
     try {
-      const { data } = await mediaItemService.getTheme(sourceColor, settings.customThemeVariant)
+      const { data } = await mediaItemService.getTheme(
+        sourceColor,
+        settings.customThemeVariant,
+        settings.customThemeContrast,
+      )
       backgroundTheme.value = data
       localStorage.setItem(
         BG_CACHE_KEY,
@@ -116,12 +121,13 @@ export const useBackgroundStore = defineStore('background', () => {
           url: backgroundUrl.value,
           theme: data,
           variant: settings.customThemeVariant,
+          contrast: settings.customThemeContrast,
         } satisfies CachedBackgroundData),
       )
       themeStore.setThemesFromJson(data)
       return data
     } catch (e) {
-      snackbarStore.error('Could not update background theme variant', e)
+      snackbarStore.error('Could not update background theme variant or contrast', e)
       return
     }
   }
@@ -129,7 +135,10 @@ export const useBackgroundStore = defineStore('background', () => {
   async function newBackgroundTheme() {
     let newBgJson: RandomPhotoResponse | null = null
     try {
-      const { data } = await mediaItemService.getRandomPhoto(settings.customThemeVariant)
+      const { data } = await mediaItemService.getRandomPhoto(
+        settings.customThemeVariant,
+        settings.customThemeContrast,
+      )
       newBgJson = data
     } catch (e) {
       snackbarStore.error('Could not get new background theme', e)
@@ -141,20 +150,21 @@ export const useBackgroundStore = defineStore('background', () => {
   }
 
   function getBackgroundTheme() {
-    // Check variable
     if (backgroundTheme.value) return backgroundTheme.value
 
-    // Check localStorage
     const data = getCachedBackgroundData()
     if (data !== null) {
-      if ('variant' in data && data.variant === settings.customThemeVariant) {
+      if (
+        'variant' in data &&
+        data.variant === settings.customThemeVariant &&
+        (!('contrast' in data) || data.contrast === settings.customThemeContrast)
+      ) {
         backgroundTheme.value = data.theme
         backgroundUrl.value = data.url
         return data.theme
       }
     }
 
-    // Fallback
     backgroundUrl.value = DEFAULT_BG_URL
     return null
   }
@@ -164,24 +174,23 @@ export const useBackgroundStore = defineStore('background', () => {
     if (theme) themeStore.setThemesFromJson(theme)
   }
 
+  // --- WATCHERS ---
+
   watch(
     () => settings.customThemeColor,
     () => setCorrectTheme(),
   )
 
-  watch(
-    () => settings.customThemeVariant,
-    async () => {
-      if (settings.useImageBackground) {
-        await refreshCurrentBackgroundTheme()
-      } else {
-        await setCorrectTheme()
-      }
-      if (settings.useImageBackground && authStore.isAuthenticated) {
-        fetchAndCacheNextBackground(true)
-      }
-    },
-  )
+  watch([() => settings.customThemeVariant, () => settings.customThemeContrast], async () => {
+    if (settings.useImageBackground) {
+      await refreshCurrentBackgroundTheme()
+    } else {
+      await setCorrectTheme()
+    }
+    if (settings.useImageBackground && authStore.isAuthenticated) {
+      fetchAndCacheNextBackground(true)
+    }
+  })
 
   const throttledTheme = useThrottleFn(setCorrectTheme, 50, true, true)
 
@@ -192,14 +201,10 @@ export const useBackgroundStore = defineStore('background', () => {
     },
   )
 
-  // --- ACTION ---
-
   function initialize() {
-    // --- Step 1: Immediately load the UI from the single cache entry ---
     setCorrectTheme().then()
 
     requestIdleCallback(() => {
-      // --- Step 2: Fetch fresh data for the next session ---
       if (authStore.isAuthenticated) {
         fetchAndCacheNextBackground()
       }
