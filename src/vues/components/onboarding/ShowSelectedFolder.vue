@@ -48,7 +48,6 @@ defineProps<{
   align-items: center;
   padding: 5px 20px;
   border-radius: 20px;
-  color: rgb(var(--v-theme-on-secondary-container));
 }
 
 .opa {

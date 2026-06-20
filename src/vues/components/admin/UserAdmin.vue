@@ -36,41 +36,71 @@ onMounted(() => {
   adminStore.fetchUsers()
 })
 
-const isCurrentUser = (user: AdminUserInfo): boolean => {
-  return authStore.user?.id === user.id || authStore.user?.name === user.username
-}
-
 // Compute the sum of all users' main drive storage
 const totalStorage = computed(() => {
   return adminStore.users.reduce((sum, user) => sum + (user.mainDriveUsed || 0), 0)
 })
+const userFolder = computed(() => pickFolderStore.viewedFolder.join('/'))
+const invalidFolderSelected = computed(() => userFolder.value === authStore.user?.mediaFolder)
+
+function isCurrentUser(user: AdminUserInfo): boolean {
+  return authStore.user?.id === user.id || authStore.user?.name === user.username
+}
 
 // Helper to determine percentage of overall storage used
-const getStoragePercentage = (used: number) => {
+function getStoragePercentage(used: number) {
   if (!totalStorage.value) return 0
   return (used / totalStorage.value) * 100
 }
 
+async function confirmChangeFolder(userEmail: string) {
+  return dialogs.confirm({
+    title: 'Change media folder?',
+    description: `
+      <p>You are about to change the media folder for:</p>
+      <pre>${userEmail}</pre>
+
+      <p><strong>This may remove content from the library.</strong></p>
+
+      <ul>
+        <li>A new file-system scan will start automatically for the new folder.</li>
+        <li>Photos and videos outside the new folder will be removed from the library.</li>
+        <li>Photos and videos in the new folder will be indexed and added to the library.</li>
+        <li><strong>Existing albums will be removed because they reference media from the current folder.</strong></li>
+      </ul>
+
+      <p>This does not delete files from disk, but it changes what appears in the library.</p>
+    `,
+    confirmText: 'Change media folder',
+    cancelText: 'Keep current folder',
+    icon: 'mdi-folder-alert',
+    persistent: true,
+  })
+}
+
 // Dialog management for changing user folders
-const openFolderPicker = (user: AdminUserInfo) => {
+async function openFolderPicker(user: AdminUserInfo) {
+  if (!(await confirmChangeFolder(user.email))) return
   editingUser.value = user
   pickFolderStore.viewedFolder = user.mediaFolder ? user.mediaFolder.split('/') : []
-  pickFolderStore.refreshFolders()
+  pickFolderStore.refreshFolders().then()
   folderPickerDialog.value = true
 }
 
-const closeFolderPicker = () => {
+function closeFolderPicker() {
   folderPickerDialog.value = false
   editingUser.value = null
 }
 
-const saveUserFolder = async () => {
+async function saveUserFolder() {
   if (!editingUser.value) return
+  if (!(await confirmChangeFolder(editingUser.value.email))) return
   savingFolder.value = true
   try {
     const selectedFolder = pickFolderStore.viewedFolder.join('/')
     await adminStore.updateUserMediaFolder(editingUser.value.id, selectedFolder)
     closeFolderPicker()
+    adminStore.fetchUsers().then()
   } catch {
     // Error feedback is handled in the store using the snackbars store
   } finally {
@@ -79,18 +109,15 @@ const saveUserFolder = async () => {
 }
 
 // Dialog management for inviting new users
-const openInviteDialog = () => {
+function openInviteDialog() {
   pickFolderStore.viewedFolder = []
   pickFolderStore.refreshFolders()
   inviteDialog.value = true
 }
 
-const closeInviteDialog = () => {
+function closeInviteDialog() {
   inviteDialog.value = false
 }
-
-const userFolder = computed(() => pickFolderStore.viewedFolder.join('/'))
-const invalidFolderSelected = computed(() => userFolder.value === authStore.user?.mediaFolder)
 
 async function generateInvite() {
   if (invalidFolderSelected.value) return
@@ -116,8 +143,8 @@ async function generateInvite() {
         { action: () => ({}), name: 'Done' },
       ],
     })
-  } catch(e) {
-    snackbarStore.error("Could not create invite link", e);
+  } catch (e) {
+    snackbarStore.error('Could not create invite link', e)
   } finally {
     generatingInvite.value = false
   }
@@ -235,7 +262,7 @@ async function deleteUser(user: AdminUserInfo) {
 
               <!-- Disk Storage Usage Info -->
               <div class="user-storage-section">
-                <span class="section-subtitle">Storage Footprint</span>
+                <span class="section-subtitle">Storage Usage</span>
 
                 <div class="storage-row">
                   <v-icon icon="mdi-harddisk" size="small" class="mr-2" color="primary" />
@@ -277,7 +304,13 @@ async function deleteUser(user: AdminUserInfo) {
 
     <!-- Dialog: Interactive Directory Chooser -->
     <v-dialog v-model="folderPickerDialog" max-width="850" persistent>
-      <v-card class="pick-folder-dialog" rounded="xl" variant="flat" elevation="0" color="surface-container-highest">
+      <v-card
+        class="pick-folder-dialog"
+        rounded="xl"
+        variant="flat"
+        elevation="0"
+        color="surface-container-highest"
+      >
         <v-card-title class="dialog-header-row">
           <div class="dialog-title">
             <v-icon icon="mdi-folder-edit-outline" class="mr-2" color="primary" />
