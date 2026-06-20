@@ -1,42 +1,82 @@
+<!-- File: src/vues/components/settings/components/SettingsSlider.vue -->
 <script setup lang="ts">
-import { TIMELINE_ROW_HEIGHT, useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { computed } from 'vue'
 
-const settings = useSettingStore()
+interface Props {
+  modelValue: number
+  label: string
+  description?: string
+  min?: number
+  max?: number
+  step?: number
+  resetValue?: number
+  unit?: string
+  showTicks?: boolean
+  formatValue?: (val: number) => string
+}
 
-const emit = defineEmits(['rowHeightEditing'])
+const props = withDefaults(defineProps<Props>(), {
+  min: 0,
+  max: 100,
+  step: 1,
+  unit: '',
+  showTicks: false,
+})
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: number): void
+  (e: 'slide-start'): void
+}>()
+
+const formattedValue = computed(() => {
+  if (props.formatValue) {
+    return props.formatValue(props.modelValue)
+  }
+  return props.modelValue.toString()
+})
+
+const reset = () => {
+  if (props.resetValue !== undefined) {
+    emit('update:modelValue', props.resetValue)
+  }
+}
 </script>
 
 <template>
   <div class="slider-wrapper">
     <span class="slider-label">
-      Timeline Row Height:
-      <span class="contrast-value-label"> {{ settings.timelineRowHeight }}</span
-      >px
+      {{ label }}
+      <span class="contrast-value-label">{{ formattedValue }}</span
+      >{{ unit }}
     </span>
     <div class="slider-flex">
       <v-slider
-        v-model="settings.timelineRowHeight"
-        @mousedown="emit('rowHeightEditing')"
-        :min="50"
-        :max="1000"
-        :step="5"
+        :model-value="modelValue"
+        @update:model-value="emit('update:modelValue', $event)"
+        @mousedown="emit('slide-start')"
+        @touchstart="emit('slide-start')"
+        :min="min"
+        :max="max"
+        :step="step"
+        :show-ticks="showTicks"
         color="primary"
         hide-details
         class="mt-2"
       />
       <v-btn
+        v-if="resetValue !== undefined"
         class="slider-reset-button"
         color="tertiary"
-        @click="settings.timelineRowHeight = TIMELINE_ROW_HEIGHT"
+        @click="reset"
         rounded
         density="compact"
         variant="plain"
         >Reset</v-btn
       >
     </div>
-    <span class="slider-desc">
-      <em>Target</em> height for the rows on the front page photo grid.
-    </span>
+    <slot name="description">
+      <span v-if="description" class="slider-desc" v-html="description" />
+    </slot>
   </div>
 </template>
 

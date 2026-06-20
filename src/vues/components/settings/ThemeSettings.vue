@@ -10,6 +10,7 @@ import { computed } from 'vue'
 import { themeOptions, themeVariantOptions } from '@/scripts/constants.ts'
 import { caps } from '@/scripts/utils.ts'
 import SettingsSlider2 from '@/vues/components/settings/components/SettingsSlider2.vue'
+import SettingsSlider from '@/vues/components/settings/components/SettingsSlider.vue'
 
 const settings = useSettingStore()
 const sun = useSunStore()
@@ -211,7 +212,17 @@ const previewSwatches = [
             </v-chip-group>
           </div>
           <!-- Section: Contrast Settings -->
-          <settings-slider2/>
+          <settings-slider
+            v-model="settings.customThemeContrast"
+            label="UI Contrast:"
+            :min="-1.0"
+            :max="1.0"
+            :step="0.1"
+            show-ticks
+            :reset-value="CUSTOM_THEME_CONTRAST"
+            :format-value="(val) => (val > 0 ? '+' : '') + val.toFixed(1)"
+            description="Adjust color luminance contrast (with -1.0 as low-contrast, 0.0 as standard, and 1.0 as maximum contrast)."
+          />
         </div>
       </v-card>
     </section>

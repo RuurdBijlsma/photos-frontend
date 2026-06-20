@@ -89,7 +89,17 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
           </div>
 
           <div class="settings-group">
-            <settings-slider @row-height-editing="rowHeightEditing = true" />
+            <settings-slider
+              v-model="settings.timelineRowHeight"
+              label="Timeline Row Height:"
+              unit="px"
+              :min="50"
+              :max="1000"
+              :step="5"
+              :reset-value="TIMELINE_ROW_HEIGHT"
+              @slide-start="rowHeightEditing = true"
+              description="<em>Target</em> height for the rows on the front page photo grid."
+            />
 
             <v-switch
               v-model="settings.timelineUseDayLabels"
