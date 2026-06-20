@@ -45,5 +45,9 @@ export const useAlbumBackupStore = defineStore('albumBackup', () => {
     }
   }
 
-  return {}
+  return {
+    fetchBackups,
+    restoreBackup,
+    backups
+  }
 })

@@ -3,6 +3,7 @@ import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import ThemeSettings from '@/vues/components/settings/ThemeSettings.vue'
 import InterfaceSettings from '@/vues/components/settings/InterfaceSettings.vue'
 import { DEFAULT_BG_URL, useBackgroundStore } from '@/scripts/stores/backgroundStore.ts'
+import BackupSettings from '@/vues/components/settings/BackupSettings.vue'
 
 const backgroundStore = useBackgroundStore()
 </script>
@@ -37,6 +38,15 @@ const backgroundStore = useBackgroundStore()
       </div>
 
       <interface-settings />
+
+      <!-- Section: Backup & Restore -->
+      <div class="divider-flex">
+        <v-divider />
+        <span>Backup & Restore</span>
+        <v-divider />
+      </div>
+
+      <backup-settings />
 
       <!-- Section: Placeholder Other Settings -->
       <section class="placeholder-section">
