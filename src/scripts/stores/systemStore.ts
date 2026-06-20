@@ -4,9 +4,22 @@ import systemService from '@/scripts/services/systemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useObjStorage } from '@/scripts/utils.ts'
 
-const DEFAULT_SYSTEM_STATS = {
+const DEFAULT_SYSTEM_STATS: SystemStats = {
   hasClusteredPeople: true,
   hasClusteredPhotos: true,
+  disk: {
+    areSameDrive: true,
+    mediaDrive: {
+      diskAvailable: 50,
+      diskTotal: 100,
+      diskUsed: 0,
+    },
+    thumbnailDrive: {
+      diskAvailable: 50,
+      diskTotal: 100,
+      diskUsed: 0,
+    },
+  },
 }
 
 export const useSystemStore = defineStore('system', () => {

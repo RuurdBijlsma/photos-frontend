@@ -9,6 +9,7 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { usePeopleStore } from '@/scripts/stores/peopleStore.ts'
 import { useTheme } from 'vuetify/framework'
 import NavExpandableList from '@/vues/components/layout/NavExpandableList.vue'
+import StorageOverview from '@/vues/components/ui/StorageOverview.vue'
 
 const albumStore = useAlbumStore()
 const timelineStore = useTimelineStore()
@@ -34,7 +35,6 @@ const albumsExpanded = useStorage('navExpandAlbums', true)
 const peopleExpanded = useStorage('navExpandPeople', true)
 const collapseDrawer = useStorage('collapseDrawer', false)
 
-const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
 const namedPeople = computed(() => peopleStore.people.filter((p) => p.name?.trim()))
 
 let isResizing = false
@@ -218,6 +218,10 @@ useEventListener(document, 'mousemove', (e) => {
         title="Cameras"
       />
     </div>
+    <template v-if="!collapseDrawer">
+      <v-divider class="mx-5 mt-2" />
+      <storage-overview />
+    </template>
     <div class="resize-handle" @mousedown="startResize"></div>
   </v-navigation-drawer>
 </template>
