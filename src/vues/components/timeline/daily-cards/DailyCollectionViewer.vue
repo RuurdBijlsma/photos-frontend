@@ -490,10 +490,6 @@ onUnmounted(() => {
   transition: width 0.03s linear;
 }
 
-.close-btn {
-  background-color: rgba(0, 0, 0, 0.4);
-}
-
 .pause-btn {
   background-color: rgba(0, 0, 0, 0.4);
   min-width: unset;

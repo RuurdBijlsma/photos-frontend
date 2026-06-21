@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { isAxiosError } from 'axios'
 import { type Snack, useSnackbarsStore } from '@/scripts/stores/snackbarStore'
 
@@ -43,7 +43,7 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
         :color="snack.color"
         :icon="snack.icon || false"
         variant="flat"
-        rounded="xl"
+        rounded="pill"
         class="snack-alert"
       >
         <div class="snack-content-wrapper">
@@ -62,16 +62,13 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
               class="action-btn"
               @click.stop="showErrorDetails(snack)"
             />
-            <!-- Custom CTA Action -->
             <v-btn
               v-if="snack.action"
               :text="snack.action.label"
               @click.stop="handleAction(snack)"
               density="comfortable"
-              size="small"
-              rounded="lg"
+              rounded
               variant="tonal"
-              class="action-btn px-3 text-caption font-weight-bold"
             />
             <!-- Dismiss Button -->
             <v-btn
@@ -189,10 +186,6 @@ const onMouseLeave = (id: string) => store.resumeTimeout(id)
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-}
-
-.action-btn {
-  letter-spacing: 0.05em;
 }
 
 /* --- Transition Animations --- */
