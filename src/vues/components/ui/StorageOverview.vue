@@ -18,7 +18,12 @@ const thumbsUsedPercentage = computed(
     <v-list-item title="Storage" prepend-icon="mdi-cloud-outline" class="mb-4" />
     <div class="storage-info">
       <p v-if="!diskStats.areSameDrive" class="drive-descriptor">Media drive</p>
-      <v-progress-linear :model-value="usedPercentage" color="primary" rounded-bar />
+      <v-progress-linear
+        class="progress-linear"
+        :model-value="usedPercentage"
+        color="primary"
+        rounded-bar
+      />
       <p class="usage-text">
         {{ prettyBytes(diskStats.mediaDrive.diskUsed, 1) }} of
         {{ prettyBytes(diskStats.mediaDrive.diskTotal, 1) }} used
@@ -26,7 +31,12 @@ const thumbsUsedPercentage = computed(
     </div>
     <div class="storage-info" v-if="!diskStats.areSameDrive">
       <p class="drive-descriptor">Thumbnail drive</p>
-      <v-progress-linear :model-value="thumbsUsedPercentage" color="primary" rounded-bar />
+      <v-progress-linear
+        class="progress-linear"
+        :model-value="thumbsUsedPercentage"
+        color="primary"
+        rounded-bar
+      />
       <p class="usage-text">
         {{ prettyBytes(diskStats.thumbnailDrive.diskUsed, 1) }} of
         {{ prettyBytes(diskStats.thumbnailDrive.diskTotal, 1) }} used
@@ -36,14 +46,14 @@ const thumbsUsedPercentage = computed(
 </template>
 
 <style scoped>
-.storage-container {
-  margin: 15px;
-}
-
 .storage-info {
   padding: 15px;
   padding-bottom: 10px;
   padding-top: 0;
+}
+
+.progress-linear {
+  opacity: 0.7;
 }
 
 .drive-descriptor {

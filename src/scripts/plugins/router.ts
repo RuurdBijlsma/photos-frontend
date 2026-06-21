@@ -80,6 +80,11 @@ const router = createRouter({
           component: () => import('@/vues/views/main/ExploreView.vue'),
         },
         {
+          path: 'trash',
+          name: 'trash',
+          component: () => import('@/vues/views/main/TrashView.vue'),
+        },
+        {
           path: 'map',
           name: 'map',
           component: () => import('@/vues/views/main/MapView.vue'),

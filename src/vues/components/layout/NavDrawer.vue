@@ -169,6 +169,12 @@ useEventListener(document, 'mousemove', (e) => {
       </NavExpandableList>
 
       <v-list-item rounded prepend-icon="mdi-camera" title="Cameras" to="/cameras" />
+
+      <v-divider class="mx-5 mt-2 mb-2" />
+
+      <v-list-item rounded prepend-icon="mdi-trash-can-outline" title="Trash" to="/trash" />
+
+      <storage-overview />
     </v-list>
     <div v-else class="collapsed-list">
       <v-btn
@@ -217,11 +223,15 @@ useEventListener(document, 'mousemove', (e) => {
         to="/cameras"
         title="Cameras"
       />
+      <v-divider class="ma-2" />
+      <v-btn
+        icon="mdi-trash-can"
+        :variant="route.path.startsWith('/trash') ? 'tonal' : 'plain'"
+        :color="route.path === '/trash' ? 'primary-darken-1' : undefined"
+        to="/trash"
+        title="Trash"
+      />
     </div>
-    <template v-if="!collapseDrawer">
-      <v-divider class="mx-5 mt-2" />
-      <storage-overview />
-    </template>
     <div class="resize-handle" @mousedown="startResize"></div>
   </v-navigation-drawer>
 </template>
