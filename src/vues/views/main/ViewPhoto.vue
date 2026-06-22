@@ -235,10 +235,20 @@ watch(
       </div>
       <div class="top-main-text">
         <h3 v-if="fullImage?.user_caption">{{ fullImage.user_caption }}</h3>
+        <router-link
+          class="top-link"
+          title="Go to date"
+          :to="`/?highlight=${id}`"
+          v-else-if="route.name !== 'view-photo-timeline'"
+        >
+          <h3>
+            {{ timestampString }}
+          </h3>
+        </router-link>
         <h3 v-else>{{ timestampString }}</h3>
         <p>
           <router-link
-            class="location-link"
+            class="top-link location-link"
             v-if="fullImage?.gps"
             :to="`/map?lat=${fullImage.gps.latitude}&lon=${fullImage.gps.longitude}`"
             v-tooltip="{
@@ -334,12 +344,7 @@ watch(
               <v-btn rounded="xl" icon="mdi-dots-horizontal" variant="plain" v-bind="props" />
             </template>
             <v-list>
-              <v-list-item
-                v-if="route.name !== 'view-photo-timeline'"
-                title="View in timeline"
-                :to="`/?highlight=${id}`"
-                exact
-              />
+              <v-list-item>Hiiii</v-list-item>
             </v-list>
           </v-menu>
         </template>
@@ -495,13 +500,21 @@ watch(
   transform: translateY(-80px);
 }
 
-.location-link {
-  color: rgba(var(--fg), 0.6);
+.top-link {
   text-decoration: none;
+  color: rgba(var(--fg), 0.8);
 }
 
-.location-link:hover {
+.top-link:active{
+  color:inherit;
+}
+
+.top-link:hover {
   text-decoration: underline;
+}
+
+.location-link {
+  color: rgba(var(--fg), 0.6);
 }
 
 .next-area {
