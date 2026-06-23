@@ -174,6 +174,7 @@ useEventListener(document, 'mousemove', (e) => {
 
       <v-list-item rounded prepend-icon="mdi-trash-can-outline" title="Bin" to="/bin" />
 
+      <v-list-item title="Storage" prepend-icon="mdi-cloud-outline" class="mb-3" to="/storage" />
       <storage-overview />
     </v-list>
     <div v-else class="collapsed-list">
@@ -230,6 +231,13 @@ useEventListener(document, 'mousemove', (e) => {
         :color="route.path === '/bin' ? 'primary-darken-1' : undefined"
         to="/bin"
         title="Bin"
+      />
+      <v-btn
+        icon="mdi-cloud-outline"
+        :variant="route.path.startsWith('/storage') ? 'tonal' : 'plain'"
+        :color="route.path === '/storage' ? 'primary-darken-1' : undefined"
+        to="/storage"
+        title="Storage"
       />
     </div>
     <div class="resize-handle" @mousedown="startResize"></div>

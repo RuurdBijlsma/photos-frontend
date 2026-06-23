@@ -15,7 +15,6 @@ const thumbsUsedPercentage = computed(
 
 <template>
   <div class="storage-container">
-    <v-list-item title="Storage" prepend-icon="mdi-cloud-outline" class="mb-4" />
     <div class="storage-info">
       <p v-if="!diskStats.areSameDrive" class="drive-descriptor">Media drive</p>
       <v-progress-linear

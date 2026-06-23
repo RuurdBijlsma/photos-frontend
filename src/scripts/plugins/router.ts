@@ -92,6 +92,18 @@ const router = createRouter({
           ],
         },
         {
+          path: 'storage',
+          name: 'storage',
+          component: () => import('@/vues/views/main/StorageView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-storage',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
           path: 'map',
           name: 'map',
           component: () => import('@/vues/views/main/MapView.vue'),
