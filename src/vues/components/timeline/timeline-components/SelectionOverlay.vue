@@ -5,6 +5,8 @@ import type { TimelineContext } from '@/scripts/types/timeline/layout.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 import { useProfileStore } from '@/scripts/stores/profileStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import { useBinStore } from '@/scripts/stores/binStore.ts'
+import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 
 withDefaults(
   defineProps<{
@@ -18,9 +20,11 @@ withDefaults(
 )
 
 const profileStore = useProfileStore()
+const systemStore = useSystemStore()
 const selectionStore = useSelectionStore()
 const albumStore = useAlbumStore()
 const authStore = useAuthStore()
+const binStore = useBinStore()
 
 async function setProfilePic() {
   if (selectionStore.selection.size !== 1) return
@@ -61,44 +65,72 @@ async function setAlbumCover(albumId: string) {
         ><span> selected</span>
       </div>
       <v-spacer />
-      <add-to-album-button
-        :exclude-album-ids="excludeAlbumIds"
-        :ids-to-add="[...selectionStore.selection]"
-      />
-      <v-btn
-        icon="mdi-delete-outline"
-        variant="plain"
-        density="compact"
-        v-tooltip:top="'Move to bin'"
-      />
 
-      <v-menu>
-        <template v-slot:activator="{ props }">
-          <v-btn v-bind="props" icon="mdi-dots-horizontal" variant="plain" density="compact" />
-        </template>
-        <v-list density="compact">
-          <v-list-item v-if="selectionStore.selection.size === 1" @click="setProfilePic">
-            <v-list-item-title>Set as profile picture</v-list-item-title>
-          </v-list-item>
-          <template v-if="context && context.album">
-            <v-divider />
-            <v-list-subheader>Album</v-list-subheader>
-            <v-list-item
-              @click="albumStore.removeFromAlbum(context.album.id, [...selectionStore.selection])"
-            >
-              <v-list-item-title>Remove from album</v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              v-if="
-                selectionStore.selection.size === 1 && context.album.ownerId === authStore.user?.id
-              "
-              @click="setAlbumCover(context.album.id)"
-            >
-              <v-list-item-title>Set as album cover</v-list-item-title>
-            </v-list-item>
+      <!-- Regular Actions -->
+      <template v-if="!context?.isBin">
+        <add-to-album-button
+          :exclude-album-ids="excludeAlbumIds"
+          :ids-to-add="[...selectionStore.selection]"
+        />
+        <v-btn
+          icon="mdi-delete-outline"
+          variant="plain"
+          density="compact"
+          v-tooltip:top="'Move to bin'"
+          :loading="binStore.softDeleteLoading"
+          @click="binStore.softDeleteItems([...selectionStore.selection])"
+        />
+
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" icon="mdi-dots-horizontal" variant="plain" density="compact" />
           </template>
-        </v-list>
-      </v-menu>
+          <v-list density="compact">
+            <v-list-item v-if="selectionStore.selection.size === 1" @click="setProfilePic">
+              <v-list-item-title>Set as profile picture</v-list-item-title>
+            </v-list-item>
+            <template v-if="context && context.album">
+              <v-divider />
+              <v-list-subheader>Album</v-list-subheader>
+              <v-list-item
+                @click="albumStore.removeFromAlbum(context.album.id, [...selectionStore.selection])"
+              >
+                <v-list-item-title>Remove from album</v-list-item-title>
+              </v-list-item>
+              <v-list-item
+                v-if="
+                  selectionStore.selection.size === 1 &&
+                  context.album.ownerId === authStore.user?.id
+                "
+                @click="setAlbumCover(context.album.id)"
+              >
+                <v-list-item-title>Set as album cover</v-list-item-title>
+              </v-list-item>
+            </template>
+          </v-list>
+        </v-menu>
+      </template>
+
+      <!-- Bin-specific Actions -->
+      <template v-else>
+        <v-btn
+          icon="mdi-restore"
+          variant="plain"
+          density="compact"
+          v-tooltip:top="'Restore'"
+          :loading="binStore.restoreLoading"
+          @click="binStore.restoreItems([...selectionStore.selection])"
+        />
+        <v-btn
+          v-if="systemStore.stats.allow_file_deletion"
+          icon="mdi-delete-forever"
+          variant="plain"
+          density="compact"
+          v-tooltip:top="'Delete permanently'"
+          :loading="binStore.hardDeleteLoading"
+          @click="binStore.hardDeleteItems([...selectionStore.selection])"
+        />
+      </template>
     </div>
   </v-slide-y-reverse-transition>
 </template>

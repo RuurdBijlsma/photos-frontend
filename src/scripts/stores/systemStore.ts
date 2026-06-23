@@ -7,6 +7,8 @@ import { useObjStorage } from '@/scripts/utils.ts'
 const DEFAULT_SYSTEM_STATS: SystemStats = {
   hasClusteredPeople: true,
   hasClusteredPhotos: true,
+  allow_file_deletion: true,
+  allow_file_modifications: true,
   disk: {
     areSameDrive: true,
     mediaDrive: {

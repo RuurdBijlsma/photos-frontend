@@ -93,6 +93,7 @@ const orderedIds = computed(() => {
 const currentIndex = computed(() => orderedIds.value.findIndex((arrId) => id.value === arrId))
 const nextId = computed(() => orderedIds.value[currentIndex.value + 1] ?? null)
 const prevId = computed(() => orderedIds.value[currentIndex.value - 1] ?? null)
+const isBin = computed(() => route.name === 'view-photo-bin')
 
 const timestampString = computed(() => {
   const dateStr = fullImage.value?.taken_at_local
@@ -286,6 +287,7 @@ watch(
           }"
         />
         <v-menu
+          v-if="!isBin"
           :close-on-content-click="false"
           :persistent="persistentInfo"
           v-model="infoMenuOpen"
@@ -505,8 +507,8 @@ watch(
   color: rgba(var(--fg), 0.8);
 }
 
-.top-link:active{
-  color:inherit;
+.top-link:active {
+  color: inherit;
 }
 
 .top-link:hover {

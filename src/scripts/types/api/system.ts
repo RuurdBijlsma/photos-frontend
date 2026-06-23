@@ -13,5 +13,7 @@ export interface DiskStats {
 export interface SystemStats {
   hasClusteredPeople: boolean
   hasClusteredPhotos: boolean
+  allow_file_modifications: boolean
+  allow_file_deletion: boolean
   disk: DiskStats
 }

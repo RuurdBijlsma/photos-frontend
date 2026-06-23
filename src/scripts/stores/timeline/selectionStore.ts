@@ -32,8 +32,8 @@ export const useSelectionStore = defineStore('selection', () => {
     anchorId = null
   }
 
-  async function deselectAll() {
-    if (selection.value.size > 10 && allIds.value.length - selection.value.size > 10) {
+  async function deselectAll(ignorePrompt = false) {
+    if (selection.value.size > 10 && allIds.value.length - selection.value.size > 10 && !ignorePrompt) {
       const confirmed = await dialogs.confirm({
         title: 'Clear Selection?',
         description: 'This will remove all selected items. This action cannot be undone.',

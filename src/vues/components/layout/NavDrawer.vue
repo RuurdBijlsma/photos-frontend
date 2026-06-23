@@ -172,7 +172,7 @@ useEventListener(document, 'mousemove', (e) => {
 
       <v-divider class="mx-5 mt-2 mb-2" />
 
-      <v-list-item rounded prepend-icon="mdi-trash-can-outline" title="Trash" to="/trash" />
+      <v-list-item rounded prepend-icon="mdi-trash-can-outline" title="Bin" to="/bin" />
 
       <storage-overview />
     </v-list>
@@ -226,10 +226,10 @@ useEventListener(document, 'mousemove', (e) => {
       <v-divider class="ma-2" />
       <v-btn
         icon="mdi-trash-can"
-        :variant="route.path.startsWith('/trash') ? 'tonal' : 'plain'"
-        :color="route.path === '/trash' ? 'primary-darken-1' : undefined"
-        to="/trash"
-        title="Trash"
+        :variant="route.path.startsWith('/bin') ? 'tonal' : 'plain'"
+        :color="route.path === '/bin' ? 'primary-darken-1' : undefined"
+        to="/bin"
+        title="Bin"
       />
     </div>
     <div class="resize-handle" @mousedown="startResize"></div>

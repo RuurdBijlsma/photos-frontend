@@ -80,9 +80,16 @@ const router = createRouter({
           component: () => import('@/vues/views/main/ExploreView.vue'),
         },
         {
-          path: 'trash',
-          name: 'trash',
-          component: () => import('@/vues/views/main/TrashView.vue'),
+          path: 'bin',
+          name: 'bin',
+          component: () => import('@/vues/views/main/BinView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-bin',
+              component: ViewPhoto,
+            },
+          ],
         },
         {
           path: 'map',

@@ -372,7 +372,7 @@ watch(
     console.log('Album ID change', id.value)
     simpleTimeline.value?.scrollToTop()
     if (!id.value) return
-    albumStore.fetchAlbumMedia(id.value)
+    albumStore.fetchAlbumMedia(id.value, false)
   },
   { immediate: true },
 )
