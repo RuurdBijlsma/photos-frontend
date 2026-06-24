@@ -2,8 +2,10 @@
 import { onMounted } from 'vue'
 import { useBinStore } from '@/scripts/stores/binStore.ts'
 import SimpleTimeline from '@/vues/components/timeline/simple-timeline/SimpleTimeline.vue'
+import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 
 const binStore = useBinStore()
+const systemStore = useSystemStore()
 
 async function emptyBin() {
   const ids = binStore.binItems.map((item) => item.id)
@@ -34,7 +36,7 @@ onMounted(() => {
 
         <div class="header-actions d-flex align-center">
           <v-btn
-            v-if="binStore.binItems.length > 0"
+            v-if="binStore.binItems.length > 0 && systemStore.stats.allowFileDeletion"
             variant="text"
             color="error"
             prepend-icon="mdi-delete-empty"

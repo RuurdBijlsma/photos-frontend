@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useResizeObserver, useThrottleFn } from '@vueuse/core'
+import { useRoute } from 'vue-router'
+import { useResizeObserver } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
@@ -10,14 +10,13 @@ import storageService from '@/scripts/services/storageService.ts'
 import { getThumbnailHeight, prettyBytes, toHms } from '@/scripts/utils.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 import type { StorageReviewItem } from '@/scripts/types/generated/timeline.ts'
+import { useBinStore } from '@/scripts/stores/binStore.ts'
 
 const route = useRoute()
-const router = useRouter()
 const dialogStore = useDialogStore()
 const snackbarStore = useSnackbarsStore()
-const systemStore = useSystemStore()
+const binStore = useBinStore()
 
 const items = ref<StorageReviewItem[]>([])
 const loading = ref(false)
@@ -30,7 +29,7 @@ const containerWidth = ref(0)
 
 const ITEM_GAP = 14
 const MIN_TILE_WIDTH = 240
-const ROW_HEIGHT = 300
+const ROW_HEIGHT = 295
 
 const mode = computed<'review' | 'blurry'>(() =>
   route.path.includes('/blurry') ? 'blurry' : 'review',
@@ -158,35 +157,18 @@ async function downloadSelected() {
 async function deleteItems(ids: string[]) {
   if (ids.length === 0) return
 
-  let confirmed = await dialogStore.confirm({
-    title: 'Delete Permanently?',
+  const confirmed = await dialogStore.confirm({
+    title: 'Move items to bin?',
     color: 'error',
     icon: 'mdi-delete',
-    description: `Are you sure you want to permanently delete ${ids.length} item${ids.length === 1 ? '' : 's'}? This action cannot be undone and will delete the files from your storage.`,
-    confirmText: 'Delete Permanently',
-  })
-  if (!confirmed) return
-
-  confirmed = await dialogStore.confirm({
-    title: 'Are you sure??',
-    color: 'error',
-    icon: 'mdi-alert',
-    description: `Are you super sure you want to permanently delete ${ids.length} item${ids.length === 1 ? '' : 's'}? This action <strong>cannot be undone</strong> and will delete the files from your storage.`,
-    confirmText: 'Delete Permanently',
+    description: `Are you sure you want to delete ${ids.length} item${ids.length === 1 ? '' : 's'}? They will end up in your Bin where you can delete them permanently.`,
+    confirmText: 'Move to bin',
   })
   if (!confirmed) return
 
   actionLoading.value = true
   try {
-    await storageService.deletePermanently(ids)
-    snackbarStore.enqueue({
-      message: `${ids.length} item${ids.length === 1 ? '' : 's'} permanently deleted`,
-      icon: 'mdi-delete-forever',
-    })
-    await loadItems()
-    requestIdleCallback(() => systemStore.fetchStats())
-  } catch (e) {
-    snackbarStore.error('Failed to permanently delete items', e)
+    await binStore.softDeleteItems(ids)
   } finally {
     actionLoading.value = false
   }
@@ -208,7 +190,7 @@ onMounted(loadItems)
         <header class="review-header">
           <div>
             <div class="breadcrumbs">
-              <button @click="router.push('/storage')">Manage storage</button>
+              <router-link class="crumb-link" to="/storage">Manage storage</router-link>
               <v-icon icon="mdi-chevron-right" size="18" />
               <span>{{ title }}</span>
             </div>
@@ -222,30 +204,9 @@ onMounted(loadItems)
           <div class="header-actions">
             <v-btn
               variant="tonal"
-              color="primary"
-              rounded="xl"
-              class="text-none stable-btn"
-              :disabled="items.length === 0"
-              @click="toggleAll"
-            >
-              {{ allSelected ? 'Clear' : 'Select all' }}
-            </v-btn>
-            <v-btn
-              variant="tonal"
-              color="primary"
-              prepend-icon="mdi-download-outline"
-              rounded="xl"
-              class="text-none stable-btn"
-              :loading="batchDownloading"
-              :disabled="selected.size === 0 || actionLoading || downloadingIds.size > 0"
-              @click="downloadSelected"
-            >
-              Download
-            </v-btn>
-            <v-btn
-              variant="tonal"
+              v-if="selected.size !== 0"
               color="error"
-              prepend-icon="mdi-delete-forever"
+              prepend-icon="mdi-delete"
               rounded="xl"
               class="text-none delete-btn"
               :loading="actionLoading"
@@ -253,6 +214,32 @@ onMounted(loadItems)
               @click="deleteItems([...selected])"
             >
               Delete
+            </v-btn>
+            <v-btn
+              variant="tonal"
+              v-if="selected.size !== 0"
+              color="primary"
+              prepend-icon="mdi-download-outline"
+              rounded="xl"
+              class="text-none stable-btn"
+              :loading="batchDownloading"
+              :disabled="actionLoading || downloadingIds.size > 0"
+              @click="downloadSelected"
+            >
+              Download
+            </v-btn>
+            <v-btn
+              variant="tonal"
+              color="primary"
+              rounded="xl"
+              :prepend-icon="
+                allSelected ? 'mdi-close' : 'mdi-checkbox-multiple-marked-circle-outline'
+              "
+              class="text-none stable-btn"
+              :disabled="items.length === 0"
+              @click="toggleAll"
+            >
+              {{ allSelected ? 'Clear' : 'Select all' }}
             </v-btn>
             <div class="selected-size">
               <span>{{ selected.size }} selected</span>
@@ -334,28 +321,26 @@ onMounted(loadItems)
                   </span>
                 </div>
                 <div class="item-actions">
-                  <button
+                  <v-btn
                     class="action-btn download"
                     :disabled="downloadingIds.has(item.id) || batchDownloading"
                     title="Download original"
+                    icon="mdi-download"
+                    color="primary"
+                    variant="plain"
+                    :loading="downloadingIds.has(item.id)"
                     @click="downloadItem(item)"
-                  >
-                    <v-progress-circular
-                      v-if="downloadingIds.has(item.id)"
-                      indeterminate
-                      size="18"
-                      width="2"
-                    />
-                    <v-icon v-else icon="mdi-download-outline" size="18" />
-                  </button>
-                  <button
+                  />
+                  <v-btn
                     class="action-btn delete"
-                    :disabled="actionLoading || batchDownloading"
-                    title="Delete permanently"
                     @click="deleteItems([item.id])"
-                  >
-                    <v-icon icon="mdi-delete-forever" size="18" />
-                  </button>
+                    :disabled="actionLoading || batchDownloading"
+                    title="Move to bin"
+                    color="error"
+                    icon="mdi-delete"
+                    variant="plain"
+                    :loading="downloadingIds.has(item.id)"
+                  />
                 </div>
               </div>
             </article>
@@ -404,13 +389,13 @@ onMounted(loadItems)
   margin-bottom: 8px;
 }
 
-.breadcrumbs button {
+.crumb-link {
   color: rgb(var(--v-theme-primary));
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  font: inherit;
+  text-decoration: none;
+}
+
+.crumb-link:hover {
+  text-decoration: underline;
 }
 
 h1 {
@@ -433,11 +418,11 @@ h1 {
 }
 
 .stable-btn {
-  width: 118px;
+  width: 150px;
 }
 
 .delete-btn {
-  width: 104px;
+  width: 120px;
 }
 
 .selected-size {
@@ -614,14 +599,6 @@ h1 {
 .action-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.action-btn.download {
-  color: rgb(var(--v-theme-primary));
-}
-
-.action-btn.delete {
-  color: rgb(var(--v-theme-error));
 }
 
 .state {

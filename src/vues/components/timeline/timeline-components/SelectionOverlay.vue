@@ -122,7 +122,7 @@ async function setAlbumCover(albumId: string) {
           @click="binStore.restoreItems([...selectionStore.selection])"
         />
         <v-btn
-          v-if="systemStore.stats.allow_file_deletion"
+          v-if="systemStore.stats.allowFileDeletion"
           icon="mdi-delete-forever"
           variant="plain"
           density="compact"

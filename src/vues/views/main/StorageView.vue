@@ -28,7 +28,7 @@ const thumbnailUsedPercentage = computed(() =>
 const reviewCards = computed(() => [
   {
     title: 'Large photos & videos',
-    description: `${summary.value.largeItemCount} item${summary.value.largeItemCount === 1 ? '' : 's'} over 10 MB`,
+    description: `${summary.value.largeItemCount}${summary.value.largeItemCount >= 250 ? '+' : ''} item${summary.value.largeItemCount === 1 ? '' : 's'} over 10 MB`,
     savings: summary.value.largePotentialSavings,
     icon: 'mdi-image-multiple-outline',
     to: '/storage/review',
