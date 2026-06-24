@@ -12,11 +12,13 @@ import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type { StorageReviewItem } from '@/scripts/types/generated/timeline.ts'
 import { useBinStore } from '@/scripts/stores/binStore.ts'
+import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 
 const route = useRoute()
 const dialogStore = useDialogStore()
 const snackbarStore = useSnackbarsStore()
 const binStore = useBinStore()
+const viewPhotoStore = useViewPhotoStore()
 
 const items = ref<StorageReviewItem[]>([])
 const loading = ref(false)
@@ -124,10 +126,22 @@ async function downloadItem(item: StorageReviewItem) {
   setDownloading(item.id, true)
   try {
     const response = await mediaItemService.downloadMediaFileById(item.id)
+    let filename = item.id
+    const contentDisposition =
+      response.headers?.['content-disposition'] || response.headers?.['Content-Disposition']
+    console.log("headers", response.headers)
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?['"]?([^;\r\n"']+)['"]?/i)
+      if (match && match[1]) {
+        filename = decodeURIComponent(match[1])
+      }
+    } else {
+      filename = item.id
+    }
     const url = window.URL.createObjectURL(response.data)
     const link = document.createElement('a')
     link.href = url
-    link.download = item.id
+    link.download = filename
     link.click()
     window.URL.revokeObjectURL(url)
     snackbarStore.enqueue({ message: 'Download started', icon: 'mdi-download-outline' })
@@ -173,6 +187,16 @@ async function deleteItems(ids: string[]) {
     actionLoading.value = false
   }
 }
+
+watch(
+  [items, () => mode.value],
+  () => {
+    viewPhotoStore.ids = items.value.map((i) => i.id)
+    viewPhotoStore.viewLink =
+      mode.value === 'blurry' ? '/storage/blurry/view/' : '/storage/review/view/'
+  },
+  { immediate: true },
+)
 
 useResizeObserver(scrollContainer, (entries) => {
   if (entries[0]) containerWidth.value = entries[0].contentRect.width
@@ -285,8 +309,8 @@ onMounted(loadItems)
                 <router-link class="thumb-link" :to="`${basePath}/view/${item.id}`">
                   <thumbnail-img
                     :media-item-id="item.id"
-                    :height="getThumbnailHeight(tileWidth)"
-                    :width="tileWidth"
+                    :height="getThumbnailHeight(ROW_HEIGHT)"
+                    :width="tileWidth - 8"
                     cover
                   />
                   <div class="video-chip" v-if="item.isVideo">
@@ -460,7 +484,7 @@ h1 {
   height: 100%;
   overflow: hidden;
   border-radius: 28px;
-  background: rgb(var(--v-theme-surface-container-low));
+  background: rgb(var(--v-theme-surface-container));
   transition:
     background-color 0.16s ease,
     box-shadow 0.16s ease;
@@ -475,7 +499,10 @@ h1 {
 
 .thumb-link {
   display: block;
-  height: 100%;
+  height: calc(100% - 16px);
+  width: calc(100% - 16px);
+  margin: 8px;
+  border-radius: 20px;
   overflow: hidden;
   background: rgba(var(--v-theme-on-surface), 0.05);
 }

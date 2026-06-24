@@ -37,6 +37,7 @@ const useOnDemandThumb = ref(new Map<string | null, boolean>())
 <style scoped>
 .cover-img {
   object-fit: cover;
+  height: 100%;
 }
 
 .contain-img {
