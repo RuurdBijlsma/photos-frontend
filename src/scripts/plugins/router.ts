@@ -104,6 +104,30 @@ const router = createRouter({
           ],
         },
         {
+          path: 'storage/review',
+          name: 'storage-review',
+          component: () => import('@/vues/views/main/StorageReviewView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-storage-review',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
+          path: 'storage/blurry',
+          name: 'storage-blurry',
+          component: () => import('@/vues/views/main/StorageReviewView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-storage-blurry',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
           path: 'map',
           name: 'map',
           component: () => import('@/vues/views/main/MapView.vue'),
