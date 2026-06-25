@@ -53,7 +53,6 @@ const userFilterOptions = computed(() => {
 })
 
 const headers = [
-  { title: 'ID', key: 'id', sortable: true, width: '80px' },
   { title: 'Job Type', key: 'jobType', sortable: true },
   { title: 'User', key: 'userId', sortable: true, width: '130px' },
   { title: 'File Path', key: 'relativePath', sortable: true },
@@ -128,6 +127,7 @@ async function handleCancelJob(jobId: number) {
     if (detailedJob.value && detailedJob.value.id === jobId) {
       detailedJob.value.status = 'cancelled'
     }
+    errorDialog.value = false
   } catch {
     // Handled in Pinia Store
   } finally {
@@ -143,6 +143,7 @@ async function handleRetryJob(jobId: number) {
     if (detailedJob.value && detailedJob.value.id === jobId) {
       detailedJob.value.status = 'queued'
     }
+    errorDialog.value = false
   } catch {
     // Handled in Pinia Store
   } finally {
