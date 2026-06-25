@@ -73,6 +73,26 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  async function cancelJob(jobId: number) {
+    try {
+      await adminService.cancelJob(jobId)
+      snackbarStore.success(`Job #${jobId} cancelled successfully`)
+    } catch (error) {
+      snackbarStore.error(`Failed to cancel Job #${jobId}`, error)
+      throw error
+    }
+  }
+
+  async function retryJob(jobId: number) {
+    try {
+      await adminService.retryJob(jobId)
+      snackbarStore.success(`Job #${jobId} scheduled for retry`)
+    } catch (error) {
+      snackbarStore.error(`Failed to retry Job #${jobId}`, error)
+      throw error
+    }
+  }
+
   // --- USER ADMINISTRATION ACTIONS ---
 
   async function fetchUsers() {
@@ -138,5 +158,7 @@ export const useAdminStore = defineStore('admin', () => {
     totalJobs,
     isJobsLoading,
     fetchJobs,
+    cancelJob,
+    retryJob,
   }
 })

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAdminStore } from '@/scripts/stores/adminStore.ts'
-import type { JobInfo, JobStatus, JobType } from '@/scripts/types/api/admin.ts'
+import type { AdminUserInfo, JobInfo, JobStatus, JobType } from '@/scripts/types/api/admin.ts'
+import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 
 const adminStore = useAdminStore()
 
@@ -16,15 +17,42 @@ const tableOptions = ref({
 // Filters State
 const selectedStatus = ref<JobStatus | null>(null)
 const selectedJobType = ref<JobType | null>(null)
+const selectedUser = ref<string | null>(null)
 const searchPath = ref('')
 
-// Error Detail Dialog State
+// Detailed Inspector Modal & Loading State
 const errorDialog = ref(false)
 const detailedJob = ref<JobInfo | null>(null)
+const isActionLoading = ref(false)
+
+// Fetch user records if not already available to map avatars
+onMounted(() => {
+  if (adminStore.users.length === 0) {
+    adminStore.fetchUsers()
+  }
+})
+
+// Build index of users for quick lookup
+const userMap = computed(() => {
+  const map = new Map<number, AdminUserInfo>()
+  adminStore.users.forEach((u) => map.set(u.id, u))
+  return map
+})
+
+// Setup dropdown selections for filtering by registered user
+const userFilterOptions = computed(() => {
+  const options = adminStore.users.map((u) => ({
+    title: u.username,
+    value: u.id.toString(),
+  }))
+  options.unshift({ title: 'System / Global', value: 'system' })
+  return options
+})
 
 const headers = [
   { title: 'ID', key: 'id', sortable: true, width: '80px' },
   { title: 'Job Type', key: 'jobType', sortable: true },
+  { title: 'User', key: 'userId', sortable: true, width: '130px' },
   { title: 'File Path', key: 'relativePath', sortable: true },
   { title: 'Priority', key: 'priority', sortable: true, width: '100px' },
   { title: 'Status', key: 'status', sortable: true, width: '120px' },
@@ -55,6 +83,13 @@ async function loadJobs(options: typeof tableOptions.value) {
   if (selectedJobType.value) {
     filterParams.push(`jobType:eq:${selectedJobType.value}`)
   }
+  if (selectedUser.value) {
+    if (selectedUser.value === 'system') {
+      filterParams.push('userId:is_null')
+    } else {
+      filterParams.push(`userId:eq:${selectedUser.value}`)
+    }
+  }
   if (searchPath.value) {
     filterParams.push(`relativePath:contains:${searchPath.value}`)
   }
@@ -76,6 +111,36 @@ function openErrorDetail(job: JobInfo) {
 function closeErrorDetail() {
   errorDialog.value = false
   detailedJob.value = null
+}
+
+async function handleCancelJob(jobId: number) {
+  isActionLoading.value = true
+  try {
+    await adminStore.cancelJob(jobId)
+    await loadJobs(tableOptions.value)
+    if (detailedJob.value && detailedJob.value.id === jobId) {
+      detailedJob.value.status = 'cancelled'
+    }
+  } catch {
+    // Handled in Pinia Store
+  } finally {
+    isActionLoading.value = false
+  }
+}
+
+async function handleRetryJob(jobId: number) {
+  isActionLoading.value = true
+  try {
+    await adminStore.retryJob(jobId)
+    await loadJobs(tableOptions.value)
+    if (detailedJob.value && detailedJob.value.id === jobId) {
+      detailedJob.value.status = 'queued'
+    }
+  } catch {
+    // Handled in Pinia Store
+  } finally {
+    isActionLoading.value = false
+  }
 }
 
 function getStatusColor(status: JobStatus) {
@@ -125,7 +190,7 @@ function formatDate(dateStr: string | null) {
         <div class="card-body">
           <!-- Filter Bar -->
           <v-row class="mb-4" dense>
-            <v-col cols="12" sm="4">
+            <v-col cols="12" sm="3">
               <v-select
                 v-model="selectedStatus"
                 label="Filter by Status"
@@ -138,7 +203,7 @@ function formatDate(dateStr: string | null) {
                 @update:model-value="triggerSearch"
               />
             </v-col>
-            <v-col cols="12" sm="4">
+            <v-col cols="12" sm="3">
               <v-select
                 v-model="selectedJobType"
                 label="Filter by Job Type"
@@ -167,7 +232,20 @@ function formatDate(dateStr: string | null) {
                 @update:model-value="triggerSearch"
               />
             </v-col>
-            <v-col cols="12" sm="4">
+            <v-col cols="12" sm="3">
+              <v-select
+                v-model="selectedUser"
+                label="Filter by User"
+                :items="userFilterOptions"
+                clearable
+                density="compact"
+                variant="outlined"
+                rounded="lg"
+                hide-details
+                @update:model-value="triggerSearch"
+              />
+            </v-col>
+            <v-col cols="12" sm="3">
               <v-text-field
                 v-model="searchPath"
                 label="Search Path"
@@ -199,6 +277,29 @@ function formatDate(dateStr: string | null) {
             <!-- Job Type chip formatting -->
             <template #[`item.jobType`]="{ item }">
               <code class="job-type-code">{{ item.jobType }}</code>
+            </template>
+
+            <!-- User rendering with avatar fallback -->
+            <template #[`item.userId`]="{ item }">
+              <div v-if="item.userId !== null" class="d-flex align-center">
+                <v-avatar size="26" class="mr-2 border" color="surface-container-highest">
+                  <thumbnail-img
+                    v-if="userMap.get(item.userId)?.avatarId"
+                    :media-item-id="userMap.get(item.userId)!.avatarId!"
+                    cover
+                  />
+                  <v-icon v-else size="small" color="primary">mdi-account-outline</v-icon>
+                </v-avatar>
+                <span class="text-caption font-weight-medium">
+                  {{ userMap.get(item.userId)?.username || `ID: ${item.userId}` }}
+                </span>
+              </div>
+              <div v-else class="d-flex align-center text-medium-emphasis">
+                <v-avatar size="26" class="mr-2" color="surface-container-highest">
+                  <v-icon size="small">mdi-cog-outline</v-icon>
+                </v-avatar>
+                <span class="text-caption italic">System</span>
+              </div>
             </template>
 
             <!-- Relative Path formatting -->
@@ -313,7 +414,40 @@ function formatDate(dateStr: string | null) {
           </v-row>
         </v-card-text>
 
-        <v-card-actions class="px-6 pb-6">
+        <v-card-actions class="px-6 pb-6 d-flex align-center">
+          <!-- Cancel Button: Queued or Running -->
+          <v-btn
+            v-if="
+              detailedJob && (detailedJob.status === 'queued' || detailedJob.status === 'running')
+            "
+            variant="tonal"
+            prepend-icon="mdi-stop-circle-outline"
+            rounded
+            :loading="isActionLoading"
+            @click="handleCancelJob(detailedJob.id)"
+            class="mr-2"
+          >
+            Cancel Job
+          </v-btn>
+
+          <!-- Retry Button: Failed, Done, Cancelled -->
+          <v-btn
+            v-if="
+              detailedJob &&
+              (detailedJob.status === 'failed' ||
+                detailedJob.status === 'done' ||
+                detailedJob.status === 'cancelled')
+            "
+            variant="tonal"
+            prepend-icon="mdi-cached"
+            rounded
+            :loading="isActionLoading"
+            @click="handleRetryJob(detailedJob.id)"
+            class="mr-2"
+          >
+            Retry Job
+          </v-btn>
+
           <v-spacer />
           <v-btn color="primary" variant="text" rounded @click="closeErrorDetail">Close</v-btn>
         </v-card-actions>
@@ -398,5 +532,9 @@ function formatDate(dateStr: string | null) {
 
 .dialog-header {
   border-bottom: 1px solid rgba(var(--v-border-color), 0.15);
+}
+
+.italic {
+  font-style: italic;
 }
 </style>

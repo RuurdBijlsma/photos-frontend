@@ -80,6 +80,20 @@ const adminService = {
   getJobs(params: URLSearchParams): Promise<AxiosResponse<PaginatedJobsResponse>> {
     return apiClient.get<PaginatedJobsResponse>('/jobs', { params })
   },
+
+  /**
+   * Cancel a specific background job.
+   */
+  cancelJob(jobId: number): Promise<AxiosResponse<void>> {
+    return apiClient.post<void>(`/jobs/${jobId}/cancel`)
+  },
+
+  /**
+   * Retry a specific background job.
+   */
+  retryJob(jobId: number): Promise<AxiosResponse<void>> {
+    return apiClient.post<void>(`/jobs/${jobId}/retry`)
+  },
 }
 
 export default adminService
