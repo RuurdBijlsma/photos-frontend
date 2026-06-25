@@ -599,7 +599,6 @@ async function deleteUser(user: AdminUserInfo) {
 
 /* Dialog customizations */
 .pick-folder-dialog {
-  //border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
   backdrop-filter: blur(15px) saturate(150%) brightness(90%) contrast(110%);
   background-color: rgba(var(--v-theme-surface-container-highest), 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
