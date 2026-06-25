@@ -57,12 +57,14 @@ const thumbsUsedPercentage = computed(
 
 .drive-descriptor {
   font-size: 12px;
-  opacity: 0.7;
+  font-weight: 500;
+  //opacity: 0.7;
 }
 
 .usage-text {
-  margin-top: 8px;
-  font-size: 14px;
-  color: rgb(var(--v-theme-on-surface-variant));
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(var(--v-theme-on-background), 0.8);
+  font-weight: 400;
 }
 </style>

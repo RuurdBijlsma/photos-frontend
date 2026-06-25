@@ -2,15 +2,16 @@
 import { computed, onMounted, ref } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import { useSystemStore } from '@/scripts/stores/systemStore.ts'
-import { prettyBytes } from '@/scripts/utils.ts'
+import { prettyBytes, useObjStorage } from '@/scripts/utils.ts'
 import storageService from '@/scripts/services/storageService.ts'
 import type { StorageSummaryResponse } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
+import BigStorageOverview from '@/vues/components/ui/BigStorageOverview.vue'
 
 const systemStore = useSystemStore()
 const snackbarStore = useSnackbarsStore()
 
-const summary = ref<StorageSummaryResponse>({
+const summary = useObjStorage<StorageSummaryResponse>('storage-summary-response', {
   largePotentialSavings: 0,
   largeItemCount: 0,
   blurryPotentialSavings: 0,
@@ -19,13 +20,6 @@ const summary = ref<StorageSummaryResponse>({
   thumbnailFolderSizeBytes: 0,
 })
 const loading = ref(false)
-const diskStats = computed(() => systemStore.stats.disk)
-const mediaUsedPercentage = computed(() =>
-  percentage(diskStats.value.mediaDrive.diskUsed, diskStats.value.mediaDrive.diskTotal),
-)
-const thumbnailUsedPercentage = computed(() =>
-  percentage(diskStats.value.thumbnailDrive.diskUsed, diskStats.value.thumbnailDrive.diskTotal),
-)
 
 const reviewCards = computed(() => [
   {
@@ -43,11 +37,6 @@ const reviewCards = computed(() => [
     to: '/storage/blurry',
   },
 ])
-
-function percentage(used: number, total: number) {
-  if (total <= 0) return 0
-  return Math.min(100, Math.max(0, (used / total) * 100))
-}
 
 async function loadSummary() {
   loading.value = true
@@ -74,7 +63,7 @@ onMounted(loadSummary)
       <header class="storage-header">
         <div>
           <h1>Manage storage</h1>
-          <p>Review large files and low-quality media before permanently deleting anything.</p>
+          <p>Review large files and low-quality media to clear up space.</p>
         </div>
         <v-btn
           variant="text"
@@ -86,53 +75,11 @@ onMounted(loadSummary)
         />
       </header>
 
-      <section class="usage-section">
-        <div class="usage-card">
-          <div class="usage-card-header">
-            <div>
-              <h2>{{ diskStats.areSameDrive ? 'Storage usage' : 'Media drive' }}</h2>
-              <p>
-                {{ prettyBytes(diskStats.mediaDrive.diskUsed, 1) }} of
-                {{ prettyBytes(diskStats.mediaDrive.diskTotal, 1) }} used
-              </p>
-            </div>
-            <strong>{{ Math.round(mediaUsedPercentage) }}%</strong>
-          </div>
-          <v-progress-linear
-            :model-value="mediaUsedPercentage"
-            color="primary"
-            height="14"
-            rounded-bar
-          />
-          <div class="usage-footer">
-            <span>{{ prettyBytes(diskStats.mediaDrive.diskAvailable, 1) }} available</span>
-            <span>{{ prettyBytes(diskStats.mediaDrive.diskUsed, 1) }} used</span>
-          </div>
-        </div>
-
-        <div class="usage-card" v-if="!diskStats.areSameDrive">
-          <div class="usage-card-header">
-            <div>
-              <h2>Thumbnail drive</h2>
-              <p>
-                {{ prettyBytes(diskStats.thumbnailDrive.diskUsed, 1) }} of
-                {{ prettyBytes(diskStats.thumbnailDrive.diskTotal, 1) }} used
-              </p>
-            </div>
-            <strong>{{ Math.round(thumbnailUsedPercentage) }}%</strong>
-          </div>
-          <v-progress-linear
-            :model-value="thumbnailUsedPercentage"
-            color="primary"
-            height="14"
-            rounded-bar
-          />
-          <div class="usage-footer">
-            <span>{{ prettyBytes(diskStats.thumbnailDrive.diskAvailable, 1) }} available</span>
-            <span>{{ prettyBytes(diskStats.thumbnailDrive.diskUsed, 1) }} used</span>
-          </div>
-        </div>
-      </section>
+      <big-storage-overview
+        :disk-stats="systemStore.stats.disk"
+        :media-folder-size-bytes="summary.mediaFolderSizeBytes"
+        :thumbnail-folder-size-bytes="summary.thumbnailFolderSizeBytes"
+      />
 
       <section class="review-section">
         <h2>Review & delete</h2>
@@ -181,43 +128,12 @@ h1 {
 .storage-header p,
 .usage-card p,
 .review-copy p,
-.usage-footer,
 .review-saving span {
   color: rgb(var(--v-theme-on-surface-variant));
 }
 
 .storage-header p {
   margin: 4px 0 0;
-}
-
-.usage-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  margin-bottom: 34px;
-}
-
-.usage-card {
-  padding: 20px;
-  border-radius: 28px;
-  background: rgb(var(--v-theme-surface-container-low));
-}
-
-.usage-card :deep(.v-progress-linear) {
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.usage-card :deep(.v-progress-linear__background) {
-  border-radius: 999px;
-}
-
-.usage-card-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: flex-start;
-  margin-bottom: 16px;
 }
 
 .usage-card h2,
@@ -234,13 +150,6 @@ h1 {
 .usage-card strong {
   font-size: 1.6rem;
   font-weight: 600;
-}
-
-.usage-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  font-size: 0.9rem;
 }
 
 .review-section h2 {

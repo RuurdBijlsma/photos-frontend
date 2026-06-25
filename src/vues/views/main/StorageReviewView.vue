@@ -358,12 +358,11 @@ onMounted(loadItems)
                   <v-btn
                     class="action-btn delete"
                     @click="deleteItems([item.id])"
-                    :disabled="actionLoading || batchDownloading"
+                    :disabled="downloadingIds.has(item.id) || actionLoading || batchDownloading"
                     title="Move to bin"
                     color="error"
                     icon="mdi-delete"
                     variant="plain"
-                    :loading="downloadingIds.has(item.id)"
                   />
                 </div>
               </div>
