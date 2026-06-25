@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import UserAdmin from '@/vues/components/admin/UserAdmin.vue'
-
 </script>
 
 <template>

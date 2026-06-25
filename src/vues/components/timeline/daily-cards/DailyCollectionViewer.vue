@@ -23,7 +23,7 @@ const currentIndex = ref(0)
 const progress = ref(0)
 const isPaused = ref(false)
 const pausedByScroll = ref(false)
-let timerId: any = null
+let timerId: ReturnType<typeof setInterval> | null = null
 
 // Precise timer tracking for pausing/resuming
 const elapsedTimeMs = ref(0)

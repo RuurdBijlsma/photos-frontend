@@ -8,14 +8,12 @@ export interface MapStyle {
   thumb: string
 }
 
-interface Props {
+defineProps<{
   currentStyle: StyleName
   mapMode: 'markers' | 'heatmap'
   nextStyle: MapStyle
-  mapStyles: MapStyle[]
-}
-
-const props = defineProps<Props>()
+  mapStyles: readonly MapStyle[]
+}>()
 
 const emit = defineEmits<{
   'update:currentStyle': [value: StyleName]
@@ -39,18 +37,9 @@ function handleCycleStyle() {
 </script>
 
 <template>
-  <div
-    class="map-layer-selector"
-    @mouseenter="isHovered = true"
-    @mouseleave="isHovered = false"
-  >
+  <div class="map-layer-selector" @mouseenter="isHovered = true" @mouseleave="isHovered = false">
     <v-fade-transition>
-      <v-card
-        v-show="isHovered"
-        flat
-        class="map-style-options-card"
-        rounded="xl"
-      >
+      <v-card v-show="isHovered" flat class="map-style-options-card" rounded="xl">
         <!-- Visualization View Selector -->
         <div class="map-mode-selector">
           <v-chip-group
@@ -86,12 +75,7 @@ function handleCycleStyle() {
             @click="handleStyleClick(style.key)"
           >
             <div class="map-style-option-thumb-wrapper">
-              <v-img
-                :src="style.thumb"
-                cover
-                class="map-style-option-thumb"
-                :alt="style.label"
-              />
+              <v-img :src="style.thumb" cover class="map-style-option-thumb" :alt="style.label" />
               <v-icon
                 v-if="currentStyle === style.key"
                 color="primary"
@@ -107,12 +91,7 @@ function handleCycleStyle() {
     </v-fade-transition>
 
     <v-card class="map-layer-trigger-card" elevation="6" rounded="xl" @click="handleCycleStyle">
-      <v-img
-        :src="nextStyle.thumb"
-        cover
-        class="map-layer-trigger-thumb"
-        :alt="nextStyle.label"
-      >
+      <v-img :src="nextStyle.thumb" cover class="map-layer-trigger-thumb" :alt="nextStyle.label">
         <div class="map-layer-trigger-overlay">
           <span class="map-layer-trigger-label">Layers</span>
         </div>

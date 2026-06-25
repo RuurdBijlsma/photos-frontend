@@ -92,7 +92,7 @@ interface Props {
   loadCoord: { lat: number; lng: number } | null
 }
 
-interface DateFilter {
+export interface DateFilter {
   startDate: Date | null
   endDate: Date | null
   active: boolean
@@ -106,7 +106,7 @@ const emit = defineEmits<{
   'visible-items-changed': [items: SimpleTimelineItem[]]
   'marker-selected': [data: { key: string; coords: [number, number] }]
   'cluster-selected': [data: { items: SimpleTimelineItem[]; item: SimpleTimelineItem }]
-  'date-filter-change': [payload: { isDragging: boolean }]
+  'date-filter-change': [payload: { isDragging: boolean; dateFilter: DateFilter }]
 }>()
 
 const route = useRoute()

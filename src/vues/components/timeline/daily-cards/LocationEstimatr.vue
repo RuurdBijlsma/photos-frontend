@@ -83,6 +83,10 @@ const tempGuess = ref<{ lat: number; lng: number } | null>(null)
 const mapInstance = ref<maplibregl.Map | null>(null)
 const mapStyle = ref<StyleName>('LIBERTY')
 
+function requireMap(): maplibregl.Map {
+  return mapInstance.value as unknown as maplibregl.Map
+}
+
 const mapWidth = ref(440) // Generous starting map size
 const mapHeight = ref(330)
 
@@ -364,7 +368,7 @@ function updateGuessMarker(lat: number, lng: number) {
       anchor: 'center',
     })
       .setLngLat([lng, lat])
-      .addTo(mapInstance.value)
+      .addTo(requireMap())
   } else {
     guessMarker.setLngLat([lng, lat])
   }
@@ -400,7 +404,7 @@ function updateActualMarker(lat: number, lng: number) {
       offset: [0, -25],
     })
       .setLngLat([lng, lat])
-      .addTo(mapInstance.value)
+      .addTo(requireMap())
   } else {
     actualMarker.setLngLat([lng, lat])
     const circle = actualMarker.getElement().querySelector('.marker-circle') as HTMLElement
@@ -416,7 +420,7 @@ function drawDottedLine(coord1: [number, number], coord2: [number, number]) {
 
   const curvedCoordinates = getGreatCircleRoute(coord1[1], coord1[0], coord2[1], coord2[0])
 
-  const geojson = {
+  const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
     type: 'Feature',
     properties: {},
     geometry: {
@@ -426,11 +430,11 @@ function drawDottedLine(coord1: [number, number], coord2: [number, number]) {
   }
 
   if (map.getSource('route')) {
-    ;(map.getSource('route') as maplibregl.GeoJSONSource).setData(geojson as any)
+    ;(map.getSource('route') as maplibregl.GeoJSONSource).setData(geojson)
   } else {
     map.addSource('route', {
       type: 'geojson',
-      data: geojson as any,
+      data: geojson,
     })
 
     map.addLayer({
@@ -480,7 +484,7 @@ function clearMapDrawings() {
 
 function drawAllOnMap() {
   if (!mapInstance.value) return
-  const map = mapInstance.value
+  const map = requireMap()
 
   clearMapDrawings()
 

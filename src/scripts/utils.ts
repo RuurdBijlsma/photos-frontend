@@ -122,7 +122,7 @@ export function getWeatherIcon(condition: string, isDaytime: boolean): string {
   return isDaytime ? icon.day : icon.night
 }
 
-export function makeDateTimeString(date:Date){
+export function makeDateTimeString(date: Date) {
   const day = date.getDate()
   const month = date.toLocaleString('en-GB', { month: 'long' })
   const year = date.getFullYear()

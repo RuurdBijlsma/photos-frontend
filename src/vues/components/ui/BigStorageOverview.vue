@@ -187,7 +187,7 @@ function percentage(used: number, total: number) {
 .usage-section {
   --media-color: #21b655;
   --thumb-color: #dd6120;
-  --other-color: rgba(var(--v-theme-on-surface-variant), .5);
+  --other-color: rgba(var(--v-theme-on-surface-variant), 0.5);
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;

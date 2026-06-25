@@ -7,7 +7,6 @@ import type {
   UnsupportedFilesResponse,
   AdminUserInfo,
 } from '@/scripts/types/api/admin.ts'
-import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
@@ -72,7 +71,7 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  async function deleteUser(userId:  number) {
+  async function deleteUser(userId: number) {
     try {
       await adminService.deleteUser(userId)
       // Filter out locally

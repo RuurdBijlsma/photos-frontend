@@ -1,13 +1,9 @@
 import { defineStore } from 'pinia'
-import { ref, shallowRef, triggerRef } from 'vue'
-import type { Album, AlbumSort, BackupInfo, UpdateAlbumRequest } from '@/scripts/types/api/album.ts'
+import { ref } from 'vue'
+import type { BackupInfo } from '@/scripts/types/api/album.ts'
 import albumService from '@/scripts/services/albumService.ts'
-import type { FullAlbumMediaResponse } from '@/scripts/types/generated/timeline.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import { useSelectionStore } from '@/scripts/stores/timeline/selectionStore.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
-import { useRouter } from 'vue-router'
-import { useObjStorage } from '@/scripts/utils.ts'
 import { useAlbumStore } from '@/scripts/stores/albumStore.ts'
 
 export const useAlbumBackupStore = defineStore('albumBackup', () => {
@@ -48,6 +44,6 @@ export const useAlbumBackupStore = defineStore('albumBackup', () => {
   return {
     fetchBackups,
     restoreBackup,
-    backups
+    backups,
   }
 })

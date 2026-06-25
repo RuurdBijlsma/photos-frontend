@@ -4,7 +4,6 @@ import type {
   DiskResponse,
   MakeFolderBody,
   MediaSampleResponse,
-  StartProcessingBody,
   UnsupportedFilesResponse,
   AdminUserInfo,
 } from '@/scripts/types/api/admin.ts'

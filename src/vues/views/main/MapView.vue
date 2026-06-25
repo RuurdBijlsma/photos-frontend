@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import MapContainer from '@/vues/components/map/MapContainer.vue'
+import MapContainer, { type DateFilter } from '@/vues/components/map/MapContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useEventListener, useResizeObserver, useStorage, useThrottleFn } from '@vueuse/core'
 import type { MapPhotosResponse, SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
@@ -25,7 +25,7 @@ const photoIdToOrder = new Map<string, number>()
 
 // --- Layout & Resize Settings ---
 const outerLayoutEl = useTemplateRef('outerLayout')
-const mapContainerRef = useTemplateRef<any>('mapContainerRef')
+const mapContainerRef = useTemplateRef<InstanceType<typeof MapContainer>>('mapContainerRef')
 const MIN_MAP_WIDTH = 400
 const MIN_SIDEBAR_WIDTH = 200
 const SIDEBAR_GAP = 5
@@ -83,7 +83,7 @@ async function fetchMapPhotos(start: Date | null, end: Date | null) {
 
 const throttledFetchMapPhotos = useThrottleFn(fetchMapPhotos, 100)
 
-function handleDateFilterChange(payload: { isDragging: boolean; dateFilter: any }) {
+function handleDateFilterChange(payload: { isDragging: boolean; dateFilter: DateFilter }) {
   const start = payload.dateFilter.active ? payload.dateFilter.startDate : null
   const end = payload.dateFilter.active ? payload.dateFilter.endDate : null
 
@@ -184,8 +184,14 @@ watch(sidebarOpen, () => {
         :map-photos="mapPhotos"
         :load-coord="loadCoord"
         @visible-items-changed="visibleItems = $event"
-        @marker-selected="selectedMarkerKey = $event.key; selectedLngLat = $event.coords"
-        @cluster-selected="selectedClusterItems = $event.items; selectedPopupItem = $event.item"
+        @marker-selected="
+          selectedMarkerKey = $event.key
+          selectedLngLat = $event.coords
+        "
+        @cluster-selected="
+          selectedClusterItems = $event.items
+          selectedPopupItem = $event.item
+        "
         @date-filter-change="handleDateFilterChange"
       />
       <v-btn

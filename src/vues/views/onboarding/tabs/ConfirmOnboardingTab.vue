@@ -8,9 +8,7 @@ const pickFolderStore = usePickFolderStore()
 
 <template>
   <v-card class="folder-card" variant="text" rounded color="primary">
-    <v-card-title class="d-flex align-center card-title">
-      Process media library
-    </v-card-title>
+    <v-card-title class="d-flex align-center card-title"> Process media library </v-card-title>
     <v-card-text>
       <v-table striped="odd">
         <tbody>

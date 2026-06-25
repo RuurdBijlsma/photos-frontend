@@ -46,8 +46,9 @@ function formatDate(dateString: string) {
           </div>
 
           <p class="section-desc mb-4">
-            Recreate missing albums from stored backups. Album backups are created automatically when you change a user's media folder.
-            Restoring will merge metadata without deleting existing photos.
+            Recreate missing albums from stored backups. Album backups are created automatically
+            when you change a user's media folder. Restoring will merge metadata without deleting
+            existing photos.
           </p>
 
           <v-list v-if="backupStore.backups.length > 0" class="backup-list" bg-color="transparent">

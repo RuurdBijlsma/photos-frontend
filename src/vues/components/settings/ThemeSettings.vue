@@ -1,15 +1,10 @@
 <script setup lang="ts">
-import {
-  CUSTOM_THEME_CONTRAST,
-  TIMELINE_ROW_HEIGHT,
-  useSettingStore,
-} from '@/scripts/stores/settingsStore.ts'
+import { CUSTOM_THEME_CONTRAST, useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useSunStore } from '@/scripts/stores/sunStore.ts'
 import { useBackgroundStore } from '@/scripts/stores/backgroundStore.ts'
 import { computed } from 'vue'
 import { themeOptions, themeVariantOptions } from '@/scripts/constants.ts'
 import { caps } from '@/scripts/utils.ts'
-import SettingsSlider2 from '@/vues/components/settings/components/SettingsSlider2.vue'
 import SettingsSlider from '@/vues/components/settings/components/SettingsSlider.vue'
 
 const settings = useSettingStore()
