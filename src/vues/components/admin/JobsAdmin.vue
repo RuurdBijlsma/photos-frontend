@@ -18,7 +18,7 @@ const tableOptions = ref({
 const autoRefresh = useStorage('autoRefreshJobsTable', false)
 
 // Filters State
-const selectedStatus = ref<JobStatus | null>(null)
+const selectedStatus = ref<JobStatus | null>('running')
 const selectedJobType = ref<JobType | null>(null)
 const selectedUser = ref<string | null>(null)
 const searchPath = ref('')
@@ -171,6 +171,11 @@ function formatDate(dateStr: string | null) {
   return new Date(dateStr).toLocaleString()
 }
 
+function setJobType(jobType: JobType) {
+  selectedJobType.value = jobType
+  loadJobs(tableOptions.value)
+}
+
 const { pause, resume } = useIntervalFn(() => {
   loadJobs(tableOptions.value)
 }, 1000)
@@ -227,19 +232,6 @@ watch(
           <v-row class="mb-4" density="comfortable">
             <v-col cols="12" sm="3">
               <v-select
-                v-model="selectedStatus"
-                label="Filter by Status"
-                :items="['queued', 'running', 'failed', 'done', 'cancelled']"
-                clearable
-                density="compact"
-                variant="outlined"
-                rounded="lg"
-                hide-details
-                @update:model-value="triggerSearch"
-              />
-            </v-col>
-            <v-col cols="12" sm="3">
-              <v-select
                 v-model="selectedJobType"
                 label="Filter by Job Type"
                 :items="[
@@ -262,7 +254,20 @@ watch(
                 clearable
                 density="compact"
                 variant="outlined"
-                rounded="lg"
+                rounded="xl"
+                hide-details
+                @update:model-value="triggerSearch"
+              />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <v-select
+                v-model="selectedStatus"
+                label="Filter by Status"
+                :items="['queued', 'running', 'failed', 'done', 'cancelled']"
+                clearable
+                density="compact"
+                variant="outlined"
+                rounded="xl"
                 hide-details
                 @update:model-value="triggerSearch"
               />
@@ -275,7 +280,7 @@ watch(
                 clearable
                 density="compact"
                 variant="outlined"
-                rounded="lg"
+                rounded="xl"
                 hide-details
                 @update:model-value="triggerSearch"
               />
@@ -288,7 +293,7 @@ watch(
                 clearable
                 density="compact"
                 variant="outlined"
-                rounded="lg"
+                rounded="xl"
                 hide-details
                 @click:clear="triggerSearch"
                 @keyup.enter="triggerSearch"
@@ -311,7 +316,9 @@ watch(
           >
             <!-- Job Type chip formatting -->
             <template #[`item.jobType`]="{ item }">
-              <code class="job-type-code">{{ item.jobType }}</code>
+              <code @click="setJobType(item.jobType)" class="job-type-code">{{
+                item.jobType
+              }}</code>
             </template>
 
             <!-- User rendering with avatar fallback -->
@@ -535,6 +542,7 @@ watch(
   border-radius: 6px;
   font-family: monospace;
   font-size: 0.85rem;
+  cursor: pointer;
 }
 
 .path-text {
