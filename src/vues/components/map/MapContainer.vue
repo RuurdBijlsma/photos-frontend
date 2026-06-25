@@ -101,11 +101,19 @@ export interface DateFilter {
 }
 
 const props = defineProps<Props>()
+export interface EmitMarkerSelected {
+  key: string
+  coords: [number, number]
+}
+export interface EmitClusterSelected {
+  items: SimpleTimelineItem[]
+  item: SimpleTimelineItem
+}
 
 const emit = defineEmits<{
   'visible-items-changed': [items: SimpleTimelineItem[]]
-  'marker-selected': [data: { key: string; coords: [number, number] }]
-  'cluster-selected': [data: { items: SimpleTimelineItem[]; item: SimpleTimelineItem }]
+  'marker-selected': [data: EmitMarkerSelected]
+  'cluster-selected': [data: EmitClusterSelected]
   'date-filter-change': [payload: { isDragging: boolean; dateFilter: DateFilter }]
 }>()
 

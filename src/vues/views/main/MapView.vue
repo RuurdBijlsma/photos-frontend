@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import MapContainer, { type DateFilter } from '@/vues/components/map/MapContainer.vue'
+import MapContainer, {
+  type DateFilter,
+  type EmitClusterSelected,
+  type EmitMarkerSelected,
+} from '@/vues/components/map/MapContainer.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { useEventListener, useResizeObserver, useStorage, useThrottleFn } from '@vueuse/core'
 import type { MapPhotosResponse, SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
@@ -162,10 +166,14 @@ mediaItemService.listMapPhotos().then((loadedPhotos) => {
   mapPhotos.value = loadedPhotos
 })
 
-// --- Watchers ---
-watch(sidebarOpen, () => {
-  // Sidebar resize handled by layout CSS transitions
-})
+function onMarkerSelected(data: EmitMarkerSelected) {
+  selectedMarkerKey.value = data.key
+  selectedLngLat.value = data.coords
+}
+function onClusterSelected(data: EmitClusterSelected) {
+  selectedClusterItems.value = data.items
+  selectedPopupItem.value = data.item
+}
 </script>
 
 <template>
@@ -184,14 +192,8 @@ watch(sidebarOpen, () => {
         :map-photos="mapPhotos"
         :load-coord="loadCoord"
         @visible-items-changed="visibleItems = $event"
-        @marker-selected="
-          selectedMarkerKey = $event.key
-          selectedLngLat = $event.coords
-        "
-        @cluster-selected="
-          selectedClusterItems = $event.items
-          selectedPopupItem = $event.item
-        "
+        @marker-selected="onMarkerSelected"
+        @cluster-selected="onClusterSelected"
         @date-filter-change="handleDateFilterChange"
       />
       <v-btn
