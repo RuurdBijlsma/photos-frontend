@@ -6,6 +6,7 @@ import type {
   MediaSampleResponse,
   UnsupportedFilesResponse,
   AdminUserInfo,
+  PaginatedJobsResponse,
 } from '@/scripts/types/api/admin.ts'
 
 const adminService = {
@@ -71,6 +72,13 @@ const adminService = {
    */
   deleteUser(userId: string | number): Promise<AxiosResponse<void>> {
     return apiClient.delete<void>(`/admin/users/${userId}`)
+  },
+
+  /**
+   * Fetch background jobs list matching filters & sorting parameters.
+   */
+  getJobs(params: URLSearchParams): Promise<AxiosResponse<PaginatedJobsResponse>> {
+    return apiClient.get<PaginatedJobsResponse>('/jobs', { params })
   },
 }
 
