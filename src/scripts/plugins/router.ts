@@ -3,8 +3,9 @@ import MainLayout from '@/vues/layouts/MainLayout.vue'
 import TimelineView from '@/vues/views/main/TimelineView.vue'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
-import ViewPhoto from '@/vues/views/main/ViewPhoto.vue'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
+
+const ViewPhoto = () => import('@/vues/views/main/ViewPhoto.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,9 +29,21 @@ const router = createRouter({
           ],
         },
         {
+          path: 'daily/:cardId',
+          name: 'daily-card-viewer',
+          component: () => import('@/vues/components/timeline/daily-cards/DailyViewer.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-daily',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
           path: 'people',
           name: 'people',
-          component: () => import('@/vues/views/library/PeopleView.vue'),
+          component: () => import('@/vues/views/library/PeopleLibrary.vue'),
         },
         {
           path: 'person/:personId',
@@ -45,9 +58,74 @@ const router = createRouter({
           ],
         },
         {
+          path: 'cameras',
+          name: 'cameras',
+          component: () => import('@/vues/views/library/CamerasLibrary.vue'),
+        },
+        {
+          path: 'camera/:cameraMake/:cameraModel',
+          name: 'camera-view',
+          component: () => import('@/vues/views/library/CameraView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-camera',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
           path: 'explore',
           name: 'explore',
           component: () => import('@/vues/views/main/ExploreView.vue'),
+        },
+        {
+          path: 'bin',
+          name: 'bin',
+          component: () => import('@/vues/views/main/BinView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-bin',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
+          path: 'storage',
+          name: 'storage',
+          component: () => import('@/vues/views/main/StorageView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-storage',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
+          path: 'storage/review',
+          name: 'storage-review',
+          component: () => import('@/vues/views/main/StorageReviewView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-storage-review',
+              component: ViewPhoto,
+            },
+          ],
+        },
+        {
+          path: 'storage/blurry',
+          name: 'storage-blurry',
+          component: () => import('@/vues/views/main/StorageReviewView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-storage-blurry',
+              component: ViewPhoto,
+            },
+          ],
         },
         {
           path: 'map',
@@ -70,6 +148,13 @@ const router = createRouter({
           path: 'settings',
           name: 'settings',
           component: () => import('@/vues/views/main/SettingsView.vue'),
+          children: [
+            {
+              path: 'view/:mediaId',
+              name: 'view-photo-settings',
+              component: ViewPhoto,
+            },
+          ],
         },
         {
           path: 'admin',

@@ -16,13 +16,16 @@ backgroundStore.initialize()
 
 <template>
   <div class="blurred-background">
-    <div v-if="settings.imageBackground" class="blur-filter"></div>
     <div
       class="background-image"
       :style="{
-        backgroundImage: settings.imageBackground ? `url(${backgroundStore.backgroundUrl})` : '',
+        backgroundImage: settings.useImageBackground ? `url(${backgroundStore.backgroundUrl})` : '',
+        filter: settings.useImageBackground
+          ? 'saturate(150%) brightness(70%) blur(25px) contrast(100%)'
+          : '',
       }"
     ></div>
+    <div v-if="settings.useImageBackground" class="gradient-overlay"></div>
   </div>
 
   <v-layout>
@@ -61,13 +64,15 @@ backgroundStore.initialize()
   background-color: rgb(var(--v-theme-surface-container-high));
 }
 
-.blur-filter {
+.gradient-overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
   background-image: linear-gradient(
     180deg,
     rgba(var(--v-theme-background), 0.95) 0%,
     rgba(var(--v-theme-background), 0.4) 100%
   );
-  backdrop-filter: saturate(150%) brightness(70%) blur(25px) contrast(100%);
   z-index: 1;
 }
 

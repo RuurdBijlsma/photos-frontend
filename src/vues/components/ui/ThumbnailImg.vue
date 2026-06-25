@@ -16,10 +16,9 @@ const useOnDemandThumb = ref(new Map<string | null, boolean>())
 </script>
 
 <template>
-  <v-img
+  <img
     :height="height"
     :width="width"
-    :cover="cover"
     :src="
       mediaItemService.getPhotoThumbnail(
         mediaItemId,
@@ -28,7 +27,20 @@ const useOnDemandThumb = ref(new Map<string | null, boolean>())
       )
     "
     @error="useOnDemandThumb.set(mediaItemId, true)"
+    :class="{
+      'cover-img': cover,
+      'contain-img': !cover,
+    }"
   />
 </template>
 
-<style scoped></style>
+<style scoped>
+.cover-img {
+  object-fit: cover;
+  height: 100%;
+}
+
+.contain-img {
+  object-fit: contain;
+}
+</style>

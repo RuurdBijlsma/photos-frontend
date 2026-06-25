@@ -143,9 +143,4 @@ const timeLabel = computed(() => {
   box-shadow: none;
   pointer-events: none;
 }
-
-:deep(.v-time-picker-clock),
-:deep(.v-time-picker-controls__time__field .v-field) {
-  background-color: rgba(var(--v-theme-primary), 0.1);
-}
 </style>

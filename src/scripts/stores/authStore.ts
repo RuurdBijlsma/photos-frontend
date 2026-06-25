@@ -130,6 +130,8 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken.value = null
     refreshToken.value = null
     expiry.value = null
+    localStorage.removeItem('dailyCardsByDate')
+    localStorage.removeItem('dailyCompletedCards')
 
     // Redirect to the login page only if the current route requires authentication.
     if (redirect) {

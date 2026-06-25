@@ -151,6 +151,23 @@ export interface FullPersonMediaResponse {
   items: SimpleTimelineItem[]
 }
 
+/** --- Camera */
+export interface CameraInfo {
+  make: string
+  model: string
+  photoCount: number
+  thumbnailId: string
+}
+
+export interface ListCameraResponse {
+  cameras: CameraInfo[]
+}
+
+export interface FullCameraPhotosResponse {
+  camera: CameraInfo | undefined
+  items: SimpleTimelineItem[]
+}
+
 /** --- Map specific --- */
 export interface MapPhotoItem {
   latitude: number
@@ -160,6 +177,33 @@ export interface MapPhotoItem {
 
 export interface MapPhotosResponse {
   items: MapPhotoItem[]
+}
+
+/** --- Storage review --- */
+export interface StorageReviewItem {
+  id: string
+  isVideo: boolean
+  hasThumbnails: boolean
+  durationMs?: number | undefined
+  ratio: number
+  sizeBytes: number
+  takenAtLocal: string
+  filename: string
+  weightedScore?: number | undefined
+}
+
+export interface StorageReviewResponse {
+  items: StorageReviewItem[]
+  totalSize: number
+}
+
+export interface StorageSummaryResponse {
+  largePotentialSavings: number
+  largeItemCount: number
+  blurryPotentialSavings: number
+  blurryItemCount: number
+  mediaFolderSizeBytes: number
+  thumbnailFolderSizeBytes: number
 }
 
 function createBaseTimelineRatiosResponse(): TimelineRatiosResponse {
@@ -1837,6 +1881,272 @@ export const FullPersonMediaResponse: MessageFns<FullPersonMediaResponse> = {
   },
 }
 
+function createBaseCameraInfo(): CameraInfo {
+  return { make: '', model: '', photoCount: 0, thumbnailId: '' }
+}
+
+export const CameraInfo: MessageFns<CameraInfo> = {
+  encode(message: CameraInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.make !== '') {
+      writer.uint32(10).string(message.make)
+    }
+    if (message.model !== '') {
+      writer.uint32(18).string(message.model)
+    }
+    if (message.photoCount !== 0) {
+      writer.uint32(24).int32(message.photoCount)
+    }
+    if (message.thumbnailId !== '') {
+      writer.uint32(34).string(message.thumbnailId)
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CameraInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseCameraInfo()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break
+          }
+
+          message.make = reader.string()
+          continue
+        }
+        case 2: {
+          if (tag !== 18) {
+            break
+          }
+
+          message.model = reader.string()
+          continue
+        }
+        case 3: {
+          if (tag !== 24) {
+            break
+          }
+
+          message.photoCount = reader.int32()
+          continue
+        }
+        case 4: {
+          if (tag !== 34) {
+            break
+          }
+
+          message.thumbnailId = reader.string()
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): CameraInfo {
+    return {
+      make: isSet(object.make) ? globalThis.String(object.make) : '',
+      model: isSet(object.model) ? globalThis.String(object.model) : '',
+      photoCount: isSet(object.photoCount)
+        ? globalThis.Number(object.photoCount)
+        : isSet(object.photo_count)
+          ? globalThis.Number(object.photo_count)
+          : 0,
+      thumbnailId: isSet(object.thumbnailId)
+        ? globalThis.String(object.thumbnailId)
+        : isSet(object.thumbnail_id)
+          ? globalThis.String(object.thumbnail_id)
+          : '',
+    }
+  },
+
+  toJSON(message: CameraInfo): unknown {
+    const obj: any = {}
+    if (message.make !== '') {
+      obj.make = message.make
+    }
+    if (message.model !== '') {
+      obj.model = message.model
+    }
+    if (message.photoCount !== 0) {
+      obj.photoCount = Math.round(message.photoCount)
+    }
+    if (message.thumbnailId !== '') {
+      obj.thumbnailId = message.thumbnailId
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<CameraInfo>, I>>(base?: I): CameraInfo {
+    return CameraInfo.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<CameraInfo>, I>>(object: I): CameraInfo {
+    const message = createBaseCameraInfo()
+    message.make = object.make ?? ''
+    message.model = object.model ?? ''
+    message.photoCount = object.photoCount ?? 0
+    message.thumbnailId = object.thumbnailId ?? ''
+    return message
+  },
+}
+
+function createBaseListCameraResponse(): ListCameraResponse {
+  return { cameras: [] }
+}
+
+export const ListCameraResponse: MessageFns<ListCameraResponse> = {
+  encode(message: ListCameraResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.cameras) {
+      CameraInfo.encode(v!, writer.uint32(10).fork()).join()
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListCameraResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseListCameraResponse()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break
+          }
+
+          message.cameras.push(CameraInfo.decode(reader, reader.uint32()))
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): ListCameraResponse {
+    return {
+      cameras: globalThis.Array.isArray(object?.cameras)
+        ? object.cameras.map((e: any) => CameraInfo.fromJSON(e))
+        : [],
+    }
+  },
+
+  toJSON(message: ListCameraResponse): unknown {
+    const obj: any = {}
+    if (message.cameras?.length) {
+      obj.cameras = message.cameras.map((e) => CameraInfo.toJSON(e))
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<ListCameraResponse>, I>>(base?: I): ListCameraResponse {
+    return ListCameraResponse.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<ListCameraResponse>, I>>(object: I): ListCameraResponse {
+    const message = createBaseListCameraResponse()
+    message.cameras = object.cameras?.map((e) => CameraInfo.fromPartial(e)) || []
+    return message
+  },
+}
+
+function createBaseFullCameraPhotosResponse(): FullCameraPhotosResponse {
+  return { camera: undefined, items: [] }
+}
+
+export const FullCameraPhotosResponse: MessageFns<FullCameraPhotosResponse> = {
+  encode(
+    message: FullCameraPhotosResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.camera !== undefined) {
+      CameraInfo.encode(message.camera, writer.uint32(10).fork()).join()
+    }
+    for (const v of message.items) {
+      SimpleTimelineItem.encode(v!, writer.uint32(18).fork()).join()
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FullCameraPhotosResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseFullCameraPhotosResponse()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break
+          }
+
+          message.camera = CameraInfo.decode(reader, reader.uint32())
+          continue
+        }
+        case 2: {
+          if (tag !== 18) {
+            break
+          }
+
+          message.items.push(SimpleTimelineItem.decode(reader, reader.uint32()))
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): FullCameraPhotosResponse {
+    return {
+      camera: isSet(object.camera) ? CameraInfo.fromJSON(object.camera) : undefined,
+      items: globalThis.Array.isArray(object?.items)
+        ? object.items.map((e: any) => SimpleTimelineItem.fromJSON(e))
+        : [],
+    }
+  },
+
+  toJSON(message: FullCameraPhotosResponse): unknown {
+    const obj: any = {}
+    if (message.camera !== undefined) {
+      obj.camera = CameraInfo.toJSON(message.camera)
+    }
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => SimpleTimelineItem.toJSON(e))
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<FullCameraPhotosResponse>, I>>(
+    base?: I,
+  ): FullCameraPhotosResponse {
+    return FullCameraPhotosResponse.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<FullCameraPhotosResponse>, I>>(
+    object: I,
+  ): FullCameraPhotosResponse {
+    const message = createBaseFullCameraPhotosResponse()
+    message.camera =
+      object.camera !== undefined && object.camera !== null
+        ? CameraInfo.fromPartial(object.camera)
+        : undefined
+    message.items = object.items?.map((e) => SimpleTimelineItem.fromPartial(e)) || []
+    return message
+  },
+}
+
 function createBaseMapPhotoItem(): MapPhotoItem {
   return { latitude: 0, longitude: 0, item: undefined }
 }
@@ -1990,6 +2300,487 @@ export const MapPhotosResponse: MessageFns<MapPhotosResponse> = {
   fromPartial<I extends Exact<DeepPartial<MapPhotosResponse>, I>>(object: I): MapPhotosResponse {
     const message = createBaseMapPhotosResponse()
     message.items = object.items?.map((e) => MapPhotoItem.fromPartial(e)) || []
+    return message
+  },
+}
+
+function createBaseStorageReviewItem(): StorageReviewItem {
+  return {
+    id: '',
+    isVideo: false,
+    hasThumbnails: false,
+    durationMs: undefined,
+    ratio: 0,
+    sizeBytes: 0,
+    takenAtLocal: '',
+    filename: '',
+    weightedScore: undefined,
+  }
+}
+
+export const StorageReviewItem: MessageFns<StorageReviewItem> = {
+  encode(message: StorageReviewItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== '') {
+      writer.uint32(10).string(message.id)
+    }
+    if (message.isVideo !== false) {
+      writer.uint32(16).bool(message.isVideo)
+    }
+    if (message.hasThumbnails !== false) {
+      writer.uint32(24).bool(message.hasThumbnails)
+    }
+    if (message.durationMs !== undefined) {
+      writer.uint32(32).int32(message.durationMs)
+    }
+    if (message.ratio !== 0) {
+      writer.uint32(45).float(message.ratio)
+    }
+    if (message.sizeBytes !== 0) {
+      writer.uint32(48).int64(message.sizeBytes)
+    }
+    if (message.takenAtLocal !== '') {
+      writer.uint32(58).string(message.takenAtLocal)
+    }
+    if (message.filename !== '') {
+      writer.uint32(66).string(message.filename)
+    }
+    if (message.weightedScore !== undefined) {
+      writer.uint32(77).float(message.weightedScore)
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): StorageReviewItem {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseStorageReviewItem()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break
+          }
+
+          message.id = reader.string()
+          continue
+        }
+        case 2: {
+          if (tag !== 16) {
+            break
+          }
+
+          message.isVideo = reader.bool()
+          continue
+        }
+        case 3: {
+          if (tag !== 24) {
+            break
+          }
+
+          message.hasThumbnails = reader.bool()
+          continue
+        }
+        case 4: {
+          if (tag !== 32) {
+            break
+          }
+
+          message.durationMs = reader.int32()
+          continue
+        }
+        case 5: {
+          if (tag !== 45) {
+            break
+          }
+
+          message.ratio = reader.float()
+          continue
+        }
+        case 6: {
+          if (tag !== 48) {
+            break
+          }
+
+          message.sizeBytes = longToNumber(reader.int64())
+          continue
+        }
+        case 7: {
+          if (tag !== 58) {
+            break
+          }
+
+          message.takenAtLocal = reader.string()
+          continue
+        }
+        case 8: {
+          if (tag !== 66) {
+            break
+          }
+
+          message.filename = reader.string()
+          continue
+        }
+        case 9: {
+          if (tag !== 77) {
+            break
+          }
+
+          message.weightedScore = reader.float()
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): StorageReviewItem {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : '',
+      isVideo: isSet(object.isVideo)
+        ? globalThis.Boolean(object.isVideo)
+        : isSet(object.is_video)
+          ? globalThis.Boolean(object.is_video)
+          : false,
+      hasThumbnails: isSet(object.hasThumbnails)
+        ? globalThis.Boolean(object.hasThumbnails)
+        : isSet(object.has_thumbnails)
+          ? globalThis.Boolean(object.has_thumbnails)
+          : false,
+      durationMs: isSet(object.durationMs)
+        ? globalThis.Number(object.durationMs)
+        : isSet(object.duration_ms)
+          ? globalThis.Number(object.duration_ms)
+          : undefined,
+      ratio: isSet(object.ratio) ? globalThis.Number(object.ratio) : 0,
+      sizeBytes: isSet(object.sizeBytes)
+        ? globalThis.Number(object.sizeBytes)
+        : isSet(object.size_bytes)
+          ? globalThis.Number(object.size_bytes)
+          : 0,
+      takenAtLocal: isSet(object.takenAtLocal)
+        ? globalThis.String(object.takenAtLocal)
+        : isSet(object.taken_at_local)
+          ? globalThis.String(object.taken_at_local)
+          : '',
+      filename: isSet(object.filename) ? globalThis.String(object.filename) : '',
+      weightedScore: isSet(object.weightedScore)
+        ? globalThis.Number(object.weightedScore)
+        : isSet(object.weighted_score)
+          ? globalThis.Number(object.weighted_score)
+          : undefined,
+    }
+  },
+
+  toJSON(message: StorageReviewItem): unknown {
+    const obj: any = {}
+    if (message.id !== '') {
+      obj.id = message.id
+    }
+    if (message.isVideo !== false) {
+      obj.isVideo = message.isVideo
+    }
+    if (message.hasThumbnails !== false) {
+      obj.hasThumbnails = message.hasThumbnails
+    }
+    if (message.durationMs !== undefined) {
+      obj.durationMs = Math.round(message.durationMs)
+    }
+    if (message.ratio !== 0) {
+      obj.ratio = message.ratio
+    }
+    if (message.sizeBytes !== 0) {
+      obj.sizeBytes = Math.round(message.sizeBytes)
+    }
+    if (message.takenAtLocal !== '') {
+      obj.takenAtLocal = message.takenAtLocal
+    }
+    if (message.filename !== '') {
+      obj.filename = message.filename
+    }
+    if (message.weightedScore !== undefined) {
+      obj.weightedScore = message.weightedScore
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<StorageReviewItem>, I>>(base?: I): StorageReviewItem {
+    return StorageReviewItem.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<StorageReviewItem>, I>>(object: I): StorageReviewItem {
+    const message = createBaseStorageReviewItem()
+    message.id = object.id ?? ''
+    message.isVideo = object.isVideo ?? false
+    message.hasThumbnails = object.hasThumbnails ?? false
+    message.durationMs = object.durationMs ?? undefined
+    message.ratio = object.ratio ?? 0
+    message.sizeBytes = object.sizeBytes ?? 0
+    message.takenAtLocal = object.takenAtLocal ?? ''
+    message.filename = object.filename ?? ''
+    message.weightedScore = object.weightedScore ?? undefined
+    return message
+  },
+}
+
+function createBaseStorageReviewResponse(): StorageReviewResponse {
+  return { items: [], totalSize: 0 }
+}
+
+export const StorageReviewResponse: MessageFns<StorageReviewResponse> = {
+  encode(message: StorageReviewResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.items) {
+      StorageReviewItem.encode(v!, writer.uint32(10).fork()).join()
+    }
+    if (message.totalSize !== 0) {
+      writer.uint32(16).int64(message.totalSize)
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): StorageReviewResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseStorageReviewResponse()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break
+          }
+
+          message.items.push(StorageReviewItem.decode(reader, reader.uint32()))
+          continue
+        }
+        case 2: {
+          if (tag !== 16) {
+            break
+          }
+
+          message.totalSize = longToNumber(reader.int64())
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): StorageReviewResponse {
+    return {
+      items: globalThis.Array.isArray(object?.items)
+        ? object.items.map((e: any) => StorageReviewItem.fromJSON(e))
+        : [],
+      totalSize: isSet(object.totalSize)
+        ? globalThis.Number(object.totalSize)
+        : isSet(object.total_size)
+          ? globalThis.Number(object.total_size)
+          : 0,
+    }
+  },
+
+  toJSON(message: StorageReviewResponse): unknown {
+    const obj: any = {}
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => StorageReviewItem.toJSON(e))
+    }
+    if (message.totalSize !== 0) {
+      obj.totalSize = Math.round(message.totalSize)
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<StorageReviewResponse>, I>>(base?: I): StorageReviewResponse {
+    return StorageReviewResponse.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<StorageReviewResponse>, I>>(
+    object: I,
+  ): StorageReviewResponse {
+    const message = createBaseStorageReviewResponse()
+    message.items = object.items?.map((e) => StorageReviewItem.fromPartial(e)) || []
+    message.totalSize = object.totalSize ?? 0
+    return message
+  },
+}
+
+function createBaseStorageSummaryResponse(): StorageSummaryResponse {
+  return {
+    largePotentialSavings: 0,
+    largeItemCount: 0,
+    blurryPotentialSavings: 0,
+    blurryItemCount: 0,
+    mediaFolderSizeBytes: 0,
+    thumbnailFolderSizeBytes: 0,
+  }
+}
+
+export const StorageSummaryResponse: MessageFns<StorageSummaryResponse> = {
+  encode(message: StorageSummaryResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.largePotentialSavings !== 0) {
+      writer.uint32(8).int64(message.largePotentialSavings)
+    }
+    if (message.largeItemCount !== 0) {
+      writer.uint32(16).int32(message.largeItemCount)
+    }
+    if (message.blurryPotentialSavings !== 0) {
+      writer.uint32(24).int64(message.blurryPotentialSavings)
+    }
+    if (message.blurryItemCount !== 0) {
+      writer.uint32(32).int32(message.blurryItemCount)
+    }
+    if (message.mediaFolderSizeBytes !== 0) {
+      writer.uint32(40).int64(message.mediaFolderSizeBytes)
+    }
+    if (message.thumbnailFolderSizeBytes !== 0) {
+      writer.uint32(48).int64(message.thumbnailFolderSizeBytes)
+    }
+    return writer
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): StorageSummaryResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
+    const end = length === undefined ? reader.len : reader.pos + length
+    const message = createBaseStorageSummaryResponse()
+    while (reader.pos < end) {
+      const tag = reader.uint32()
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break
+          }
+
+          message.largePotentialSavings = longToNumber(reader.int64())
+          continue
+        }
+        case 2: {
+          if (tag !== 16) {
+            break
+          }
+
+          message.largeItemCount = reader.int32()
+          continue
+        }
+        case 3: {
+          if (tag !== 24) {
+            break
+          }
+
+          message.blurryPotentialSavings = longToNumber(reader.int64())
+          continue
+        }
+        case 4: {
+          if (tag !== 32) {
+            break
+          }
+
+          message.blurryItemCount = reader.int32()
+          continue
+        }
+        case 5: {
+          if (tag !== 40) {
+            break
+          }
+
+          message.mediaFolderSizeBytes = longToNumber(reader.int64())
+          continue
+        }
+        case 6: {
+          if (tag !== 48) {
+            break
+          }
+
+          message.thumbnailFolderSizeBytes = longToNumber(reader.int64())
+          continue
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break
+      }
+      reader.skip(tag & 7)
+    }
+    return message
+  },
+
+  fromJSON(object: any): StorageSummaryResponse {
+    return {
+      largePotentialSavings: isSet(object.largePotentialSavings)
+        ? globalThis.Number(object.largePotentialSavings)
+        : isSet(object.large_potential_savings)
+          ? globalThis.Number(object.large_potential_savings)
+          : 0,
+      largeItemCount: isSet(object.largeItemCount)
+        ? globalThis.Number(object.largeItemCount)
+        : isSet(object.large_item_count)
+          ? globalThis.Number(object.large_item_count)
+          : 0,
+      blurryPotentialSavings: isSet(object.blurryPotentialSavings)
+        ? globalThis.Number(object.blurryPotentialSavings)
+        : isSet(object.blurry_potential_savings)
+          ? globalThis.Number(object.blurry_potential_savings)
+          : 0,
+      blurryItemCount: isSet(object.blurryItemCount)
+        ? globalThis.Number(object.blurryItemCount)
+        : isSet(object.blurry_item_count)
+          ? globalThis.Number(object.blurry_item_count)
+          : 0,
+      mediaFolderSizeBytes: isSet(object.mediaFolderSizeBytes)
+        ? globalThis.Number(object.mediaFolderSizeBytes)
+        : isSet(object.media_folder_size_bytes)
+          ? globalThis.Number(object.media_folder_size_bytes)
+          : 0,
+      thumbnailFolderSizeBytes: isSet(object.thumbnailFolderSizeBytes)
+        ? globalThis.Number(object.thumbnailFolderSizeBytes)
+        : isSet(object.thumbnail_folder_size_bytes)
+          ? globalThis.Number(object.thumbnail_folder_size_bytes)
+          : 0,
+    }
+  },
+
+  toJSON(message: StorageSummaryResponse): unknown {
+    const obj: any = {}
+    if (message.largePotentialSavings !== 0) {
+      obj.largePotentialSavings = Math.round(message.largePotentialSavings)
+    }
+    if (message.largeItemCount !== 0) {
+      obj.largeItemCount = Math.round(message.largeItemCount)
+    }
+    if (message.blurryPotentialSavings !== 0) {
+      obj.blurryPotentialSavings = Math.round(message.blurryPotentialSavings)
+    }
+    if (message.blurryItemCount !== 0) {
+      obj.blurryItemCount = Math.round(message.blurryItemCount)
+    }
+    if (message.mediaFolderSizeBytes !== 0) {
+      obj.mediaFolderSizeBytes = Math.round(message.mediaFolderSizeBytes)
+    }
+    if (message.thumbnailFolderSizeBytes !== 0) {
+      obj.thumbnailFolderSizeBytes = Math.round(message.thumbnailFolderSizeBytes)
+    }
+    return obj
+  },
+
+  create<I extends Exact<DeepPartial<StorageSummaryResponse>, I>>(
+    base?: I,
+  ): StorageSummaryResponse {
+    return StorageSummaryResponse.fromPartial(base ?? ({} as any))
+  },
+  fromPartial<I extends Exact<DeepPartial<StorageSummaryResponse>, I>>(
+    object: I,
+  ): StorageSummaryResponse {
+    const message = createBaseStorageSummaryResponse()
+    message.largePotentialSavings = object.largePotentialSavings ?? 0
+    message.largeItemCount = object.largeItemCount ?? 0
+    message.blurryPotentialSavings = object.blurryPotentialSavings ?? 0
+    message.blurryItemCount = object.blurryItemCount ?? 0
+    message.mediaFolderSizeBytes = object.mediaFolderSizeBytes ?? 0
+    message.thumbnailFolderSizeBytes = object.thumbnailFolderSizeBytes ?? 0
     return message
   },
 }

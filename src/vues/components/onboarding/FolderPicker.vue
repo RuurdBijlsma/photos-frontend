@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 
@@ -30,7 +30,11 @@ async function promptCreateFolder() {
   await pickFolderStore.makeFolder(folder)
 }
 
-pickFolderStore.refreshFolders().then()
+async function init() {
+  await pickFolderStore.refreshFolders()
+}
+
+onMounted(init)
 </script>
 
 <template>

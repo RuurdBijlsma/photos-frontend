@@ -42,3 +42,14 @@ export interface UnsupportedFilesResponse {
   unsupportedFiles: Record<string, string[]> // Represents a dictionary of string arrays
   unsupportedCount: number
 }
+
+// --- Admin-specific types ---
+
+export interface AdminUserInfo {
+  id: number
+  username: string
+  email: string
+  avatarId: string | null
+  mediaFolder: string | null
+  mainDriveUsed: number
+}

@@ -1,35 +1,30 @@
-import { type Ref, ref } from 'vue'
+import { type Ref, ref, watch, onBeforeUnmount } from 'vue'
 import { defineStore } from 'pinia'
 import type { ThemeDefinition } from 'vuetify'
 import type { DynamicScheme, Palette, Theme } from '@/scripts/types/themeColor.ts'
 import { useTheme } from 'vuetify/framework'
+import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { useSunStore } from '@/scripts/stores/sunStore.ts'
+import { resolveThemeMode } from '@/scripts/themeUtils.ts'
 
 type VuetifyColors = ThemeDefinition['colors']
 
-/**
- * Generates and adds lighten/darken color variations to the theme.
- * @param {VuetifyColors} colors - The colors object to modify. Can be undefined.
- * @param {string} name - The color name ('primary', 'secondary', etc.).
- * @param {Palette} palette - The color's corresponding palette.
- * @param {boolean} isDark - Whether the theme is dark or not.
- */
 export function generateColorVariations(
   colors: VuetifyColors,
   name: string,
   palette: Palette,
   isDark: boolean,
 ) {
-  // Ensure colors object exists before modifying it.
   if (!colors) return
 
   if (isDark) {
-    // Dark Theme: The base color is a high tone (e.g., 80).
+    // Dark Theme: Guess that base color is a high tone (e.g., 80).
     colors[`${name}-lighten-1`] = palette.tones['90']
     colors[`${name}-darken-1`] = palette.tones['70']
     colors[`${name}-darken-2`] = palette.tones['60']
     colors[`${name}-darken-3`] = palette.tones['50']
   } else {
-    // Light Theme: The base color is a mid-tone (e.g., 40).
+    // Light Theme: Guess that base color is a mid-tone (e.g., 40).
     colors[`${name}-lighten-1`] = palette.tones['50']
     colors[`${name}-lighten-2`] = palette.tones['60']
     colors[`${name}-lighten-3`] = palette.tones['70']
@@ -40,20 +35,19 @@ export function generateColorVariations(
 }
 
 /**
- * Transforms your backend's scheme into a Vuetify ThemeDefinition object.
+ * Transforms mcu scheme into a Vuetify ThemeDefinition object.
  * @param {DynamicScheme} scheme - The light or dark scheme from your types.
  * @param isDark is dark
  * @returns {ThemeDefinition} A complete Vuetify theme definition.
  */
 export function transformToVuetifyTheme(scheme: DynamicScheme, isDark: boolean): ThemeDefinition {
-  // Map the scheme from your backend to Vuetify's expected color properties.
   const colors: VuetifyColors = {
     background: scheme.background,
     surface: scheme.surface,
     primary: scheme.primary,
     secondary: scheme.secondary,
     tertiary: scheme.tertiary,
-    'on-background': scheme.on_surface, // Map on_surface to on_background
+    'on-background': scheme.on_surface,
     'on-surface': scheme.on_surface,
     'on-primary': scheme.on_primary,
     'on-secondary': scheme.on_secondary,
@@ -91,7 +85,6 @@ export function transformToVuetifyTheme(scheme: DynamicScheme, isDark: boolean):
     'surface-light': scheme.surface_tint,
   }
 
-  // Generate and inject the lighten/darken variations.
   generateColorVariations(colors, 'primary', scheme.primary_palette, scheme.is_dark)
   generateColorVariations(colors, 'secondary', scheme.secondary_palette, scheme.is_dark)
   generateColorVariations(colors, 'tertiary', scheme.tertiary_palette, scheme.is_dark)
@@ -125,7 +118,12 @@ export const useThemeStore = defineStore('theme', () => {
   const currentTheme: Ref<{ light: ThemeDefinition; dark: ThemeDefinition } | null> = ref(null)
   const vuetifyTheme = useTheme()
 
-  // --- ACTION ---
+  const settings = useSettingStore()
+  const sun = useSunStore()
+  let isInitialized = false
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  // --- ACTIONS ---
 
   function themeFromJson(
     themeData: Theme,
@@ -139,15 +137,9 @@ export const useThemeStore = defineStore('theme', () => {
     const lightTheme = transformToVuetifyTheme(schemes.light, false)
     const darkTheme = transformToVuetifyTheme(schemes.dark, true)
 
-    // Update the Pinia state
     return { light: lightTheme, dark: darkTheme }
   }
 
-  /**
-   * Applies a new theme to both the store's state and the live Vuetify instance.
-   * This is the single entry point for changing the application's theme.
-   * @param themeData The theme object from your backend.
-   */
   function setThemesFromJson(themeData: Theme) {
     const theme = themeFromJson(themeData)
     currentTheme.value = theme
@@ -161,11 +153,125 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
+  /**
+   * Plans a setTimeout execution targeting the next upcoming transition point (sunset or sunrise)
+   */
+  function scheduleNextTransition() {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+      timeoutId = null
+    }
+
+    if (settings.themeString !== 'schedule') {
+      return
+    }
+
+    const now = new Date()
+    let nextTransition: Date | null = null
+
+    if (settings.useSunSchedule) {
+      const sunrise = sun.sunrise
+      const sunset = sun.sunset
+
+      if (sunrise && sunset) {
+        const nextSunrise = new Date(sunrise)
+        nextSunrise.setFullYear(now.getFullYear(), now.getMonth(), now.getDate())
+        if (nextSunrise <= now) {
+          nextSunrise.setDate(nextSunrise.getDate() + 1)
+        }
+
+        const nextSunset = new Date(sunset)
+        nextSunset.setFullYear(now.getFullYear(), now.getMonth(), now.getDate())
+        if (nextSunset <= now) {
+          nextSunset.setDate(nextSunset.getDate() + 1)
+        }
+
+        nextTransition = nextSunrise < nextSunset ? nextSunrise : nextSunset
+      } else {
+        timeoutId = setTimeout(() => {
+          updateActiveTheme()
+        }, 5000)
+        return
+      }
+    } else {
+      const lightTime = settings.enableLightThemeTime || '07:00'
+      const darkTime = settings.enableDarkThemeTime || '19:00'
+
+      const getNextTransitionDate = (timeStr: string) => {
+        const [h, m] = timeStr.split(':').map(Number)
+        const d = new Date()
+        d.setHours(h, m, 0, 0)
+        if (d <= now) {
+          d.setDate(d.getDate() + 1)
+        }
+        return d
+      }
+
+      const nextLight = getNextTransitionDate(lightTime)
+      const nextDark = getNextTransitionDate(darkTime)
+      nextTransition = nextLight < nextDark ? nextLight : nextDark
+    }
+
+    if (nextTransition) {
+      const delay = nextTransition.getTime() - now.getTime()
+      const safeDelay = Math.max(delay, 1000)
+
+      timeoutId = setTimeout(() => {
+        updateActiveTheme()
+      }, safeDelay)
+    }
+  }
+
+  function updateActiveTheme() {
+    const targetTheme = resolveThemeMode(
+      settings.themeString,
+      settings.useSunSchedule,
+      sun.sunrise,
+      sun.sunset,
+      settings.enableLightThemeTime,
+      settings.enableDarkThemeTime,
+    )
+
+    if (vuetifyTheme.global.name.value !== targetTheme) {
+      vuetifyTheme.change(targetTheme)
+    }
+
+    scheduleNextTransition()
+  }
+
+  function initThemeSync() {
+    if (isInitialized) return
+    isInitialized = true
+
+    sun.fetchSunTimes(true)
+
+    watch(
+      [
+        () => settings.themeString,
+        () => settings.useSunSchedule,
+        () => settings.enableLightThemeTime,
+        () => settings.enableDarkThemeTime,
+        () => sun.sunrise,
+        () => sun.sunset,
+      ],
+      () => {
+        updateActiveTheme()
+      },
+      { immediate: true },
+    )
+
+    onBeforeUnmount(() => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    })
+  }
+
   return {
-    // State
     currentTheme,
-    // Actions
     setThemesFromJson,
     themeFromJson,
+    updateActiveTheme,
+    initThemeSync,
   }
 })

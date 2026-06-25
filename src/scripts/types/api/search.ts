@@ -13,7 +13,7 @@ export interface BaseSearchParams {
   sortBy?: string
   negativeQuery?: string
   countryCodes?: string
-  faceNames?: string
+  personIds?: string
   allFacesRequired?: boolean
 }
 

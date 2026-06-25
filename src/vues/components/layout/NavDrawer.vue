@@ -9,6 +9,7 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import { usePeopleStore } from '@/scripts/stores/peopleStore.ts'
 import { useTheme } from 'vuetify/framework'
 import NavExpandableList from '@/vues/components/layout/NavExpandableList.vue'
+import StorageOverview from '@/vues/components/ui/StorageOverview.vue'
 
 const albumStore = useAlbumStore()
 const timelineStore = useTimelineStore()
@@ -34,13 +35,16 @@ const albumsExpanded = useStorage('navExpandAlbums', true)
 const peopleExpanded = useStorage('navExpandPeople', true)
 const collapseDrawer = useStorage('collapseDrawer', false)
 
-const userHasAlbums = computed(() => albumStore.userAlbums.length > 0)
 const namedPeople = computed(() => peopleStore.people.filter((p) => p.name?.trim()))
 
 let isResizing = false
 const COLLAPSE_THRESHOLD = 125
 function startResize() {
   isResizing = true
+}
+
+function timelineToTop() {
+  timelineStore.refresh().then(() => timelineStore.scrollToTop())
 }
 
 requestIdleCallback(() => {
@@ -74,34 +78,19 @@ useEventListener(document, 'mousemove', (e) => {
         title="Photos"
         to="/"
         :active="route.path === '/'"
-        @click="route.path === '/' ? timelineStore.scrollToTop() : undefined"
+        @click="route.path === '/' ? timelineToTop() : undefined"
       />
       <v-list-item rounded prepend-icon="mdi-compass-outline" title="Explore" to="/explore" />
       <v-list-item rounded prepend-icon="mdi-map-outline" title="Map" to="/map" />
 
       <v-list-subheader class="mt-5">Collections</v-list-subheader>
 
-      <div class="albums-nav">
-        <v-list-item class="albums-nav-item" rounded prepend-icon="mdi-image-album" to="/albums">
-          <v-list-item-title>Albums</v-list-item-title>
-        </v-list-item>
-        <v-btn
-          @click="albumsExpanded = !albumsExpanded"
-          class="albums-nav-btn"
-          density="compact"
-          icon="mdi-menu-down"
-          v-if="userHasAlbums"
-          :class="{
-            'point-down': albumsExpanded,
-          }"
-          variant="plain"
-        ></v-btn>
-      </div>
-
       <NavExpandableList
-        v-if="userHasAlbums"
+        v-model:expanded="albumsExpanded"
+        title="Albums"
+        to="/albums"
+        icon="mdi-image-album"
         :items="albumStore.userAlbums"
-        :expanded="albumsExpanded"
       >
         <template #item="{ item: album }">
           <v-list-item
@@ -140,27 +129,13 @@ useEventListener(document, 'mousemove', (e) => {
         </template>
       </NavExpandableList>
 
-      <div class="albums-nav" v-if="systemStore.stats.hasClusteredPeople">
-        <v-list-item class="albums-nav-item" rounded :prepend-icon="faceIcon" to="/people">
-          <v-list-item-title>People</v-list-item-title>
-        </v-list-item>
-        <v-btn
-          @click="peopleExpanded = !peopleExpanded"
-          class="albums-nav-btn"
-          density="compact"
-          icon="mdi-menu-down"
-          v-if="namedPeople.length > 0"
-          :class="{
-            'point-down': peopleExpanded,
-          }"
-          variant="plain"
-        ></v-btn>
-      </div>
-
       <NavExpandableList
         v-if="systemStore.stats.hasClusteredPeople"
+        v-model:expanded="peopleExpanded"
+        title="People"
+        to="/people"
+        :icon="faceIcon"
         :items="namedPeople"
-        :expanded="peopleExpanded"
       >
         <template #item="{ item: person }">
           <v-list-item
@@ -192,11 +167,20 @@ useEventListener(document, 'mousemove', (e) => {
           </v-list-item>
         </template>
       </NavExpandableList>
+
+      <v-list-item rounded prepend-icon="mdi-camera" title="Cameras" to="/cameras" />
+
+      <v-divider class="mx-5 mt-2 mb-2" />
+
+      <v-list-item rounded prepend-icon="mdi-trash-can-outline" title="Bin" to="/bin" />
+
+      <v-list-item title="Storage" prepend-icon="mdi-cloud-outline" class="mb-3" to="/storage" />
+      <storage-overview />
     </v-list>
     <div v-else class="collapsed-list">
       <v-btn
         icon="mdi-image-outline"
-        @click="route.path === '/' ? timelineStore.scrollToTop() : undefined"
+        @click="route.path === '/' ? timelineToTop() : undefined"
         :variant="route.path === '/' ? 'tonal' : 'plain'"
         :color="route.path === '/' ? 'primary-darken-1' : undefined"
         to="/"
@@ -232,6 +216,28 @@ useEventListener(document, 'mousemove', (e) => {
         :color="route.path === '/people' ? 'primary-darken-1' : undefined"
         to="/people"
         title="People"
+      />
+      <v-btn
+        icon="mdi-camera"
+        :variant="route.path.startsWith('/cameras') ? 'tonal' : 'plain'"
+        :color="route.path === '/cameras' ? 'primary-darken-1' : undefined"
+        to="/cameras"
+        title="Cameras"
+      />
+      <v-divider class="ma-2" />
+      <v-btn
+        icon="mdi-trash-can"
+        :variant="route.path.startsWith('/bin') ? 'tonal' : 'plain'"
+        :color="route.path === '/bin' ? 'primary-darken-1' : undefined"
+        to="/bin"
+        title="Bin"
+      />
+      <v-btn
+        icon="mdi-cloud-outline"
+        :variant="route.path.startsWith('/storage') ? 'tonal' : 'plain'"
+        :color="route.path === '/storage' ? 'primary-darken-1' : undefined"
+        to="/storage"
+        title="Storage"
       />
     </div>
     <div class="resize-handle" @mousedown="startResize"></div>

@@ -1,18 +1,23 @@
 <script setup lang="ts">
-import BaseMap from '@/vues/components/map/BaseMap.vue'
 import type { FullMediaItem, MediaItemAlbumRef } from '@/scripts/types/api/fullPhoto.ts'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
-import { computed, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { DAYS, MONTHS } from '@/scripts/constants.ts'
 import MediaWeatherInfo from '@/vues/components/viewer/MediaWeatherInfo.vue'
-import { makeLocationString } from '@/scripts/utils.ts'
+import { caps, prettyBytes, toHms } from '@/scripts/utils.ts'
 import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
 import { useRoute } from 'vue-router'
 import { useTheme } from 'vuetify/framework'
+import { getCodecInfo } from '@/scripts/codecUtils.ts'
+import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
+
+const MediaLocationMap = defineAsyncComponent(
+  () => import('@/vues/components/map/MediaLocationMap.vue'),
+)
 
 const props = defineProps<{
   mediaItem?: FullMediaItem | SharedMediaItem
@@ -21,11 +26,12 @@ const props = defineProps<{
 
 const emit = defineEmits(['closeDateTime', 'openDateTime'])
 
-const theme = useTheme()
 const dialogs = useDialogStore()
 const settings = useSettingStore()
 const authStore = useAuthStore()
+const mediaItemStore = useMediaItemStore()
 const route = useRoute()
+const theme = useTheme()
 
 const currentAlbumId = computed(() => route.params.albumId as string | undefined)
 
@@ -59,6 +65,7 @@ function fullDateString(date: Date) {
 }
 
 async function editCaption() {
+  if (!props.mediaItem?.id) return
   const oldCaption = props.mediaItem?.user_caption ?? ''
   const newCaption = await dialogs.prompt({
     title: 'Edit Caption',
@@ -66,8 +73,10 @@ async function editCaption() {
     confirmText: 'Update',
     attach: true,
   })
+  if (newCaption === '')
+    return await mediaItemStore.updateMediaItem(props.mediaItem.id, { userCaption: null })
   if (!newCaption) return
-  // todo update server with new caption and refresh media item
+  await mediaItemStore.updateMediaItem(props.mediaItem.id, { userCaption: newCaption })
 }
 
 watch(dateTimeDialogOpen, () => {
@@ -78,6 +87,182 @@ watch(dateTimeDialogOpen, () => {
     dialogs.customVisible = false
     emit('closeDateTime')
   }
+})
+
+// Camera info computeds
+const cameraDisplayName = computed(() => {
+  const cs = props.mediaItem?.camera_settings
+  if (!cs) return null
+  const make = cs.camera_make?.trim() ?? cs.lens_make?.trim()
+  const model = cs.camera_model?.trim()
+  if (!make && !model) return null
+  if (!make) return model!
+  if (!model) return make
+  // Avoid duplication like "Canon Canon EOS R5"
+  if (model.toLowerCase().startsWith(make.toLowerCase())) return model
+  return `${make} ${model}`
+})
+
+const fileTypeLabel = computed(() => {
+  const mime = props.mediaItem?.media_features?.mime_type
+  if (!mime) return null
+  const sub = mime.split('/')[1]
+  if (!sub) return null
+  const map: Record<string, string> = {
+    quicktime: 'MOV',
+    'x-msvideo': 'AVI',
+    'x-matroska': 'MKV',
+  }
+  return map[sub] ?? sub.toUpperCase()
+})
+
+const featureBadges = computed(() => {
+  const features = props.mediaItem?.media_features
+  if (!features) return []
+  const badges: string[] = []
+  if (features.is_hdr) badges.push('HDR')
+  if (features.is_nightsight) badges.push('Night')
+  if (features.is_motion_photo) badges.push('Motion')
+  if (features.is_burst) badges.push('Burst')
+  if (features.is_timelapse) badges.push('Timelapse')
+  return badges
+})
+
+const lensDisplayName = computed(() => {
+  const cs = props.mediaItem?.camera_settings
+  if (!cs) return null
+  const lensModel = cs.lens_model?.trim()
+  const lensMake = cs.lens_make?.trim()
+  const cameraMake = cs.camera_make?.trim()
+  const cameraModel = cs.camera_model?.trim()
+  if (!lensMake && !lensModel) return null
+  let result
+  if (!lensMake) {
+    result = lensModel!
+  } else if (!lensModel) {
+    result = lensMake!
+  } else {
+    if (lensModel.startsWith(lensMake)) {
+      result = lensModel!
+    } else {
+      result = `${lensMake} ${lensModel!}`
+    }
+  }
+
+  if (cameraMake) {
+    if (result.startsWith(cameraMake) && result.length !== cameraMake.length) {
+      result = result.replace(cameraMake, '').trim()
+    }
+  }
+  if (cameraModel) {
+    if (result.startsWith(cameraModel) && result.length !== cameraModel.length) {
+      result = result.replace(cameraModel, '').trim()
+    }
+  }
+
+  return caps(result)
+})
+
+const mediaSpecsLine = computed(() => {
+  const item = props.mediaItem
+  if (!item) return null
+  const parts: string[] = []
+
+  if (!item.is_video && item.width && item.height) {
+    const mp = (item.width * item.height) / 1_000_000
+    parts.push(`${Math.round(mp)} MP`)
+  }
+
+  if (item.width && item.height) {
+    parts.push(`${item.width} × ${item.height}`)
+  }
+
+  if (item.is_video && item.duration_ms) {
+    parts.push(toHms(item.duration_ms / 1000))
+  }
+
+  const bytes = item.media_features?.size_bytes
+  if (bytes) {
+    parts.push(prettyBytes(bytes))
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : null
+})
+
+const exposureItems = computed(() => {
+  const cs = props.mediaItem?.camera_settings
+  if (!cs) return []
+  const items: { label: string; tooltip?: string | undefined }[] = []
+
+  if (cs.iso != null) items.push({ label: `ISO ${cs.iso}` })
+  if (cs.focal_length != null || cs.focal_length_in_35mm != null) {
+    if (cs.focal_length === null) {
+      items.push({
+        label: `${cs.focal_length_in_35mm} mm eq`,
+        tooltip: '35mm-equivalent focal length',
+      })
+    } else if (cs.focal_length_in_35mm === null) {
+      items.push({
+        label: `${cs.focal_length} mm`,
+        tooltip: 'Actual focal length (35mm equivalent unavailable)',
+      })
+    } else {
+      items.push({
+        label: `${cs.focal_length_in_35mm} mm eq`,
+        tooltip: `35mm-equivalent focal length • Actual: ${cs.focal_length} mm`,
+      })
+    }
+  }
+  if (cs.exposure_compensation != null)
+    items.push({ label: `${Math.round(cs.exposure_compensation * 100) / 100} ev` })
+  if (cs.aperture != null) items.push({ label: `ƒ${cs.aperture}` })
+
+  if (cs.exposure_time != null) {
+    if (cs.exposure_time >= 0.5) {
+      items.push({ label: `${Math.round(cs.exposure_time * 100) / 100} s` })
+    } else {
+      const denom = Math.round(1 / cs.exposure_time)
+      items.push({ label: `1/${denom} s` })
+    }
+  }
+
+  // Video FPS
+  if (props.mediaItem?.is_video) {
+    const fps =
+      props.mediaItem.media_features.video_fps ?? props.mediaItem.media_features.capture_fps
+    if (fps) {
+      items.push({ label: `${Math.round(fps * 10) / 10} fps` })
+    }
+  }
+
+  // Video Bitrate
+  const item = props.mediaItem
+  const bytes = item?.media_features?.size_bytes
+  const durationMs = item?.duration_ms
+  const isVideo = item?.is_video
+  if (bytes && durationMs && isVideo) {
+    const bytesPerSecond = Math.round(bytes / (durationMs / 1000) / 1000) * 1000
+    const bitRate = prettyBytes(bytesPerSecond) + '/s'
+    items.push({ label: bitRate })
+  }
+
+  if (isVideo && item?.media_features?.compressor_id) {
+    const codecInfo = getCodecInfo(item.media_features.compressor_id)
+    if (codecInfo) {
+      items.push({ label: codecInfo?.friendlyName })
+    }
+  }
+
+  return items
+})
+
+const showCameraSection = computed(() => {
+  return !!(
+    cameraDisplayName.value ||
+    fileTypeLabel.value ||
+    mediaSpecsLine.value ||
+    exposureItems.value.length > 0
+  )
 })
 </script>
 
@@ -94,7 +279,10 @@ watch(dateTimeDialogOpen, () => {
     <template v-else>
       <div class="caption">
         <div class="user-caption">
-          <p v-if="mediaItem.user_caption">{{ mediaItem.user_caption }}</p>
+          <div class="user-caption-holder" v-if="mediaItem.user_caption">
+            <p class="user-caption-title">Caption</p>
+            <p class="user-caption-caption">{{ mediaItem.user_caption }}</p>
+          </div>
           <p class="no-caption" v-else>No caption</p>
           <v-btn
             v-if="authStore.isAuthenticated"
@@ -198,36 +386,39 @@ watch(dateTimeDialogOpen, () => {
           <v-icon icon="mdi-chevron-right" size="16" class="album-chevron" />
         </router-link>
       </section>
-      <div class="capture-info">
-        <!--        todo! capture info-->
+      <div class="camera-info" v-if="showCameraSection">
+        <!--        todo add more info here!-->
+        <div
+          class="camera-header"
+          v-if="cameraDisplayName || fileTypeLabel || featureBadges.length > 0"
+        >
+          <span class="camera-model" v-if="cameraDisplayName">{{ cameraDisplayName }}</span>
+          <span class="lens-info no-lens" v-else>No camera info</span>
+          <div class="camera-badges">
+            <span v-for="badge in featureBadges" :key="badge" class="feature-badge">{{
+              badge
+            }}</span>
+            <span v-if="fileTypeLabel" class="file-type-badge">{{ fileTypeLabel }}</span>
+          </div>
+        </div>
+        <p class="lens-info" v-if="lensDisplayName">{{ lensDisplayName }}</p>
+        <p class="lens-info no-lens" v-else-if="cameraDisplayName">No lens information</p>
+        <p class="media-specs" v-if="mediaSpecsLine">{{ mediaSpecsLine }}</p>
+        <div class="exposure-row" v-if="exposureItems.length > 0">
+          <span
+            v-for="(item, i) in exposureItems"
+            :key="i"
+            class="exposure-cell"
+            v-tooltip="{
+              location: 'bottom',
+              text: item.tooltip,
+              disabled: !item.tooltip,
+            }"
+            >{{ item.label }}</span
+          >
+        </div>
       </div>
-      <div class="map-info" v-if="mediaItem?.gps">
-        <base-map
-          class="base-map"
-          :map-options="{
-            center: { lat: mediaItem.gps.latitude, lon: mediaItem.gps.longitude },
-            zoom: 9,
-            attributionControl: {
-              compact: true,
-            },
-          }"
-        />
-        <v-theme-provider theme="dark">
-          <v-sheet class="map-buttons">
-            <a
-              v-ripple
-              :href="`https://www.google.com/maps/place/${mediaItem.gps.latitude},${mediaItem.gps.longitude}`"
-              target="_blank"
-              referrerpolicy="no-referrer"
-            >
-              <span v-if="mediaItem.gps.location">{{
-                makeLocationString(mediaItem.gps.location, 3)
-              }}</span>
-              <v-icon size="15" class="ml-2 map-button-icon" icon="mdi-arrow-top-right" />
-            </a>
-          </v-sheet>
-        </v-theme-provider>
-      </div>
+      <media-location-map class="map-info" :media-item="mediaItem" />
     </template>
   </div>
 </template>
@@ -286,6 +477,24 @@ watch(dateTimeDialogOpen, () => {
   align-items: center;
   font-size: 13px;
   justify-content: space-between;
+}
+
+.user-caption-holder {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-caption-title {
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+.user-caption-caption {
+  font-size: 16px;
+}
+
+.user-caption-holder p {
+  margin: 0;
 }
 
 .no-caption {
@@ -399,33 +608,98 @@ watch(dateTimeDialogOpen, () => {
 }
 
 .map-info {
-  border-radius: 20px;
   margin: 10px;
-  overflow: hidden;
 }
 
-.base-map {
-  width: 380px;
-  height: 300px;
+.camera-info {
+  margin: 8px 20px;
+  margin-bottom: 15px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background-color: rgba(var(--v-theme-on-surface), 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.map-buttons {
-  background-color: rgba(var(--v-theme-on-surface), 0.9);
-}
-
-.map-buttons a {
-  color: rgba(var(--v-theme-surface-variant), 1);
-  text-decoration: none;
+.camera-header {
   display: flex;
   align-items: center;
-  user-select: none;
-  font-weight: 500;
-  font-size: 13px;
-  padding: 7px 20px;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.map-button-icon {
-  font-weight: lighter;
+.camera-model {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.camera-badges {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.file-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
+}
+
+.feature-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background-color: rgba(var(--v-theme-primary), 0.15);
+  color: rgb(var(--v-theme-primary));
+}
+
+.lens-info {
+  font-size: 13px;
+  font-style: italic;
+  opacity: 0.7;
+  margin: 0;
+  display: flex;
+  gap: 5px;
+}
+
+.lens-info.no-lens {
+  opacity: 0.45;
+}
+
+.media-specs {
+  font-size: 13px;
   opacity: 0.8;
+  margin: 2px 0 0;
+}
+
+.exposure-row {
+  display: flex;
+  gap: 0;
+  margin-top: 4px;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+  padding-top: 8px;
+}
+
+.exposure-cell {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.75;
+  padding: 0 10px;
+  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.15);
+  white-space: nowrap;
+}
+
+.exposure-cell:first-child {
+  padding-left: 0;
+}
+
+.exposure-cell:last-child {
+  border-right: none;
 }
 </style>

@@ -26,7 +26,7 @@ const albumStore = useAlbumStore()
 
 const show = ref(false)
 const newLoading = ref(false)
-const addLoading = ref(false)
+const addLoading = ref(new Set<string>())
 const filteredUserAlbums = computed(() =>
   albumStore.userAlbums.filter((a) => !props.excludeAlbumIds.includes(a.id)),
 )
@@ -56,7 +56,7 @@ async function addToAlbum(album: Album) {
   if (props.idsToAdd.length === 0) {
     return snackbarStore.warning("Can't add 0 items to album.")
   }
-  addLoading.value = true
+  addLoading.value.add(album.id)
   try {
     await albumService.addMediaToAlbum(album.id, { mediaItemIds: props.idsToAdd })
     requestIdleCallback(() => {
@@ -76,7 +76,7 @@ async function addToAlbum(album: Album) {
   } catch (e) {
     snackbarStore.error('Error adding to album', e as Error)
   } finally {
-    addLoading.value = false
+    addLoading.value.delete(album.id)
   }
 }
 </script>
@@ -123,6 +123,7 @@ async function addToAlbum(album: Album) {
               <v-btn
                 variant="plain"
                 @click="addToAlbum(album)"
+                :loading="addLoading.has(album.id)"
                 class="rounded-pill"
                 density="compact"
                 icon="mdi-plus"
@@ -133,9 +134,9 @@ async function addToAlbum(album: Album) {
         </v-list-item>
       </v-list>
       <v-card-actions class="card-actions">
-        <v-btn @click="createNew" rounded class="px-5"
-          ><v-icon icon="mdi-plus" class="mr-2"></v-icon> Create new album</v-btn
-        >
+        <v-btn @click="createNew" rounded class="px-5" :loading="newLoading">
+          <v-icon icon="mdi-plus" class="mr-2"></v-icon> Create new album
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-menu>

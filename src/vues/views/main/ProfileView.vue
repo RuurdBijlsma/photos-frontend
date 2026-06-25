@@ -67,7 +67,6 @@ async function saveProfile() {
     if (isCurrentUser.value) {
       await authStore.fetchCurrentUser()
     }
-    snackbars.success('Profile updated successfully')
     editDialog.value = false
   } catch (error) {
     snackbars.error('Failed to update profile')

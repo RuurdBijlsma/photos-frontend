@@ -11,7 +11,6 @@ export const useProfileStore = defineStore('profile', () => {
     try {
       await userService.updateProfile({ avatarId: mediaItemId })
       requestIdleCallback(() => authStore.fetchCurrentUser())
-      snackbarStore.success('Updated profile picture')
     } catch (e) {
       snackbarStore.error("Couldn't set profile picture", e)
     }

@@ -182,6 +182,10 @@
 * ✅ [bug] Checkmark for select image is offset for some reason
 * ✅ [bug] als je album maakt op niet "/", bijv "/search", dan gaat ie naar "/search?create=1" ofzo
 * ✅ [bug] selection store init
+* ✅ Theme picker in profile v-menu top right (same as ruurd music). Dark | Light | Follow system | Follow schedule
+* ✅ in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
+  button
+* ✅ daily card thumbnails arent avif???
 * on login redirect to where you were
 * improve messaging when you load the website and the server is off
 * make func to refresh frontpage, call it after onboarding is done after 10s, then every 5s;
@@ -198,8 +202,7 @@
     * this would prevent new photos being added in between the ratios and byMonth request
     * it doesn't prevent removals messing things up, but removals are done by UI interaction so that's less of a problem
 * [BUG] als je /profile window klein maakt kan je niet scrollen naar onder
-* in search filters, gebruik zelfde date range filter UI component als in map view, maar dan fixed, niet openen met
-  button
-* Theme picker in profile v-menu top right (same as ruurd music). Dark | Light | Follow system | Follow schedule
 * [investigate] krijg je ratio/monthItem desync als je de map eerst laad, terwijl de backend foto metadata ingest, en
   dan naar de timeline gaat? Want de map date filter heeft dan al de ratios opgevraagd in de timelineStore.
+* settings page heeft geen visible scrollbar
+* ✅ loading indicator als je album maakt

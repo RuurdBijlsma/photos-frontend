@@ -46,6 +46,7 @@
     "jiti": "^2.6.1",
     "npm-run-all2": "^8.0.4",
     "oxlint": "~1.57.0",
+    "playwright": "^1.61.0",
     "prettier": "3.8.1",
     "ts-proto": "^2.11.6",
     "typescript": "~6.0.2",

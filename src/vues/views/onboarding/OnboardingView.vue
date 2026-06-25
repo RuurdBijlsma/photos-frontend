@@ -6,20 +6,25 @@ import PickFolderTab from '@/vues/views/onboarding/tabs/PickFolderTab.vue'
 import SkippedFilesTab from '@/vues/views/onboarding/tabs/SkippedFilesTab.vue'
 import { usePickFolderStore } from '@/scripts/stores/pickFolderStore.ts'
 import ConfirmOnboardingTab from '@/vues/views/onboarding/tabs/ConfirmOnboardingTab.vue'
-import { useOnboardingStore } from '@/scripts/stores/onboardingStore.ts'
 import FocusLayout from '@/vues/layouts/FocusLayout.vue'
 import OnboardingLayout from '@/vues/layouts/OnboardingLayout.vue'
+import { useAdminStore } from '@/scripts/stores/adminStore.ts'
+import { useAuthStore } from '@/scripts/stores/authStore.ts'
 
 const router = useRouter()
 const route = useRoute()
-const onboardingStore = useOnboardingStore()
+const adminStore = useAdminStore()
+const authStore = useAuthStore()
 const pickFolderStore = usePickFolderStore()
 const isLoading = ref(false)
 
 async function startProcessing() {
   isLoading.value = true
   try {
-    await onboardingStore.startProcessing()
+    if (authStore.user) {
+      const userFolder = pickFolderStore.viewedFolder.join('/')
+      await adminStore.updateUserMediaFolder(authStore.user.id, userFolder)
+    }
     console.log('Pushing ', { name: 'timeline' })
     await router.push({ name: 'timeline', query: { onboarding: 'true' } })
   } finally {
@@ -117,7 +122,7 @@ setStepFromRoute()
             rounded
             v-else
             @click="startProcessing"
-            >Start</v-btn
+            >Start processing</v-btn
           >
         </div>
       </template>

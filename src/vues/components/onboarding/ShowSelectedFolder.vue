@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { useTheme } from 'vuetify/framework'
-
 defineProps<{
   folder: string[]
   pill: boolean
   iconColor?: string
   includeSelectedText?: boolean
 }>()
-
-const theme = useTheme()
 </script>
 
 <template>
@@ -17,11 +13,13 @@ const theme = useTheme()
     <span class="primary-color" v-if="includeSelectedText">Selected folder:</span>
     <div
       :style="{
-        backgroundColor: pill ? `${theme.current.value.colors['secondary-container']}` : undefined,
+        backgroundColor: pill ? `rgb(var(--v-theme-secondary-container))` : undefined,
+        color: pill ? `rgb(var(--v-theme-on-secondary-container))` : undefined,
+        paddingLeft: pill ? '20px' : '0',
       }"
       class="viewed-folder"
     >
-      <span class="opa">Media Root</span>
+      <span class="opa">Root</span>
       <template v-for="(component, index) in folder" :key="index">
         <v-icon color="on-secondary-container" icon="mdi-chevron-right" />
         <span>{{ component }}</span>
@@ -36,6 +34,8 @@ const theme = useTheme()
   justify-content: center;
   gap: 10px;
   align-items: center;
+  border-radius: 20px;
+  padding-left: 10px;
 }
 
 .primary-color {
@@ -48,7 +48,6 @@ const theme = useTheme()
   align-items: center;
   padding: 5px 20px;
   border-radius: 20px;
-  color: rgb(var(--v-theme-on-secondary-container));
 }
 
 .opa {

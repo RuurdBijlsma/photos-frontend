@@ -482,7 +482,7 @@ watch(
                 :thumbnail-size="240"
                 :is-scrolling-fast="false"
                 class="search-grid-item"
-                :view-link="`/search/view/`"
+                view-link="/search/view/"
                 :query="{ query }"
               />
             </div>
@@ -519,6 +519,7 @@ watch(
   border-bottom-left-radius: 25px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background-color: rgba(var(--v-theme-surface-container-high), 0.95);
+  box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.2);
 }
 
 .backdrop-blur .search-suggestions {

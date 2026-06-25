@@ -1,5 +1,5 @@
 export interface Theme {
-  source: string
+  source_color: string
   contrast_level: number
   variant: string
   schemes: DynamicSchemeCollection

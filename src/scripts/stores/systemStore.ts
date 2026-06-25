@@ -4,9 +4,24 @@ import systemService from '@/scripts/services/systemService.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import { useObjStorage } from '@/scripts/utils.ts'
 
-const DEFAULT_SYSTEM_STATS = {
+const DEFAULT_SYSTEM_STATS: SystemStats = {
   hasClusteredPeople: true,
   hasClusteredPhotos: true,
+  allowFileDeletion: true,
+  allowFileModifications: true,
+  disk: {
+    areSameDrive: true,
+    mediaDrive: {
+      diskAvailable: 50,
+      diskTotal: 100,
+      diskUsed: 0,
+    },
+    thumbnailDrive: {
+      diskAvailable: 50,
+      diskTotal: 100,
+      diskUsed: 0,
+    },
+  },
 }
 
 export const useSystemStore = defineStore('system', () => {
@@ -18,6 +33,7 @@ export const useSystemStore = defineStore('system', () => {
     try {
       const { data } = await systemService.getStats()
       console.log('system stats', data)
+      // data.disk.areSameDrive = true
       stats.value = data
     } catch (e) {
       snackbarStore.error('Could not fetch system stats', e)

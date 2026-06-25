@@ -11,10 +11,21 @@ import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
 import type { PhotoViewerType } from '@/scripts/types/viewerType'
 import { useEventListener } from '@vueuse/core'
 import MediaInfoPanel from '@/vues/components/viewer/MediaInfoPanel.vue'
-import { makeLocationString } from '@/scripts/utils.ts'
+import { makeDateTimeString, makeLocationString } from '@/scripts/utils.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { useTheme } from 'vuetify/framework'
+
+const props = withDefaults(
+  defineProps<{
+    overrideId?: string
+    muted?: boolean
+  }>(),
+  {
+    overrideId: undefined,
+    muted: false,
+  },
+)
 
 const route = useRoute()
 const router = useRouter()
@@ -46,6 +57,7 @@ useEventListener(document, 'mousemove', () => {
 })
 
 const id = computed(() => {
+  if (props.overrideId) return props.overrideId
   const rawId = route.params.mediaId
   if (rawId && !Array.isArray(rawId)) return rawId
   console.warn('WEIRD ID IN ROUTE DETECTED')
@@ -81,19 +93,12 @@ const orderedIds = computed(() => {
 const currentIndex = computed(() => orderedIds.value.findIndex((arrId) => id.value === arrId))
 const nextId = computed(() => orderedIds.value[currentIndex.value + 1] ?? null)
 const prevId = computed(() => orderedIds.value[currentIndex.value - 1] ?? null)
+const isBin = computed(() => route.name === 'view-photo-bin')
 
 const timestampString = computed(() => {
   const dateStr = fullImage.value?.taken_at_local
   if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const day = date.getDate()
-  const month = date.toLocaleString('en-GB', { month: 'long' })
-  const year = date.getFullYear()
-
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-
-  return `${day} ${month} ${year} at ${hours}:${minutes}`
+  return makeDateTimeString(new Date(dateStr))
 })
 
 const locationString = computed(() => {
@@ -141,7 +146,7 @@ async function initialize() {
     await mediaItemStore.fetchSharedMediaItem(albumId.value, loadingId)
   }
   if (id.value !== loadingId) return
-  console.log('SHARED MEDIA ITEM', fullImage.value)
+  console.log('FULL MEDIA ITEM', fullImage.value)
 }
 
 function toggleSelected() {
@@ -206,7 +211,13 @@ watch(
       backgroundColor: settings.useImageGlow ? 'rgb(var(--v-theme-background))' : 'black',
     }"
   >
-    <media-viewer v-if="id" :view-type="viewerType" :media-item-id="id" class="photo-viewer" />
+    <media-viewer
+      :muted="muted"
+      v-if="id"
+      :view-type="viewerType"
+      :media-item-id="id"
+      class="photo-viewer"
+    />
     <div class="top-bar">
       <div class="left-buttons">
         <v-btn
@@ -224,10 +235,21 @@ watch(
         />
       </div>
       <div class="top-main-text">
-        <h3>{{ timestampString }}</h3>
+        <h3 v-if="fullImage?.user_caption">{{ fullImage.user_caption }}</h3>
+        <router-link
+          class="top-link"
+          title="Go to date"
+          :to="`/?highlight=${id}`"
+          v-else-if="route.name !== 'view-photo-timeline'"
+        >
+          <h3>
+            {{ timestampString }}
+          </h3>
+        </router-link>
+        <h3 v-else>{{ timestampString }}</h3>
         <p>
           <router-link
-            class="location-link"
+            class="top-link location-link"
             v-if="fullImage?.gps"
             :to="`/map?lat=${fullImage.gps.latitude}&lon=${fullImage.gps.longitude}`"
             v-tooltip="{
@@ -238,10 +260,14 @@ watch(
               width: 140,
             }"
           >
-            {{ locationString }}
+            <span>{{ locationString }}</span>
           </router-link>
-          <span v-if="locationString.length > 0"> · </span>
-          {{ currentIndex + 1 }} of
+          <template v-if="fullImage?.user_caption">
+            <span class="ml-2 mr-2"> • </span>
+            <span>{{ timestampString }}</span>
+          </template>
+          <span v-if="locationString.length > 0" class="ml-2 mr-2"> • </span>
+          {{ (currentIndex + 1).toLocaleString() }} of
           {{ viewPhotoStore.ids.length === 0 ? '...' : viewPhotoStore.ids.length.toLocaleString() }}
         </p>
       </div>
@@ -261,6 +287,7 @@ watch(
           }"
         />
         <v-menu
+          v-if="!isBin"
           :close-on-content-click="false"
           :persistent="persistentInfo"
           v-model="infoMenuOpen"
@@ -319,12 +346,7 @@ watch(
               <v-btn rounded="xl" icon="mdi-dots-horizontal" variant="plain" v-bind="props" />
             </template>
             <v-list>
-              <v-list-item
-                v-if="route.name !== 'view-photo-timeline'"
-                title="View in timeline"
-                :to="`/?highlight=${id}`"
-                exact
-              />
+              <v-list-item>Hiiii</v-list-item>
             </v-list>
           </v-menu>
         </template>
@@ -480,13 +502,21 @@ watch(
   transform: translateY(-80px);
 }
 
-.location-link {
-  color: rgba(var(--fg), 0.6);
+.top-link {
   text-decoration: none;
+  color: rgba(var(--fg), 0.8);
 }
 
-.location-link:hover {
+.top-link:active {
+  color: inherit;
+}
+
+.top-link:hover {
   text-decoration: underline;
+}
+
+.location-link {
+  color: rgba(var(--fg), 0.6);
 }
 
 .next-area {

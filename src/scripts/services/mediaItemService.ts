@@ -6,6 +6,7 @@ import type { Theme } from '@/scripts/types/themeColor.ts'
 import type { Album } from '@/scripts/types/api/album.ts'
 import type { UpdateMediaItemRequest } from '@/scripts/types/api/mediaItem.ts'
 import { MapPhotosResponse } from '@/scripts/types/generated/timeline.ts'
+import type { ThemeVariant } from '@/scripts/constants.ts'
 
 const mediaItemService = {
   update(id: string, payload: UpdateMediaItemRequest) {
@@ -32,13 +33,22 @@ const mediaItemService = {
     return new URL(path, baseUrl).href
   },
 
-  getRandomPhoto(): Promise<AxiosResponse<RandomPhotoResponse>> {
-    return apiClient.get<RandomPhotoResponse>('/photos/random')
+  getRandomPhoto(
+    variant: ThemeVariant = 'Expressive',
+    contrast: number = 0.2,
+  ): Promise<AxiosResponse<RandomPhotoResponse | null>> {
+    return apiClient.get<RandomPhotoResponse | null>('/theme/random-photo', {
+      params: { variant, contrast },
+    })
   },
 
-  getTheme(color: string): Promise<AxiosResponse<Theme>> {
-    return apiClient.get<Theme>('/photos/theme', {
-      params: { color },
+  getTheme(
+    color: string,
+    variant: ThemeVariant = 'Expressive',
+    contrast: number = 0.2,
+  ): Promise<AxiosResponse<Theme>> {
+    return apiClient.get<Theme>('/theme/by-color', {
+      params: { color, variant, contrast },
     })
   },
 

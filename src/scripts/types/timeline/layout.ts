@@ -1,6 +1,6 @@
 import type { AlbumInfo, SimpleTimelineItem } from '@/scripts/types/generated/timeline.ts'
 
-export type TimelineContext = { album?: AlbumInfo }
+export type TimelineContext = { album?: AlbumInfo; isBin?: boolean }
 
 export interface SimpleLayoutRow {
   items: SimpleTimelineItem[]

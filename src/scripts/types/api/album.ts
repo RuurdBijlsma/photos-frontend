@@ -86,14 +86,18 @@ export interface SharedMediaFeatures {
   mime_type: string
   size_bytes: number
   is_motion_photo: boolean
-  motion_photo_presentation_timestamp: number | null
+  motion_photo_presentation_timestamp?: number
   is_hdr: boolean
   is_burst: boolean
-  burst_id: string | null
-  capture_fps: number | null
-  video_fps: number | null
+  burst_id?: string
+  capture_fps?: number
+  video_fps?: number
   is_nightsight: boolean
   is_timelapse: boolean
+  audio_format?: string
+  audio_channels?: number
+  audio_sample_rate?: number
+  compressor_id?: string
 }
 
 export interface SharedMediaItem {
@@ -117,4 +121,10 @@ export interface SharedMediaItem {
   panorama: Panorama
   user_caption: string | null
   gps: null
+}
+
+export interface BackupInfo {
+  filename: string
+  sizeBytes: number
+  createdAt: string // ISO Date string
 }
