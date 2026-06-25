@@ -15,6 +15,8 @@ const summary = ref<StorageSummaryResponse>({
   largeItemCount: 0,
   blurryPotentialSavings: 0,
   blurryItemCount: 0,
+  mediaFolderSizeBytes: 0,
+  thumbnailFolderSizeBytes: 0,
 })
 const loading = ref(false)
 const diskStats = computed(() => systemStore.stats.disk)

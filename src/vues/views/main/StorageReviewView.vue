@@ -31,7 +31,7 @@ const containerWidth = ref(0)
 
 const ITEM_GAP = 14
 const MIN_TILE_WIDTH = 240
-const ROW_HEIGHT = 295
+const row_height = computed(() => (mode.value === 'blurry' ? 315 : 300))
 
 const mode = computed<'review' | 'blurry'>(() =>
   route.path.includes('/blurry') ? 'blurry' : 'review',
@@ -41,10 +41,10 @@ const emptyIcon = computed(() =>
   mode.value === 'blurry' ? 'mdi-image-broken-variant' : 'mdi-harddisk',
 )
 const basePath = computed(() => (mode.value === 'blurry' ? '/storage/blurry' : '/storage/review'))
-const totalSize = computed(() => items.value.reduce((sum, item) => sum + item.fileSize, 0))
+const totalSize = computed(() => items.value.reduce((sum, item) => sum + item.sizeBytes, 0))
 const selectedItems = computed(() => items.value.filter((item) => selected.value.has(item.id)))
 const selectedSize = computed(() =>
-  selectedItems.value.reduce((sum, item) => sum + item.fileSize, 0),
+  selectedItems.value.reduce((sum, item) => sum + item.sizeBytes, 0),
 )
 const allSelected = computed(
   () => items.value.length > 0 && selected.value.size === items.value.length,
@@ -69,7 +69,7 @@ const rows = computed(() => {
 const virtualizerOptions = computed(() => ({
   count: rows.value.length,
   getScrollElement: () => scrollContainer.value,
-  estimateSize: () => ROW_HEIGHT + ITEM_GAP,
+  estimateSize: () => row_height.value + ITEM_GAP,
   overscan: 3,
 }))
 const rowVirtualizer = useVirtualizer(virtualizerOptions)
@@ -78,7 +78,7 @@ const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 const virtualGridHeight = computed(() => rowVirtualizer.value.getTotalSize())
 
 function itemDate(item: StorageReviewItem) {
-  const date = new Date(item.timestamp)
+  const date = new Date(item.takenAtLocal)
   if (Number.isNaN(date.getTime())) return 'Unknown date'
   return date.toLocaleDateString(undefined, {
     day: 'numeric',
@@ -113,6 +113,7 @@ async function loadItems() {
       mode.value === 'blurry'
         ? await storageService.getBlurryItems()
         : await storageService.getReviewItems()
+    console.log('review items', response.items)
     items.value = response.items
   } catch (e) {
     snackbarStore.error('Could not load storage review items', e)
@@ -126,17 +127,15 @@ async function downloadItem(item: StorageReviewItem) {
   setDownloading(item.id, true)
   try {
     const response = await mediaItemService.downloadMediaFileById(item.id)
-    let filename = item.id
+    let filename = item.filename
     const contentDisposition =
       response.headers?.['content-disposition'] || response.headers?.['Content-Disposition']
-    console.log("headers", response.headers)
+    console.log('headers', response.headers)
     if (contentDisposition) {
       const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?['"]?([^;\r\n"']+)['"]?/i)
       if (match && match[1]) {
         filename = decodeURIComponent(match[1])
       }
-    } else {
-      filename = item.id
     }
     const url = window.URL.createObjectURL(response.data)
     const link = document.createElement('a')
@@ -295,7 +294,7 @@ onMounted(loadItems)
             class="virtual-row"
             :style="{
               transform: `translateY(${virtualRow.start}px)`,
-              height: `${ROW_HEIGHT}px`,
+              height: `${row_height}px`,
               gap: `${ITEM_GAP}px`,
             }"
           >
@@ -309,7 +308,7 @@ onMounted(loadItems)
                 <router-link class="thumb-link" :to="`${basePath}/view/${item.id}`">
                   <thumbnail-img
                     :media-item-id="item.id"
-                    :height="getThumbnailHeight(ROW_HEIGHT)"
+                    :height="getThumbnailHeight(row_height)"
                     :width="tileWidth - 8"
                     cover
                   />
@@ -338,7 +337,8 @@ onMounted(loadItems)
 
               <div class="item-info">
                 <div class="meta">
-                  <strong>{{ prettyBytes(item.fileSize) }}</strong>
+                  <strong>{{ prettyBytes(item.sizeBytes) }}</strong>
+                  <span>{{ item.filename }}</span>
                   <span>{{ itemDate(item) }}</span>
                   <span v-if="item.weightedScore !== undefined">
                     Quality {{ Math.round(item.weightedScore) }}
