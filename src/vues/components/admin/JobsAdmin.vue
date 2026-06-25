@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useAdminStore } from '@/scripts/stores/adminStore.ts'
 import type { AdminUserInfo, JobInfo, JobStatus, JobType } from '@/scripts/types/api/admin.ts'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
+import { useIntervalFn, useStorage } from '@vueuse/core'
 
 const adminStore = useAdminStore()
 
 // Datatable parameters
-const itemsPerPage = ref(15)
+const itemsPerPage = ref(10)
 const tableOptions = ref({
   page: 1,
   itemsPerPage: 15,
   sortBy: [] as { key: string; order: 'asc' | 'desc' }[],
 })
+
+const autoRefresh = useStorage('autoRefreshJobsTable', false)
 
 // Filters State
 const selectedStatus = ref<JobStatus | null>(null)
@@ -45,7 +48,7 @@ const userFilterOptions = computed(() => {
     title: u.username,
     value: u.id.toString(),
   }))
-  options.unshift({ title: 'System / Global', value: 'system' })
+  options.unshift({ title: 'System', value: 'system' })
   return options
 })
 
@@ -94,13 +97,17 @@ async function loadJobs(options: typeof tableOptions.value) {
     filterParams.push(`relativePath:contains:${searchPath.value}`)
   }
 
-  await adminStore.fetchJobs({
-    page: options.page,
-    limit: options.itemsPerPage,
-    offset: (options.page - 1) * options.itemsPerPage,
-    sort: sortParams,
-    filter: filterParams,
-  })
+  try {
+    await adminStore.fetchJobs({
+      page: options.page,
+      limit: options.itemsPerPage,
+      offset: (options.page - 1) * options.itemsPerPage,
+      sort: sortParams,
+      filter: filterParams,
+    })
+  } catch {
+    autoRefresh.value = false
+  }
 }
 
 function openErrorDetail(job: JobInfo) {
@@ -163,6 +170,22 @@ function formatDate(dateStr: string | null) {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleString()
 }
+
+const { pause, resume } = useIntervalFn(() => {
+  loadJobs(tableOptions.value)
+}, 1000)
+
+watch(
+  autoRefresh,
+  () => {
+    if (autoRefresh.value) {
+      resume()
+    } else {
+      pause()
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -175,7 +198,9 @@ function formatDate(dateStr: string | null) {
             <span class="card-title">Background Job Queue</span>
             <v-icon color="primary" size="large" class="ml-2">mdi-clock-fast</v-icon>
           </div>
+          <v-spacer />
           <v-btn
+            v-if="!autoRefresh"
             prepend-icon="mdi-refresh"
             variant="tonal"
             color="primary"
@@ -185,11 +210,21 @@ function formatDate(dateStr: string | null) {
           >
             Refresh Queue
           </v-btn>
+          <v-switch
+            hide-details
+            v-model="autoRefresh"
+            color="primary"
+            label="Auto refresh"
+            size="small"
+            true-icon="mdi-check"
+            false-icon="mdi-close"
+            inset="material"
+          ></v-switch>
         </div>
 
         <div class="card-body">
           <!-- Filter Bar -->
-          <v-row class="mb-4" dense>
+          <v-row class="mb-4" density="comfortable">
             <v-col cols="12" sm="3">
               <v-select
                 v-model="selectedStatus"
@@ -394,7 +429,7 @@ function formatDate(dateStr: string | null) {
           </div>
 
           <!-- Extra Meta Info -->
-          <v-row class="mt-4 text-caption text-medium-emphasis" dense>
+          <v-row class="mt-4 text-caption text-medium-emphasis" density="comfortable">
             <v-col cols="6" sm="3">
               <strong>Created:</strong><br />
               {{ formatDate(detailedJob?.createdAt || '') }}
@@ -470,7 +505,7 @@ function formatDate(dateStr: string | null) {
   border-top-right-radius: 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 25px;
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 

@@ -68,6 +68,7 @@ export const useAdminStore = defineStore('admin', () => {
       totalJobs.value = response.data.total
     } catch (error) {
       snackbarStore.error('Failed to load background jobs list', error)
+      throw error
     } finally {
       isJobsLoading.value = false
     }
