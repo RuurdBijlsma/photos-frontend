@@ -205,4 +205,4 @@
 * [investigate] krijg je ratio/monthItem desync als je de map eerst laad, terwijl de backend foto metadata ingest, en
   dan naar de timeline gaat? Want de map date filter heeft dan al de ratios opgevraagd in de timelineStore.
 * settings page heeft geen visible scrollbar
-* loading indicator als je album maakt
+* ✅ loading indicator als je album maakt
