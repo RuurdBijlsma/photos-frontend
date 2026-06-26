@@ -9,6 +9,7 @@ const props = defineProps<{
   basePath: string
   tileWidth: number
   isSelected: boolean
+  isSelecting: boolean // Selection mode indicator
   isDownloading: boolean
   actionLoading: boolean
   batchDownloading: boolean
@@ -16,7 +17,6 @@ const props = defineProps<{
 
 const emit = defineEmits(['toggle', 'download', 'delete'])
 
-// Compute formatted string representations once and cache them in Vue
 const formattedSize = computed(() => prettyBytes(props.item.sizeBytes))
 const formattedDuration = computed(() => toHms((props.item.durationMs ?? 0) / 1000))
 
@@ -36,9 +36,28 @@ const roundedScore = computed(() =>
 </script>
 
 <template>
-  <article class="review-item" :style="{ width: `${tileWidth}px` }">
+  <article
+    class="review-item"
+    :style="{ width: `${tileWidth}px` }"
+    :class="{ 'is-selected': isSelected }"
+  >
     <div class="thumb-container">
-      <router-link class="thumb-link" :to="`${basePath}/view/${item.id}`">
+      <!-- Option A: Selection mode is active. Clicking preview toggles selection -->
+      <div v-if="isSelecting" class="thumb-link select-trigger" @click="emit('toggle')">
+        <img
+          decoding="async"
+          loading="lazy"
+          :src="mediaItemService.getPhotoThumbnail(item.id, 240, !item.hasThumbnails)"
+          class="thumbnail-img"
+        />
+        <div class="video-chip" v-if="item.isVideo">
+          <v-icon icon="mdi-play" size="16" />
+          <span>{{ formattedDuration }}</span>
+        </div>
+      </div>
+
+      <!-- Option B: Selection mode is NOT active. Clicking preview navigates to full view -->
+      <router-link v-else class="thumb-link" :to="`${basePath}/view/${item.id}`">
         <img
           decoding="async"
           loading="lazy"
@@ -51,11 +70,22 @@ const roundedScore = computed(() =>
         </div>
       </router-link>
 
-      <!-- Replaced v-btn with lightweight native button -->
+      <!-- Floating Fullscreen Shortcut: Shown in selection mode during hover -->
+      <router-link
+        v-if="isSelecting"
+        class="fullscreen-btn"
+        :to="`${basePath}/view/${item.id}`"
+        title="View in fullscreen"
+        @click.stop
+      >
+        <v-icon size="18" icon="mdi-fullscreen" />
+      </router-link>
+
+      <!-- Selector button circle -->
       <button
         type="button"
         class="select-overlay-btn"
-        :class="{ 'is-selected': isSelected }"
+        :class="{ visible: isSelecting }"
         @click.stop="emit('toggle')"
       >
         <v-icon
@@ -73,7 +103,6 @@ const roundedScore = computed(() =>
         <span v-if="roundedScore !== null"> Quality {{ roundedScore }} </span>
       </div>
       <div class="item-actions">
-        <!-- Native buttons bypass framework wrapper initialization weight -->
         <button
           type="button"
           class="action-btn download"
@@ -124,6 +153,22 @@ const roundedScore = computed(() =>
   border-radius: 20px;
   overflow: hidden;
   background: rgba(var(--v-theme-on-surface), 0.05);
+  transition:
+    transform 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.thumb-link.select-trigger {
+  cursor: pointer;
+}
+
+/* Clear visual highlight and shrink response to match GridItem.vue */
+.is-selected .thumb-link {
+  box-shadow:
+    inset 0 0 0 2px rgb(var(--v-theme-primary)),
+    0 0 0 4px rgba(var(--v-theme-primary), 0.4);
+  transform: scale(0.96);
+  border-radius: 20px;
 }
 
 .thumbnail-img {
@@ -133,6 +178,7 @@ const roundedScore = computed(() =>
   display: block;
 }
 
+/* Hidden by default; displayed on hover or when selection processes are active */
 .select-overlay-btn {
   position: absolute;
   top: 10px;
@@ -148,10 +194,20 @@ const roundedScore = computed(() =>
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
   transition:
+    opacity 0.15s ease,
     background-color 0.15s ease,
     color 0.15s ease,
     transform 0.15s ease;
+}
+
+.review-item:hover .select-overlay-btn,
+.is-selected .select-overlay-btn,
+.select-overlay-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .select-overlay-btn:hover {
@@ -159,9 +215,36 @@ const roundedScore = computed(() =>
   transform: scale(1.05);
 }
 
-.select-overlay-btn.is-selected {
+.is-selected .select-overlay-btn {
   background: rgb(var(--v-theme-primary));
   color: rgb(var(--v-theme-on-primary));
+}
+
+/* floating fullscreen shortcut icon style */
+.fullscreen-btn {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  z-index: 2;
+  transition: transform 0.15s ease-in-out;
+}
+
+.fullscreen-btn:hover {
+  transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.review-item:hover .fullscreen-btn {
+  display: flex;
 }
 
 .video-chip {

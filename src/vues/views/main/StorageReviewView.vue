@@ -301,6 +301,7 @@ onMounted(loadItems)
               :base-path="basePath"
               :tile-width="tileWidth"
               :is-selected="selected.has(item.id)"
+              :is-selecting="selected.size > 0"
               :is-downloading="downloadingIds.has(item.id)"
               :action-loading="actionLoading"
               :batch-downloading="batchDownloading"
