@@ -119,7 +119,7 @@ const { pause, resume } = useIntervalFn(
   () => {
     loadData()
   },
-  2500,
+  3000,
   { immediate: false },
 )
 
@@ -171,6 +171,7 @@ function toggleError(jobId: number) {
             icon="mdi-refresh"
             variant="text"
             density="comfortable"
+            color="primary"
             @click="loadData"
             :loading="ingestStore.isOverviewLoading || ingestStore.isRunningLoading"
           />
@@ -211,8 +212,8 @@ function toggleError(jobId: number) {
 
         <div class="running-jobs-section">
           <div class="section-title">
-            <v-icon icon="mdi-play-circle-outline" color="primary" />
-            <span>Currently Running</span>
+            <v-icon icon="mdi-swap-vertical" color="primary" />
+            <span>Currently importing</span>
           </div>
 
           <div v-if="ingestStore.runningJobs.length > 0">
@@ -299,13 +300,14 @@ function toggleError(jobId: number) {
               },
             ]"
           >
-            <div class="category-header mb-3">
+            <div class="category-header mb-2">
               <span class="category-title text-subtitle-1">
                 <v-icon :icon="cat.icon" size="22" color="primary" class="mr-1" />
                 {{ cat.label }}
               </span>
               <span class="category-stats text-subtitle-2" v-if="cat.total > 0">
-                <strong>{{ cat.done }}</strong> of {{ cat.total }} tasks complete ({{
+                <!-- TODO: change this to {queued + running} of {total} to go (percentage)-->
+                <strong>{{ cat.done }}</strong> of {{ cat.total }} complete ({{
                   cat.percentage
                 }}%)
               </span>
@@ -341,7 +343,7 @@ function toggleError(jobId: number) {
         <!-- Running Tasks (Hidden if pipeline is idle) -->
         <div v-if="ingestStore.runningJobs.length > 0" class="mb-6">
           <h2 class="section-title">
-            <v-icon icon="mdi-play-circle-outline" color="primary" />
+            <v-icon icon="mdi-swap-vertical" color="primary" />
             <span>Currently importing ({{ ingestStore.runningJobs.length }})</span>
           </h2>
 
@@ -599,7 +601,6 @@ function toggleError(jobId: number) {
   font-size: 0.725rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: rgb(var(--v-theme-primary));
 }
 
