@@ -10,8 +10,7 @@ import IngestActivityCard from '@/vues/components/activity/IngestActivityCard.vu
       <header class="activity-header mb-6">
         <h1 class="activity-title">Library import status</h1>
         <p class="activity-subtitle">
-          Monitor your server's metadata extraction, image processing, analysis pipelines, and LLM
-          tagging progress.
+          Monitor your server's metadata extraction, image processing, and analysis pipelines.
         </p>
       </header>
 

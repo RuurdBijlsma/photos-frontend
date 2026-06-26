@@ -5,6 +5,11 @@ import { useIngestJobsStore } from '@/scripts/stores/ingestJobsStore.ts'
 import { useIntervalFn } from '@vueuse/core'
 import { caps } from '@/scripts/utils.ts'
 
+// todo:
+// Extract duplicate code into own component
+// Align slight differences between overlay and activity view UI, so it can be extracted properly to own component
+// The failed section can go on ActivityView.vue, as well as the Scan folder button
+
 const props = withDefaults(
   defineProps<{
     overlay?: boolean
@@ -61,6 +66,7 @@ const categoryProgress = computed(() => {
         ...cat,
         total: 0,
         done: 0,
+        toGo: 0,
         percentage: 0,
         segments: [],
       }
@@ -71,6 +77,7 @@ const categoryProgress = computed(() => {
     const queued = counts.queued || 0
     const failed = counts.failed || 0
     const cancelled = counts.cancelled || 0
+    const toGo = queued + running
 
     const segments = [
       { name: 'done', value: done, colorClass: 'done', label: 'Completed' },
@@ -91,6 +98,7 @@ const categoryProgress = computed(() => {
       ...cat,
       total,
       done,
+      toGo,
       percentage,
       segments,
       counts,
@@ -184,8 +192,12 @@ function toggleError(jobId: number) {
                 <v-icon :icon="cat.icon" size="18" color="primary" />
                 {{ cat.label }}
               </span>
-              <span class="category-stats" v-if="cat.total > 0">
-                {{ cat.done }}/{{ cat.total }} ({{ cat.percentage }}%)
+              <span class="category-stats" v-if="cat.total > 0 && cat.toGo > 0">
+                <strong>{{ cat.toGo.toLocaleString() }}</strong> of
+                {{ cat.total.toLocaleString() }} to go ({{ cat.percentage }}%)
+              </span>
+              <span class="category-stats" v-else-if="cat.total > 0">
+                <em>No more tasks</em>
               </span>
               <span class="category-stats italic" v-else>No jobs scheduled</span>
             </div>
@@ -204,7 +216,7 @@ function toggleError(jobId: number) {
             <div class="legend-flex" v-if="cat.total > 0">
               <div v-for="seg in cat.segments" :key="seg.name" class="legend-item">
                 <div :class="['legend-dot', seg.colorClass]" />
-                <span>{{ seg.label }} ({{ seg.value }})</span>
+                <span>{{ seg.label }} ({{ seg.value.toLocaleString() }})</span>
               </div>
             </div>
           </div>
@@ -232,10 +244,6 @@ function toggleError(jobId: number) {
             >
               + {{ ingestStore.runningJobs.length - 4 }} more active tasks
             </div>
-          </div>
-          <div v-else class="idle-state">
-            <v-icon icon="mdi-check-circle-outline" color="success" size="28" />
-            <span class="idle-text">All scheduled import operations complete.</span>
           </div>
         </div>
 
@@ -285,8 +293,8 @@ function toggleError(jobId: number) {
         <!-- Dynamic Category Progress Overviews -->
         <div class="progress-section">
           <h2 class="section-title">
-            <v-icon icon="mdi-chart-bar" color="primary" />
-            <span>Ingestion Pipeline</span>
+            <v-icon icon="mdi-pipe" color="primary" />
+            <span>File Import Pipeline</span>
           </h2>
 
           <div
@@ -305,11 +313,11 @@ function toggleError(jobId: number) {
                 <v-icon :icon="cat.icon" size="22" color="primary" class="mr-1" />
                 {{ cat.label }}
               </span>
-              <span class="category-stats text-subtitle-2" v-if="cat.total > 0">
-                <!-- TODO: change this to {queued + running} of {total} to go (percentage)-->
-                <strong>{{ cat.done }}</strong> of {{ cat.total }} complete ({{
-                  cat.percentage
-                }}%)
+              <span class="category-stats text-subtitle-2" v-if="cat.total > 0 && cat.toGo > 0">
+                <strong>{{ cat.toGo }}</strong> of {{ cat.total }} to go ({{ cat.percentage }}%)
+              </span>
+              <span class="category-stats text-subtitle-2" v-else-if="cat.total > 0">
+                <em>No more tasks</em>
               </span>
               <span class="category-stats italic text-subtitle-2 text-medium-emphasis" v-else>
                 No active/recent jobs found
@@ -433,7 +441,7 @@ function toggleError(jobId: number) {
 
 <style scoped>
 .overlay-container {
-  width: 380px;
+  width: 420px;
   max-width: 100vw;
   background-color: rgb(var(--v-theme-surface-container-high)) !important;
   border-radius: 24px !important;
