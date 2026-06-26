@@ -26,10 +26,7 @@ async function logout() {
     <search-bar v-if="authStore.isAuthenticated" />
     <v-spacer />
     <div v-if="authStore.isAuthenticated" class="header-buttons">
-      <v-btn variant="plain" rounded>
-        <v-icon icon="mdi-upload"></v-icon>
-        Upload
-      </v-btn>
+      <v-btn variant="plain" rounded prepend-icon="mdi-upload"> Upload </v-btn>
       <v-menu v-model="menuOpen" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props">
@@ -66,7 +63,7 @@ async function logout() {
           <v-list bg-color="surface-container">
             <v-list-item>
               <div class="mt-1 theme-container">
-                <v-list-item-title class="theme-title"> Theme</v-list-item-title>
+                <v-list-item-title class="theme-title">Theme</v-list-item-title>
 
                 <v-chip-group
                   v-model="settings.themeString"
@@ -109,6 +106,9 @@ async function logout() {
               @click="menuOpen = false"
             >
               <v-list-item-title>Admin</v-list-item-title>
+            </v-list-item>
+            <v-list-item prepend-icon="mdi-sync" to="/activity" @click="menuOpen = false">
+              <v-list-item-title>Activity</v-list-item-title>
             </v-list-item>
             <v-list-item prepend-icon="mdi-cog" to="/settings" @click="menuOpen = false">
               <v-list-item-title>Settings</v-list-item-title>

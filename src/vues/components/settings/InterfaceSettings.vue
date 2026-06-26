@@ -27,7 +27,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
       hide-scroll-bar
       class="timeline-preview"
       :timeline-items="previewTimeline"
-      view-link="/settings/view/"
+      view-link="/unreachable"
       :ideal-row-height="settings.timelineRowHeight"
       :style="{
         height: settings.timelineRowHeight + 100 + 'px',
@@ -224,6 +224,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
   left: 0;
   width: 100%;
   opacity: 0.6;
+  pointer-events: none;
 }
 
 .ui-settings-layout {
