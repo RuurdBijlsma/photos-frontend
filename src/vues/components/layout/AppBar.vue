@@ -1,6 +1,6 @@
 <!-- File: src/vues/components/layout/AppBar.vue -->
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import SearchBar from '@/vues/components/ui/SearchBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
@@ -19,53 +19,11 @@ const route = useRoute()
 const menuOpen = ref(false)
 const ingestMenuOpen = ref(false)
 
-// todo fix type
-let statsInterval: any = null
-
 async function logout() {
   menuOpen.value = false
   await authStore.logout(false)
   location.reload()
 }
-
-// todo use useInterval
-function startStatsPolling() {
-  if (statsInterval) return
-  systemStore.fetchStats()
-  statsInterval = setInterval(() => {
-    if (authStore.isAuthenticated) {
-      systemStore.fetchStats()
-    }
-  }, 15000)
-}
-
-function stopStatsPolling() {
-  if (statsInterval) {
-    clearInterval(statsInterval)
-    statsInterval = null
-  }
-}
-
-onMounted(() => {
-  if (authStore.isAuthenticated) {
-    startStatsPolling()
-  }
-})
-
-watch(
-  () => authStore.isAuthenticated,
-  (val) => {
-    if (val) {
-      startStatsPolling()
-    } else {
-      stopStatsPolling()
-    }
-  },
-)
-
-onUnmounted(() => {
-  stopStatsPolling()
-})
 </script>
 
 <template>

@@ -24,20 +24,36 @@ const isScanning = ref(false)
 const retryingJobIds = ref<Set<number>>(new Set())
 const failedExpanded = ref<Record<number, boolean>>({})
 
-// todo: there should be a constant boolean flag, SHOW_LLM, if false, then dont show anything related to the ingest_llm jobs. Some servers dont have llm functionality
+// Toggle this flag to show/hide LLM Tagging options
+const SHOW_LLM = false
 
 const categories = [
   { key: 'metadata', label: 'File import', icon: 'mdi-file-image-outline' },
   { key: 'thumbnails', label: 'Generate thumbnails', icon: 'mdi-image-outline' },
   { key: 'analysis', label: 'Index for search', icon: 'mdi-search-web' },
-  { key: 'llm', label: 'LLM Tagging', icon: 'mdi-brain' },
+  ...(SHOW_LLM ? [{ key: 'llm', label: 'LLM Tagging', icon: 'mdi-brain' }] : []),
 ] as const
+type CatKey = 'metadata' | 'thumbnails' | 'analysis' | 'llm'
+
+// Identifies the current phase of the ingestion process
+const activeCategories = computed(() => {
+  if (!ingestStore.overview) return new Set<string>()
+  // Step 1: Look for any category with actively running processes
+  const activeCats = new Set<string>()
+  for (const cat of categories) {
+    const counts = ingestStore.overview[cat.key as CatKey]
+    if (counts && counts.running > 0) {
+      activeCats.add(cat.key)
+    }
+  }
+  return activeCats
+})
 
 const categoryProgress = computed(() => {
   if (!ingestStore.overview) return []
 
   return categories.map((cat) => {
-    const counts = ingestStore.overview![cat.key]
+    const counts = ingestStore.overview![cat.key as CatKey]
     const total = counts?.total || 0
 
     if (total === 0) {
@@ -56,7 +72,6 @@ const categoryProgress = computed(() => {
     const failed = counts.failed || 0
     const cancelled = counts.cancelled || 0
 
-    // Filter segments > 0 to maintain clean layouts and avoid visual gaps
     const segments = [
       { name: 'done', value: done, colorClass: 'done', label: 'Completed' },
       { name: 'running', value: running, colorClass: 'running', label: 'Running' },
@@ -70,7 +85,7 @@ const categoryProgress = computed(() => {
         pct: (s.value / total) * 100,
       }))
 
-    const percentage = Math.round((done / total) * 100)
+    const percentage = Math.floor((done / total) * 100)
 
     return {
       ...cat,
@@ -81,6 +96,15 @@ const categoryProgress = computed(() => {
       counts,
     }
   })
+})
+
+// Dynamically filter segments to optimize presentation space in the dropdown overlay
+const filteredCategoryProgress = computed(() => {
+  const progress = categoryProgress.value
+  if (props.overlay && activeCategories.value.size > 0) {
+    return progress.filter((cat) => activeCategories.value.has(cat.key))
+  }
+  return progress
 })
 
 const loadData = async () => {
@@ -134,11 +158,6 @@ async function handleRetry(jobId: number) {
 function toggleError(jobId: number) {
   failedExpanded.value[jobId] = !failedExpanded.value[jobId]
 }
-
-// todo: highlight the part of the pipeline that's currently running. So if analysis has running jobs, then it's active.
-// reflect this activeness in the UI. Usually only one of the pipelines part is active at a time.
-// In the overlay card, I think we should actually hide away the non-active sections
-// In the activity view fixed page, we should add a highlight to the active category, and maybe dim the others a bit.
 </script>
 
 <template>
@@ -158,7 +177,7 @@ function toggleError(jobId: number) {
         </div>
 
         <div class="progress-section">
-          <div v-for="cat in categoryProgress" :key="cat.key" class="category-row">
+          <div v-for="cat in filteredCategoryProgress" :key="cat.key" class="category-row">
             <div class="category-header">
               <span class="category-title">
                 <v-icon :icon="cat.icon" size="18" color="primary" />
@@ -269,7 +288,17 @@ function toggleError(jobId: number) {
             <span>Ingestion Pipeline</span>
           </h2>
 
-          <div v-for="cat in categoryProgress" :key="cat.key" class="category-row pa-5">
+          <div
+            v-for="cat in filteredCategoryProgress"
+            :key="cat.key"
+            :class="[
+              'category-row pa-5',
+              {
+                'active-category': activeCategories.has(cat.key),
+                'dimmed-category': activeCategories.size > 0 && !activeCategories.has(cat.key),
+              },
+            ]"
+          >
             <div class="category-header mb-3">
               <span class="category-title text-subtitle-1">
                 <v-icon :icon="cat.icon" size="22" color="primary" class="mr-1" />
@@ -309,14 +338,14 @@ function toggleError(jobId: number) {
       </div>
 
       <div class="right-col">
-        <!-- Running Tasks -->
-        <div class="mb-6">
+        <!-- Running Tasks (Hidden if pipeline is idle) -->
+        <div v-if="ingestStore.runningJobs.length > 0" class="mb-6">
           <h2 class="section-title">
             <v-icon icon="mdi-play-circle-outline" color="primary" />
-            <span>Active Tasks ({{ ingestStore.runningJobs.length }})</span>
+            <span>Currently importing ({{ ingestStore.runningJobs.length }})</span>
           </h2>
 
-          <div v-if="ingestStore.runningJobs.length > 0">
+          <div>
             <div v-for="job in ingestStore.runningJobs" :key="job.id" class="job-pill pa-4">
               <div class="job-info-left">
                 <span class="job-type-badge text-caption mb-1">
@@ -329,19 +358,13 @@ function toggleError(jobId: number) {
               <v-progress-circular indeterminate size="20" width="2" color="primary" />
             </div>
           </div>
-          <div v-else class="idle-state py-8">
-            <v-icon icon="mdi-check-circle-outline" color="success" size="48" class="mb-2" />
-            <!--  todo: if pipeline is idle, dont show `Running Tasks` section. Remove idle UI -->
-            <h3 class="text-subtitle-1 font-weight-bold">Pipeline Idle</h3>
-            <p class="idle-text mb-0">All files are structured and processed.</p>
-          </div>
         </div>
 
         <!-- Failed Imports / Retries -->
         <div>
           <h2 class="section-title">
             <v-icon icon="mdi-alert-circle-outline" color="error" />
-            <span>Failed Jobs ({{ ingestStore.failedJobs.length }})</span>
+            <span>Failed ({{ ingestStore.failedJobs.length }})</span>
           </h2>
 
           <div v-if="ingestStore.failedJobs.length > 0" class="failed-list">
@@ -433,6 +456,21 @@ function toggleError(jobId: number) {
   padding: 12px;
   display: flex;
   flex-direction: column;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.category-row.active-category {
+  border-color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.05);
+}
+
+.category-row.dimmed-category {
+  opacity: 0.55;
+}
+
+.category-row.dimmed-category:hover {
+  opacity: 0.85;
 }
 
 .category-header {

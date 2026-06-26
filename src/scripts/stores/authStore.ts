@@ -1,10 +1,10 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, type Ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import authService from '@/scripts/services/authService.ts'
 import type { CreateUser, LoginUser, Tokens, User } from '@/scripts/types/api/auth.ts'
 import { useRouter } from 'vue-router'
 import { useSystemStore } from '@/scripts/stores/systemStore.ts'
-import { useStorage } from '@vueuse/core'
+import { useIntervalFn, useStorage } from '@vueuse/core'
 import { useObjStorage } from '@/scripts/utils.ts'
 
 type AuthStatus = 'idle' | 'loading' | 'error' | 'success'
@@ -66,8 +66,31 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const { pause: pauseFetchingStats, resume: resumeFetchingStats } = useIntervalFn(
+    () => {
+      if (isAuthenticated.value) {
+        systemStore.fetchStats().then()
+      }
+    },
+    15000,
+    { immediate: false },
+  )
+
+  watch(
+    () => isAuthenticated,
+    (val) => {
+      if (val) {
+        resumeFetchingStats()
+      } else {
+        pauseFetchingStats()
+      }
+    },
+  )
+
   async function onAuthenticated() {
     await systemStore.fetchStats()
+    resumeFetchingStats()
+    // Configured background polling via useIntervalFn
   }
 
   /**
