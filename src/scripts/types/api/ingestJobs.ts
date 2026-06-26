@@ -2,7 +2,7 @@ export interface IngestJobCounts {
   queued: number
   running: number
   failed: number
-  completed: number // corresponds to 'done' status in db
+  done: number
   cancelled: number
   total: number
 }

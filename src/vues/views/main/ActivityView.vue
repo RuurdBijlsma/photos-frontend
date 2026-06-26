@@ -1,52 +1,46 @@
+<!-- File: src/vues/views/main/ActivityView.vue -->
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
+import IngestActivityCard from '@/vues/components/activity/IngestActivityCard.vue'
 </script>
 
 <template>
-  <main-layout-container class="settings">
-    <div class="settings-content">
-      <h1 class="settings-title">Activity</h1>
+  <main-layout-container class="activity-scroll-view">
+    <div class="activity-content">
+      <header class="activity-header mb-6">
+        <h1 class="activity-title">Library import status</h1>
+        <p class="activity-subtitle">
+          Monitor your server's metadata extraction, image processing, analysis pipelines, and LLM
+          tagging progress.
+        </p>
+      </header>
 
-      <div class="divider-flex">
-        <v-divider />
-        <span>Temp</span>
-        <v-divider />
-      </div>
+      <ingest-activity-card />
     </div>
   </main-layout-container>
 </template>
 
 <style scoped>
-.settings {
+.activity-scroll-view {
   overflow-y: auto;
 }
 
-.settings-content {
+.activity-content {
   max-width: 1400px;
   margin: 0 auto;
   padding: 32px 24px;
 }
 
-.settings-title {
+.activity-title {
   font-size: 2.125rem;
   font-weight: 700;
-  margin-bottom: 32px;
+  margin-bottom: 6px;
   color: rgb(var(--v-theme-on-surface));
 }
 
-.divider-flex {
-  display: flex;
-  gap: 30px;
-  margin-top: 25px;
-  margin-bottom: 25px;
-  margin-left: 50px;
-  margin-right: 50px;
-  align-items: center;
-}
-
-.divider-flex span {
-  font-size: 25px;
-  white-space: nowrap;
-  color: rgba(var(--v-theme-on-surface-variant), 0.8);
+.activity-subtitle {
+  font-size: 0.95rem;
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin-bottom: 0;
 }
 </style>

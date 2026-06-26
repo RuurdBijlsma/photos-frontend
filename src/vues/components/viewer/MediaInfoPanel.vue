@@ -387,7 +387,6 @@ const showCameraSection = computed(() => {
         </router-link>
       </section>
       <div class="camera-info" v-if="showCameraSection">
-        <!--        todo add more info here!-->
         <div
           class="camera-header"
           v-if="cameraDisplayName || fileTypeLabel || featureBadges.length > 0"

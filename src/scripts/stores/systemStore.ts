@@ -34,7 +34,6 @@ export const useSystemStore = defineStore('system', () => {
     try {
       const { data } = await systemService.getStats()
       console.log('system stats', data)
-      // data.disk.areSameDrive = true
       stats.value = data
     } catch (e) {
       snackbarStore.error('Could not fetch system stats', e)

@@ -1,22 +1,71 @@
+<!-- File: src/vues/components/layout/AppBar.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import SearchBar from '@/vues/components/ui/SearchBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import UserAvatar from '@/vues/components/ui/UserAvatar.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 import { themeOptions } from '@/scripts/constants.ts'
 import { caps } from '@/scripts/utils.ts'
+import IngestActivityCard from '@/vues/components/activity/IngestActivityCard.vue'
 
 const authStore = useAuthStore()
 const settings = useSettingStore()
+const systemStore = useSystemStore()
+const route = useRoute()
 
 const menuOpen = ref(false)
+const ingestMenuOpen = ref(false)
+
+// todo fix type
+let statsInterval: any = null
 
 async function logout() {
   menuOpen.value = false
   await authStore.logout(false)
   location.reload()
 }
+
+// todo use useInterval
+function startStatsPolling() {
+  if (statsInterval) return
+  systemStore.fetchStats()
+  statsInterval = setInterval(() => {
+    if (authStore.isAuthenticated) {
+      systemStore.fetchStats()
+    }
+  }, 15000)
+}
+
+function stopStatsPolling() {
+  if (statsInterval) {
+    clearInterval(statsInterval)
+    statsInterval = null
+  }
+}
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    startStatsPolling()
+  }
+})
+
+watch(
+  () => authStore.isAuthenticated,
+  (val) => {
+    if (val) {
+      startStatsPolling()
+    } else {
+      stopStatsPolling()
+    }
+  },
+)
+
+onUnmounted(() => {
+  stopStatsPolling()
+})
 </script>
 
 <template>
@@ -26,6 +75,23 @@ async function logout() {
     <search-bar v-if="authStore.isAuthenticated" />
     <v-spacer />
     <div v-if="authStore.isAuthenticated" class="header-buttons">
+      <!-- Sync Menu overlay for background ingestion state (hidden when on full activity page) -->
+      <v-menu
+        v-if="systemStore.stats.isIngesting && route.path !== '/activity'"
+        v-model="ingestMenuOpen"
+        :close-on-content-click="false"
+        location="bottom end"
+        offset="10"
+        transition="slide-y-transition"
+      >
+        <template v-slot:activator="{ props }">
+          <v-btn icon v-bind="props" variant="text" color="primary" class="mr-1">
+            <v-icon class="spinning-sync-icon">mdi-sync</v-icon>
+          </v-btn>
+        </template>
+        <IngestActivityCard overlay @close-menu="ingestMenuOpen = false" />
+      </v-menu>
+
       <v-btn variant="plain" rounded prepend-icon="mdi-upload"> Upload </v-btn>
       <v-menu v-model="menuOpen" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
@@ -190,5 +256,18 @@ async function logout() {
   font-weight: 300;
   opacity: 0.7;
   text-align: center;
+}
+
+.spinning-sync-icon {
+  animation: rotation 3s infinite linear;
+}
+
+@keyframes rotation {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
 }
 </style>
