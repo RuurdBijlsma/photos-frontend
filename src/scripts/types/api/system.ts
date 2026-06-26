@@ -16,4 +16,5 @@ export interface SystemStats {
   allowFileModifications: boolean
   allowFileDeletion: boolean
   disk: DiskStats
+  isIngesting: boolean
 }

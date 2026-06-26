@@ -9,6 +9,7 @@ const DEFAULT_SYSTEM_STATS: SystemStats = {
   hasClusteredPhotos: true,
   allowFileDeletion: true,
   allowFileModifications: true,
+  isIngesting: false,
   disk: {
     areSameDrive: true,
     mediaDrive: {
