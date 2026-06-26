@@ -307,6 +307,8 @@ onMounted(loadItems)
               <div class="thumb-container">
                 <router-link class="thumb-link" :to="`${basePath}/view/${item.id}`">
                   <thumbnail-img
+                    decoding="async"
+                    loading="lazy"
                     :media-item-id="item.id"
                     :height="getThumbnailHeight(row_height)"
                     :width="tileWidth - 8"
@@ -318,21 +320,17 @@ onMounted(loadItems)
                   </div>
                 </router-link>
 
-                <button
+                <v-btn
                   class="select-overlay-btn"
                   :class="{ 'is-selected': selected.has(item.id) }"
                   @click.stop="toggleItem(item.id)"
-                  aria-label="Select item"
+                  :icon="
+                    selected.has(item.id)
+                      ? 'mdi-checkbox-marked-circle'
+                      : 'mdi-checkbox-blank-circle-outline'
+                  "
                 >
-                  <v-icon
-                    :icon="
-                      selected.has(item.id)
-                        ? 'mdi-checkbox-marked-circle'
-                        : 'mdi-checkbox-blank-circle-outline'
-                    "
-                    size="22"
-                  />
-                </button>
+                </v-btn>
               </div>
 
               <div class="item-info">

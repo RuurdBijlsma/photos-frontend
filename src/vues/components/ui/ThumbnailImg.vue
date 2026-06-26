@@ -8,6 +8,8 @@ withDefaults(
     height?: number
     width?: number
     cover?: boolean
+    decoding?: 'async' | 'auto' | 'sync'
+    loading?: 'eager' | 'lazy'
   }>(),
   {},
 )
@@ -17,6 +19,8 @@ const useOnDemandThumb = ref(new Map<string | null, boolean>())
 
 <template>
   <img
+    :decoding="decoding"
+    :loading="loading"
     :height="height"
     :width="width"
     :src="
