@@ -14,7 +14,7 @@ withDefaults(
   {},
 )
 
-const useOnDemandThumb = ref(new Map<string | null, boolean>())
+const useOnDemandThumb = ref(false)
 </script>
 
 <template>
@@ -23,14 +23,8 @@ const useOnDemandThumb = ref(new Map<string | null, boolean>())
     :loading="loading"
     :height="height"
     :width="width"
-    :src="
-      mediaItemService.getPhotoThumbnail(
-        mediaItemId,
-        height ?? 480,
-        useOnDemandThumb.get(mediaItemId),
-      )
-    "
-    @error="useOnDemandThumb.set(mediaItemId, true)"
+    :src="mediaItemService.getPhotoThumbnail(mediaItemId, height ?? 480, useOnDemandThumb)"
+    @error="useOnDemandThumb = true"
     :class="{
       'cover-img': cover,
       'contain-img': !cover,

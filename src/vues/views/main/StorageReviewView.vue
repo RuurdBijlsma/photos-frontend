@@ -4,15 +4,15 @@ import { useRoute } from 'vue-router'
 import { useResizeObserver } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import storageService from '@/scripts/services/storageService.ts'
-import { getThumbnailHeight, prettyBytes, toHms } from '@/scripts/utils.ts'
+import { prettyBytes } from '@/scripts/utils.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import type { StorageReviewItem } from '@/scripts/types/generated/timeline.ts'
 import { useBinStore } from '@/scripts/stores/binStore.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
+import StorageReviewCard from '@/vues/components/ui/StorageReviewCard.vue'
 
 const route = useRoute()
 const dialogStore = useDialogStore()
@@ -42,10 +42,16 @@ const emptyIcon = computed(() =>
 )
 const basePath = computed(() => (mode.value === 'blurry' ? '/storage/blurry' : '/storage/review'))
 const totalSize = computed(() => items.value.reduce((sum, item) => sum + item.sizeBytes, 0))
-const selectedItems = computed(() => items.value.filter((item) => selected.value.has(item.id)))
-const selectedSize = computed(() =>
-  selectedItems.value.reduce((sum, item) => sum + item.sizeBytes, 0),
-)
+const selectedSize = computed(() => {
+  let sum = 0
+  for (const item of items.value) {
+    if (selected.value.has(item.id)) {
+      sum += item.sizeBytes
+    }
+  }
+  return sum
+})
+
 const allSelected = computed(
   () => items.value.length > 0 && selected.value.size === items.value.length,
 )
@@ -76,16 +82,6 @@ const rowVirtualizer = useVirtualizer(virtualizerOptions)
 
 const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 const virtualGridHeight = computed(() => rowVirtualizer.value.getTotalSize())
-
-function itemDate(item: StorageReviewItem) {
-  const date = new Date(item.takenAtLocal)
-  if (Number.isNaN(date.getTime())) return 'Unknown date'
-  return date.toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
 
 function toggleItem(id: string) {
   const next = new Set(selected.value)
@@ -130,7 +126,6 @@ async function downloadItem(item: StorageReviewItem) {
     let filename = item.filename
     const contentDisposition =
       response.headers?.['content-disposition'] || response.headers?.['Content-Disposition']
-    console.log('headers', response.headers)
     if (contentDisposition) {
       const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?['"]?([^;\r\n"']+)['"]?/i)
       if (match && match[1]) {
@@ -152,14 +147,16 @@ async function downloadItem(item: StorageReviewItem) {
 }
 
 async function downloadSelected() {
-  if (batchDownloading.value || selectedItems.value.length === 0) return
+  // Evaluated on demand instead of inside an active computed watcher
+  const targetItems = items.value.filter((item) => selected.value.has(item.id))
+  if (batchDownloading.value || targetItems.length === 0) return
   batchDownloading.value = true
   snackbarStore.enqueue({
-    message: `Preparing ${selectedItems.value.length} download${selectedItems.value.length === 1 ? '' : 's'}`,
+    message: `Preparing ${targetItems.length} download${targetItems.length === 1 ? '' : 's'}`,
     icon: 'mdi-download-outline',
   })
   try {
-    for (const item of selectedItems.value) {
+    for (const item of targetItems) {
       await downloadItem(item)
     }
   } finally {
@@ -202,7 +199,6 @@ useResizeObserver(scrollContainer, (entries) => {
 })
 
 watch(mode, loadItems)
-watch([rows, columns], () => rowVirtualizer.value.measure())
 onMounted(loadItems)
 </script>
 
@@ -298,73 +294,20 @@ onMounted(loadItems)
               gap: `${ITEM_GAP}px`,
             }"
           >
-            <article
+            <storage-review-card
               v-for="item in rows[virtualRow.index]"
               :key="item.id"
-              class="review-item"
-              :style="{ width: `${tileWidth}px` }"
-            >
-              <div class="thumb-container">
-                <router-link class="thumb-link" :to="`${basePath}/view/${item.id}`">
-                  <thumbnail-img
-                    decoding="async"
-                    loading="lazy"
-                    :media-item-id="item.id"
-                    :height="getThumbnailHeight(row_height)"
-                    :width="tileWidth - 8"
-                    cover
-                  />
-                  <div class="video-chip" v-if="item.isVideo">
-                    <v-icon icon="mdi-play" size="16" />
-                    <span>{{ toHms((item.durationMs ?? 0) / 1000) }}</span>
-                  </div>
-                </router-link>
-
-                <v-btn
-                  class="select-overlay-btn"
-                  :class="{ 'is-selected': selected.has(item.id) }"
-                  @click.stop="toggleItem(item.id)"
-                  :icon="
-                    selected.has(item.id)
-                      ? 'mdi-checkbox-marked-circle'
-                      : 'mdi-checkbox-blank-circle-outline'
-                  "
-                >
-                </v-btn>
-              </div>
-
-              <div class="item-info">
-                <div class="meta">
-                  <strong>{{ prettyBytes(item.sizeBytes) }}</strong>
-                  <span>{{ item.filename }}</span>
-                  <span>{{ itemDate(item) }}</span>
-                  <span v-if="item.weightedScore !== undefined">
-                    Quality {{ Math.round(item.weightedScore) }}
-                  </span>
-                </div>
-                <div class="item-actions">
-                  <v-btn
-                    class="action-btn download"
-                    :disabled="downloadingIds.has(item.id) || batchDownloading"
-                    title="Download original"
-                    icon="mdi-download"
-                    color="primary"
-                    variant="plain"
-                    :loading="downloadingIds.has(item.id)"
-                    @click="downloadItem(item)"
-                  />
-                  <v-btn
-                    class="action-btn delete"
-                    @click="deleteItems([item.id])"
-                    :disabled="downloadingIds.has(item.id) || actionLoading || batchDownloading"
-                    title="Move to bin"
-                    color="error"
-                    icon="mdi-delete"
-                    variant="plain"
-                  />
-                </div>
-              </div>
-            </article>
+              :item="item"
+              :base-path="basePath"
+              :tile-width="tileWidth"
+              :is-selected="selected.has(item.id)"
+              :is-downloading="downloadingIds.has(item.id)"
+              :action-loading="actionLoading"
+              :batch-downloading="batchDownloading"
+              @toggle="toggleItem(item.id)"
+              @download="downloadItem(item)"
+              @delete="deleteItems([item.id])"
+            />
           </div>
         </div>
       </div>
@@ -475,154 +418,6 @@ h1 {
   display: flex;
   width: 100%;
   contain: layout paint;
-}
-
-.review-item {
-  height: 100%;
-  overflow: hidden;
-  border-radius: 28px;
-  background: rgb(var(--v-theme-surface-container));
-  transition:
-    background-color 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.thumb-container {
-  position: relative;
-  height: 210px;
-  overflow: hidden;
-  border-radius: 28px;
-}
-
-.thumb-link {
-  display: block;
-  height: calc(100% - 16px);
-  width: calc(100% - 16px);
-  margin: 8px;
-  border-radius: 20px;
-  overflow: hidden;
-  background: rgba(var(--v-theme-on-surface), 0.05);
-}
-
-.thumb-link :deep(img) {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.select-overlay-btn {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 2;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(0, 0, 0, 0.35);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease,
-    transform 0.15s ease;
-}
-
-.select-overlay-btn:hover {
-  background: rgba(0, 0, 0, 0.6);
-  transform: scale(1.05);
-}
-
-.select-overlay-btn.is-selected {
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-}
-
-.placeholder-thumb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(var(--v-theme-on-surface), 0.05);
-  border-radius: 28px;
-  width: 100%;
-}
-
-.video-chip {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  color: white;
-  background: rgba(0, 0, 0, 0.62);
-  border-radius: 999px;
-  padding: 4px 9px;
-  font-size: 0.78rem;
-}
-
-.item-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
-}
-
-.meta {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-
-.meta strong {
-  font-size: 1rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.meta span {
-  color: rgb(var(--v-theme-on-surface-variant));
-  font-size: 0.8rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.item-actions {
-  display: flex;
-  flex-shrink: 0;
-  gap: 6px;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.action-btn:hover:not(:disabled) {
-  background: rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.action-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .state {
