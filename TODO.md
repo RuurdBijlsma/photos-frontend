@@ -206,5 +206,5 @@
   dan naar de timeline gaat? Want de map date filter heeft dan al de ratios opgevraagd in de timelineStore.
 * settings page heeft geen visible scrollbar
 * ✅ loading indicator als je album maakt
-* [BUG] negative query is not sending full query (i type orange, it sends "or" in the request payload)
-* [BUG] timeline is slow again? fps
+* ✅ [BUG] negative query is not sending full query (i type orange, it sends "or" in the request payload)
+* [BUG] timeline is slow again? fps (wait for all thumbnails to process before checking)
