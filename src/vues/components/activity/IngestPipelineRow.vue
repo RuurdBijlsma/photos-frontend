@@ -61,7 +61,7 @@ const segments = computed(() => {
         {{ total.toLocaleString() }} to go ({{ percentage }}%)
       </span>
       <span class="category-stats" v-else-if="total > 0">
-        <em>No more tasks</em>
+        <em>All done</em>
       </span>
       <span class="category-stats italic" v-else>
         {{ compact ? 'No jobs scheduled' : 'No active/recent jobs found' }}
