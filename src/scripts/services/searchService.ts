@@ -4,11 +4,12 @@ import type { AxiosResponse } from 'axios'
 import type { SearchFilterRanges, SearchParams } from '@/scripts/types/api/search.ts'
 
 const searchService = {
-  async search(params: SearchParams): Promise<SearchResponse> {
+  async search(params: SearchParams, signal?: AbortSignal): Promise<SearchResponse> {
     console.log('Search with params', params)
     const response = await apiClient.get('/search', {
       params,
       responseType: 'arraybuffer',
+      signal,
     })
     const buffer = new Uint8Array(response.data)
     return SearchResponse.decode(buffer)
@@ -31,7 +32,11 @@ const searchService = {
     return apiClient.get<SearchFilterRanges>('/search/params')
   },
 
-  async searchByImage(imageFile: File, params: SearchParams): Promise<SearchResponse> {
+  async searchByImage(
+    imageFile: File,
+    params: SearchParams,
+    signal?: AbortSignal,
+  ): Promise<SearchResponse> {
     const formData = new FormData()
     formData.append('image', imageFile)
 
@@ -41,15 +46,21 @@ const searchService = {
       headers: {
         'Content-Type': undefined,
       },
+      signal,
     })
     const buffer = new Uint8Array(response.data)
     return SearchResponse.decode(buffer)
   },
 
-  async searchByImageSession(sessionId: string, params: SearchParams): Promise<SearchResponse> {
+  async searchByImageSession(
+    sessionId: string,
+    params: SearchParams,
+    signal?: AbortSignal,
+  ): Promise<SearchResponse> {
     const response = await apiClient.get(`/search/image/uuid/${sessionId}`, {
       params,
       responseType: 'arraybuffer',
+      signal,
     })
     const buffer = new Uint8Array(response.data)
     return SearchResponse.decode(buffer)

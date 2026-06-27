@@ -34,7 +34,7 @@ async function logout() {
     <div v-if="authStore.isAuthenticated" class="header-buttons">
       <!-- Sync Menu overlay for background ingestion state (hidden when on full activity page) -->
       <v-menu
-        v-if="systemStore.stats.isIngesting && route.path !== '/activity'"
+        v-if="systemStore.stats.isIngesting"
         v-model="ingestMenuOpen"
         :close-on-content-click="false"
         location="bottom end"
