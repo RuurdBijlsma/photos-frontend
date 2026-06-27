@@ -97,7 +97,7 @@ const segments = computed(() => {
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  border: 1px solid transparent;
+  border: 3px solid transparent;
   transition: all 0.3s ease;
 }
 
@@ -107,7 +107,6 @@ const segments = computed(() => {
 
 .category-row.active-category {
   border-color: rgba(var(--v-border-color), 0.3);
-  background-color: rgba(var(--v-theme-primary), 0.05);
 }
 
 .category-header {

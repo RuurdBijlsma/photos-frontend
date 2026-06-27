@@ -1,20 +1,40 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+
+const props = defineProps<{
   folder: string[]
   pill: boolean
+  bgColor?: string
+  textColor?: string
   iconColor?: string
   includeSelectedText?: boolean
+  excludeCheckIcon?: boolean
 }>()
+
+const backgroundColor = computed(() => {
+  if (!props.pill) return undefined
+  if (props.bgColor) return `rgb(var(--v-theme-${props.bgColor}))`
+  return `rgb(var(--v-theme-secondary-container))`
+})
+const color = computed(() => {
+  if (!props.pill) return undefined
+  if (props.textColor) return `rgb(var(--v-theme-${props.textColor}))`
+  return `rgb(var(--v-theme-on-secondary-container))`
+})
 </script>
 
 <template>
   <div class="folder-selection text-lg-caption">
-    <v-icon :color="iconColor ?? 'primary'" icon="mdi-check-circle-outline" />
+    <v-icon
+      v-if="!excludeCheckIcon"
+      :color="iconColor ?? 'primary'"
+      icon="mdi-check-circle-outline"
+    />
     <span class="primary-color" v-if="includeSelectedText">Selected folder:</span>
     <div
       :style="{
-        backgroundColor: pill ? `rgb(var(--v-theme-secondary-container))` : undefined,
-        color: pill ? `rgb(var(--v-theme-on-secondary-container))` : undefined,
+        backgroundColor,
+        color,
         paddingLeft: pill ? '20px' : '0',
       }"
       class="viewed-folder"

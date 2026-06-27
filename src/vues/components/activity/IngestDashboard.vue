@@ -5,6 +5,7 @@ import IngestPipelineRow from '@/vues/components/activity/IngestPipelineRow.vue'
 import RunningJobPill from '@/vues/components/activity/RunningJobPill.vue'
 import FailedJobCard from '@/vues/components/activity/FailedJobCard.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
+import ShowSelectedFolder from '@/vues/components/onboarding/ShowSelectedFolder.vue'
 
 const ingestStore = useIngestJobsStore()
 const authStore = useAuthStore()
@@ -90,13 +91,24 @@ async function handleRetry(jobId: number) {
       <!-- Scan Library Action -->
       <v-card class="action-card mb-6" flat>
         <div class="action-content pa-6">
-          <div>
-            <h2 class="mb-1">Index Library Folder</h2>
-            <p class="mb-0">
-              Start a search of <pre>{{authStore.user.mediaFolder}}</pre> to discover new photos and
-              videos.
-            </p>
+          <div class="action-text">
+            <div>
+              <h2 class="fix-margin">Index Library Folder</h2>
+              <p class="mb-0">
+                Folder: Start a search of your media folder to discover new photos and videos.
+              </p>
+            </div>
+            <show-selected-folder
+              class="mt-3 mr-1"
+              bg-color="surface-variant"
+              text-color="on-surface-variant"
+              exclude-check-icon
+              v-if="authStore.user?.mediaFolder"
+              :folder="authStore.user.mediaFolder.split('/')"
+              pill
+            />
           </div>
+          <div class="below-button"></div>
           <v-btn
             color="primary"
             variant="tonal"
@@ -186,11 +198,19 @@ async function handleRetry(jobId: number) {
   border-radius: 24px !important;
 }
 
-.action-content{
-  display: flex;
+.action-content {
   justify-content: space-between;
   align-items: center;
-  gap:10px;
+  gap: 10px;
+}
+
+.action-text {
+  display: flex;
+  align-items: flex-start;
+}
+
+.fix-margin {
+  margin: 0;
 }
 
 .progress-section {
