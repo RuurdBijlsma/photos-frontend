@@ -424,7 +424,9 @@ const activeFilterChips = computed(() => {
                 placeholder="Anyone"
                 item-title="name"
                 item-value="personId"
-                variant="solo"
+                variant="outlined"
+                bg-color="surface-container-lowest"
+                base-color="primary"
                 density="comfortable"
                 multiple
                 chips
@@ -473,7 +475,9 @@ const activeFilterChips = computed(() => {
                 "
                 item-title="name"
                 item-value="code"
-                variant="solo"
+                variant="outlined"
+                bg-color="surface-container-lowest"
+                base-color="primary"
                 density="comfortable"
                 width="430"
                 rounded
@@ -522,7 +526,9 @@ const activeFilterChips = computed(() => {
                 hide-details
                 clearable
                 placeholder="E.g. “orange”"
-                variant="solo"
+                variant="outlined"
+                bg-color="surface-container-lowest"
+                base-color="primary"
                 density="comfortable"
                 width="430"
                 rounded
@@ -617,12 +623,6 @@ const activeFilterChips = computed(() => {
   background-color: rgba(var(--v-theme-surface-container-low), 0.95);
 }
 
-.backdrop-blur :deep(.search-filter-menu) .search-filters {
-  background-color: rgba(var(--v-theme-surface-container-low), 0.8) !important;
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-}
-
 .small-filters {
   display: flex;
   flex-direction: column;
@@ -644,5 +644,13 @@ const activeFilterChips = computed(() => {
 
 .sort-button-group {
   overflow-x: hidden;
+}
+</style>
+
+<style>
+.backdrop-blur .search-filter-menu .search-filters {
+  background-color: rgba(var(--v-theme-surface-container-low), 0.8) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
 }
 </style>

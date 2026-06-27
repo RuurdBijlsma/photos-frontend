@@ -155,7 +155,11 @@ function calculateLayout(timelineItems: SimpleTimelineItem[], containerWidth: nu
   }
 
   if (rowItems.length > 0) {
-    const sizeMultiplier = Math.min(containerWidth / rowWidth, MAX_SIZE_MULTIPLIER)
+    let sizeMultiplier = Math.min(containerWidth / rowWidth, MAX_SIZE_MULTIPLIER)
+    // If full row width can be reached width size multiplier, then use it, otherwise dont increase size
+    if (rowWidth * sizeMultiplier < containerWidth) {
+      sizeMultiplier = 1
+    }
     const rowHeight = props.idealRowHeight * sizeMultiplier
     layoutRows.push({
       items: rowItems,
