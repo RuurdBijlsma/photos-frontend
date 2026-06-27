@@ -1,4 +1,3 @@
-<!-- File: src/vues/components/settings/components/SettingsSlider.vue -->
 <script setup lang="ts">
 import { computed } from 'vue'
 

@@ -1,6 +1,5 @@
-<!-- File: src/vues/components/layout/AppBar.vue -->
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import SearchBar from '@/vues/components/ui/SearchBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
@@ -9,7 +8,7 @@ import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 import { themeOptions } from '@/scripts/constants.ts'
 import { caps } from '@/scripts/utils.ts'
-import IngestActivityCard from '@/vues/components/activity/IngestActivityCard.vue'
+import IngestOverlayMenu from '@/vues/components/activity/IngestOverlayMenu.vue'
 
 const authStore = useAuthStore()
 const settings = useSettingStore()
@@ -47,7 +46,7 @@ async function logout() {
             <v-icon class="spinning-sync-icon">mdi-sync</v-icon>
           </v-btn>
         </template>
-        <IngestActivityCard overlay @close-menu="ingestMenuOpen = false" />
+        <ingest-overlay-menu @close-menu="ingestMenuOpen = false" />
       </v-menu>
 
       <v-btn variant="plain" rounded prepend-icon="mdi-upload"> Upload </v-btn>

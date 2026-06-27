@@ -1,7 +1,6 @@
-<!-- File: src/vues/views/main/ActivityView.vue -->
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
-import IngestActivityCard from '@/vues/components/activity/IngestActivityCard.vue'
+import IngestDashboard from '@/vues/components/activity/IngestDashboard.vue'
 </script>
 
 <template>
@@ -14,7 +13,7 @@ import IngestActivityCard from '@/vues/components/activity/IngestActivityCard.vu
         </p>
       </header>
 
-      <ingest-activity-card />
+      <ingest-dashboard />
     </div>
   </main-layout-container>
 </template>

@@ -17,6 +17,11 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
   const isRunningLoading: Ref<boolean> = ref(false)
   const isFailedLoading: Ref<boolean> = ref(false)
 
+  // Polling State & Connection Counters
+  let pollingIntervalId: ReturnType<typeof setInterval> | null = null
+  const activeSubscribers = ref(0)
+  const needsFailedScope = ref(0)
+
   // --- ACTIONS ---
 
   async function fetchOverview() {
@@ -69,11 +74,48 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
     try {
       await ingestJobsService.retry(jobId)
       snackbarStore.success(`Ingest Job #${jobId} scheduled for retry`)
-      // Refresh local list states
       await Promise.all([fetchOverview(), fetchFailed()])
     } catch (error) {
       snackbarStore.error(`Failed to retry Ingest Job #${jobId}`, error)
       throw error
+    }
+  }
+
+  // Orchestrated Tick
+  async function pollTick() {
+    const promises: Promise<void>[] = [fetchOverview(), fetchRunning()]
+    if (needsFailedScope.value > 0) {
+      promises.push(fetchFailed())
+    }
+    await Promise.all(promises)
+  }
+
+  // Subscriber Reference-Counting Methods
+  function startPolling(includeFailed = false) {
+    activeSubscribers.value++
+    if (includeFailed) {
+      needsFailedScope.value++
+    }
+
+    if (activeSubscribers.value === 1) {
+      pollTick()
+      pollingIntervalId = setInterval(() => {
+        pollTick()
+      }, 3000)
+    } else if (includeFailed && needsFailedScope.value === 1) {
+      fetchFailed()
+    }
+  }
+
+  function stopPolling(includeFailed = false) {
+    activeSubscribers.value = Math.max(0, activeSubscribers.value - 1)
+    if (includeFailed) {
+      needsFailedScope.value = Math.max(0, needsFailedScope.value - 1)
+    }
+
+    if (activeSubscribers.value === 0 && pollingIntervalId) {
+      clearInterval(pollingIntervalId)
+      pollingIntervalId = null
     }
   }
 
@@ -91,5 +133,8 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
     fetchFailed,
     triggerScan,
     retryJob,
+    pollTick,
+    startPolling,
+    stopPolling,
   }
 })
