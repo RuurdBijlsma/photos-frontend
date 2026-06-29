@@ -2,7 +2,7 @@
 import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWindowSize } from '@vueuse/core'
-import type { DailyCardResponse } from '@/scripts/types/api/dailyCards.ts'
+import type { CollectionMediaItem, DailyCardResponse } from '@/scripts/types/api/dailyCards.ts'
 import { getThumbnailHeight, getVideoHeight, useObjStorage } from '@/scripts/utils.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import BaseMap from '@/vues/components/map/BaseMap.vue'
@@ -21,17 +21,7 @@ const cardStore = useDailyCardStore()
 export interface EstimatrRound {
   latitude: number
   longitude: number
-  mediaItem: {
-    id: string
-    isVideo: boolean
-    isPanorama: boolean
-    hasThumbnails: boolean
-    width: number
-    height: number
-    ratio: number
-    durationMs: number | null
-    takenAtLocal: string
-  }
+  mediaItem: CollectionMediaItem
 }
 
 export interface EstimatrPayload {
