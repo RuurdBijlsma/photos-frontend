@@ -7,30 +7,14 @@ import ingestJobsService from '@/scripts/services/ingestJobsService.ts'
 
 interface DisplayJob extends JobInfo {
   status?: string
-  finished_at?: string | null
-  finishedAt?: string | null
-  color: string
-  _localFinishedAt?: number
-}
-
-const stringToColour = (str: string) => {
-  let hash = 0
-  str.split('').forEach((char) => {
-    hash = char.charCodeAt(0) + ((hash << 5) - hash)
-  })
-  let colour = '#'
-  for (let i = 0; i < 3; i++) {
-    const value = (hash >> (i * 8)) & 0xff
-    colour += value.toString(16).padStart(2, '0')
-  }
-  return colour
+  _displayFinishedTime?: number // Local timestamp tracking when the job completed in the UI [1]
 }
 
 export const useIngestJobsStore = defineStore('ingestJobs', () => {
   const snackbarStore = useSnackbarsStore()
 
   // --- CONFIGURATION ---
-  const MAX_DISPLAY_ITEMS = 30 // Caps the displayed list size
+  const MAX_DISPLAY_ITEMS = 30 // Caps the displayed list size [1]
 
   // --- STATE ---
   const overview: Ref<IngestOverviewResponse | null> = ref(null)
@@ -55,29 +39,20 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
 
   // --- PRIVATE UTILS ---
 
-  function getFinishedTimeMs(job: DisplayJob): number {
-    const finishedStr = job.finished_at || job.finishedAt
-    if (finishedStr) {
-      const parsed = Date.parse(finishedStr)
-      if (!isNaN(parsed)) return parsed
-    }
-    return job._localFinishedAt || Date.now()
-  }
-
   function processIncomingJobs(incomingJobs: DisplayJob[]) {
     const incomingMap = new Map<number, DisplayJob>()
     for (const job of incomingJobs) {
       incomingMap.set(job.id, job)
     }
 
-    // 1. Update status/timestamps on items already being shown in the list
+    // 1. Update status on items already being shown in the list
     runningJobs.value = runningJobs.value.map((existingJob) => {
       const incoming = incomingMap.get(existingJob.id)
       if (incoming) {
         const becameDone = existingJob.status !== 'done' && incoming.status === 'done'
         const updated = { ...existingJob, ...incoming }
-        if (becameDone && !updated._localFinishedAt) {
-          updated._localFinishedAt = Date.now()
+        if (becameDone) {
+          updated._displayFinishedTime = Date.now() // Lock in completion timestamp [1]
         }
         return updated
       } else {
@@ -86,7 +61,7 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
           return {
             ...existingJob,
             status: 'done',
-            _localFinishedAt: Date.now(),
+            _displayFinishedTime: Date.now(),
           }
         }
         return existingJob
@@ -100,11 +75,6 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
     const newJobs = incomingJobs.filter((job) => !existingIds.has(job.id) && !queuedIds.has(job.id))
 
     if (newJobs.length > 0) {
-      for (const job of newJobs) {
-        if (job.status === 'done' && !job._localFinishedAt) {
-          job._localFinishedAt = Date.now()
-        }
-      }
       trickleQueue.value.push(...newJobs)
     }
 
@@ -133,7 +103,11 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
         for (let i = 0; i < itemsToAdd; i++) {
           const nextJob = trickleQueue.value.shift()
           if (nextJob) {
-            runningJobs.value.unshift(nextJob)
+            // If the job was already completed when trickled, stamp its completion time now [1]
+            if (nextJob.status === 'done' && !nextJob._displayFinishedTime) {
+              nextJob._displayFinishedTime = now
+            }
+            runningJobs.value.unshift(nextJob) // Newest additions appear at the top [1]
           }
         }
       }
@@ -142,27 +116,25 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
       targetRate.value = 0
     }
 
-    // 2. Cleanup age-out: Remove completed items older than 5 seconds
+    // 2. Cleanup age-out: Keep only completed items finished <= 5 seconds ago in UI [1]
     runningJobs.value = runningJobs.value.filter((job) => {
       if (job.status !== 'done') {
-        return true
+        return true // Always keep active/running/queued/failed jobs
       }
-      const ageMs = now - getFinishedTimeMs(job)
-      return ageMs <= 5000
+      const finishedTime = job._displayFinishedTime || now
+      return now - finishedTime <= 5000
     })
 
-    // 3. Performance safety cap: Drop oldest completed items if list gets too long
+    // 3. Performance safety cap: Drop oldest completed items from the bottom (end of the array) [1]
     if (runningJobs.value.length > MAX_DISPLAY_ITEMS) {
-      const excessCount = runningJobs.value.length - MAX_DISPLAY_ITEMS
+      let excessCount = runningJobs.value.length - MAX_DISPLAY_ITEMS
 
-      const completedItems = runningJobs.value
-        .map((job, idx) => ({ job, idx, finishedTime: getFinishedTimeMs(job) }))
-        .filter((item) => item.job.status === 'done')
-        .sort((a, b) => a.finishedTime - b.finishedTime)
-
-      if (completedItems.length > 0) {
-        const removeIds = new Set(completedItems.slice(0, excessCount).map((item) => item.job.id))
-        runningJobs.value = runningJobs.value.filter((job) => !removeIds.has(job.id))
+      // Loop backward from the oldest items (at the bottom) to remove completed jobs [1]
+      for (let i = runningJobs.value.length - 1; i >= 0 && excessCount > 0; i--) {
+        if (runningJobs.value[i].status === 'done') {
+          runningJobs.value.splice(i, 1)
+          excessCount--
+        }
       }
     }
   }
@@ -241,7 +213,6 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
     }
 
     if (activeSubscribers.value === 1) {
-      // Initialize the timestamp tracker to current time to prevent massive dt jump on startup [1]
       lastTickTime = Date.now()
 
       pollTick()
@@ -249,7 +220,6 @@ export const useIngestJobsStore = defineStore('ingestJobs', () => {
         pollTick()
       }, 3000)
 
-      // Start the fluid 50ms (20 FPS) trickle/cleanup loop [1]
       if (!trickleIntervalId) {
         trickleIntervalId = setInterval(() => {
           tickTrickleAndCleanup()

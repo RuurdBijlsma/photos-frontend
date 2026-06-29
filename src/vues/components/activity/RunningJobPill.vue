@@ -24,7 +24,6 @@ defineProps<{
         }}
       </span>
     </div>
-    <v-progress-circular indeterminate :size="compact ? 16 : 20" width="2" color="primary" />
   </div>
 </template>
 
