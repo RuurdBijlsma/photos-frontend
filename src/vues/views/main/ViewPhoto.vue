@@ -15,7 +15,6 @@ import { makeDateTimeString, makeLocationString } from '@/scripts/utils.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { useTheme } from 'vuetify/framework'
-import { usePanoStore } from '@/scripts/stores/panoStore.ts'
 
 const props = withDefaults(
   defineProps<{
@@ -38,7 +37,6 @@ const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
 const dialogs = useDialogStore()
 const authStore = useAuthStore()
-const panoStore = usePanoStore()
 
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
@@ -172,19 +170,11 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
-async function prefetchMediaItem(mediaItemId: string) {
-  console.warn('PREFETCH', mediaItemId)
-  let item
+function prefetchMediaItem(mediaItemId: string) {
   if (authStore.isAuthenticated) {
-    await mediaItemStore.fetchMediaItem(mediaItemId)
-    item = mediaItemStore.mediaItems.get(mediaItemId)
+    mediaItemStore.fetchMediaItem(mediaItemId)
   } else if (albumId.value) {
-    await mediaItemStore.fetchSharedMediaItem(albumId.value, mediaItemId)
-    item = mediaItemStore.sharedMediaItems.get(mediaItemId)
-  }
-  const usePanoViewer = item?.use_panorama_viewer ?? false
-  if (usePanoViewer) {
-    panoStore.fetchConfig(mediaItemId).then()
+    mediaItemStore.fetchSharedMediaItem(albumId.value, mediaItemId)
   }
 }
 

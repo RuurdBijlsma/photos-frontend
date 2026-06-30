@@ -1,4 +1,5 @@
 import type { Theme } from '@/scripts/types/themeColor.ts'
+import type { PannellumConfig } from '@/scripts/types/api/pannellumConfig.ts'
 
 export interface QualityScore {
   exposure: number
@@ -121,15 +122,6 @@ export interface CameraSettings {
   exposure_compensation?: number
 }
 
-export interface Panorama {
-  is_photosphere: boolean
-  projection_type?: string
-  horizontal_fov_deg?: number
-  vertical_fov_deg?: number
-  center_yaw_deg?: number
-  center_pitch_deg?: number
-}
-
 export interface Location {
   name: string | null
   admin1: string | null
@@ -196,6 +188,7 @@ export interface FullMediaItem {
   timezone_offset_seconds?: number
   og_timezone_offset_seconds?: number
   use_panorama_viewer: boolean
+  panorama_config: PannellumConfig
   has_thumbnails: boolean
   visual_analyses: VisualAnalysis[]
   gps?: Gps
@@ -203,6 +196,5 @@ export interface FullMediaItem {
   weather?: Weather
   media_features: MediaFeatures
   camera_settings: CameraSettings
-  panorama: Panorama
   user_caption?: string
 }
