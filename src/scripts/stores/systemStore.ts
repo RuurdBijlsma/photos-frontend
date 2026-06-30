@@ -17,7 +17,7 @@ const DEFAULT_SYSTEM_STATS: SystemStats = {
       diskTotal: 100,
       diskUsed: 0,
     },
-    thumbnailDrive: {
+    appDataDrive: {
       diskAvailable: 50,
       diskTotal: 100,
       diskUsed: 0,

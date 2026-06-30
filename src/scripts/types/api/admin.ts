@@ -11,7 +11,7 @@ export interface PathInfoResponse {
 // Maps to the DiskResponse schema
 export interface DiskResponse {
   mediaFolder: PathInfoResponse
-  thumbnailsFolder: PathInfoResponse
+  appDataFolder: PathInfoResponse
 }
 
 // Maps to the MakeFolderBody schema

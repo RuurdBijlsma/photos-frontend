@@ -5,7 +5,7 @@ export interface DiskInfo {
 }
 
 export interface DiskStats {
-  thumbnailDrive: DiskInfo
+  appDataDrive: DiskInfo
   mediaDrive: DiskInfo
   areSameDrive: boolean
 }

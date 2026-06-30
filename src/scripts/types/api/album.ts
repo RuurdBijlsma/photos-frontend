@@ -1,11 +1,11 @@
 import type { TimelineItem } from '@/scripts/types/generated/timeline'
 import type {
   CameraSettings,
-  Panorama,
   TimeDetails,
   VisualAnalysis,
   Weather,
 } from '@/scripts/types/api/fullPhoto.ts'
+import type { PannellumConfig } from '@/scripts/types/api/pannellumConfig.ts'
 
 // Enums
 export type AlbumRole = 'Owner' | 'Contributor' | 'Viewer'
@@ -111,6 +111,7 @@ export interface SharedMediaItem {
   taken_at_utc: string | null // DateTime<Utc>
   timezone_name: string | null
   timezone_offset_seconds: number | null
+  panorama_config: PannellumConfig
   use_panorama_viewer: boolean
   has_thumbnails: boolean
   visual_analyses: VisualAnalysis[]
@@ -118,7 +119,6 @@ export interface SharedMediaItem {
   weather: Weather | null
   media_features: SharedMediaFeatures
   camera_settings: CameraSettings
-  panorama: Panorama
   user_caption: string | null
   gps: null
 }

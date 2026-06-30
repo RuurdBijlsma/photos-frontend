@@ -9,7 +9,7 @@ const usedPercentage = computed(
   () => (diskStats.value.mediaDrive.diskUsed / diskStats.value.mediaDrive.diskTotal) * 100,
 )
 const thumbsUsedPercentage = computed(
-  () => (diskStats.value.thumbnailDrive.diskUsed / diskStats.value.thumbnailDrive.diskTotal) * 100,
+  () => (diskStats.value.appDataDrive.diskUsed / diskStats.value.appDataDrive.diskTotal) * 100,
 )
 </script>
 
@@ -37,8 +37,8 @@ const thumbsUsedPercentage = computed(
         rounded-bar
       />
       <p class="usage-text">
-        {{ prettyBytes(diskStats.thumbnailDrive.diskUsed, 1) }} of
-        {{ prettyBytes(diskStats.thumbnailDrive.diskTotal, 1) }} used
+        {{ prettyBytes(diskStats.appDataDrive.diskUsed, 1) }} of
+        {{ prettyBytes(diskStats.appDataDrive.diskTotal, 1) }} used
       </p>
     </div>
   </div>

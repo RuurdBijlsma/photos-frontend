@@ -18,7 +18,7 @@ const pickFolderStore = usePickFolderStore()
           </tr>
           <tr>
             <td class="table-left">Thumbnails folder</td>
-            <td class="table-right">{{ adminStore.disks?.thumbnailsFolder?.folder }}</td>
+            <td class="table-right">{{ adminStore.disks?.appDataFolder?.folder }}</td>
           </tr>
           <tr>
             <td class="table-left">User folder</td>

@@ -5,7 +5,7 @@ import type { DiskStats } from '@/scripts/types/api/system.ts'
 
 const props = defineProps<{
   mediaFolderSizeBytes: number
-  thumbnailFolderSizeBytes: number
+  appDataFolderSizeBytes: number
   diskStats: DiskStats
 }>()
 
@@ -13,7 +13,7 @@ const mediaUsedPercentage = computed(() =>
   percentage(props.diskStats.mediaDrive.diskUsed, props.diskStats.mediaDrive.diskTotal),
 )
 const thumbnailUsedPercentage = computed(() =>
-  percentage(props.diskStats.thumbnailDrive.diskUsed, props.diskStats.thumbnailDrive.diskTotal),
+  percentage(props.diskStats.appDataDrive.diskUsed, props.diskStats.appDataDrive.diskTotal),
 )
 
 // Computed breakdown for media drive usage
@@ -25,7 +25,7 @@ const mediaDriveUsage = computed(() => {
   // Guard against out-of-sync backend measurements and division by zero
   const mediaBytes = Math.min(used, props.mediaFolderSizeBytes)
   const thumbnailBytes = props.diskStats.areSameDrive
-    ? Math.min(used - mediaBytes, props.thumbnailFolderSizeBytes)
+    ? Math.min(used - mediaBytes, props.appDataFolderSizeBytes)
     : 0
 
   const otherBytes = Math.max(0, used - mediaBytes - thumbnailBytes)
@@ -46,11 +46,11 @@ const mediaDriveUsage = computed(() => {
 
 // Computed breakdown for thumbnail drive usage (only relevant when drives are separate)
 const thumbnailDriveUsage = computed(() => {
-  const drive = props.diskStats.thumbnailDrive
+  const drive = props.diskStats.appDataDrive
   const total = drive.diskTotal
   const used = drive.diskUsed
 
-  const thumbnailBytes = Math.min(used, props.thumbnailFolderSizeBytes)
+  const thumbnailBytes = Math.min(used, props.appDataFolderSizeBytes)
   const otherBytes = Math.max(0, used - thumbnailBytes)
 
   const thumbnailPercent = total > 0 ? (thumbnailBytes / total) * 100 : 0
@@ -138,11 +138,11 @@ function percentage(used: number, total: number) {
           <h2>Thumbnail drive</h2>
           <div class="usage-used-available">
             <span>
-              {{ prettyBytes(diskStats.thumbnailDrive.diskUsed, 1) }} of
-              {{ prettyBytes(diskStats.thumbnailDrive.diskTotal, 1) }} used
+              {{ prettyBytes(diskStats.appDataDrive.diskUsed, 1) }} of
+              {{ prettyBytes(diskStats.appDataDrive.diskTotal, 1) }} used
             </span>
             <span>•</span>
-            <span> {{ prettyBytes(diskStats.thumbnailDrive.diskAvailable, 1) }} available </span>
+            <span> {{ prettyBytes(diskStats.appDataDrive.diskAvailable, 1) }} available </span>
           </div>
         </div>
         <strong class="usage-percentage">{{ Math.round(thumbnailUsedPercentage) }}%</strong>
