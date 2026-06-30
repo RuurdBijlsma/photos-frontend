@@ -375,26 +375,6 @@ export interface HotSpotConfig {
   cssClass?: string
 
   /**
-   * Custom function to create the hot spot tooltip DOM instead of the default.
-   */
-  createTooltipFunc?: (element: HTMLElement, args: any) => void
-
-  /**
-   * Arguments passed to createTooltipFunc.
-   */
-  createTooltipArgs?: any
-
-  /**
-   * Event handler for the hot spot's click event.
-   */
-  clickHandlerFunc?: (event: MouseEvent, args: any) => void
-
-  /**
-   * Arguments passed to clickHandlerFunc.
-   */
-  clickHandlerArgs?: any
-
-  /**
    * When true, the hot spot is scaled to match changes in the field of view.
    * Defaults to false.
    */

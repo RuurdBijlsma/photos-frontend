@@ -80,7 +80,7 @@ export interface JobInfo {
   relativePath: string | null
   userId: number | null
   jobType: JobType
-  payload: any | null
+  payload: unknown | null
   priority: number
   status: JobStatus
   attempts: number

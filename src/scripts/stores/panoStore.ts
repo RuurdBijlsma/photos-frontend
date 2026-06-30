@@ -22,7 +22,7 @@ export const usePanoStore = defineStore('pano', () => {
       const promise = panoService.getConfig(mediaItemId)
       configPromises.set(mediaItemId, promise)
       const response = await promise
-      console.log("Pano Config", response.data)
+      console.log('Pano Config', response.data)
       configPromises.delete(mediaItemId)
       configs.value.set(mediaItemId, response.data)
       triggerRef(configs)

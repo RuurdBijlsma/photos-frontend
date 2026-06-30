@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute } from 'vue-router'
 import SearchBar from '@/vues/components/ui/SearchBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import UserAvatar from '@/vues/components/ui/UserAvatar.vue'
@@ -13,7 +12,6 @@ import IngestOverlayMenu from '@/vues/components/activity/IngestOverlayMenu.vue'
 const authStore = useAuthStore()
 const settings = useSettingStore()
 const systemStore = useSystemStore()
-const route = useRoute()
 
 const menuOpen = ref(false)
 const ingestMenuOpen = ref(false)

@@ -45,12 +45,7 @@ const segments = computed(() => {
 </script>
 
 <template>
-  <div
-    :class="[
-      'category-row',
-      compact ? 'compact-pad' : 'pa-5',
-    ]"
-  >
+  <div :class="['category-row', compact ? 'compact-pad' : 'pa-5']">
     <div class="category-header">
       <span class="category-title">
         <v-icon :icon="icon" :size="compact ? 18 : 22" color="primary" />
