@@ -15,11 +15,9 @@ const props = withDefaults(
       failed: number
       cancelled: number
     }
-    active?: boolean
     compact?: boolean
   }>(),
   {
-    active: false,
     compact: false,
   },
 )
@@ -31,7 +29,12 @@ const segments = computed(() => {
     { name: 'running', value: props.counts.running, colorClass: 'running', label: 'Running' },
     { name: 'queued', value: props.counts.queued, colorClass: 'queued', label: 'Queued' },
     { name: 'failed', value: props.counts.failed, colorClass: 'failed', label: 'Failed' },
-    { name: 'cancelled', value: props.counts.cancelled, colorClass: 'cancelled', label: 'Cancelled' },
+    {
+      name: 'cancelled',
+      value: props.counts.cancelled,
+      colorClass: 'cancelled',
+      label: 'Cancelled',
+    },
   ]
     .filter((s) => s.value > 0)
     .map((s) => ({
@@ -46,9 +49,6 @@ const segments = computed(() => {
     :class="[
       'category-row',
       compact ? 'compact-pad' : 'pa-5',
-      {
-        'active-category': active,
-      },
     ]"
   >
     <div class="category-header">
@@ -57,8 +57,9 @@ const segments = computed(() => {
         {{ label }}
       </span>
       <span class="category-stats" v-if="total > 0 && toGo > 0">
-        <strong>{{ toGo.toLocaleString() }}</strong> of
-        {{ total.toLocaleString() }} to go ({{ percentage }}%)
+        <strong>{{ toGo.toLocaleString() }}</strong> of {{ total.toLocaleString() }} to go ({{
+          percentage
+        }}%)
       </span>
       <span class="category-stats" v-else-if="total > 0">
         <em>All done</em>
@@ -84,7 +85,10 @@ const segments = computed(() => {
       <div class="legend-flex">
         <div v-for="seg in segments" :key="seg.name" class="legend-item">
           <div :class="['legend-dot', seg.colorClass]" />
-          <span>{{ seg.label }} (<strong>{{ seg.value.toLocaleString() }}</strong>)</span>
+          <span
+            >{{ seg.label }} (<strong>{{ seg.value.toLocaleString() }}</strong
+            >)</span
+          >
         </div>
       </div>
     </template>
@@ -93,20 +97,15 @@ const segments = computed(() => {
 
 <style scoped>
 .category-row {
-  background-color: rgb(var(--v-theme-surface-container-low));
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  border: 3px solid transparent;
   transition: all 0.3s ease;
+  background-color: rgba(var(--v-theme-surface-container-low), 1);
 }
 
 .category-row.compact-pad {
   padding: 12px;
-}
-
-.category-row.active-category {
-  border-color: rgba(var(--v-border-color), 0.3);
 }
 
 .category-header {
@@ -178,27 +177,6 @@ const segments = computed(() => {
   align-items: center;
   gap: 4px;
   font-size: 0.7rem;
-  color: rgb(var(--v-theme-on-surface-variant));
-}
-
-.legend-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.legend-pill {
-  background-color: rgb(var(--v-theme-surface-container-highest));
-  padding: 4px 10px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.legend-label {
-  font-size: 0.75rem;
   color: rgb(var(--v-theme-on-surface-variant));
 }
 

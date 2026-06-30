@@ -134,31 +134,12 @@ async function handleRetry(jobId: number) {
             v-for="cat in categoryProgress"
             :key="cat.key"
             v-bind="cat"
-            :active="activeCategories.has(cat.key)"
-            :dimmed="activeCategories.size > 0 && !activeCategories.has(cat.key)"
           />
         </div>
       </div>
     </div>
 
     <div class="right-col">
-      <!-- Running Tasks -->
-      <div v-if="ingestStore.runningJobs.length > 0" class="mb-6">
-        <h2 class="section-title">
-          <v-icon icon="mdi-swap-vertical" color="primary" />
-          <span>Currently importing ({{ ingestStore.runningJobs.length }})</span>
-        </h2>
-
-        <div class="running-list">
-          <RunningJobPill
-            v-for="job in ingestStore.runningJobs"
-            :key="job.id"
-            :job-type="job.jobType"
-            :relative-path="job.relativePath"
-          />
-        </div>
-      </div>
-
       <!-- Failed Imports / Retries -->
       <div v-if="ingestStore.failedJobs.length > 0">
         <h2 class="section-title">
@@ -173,6 +154,26 @@ async function handleRetry(jobId: number) {
             v-bind="job"
             :retrying="retryingJobIds.has(job.id)"
             @retry="handleRetry"
+          />
+        </div>
+      </div>
+
+      <!-- Running Tasks -->
+      <div v-if="ingestStore.runningJobs.length > 0" class="mt-6">
+        <h2 class="section-title">
+          <v-icon icon="mdi-swap-vertical" color="primary" />
+          <span
+            >Currently importing ({{ ingestStore.runningJobs.length
+            }}{{ ingestStore.runningJobs.length >= 100 ? '+' : '' }})</span
+          >
+        </h2>
+
+        <div class="running-list">
+          <RunningJobPill
+            v-for="job in ingestStore.runningJobs"
+            :key="job.id"
+            :job-type="job.jobType"
+            :relative-path="job.relativePath"
           />
         </div>
       </div>
@@ -225,6 +226,11 @@ async function handleRetry(jobId: number) {
   gap: 16px;
 }
 
+.running-list {
+  height: 410px;
+  overflow-y: auto;
+}
+
 .section-title {
   font-size: 1.05rem;
   font-weight: 600;
@@ -238,22 +244,5 @@ async function handleRetry(jobId: number) {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.idle-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 12px;
-  text-align: center;
-  background-color: rgb(var(--v-theme-surface-container-low));
-  border-radius: 20px;
-}
-
-.idle-text {
-  font-size: 0.85rem;
-  color: rgb(var(--v-theme-on-surface-variant));
-  margin-top: 6px;
 }
 </style>
