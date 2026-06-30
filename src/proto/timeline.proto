@@ -28,6 +28,7 @@ message TimelineItem {
   bool has_thumbnails = 3;
   optional int32 duration_ms = 4;
   string timestamp = 5;
+  bool use_panorama_viewer = 6;
 }
 
 // --- Simple timeline ---
@@ -36,7 +37,8 @@ message SimpleTimelineItem {
   bool is_video = 2;
   bool has_thumbnails = 3;
   optional int32 duration_ms = 4;
-  float ratio = 6;
+  float ratio = 5;
+  bool use_panorama_viewer = 6;
 }
 
 // --- Album Specific ---

@@ -15,6 +15,7 @@ import { makeDateTimeString, makeLocationString } from '@/scripts/utils.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import { useTheme } from 'vuetify/framework'
+import { usePanoStore } from '@/scripts/stores/panoStore.ts'
 
 const props = withDefaults(
   defineProps<{
@@ -37,6 +38,7 @@ const selectionStore = useSelectionStore()
 const viewPhotoStore = useViewPhotoStore()
 const dialogs = useDialogStore()
 const authStore = useAuthStore()
+const panoStore = usePanoStore()
 
 const showRightButton = ref(false)
 const showLeftButton = ref(false)
@@ -170,27 +172,33 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
+function prefetchMediaItem(mediaItemId: string) {
+  console.warn('PREFETCH', mediaItemId)
+  if (authStore.isAuthenticated) {
+    mediaItemStore.fetchMediaItem(mediaItemId)
+  } else if (albumId.value) {
+    mediaItemStore.fetchSharedMediaItem(albumId.value, mediaItemId)
+  }
+
+  const timelineItem = timelineStore.mediaItemsMap.get(mediaItemId)
+  if (!timelineItem) {
+    console.warn('OH NO')
+    return
+  }
+  if (timelineItem.usePanoramaViewer) {
+    panoStore.fetchConfig(timelineItem.id)
+  }
+}
+
 onBeforeUnmount(() => clearInterval(hideTimer))
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeyDown))
 // Pre-fetch
 watch(prevId, () => {
-  if (prevId.value) {
-    if (authStore.isAuthenticated) {
-      return mediaItemStore.fetchMediaItem(prevId.value)
-    } else if (albumId.value) {
-      return mediaItemStore.fetchSharedMediaItem(albumId.value, prevId.value)
-    }
-  }
+  if (prevId.value) requestIdleCallback(() => prefetchMediaItem(prevId.value))
 })
 watch(nextId, () => {
-  if (nextId.value) {
-    if (authStore.isAuthenticated) {
-      return mediaItemStore.fetchMediaItem(nextId.value)
-    } else if (albumId.value) {
-      return mediaItemStore.fetchSharedMediaItem(albumId.value, nextId.value)
-    }
-  }
+  if (nextId.value) requestIdleCallback(() => prefetchMediaItem(nextId.value))
 })
 watch(
   id,

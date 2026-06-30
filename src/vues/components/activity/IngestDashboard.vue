@@ -14,9 +14,9 @@ const isScanning = ref(false)
 const retryingJobIds = ref<Set<number>>(new Set())
 
 const categories = [
-  { key: 'metadata', label: 'File import', icon: 'mdi-file-image-outline' },
-  { key: 'thumbnails', label: 'Generate thumbnails', icon: 'mdi-image-outline' },
-  { key: 'analysis', label: 'Index for search', icon: 'mdi-search-web' },
+  { id: 'metadata', label: 'File import', icon: 'mdi-file-image-outline' },
+  { id: 'thumbnails', label: 'Generate thumbnails', icon: 'mdi-image-outline' },
+  { id: 'analysis', label: 'Index for search', icon: 'mdi-search-web' },
 ] as const
 
 onMounted(() => {
@@ -28,23 +28,11 @@ onUnmounted(() => {
   ingestStore.stopPolling(true)
 })
 
-const activeCategories = computed(() => {
-  if (!ingestStore.overview) return new Set<string>()
-  const activeCats = new Set<string>()
-  for (const cat of categories) {
-    const counts = ingestStore.overview[cat.key]
-    if (counts && counts.running > 0) {
-      activeCats.add(cat.key)
-    }
-  }
-  return activeCats
-})
-
 const categoryProgress = computed(() => {
   if (!ingestStore.overview) return []
 
   return categories.map((cat) => {
-    const counts = ingestStore.overview![cat.key]
+    const counts = ingestStore.overview![cat.id]
     const total = counts?.total || 0
     const done = counts?.done || 0
     const running = counts?.running || 0
@@ -130,11 +118,7 @@ async function handleRetry(jobId: number) {
         </h2>
 
         <div class="pipeline-list">
-          <IngestPipelineRow
-            v-for="cat in categoryProgress"
-            :key="cat.key"
-            v-bind="cat"
-          />
+          <IngestPipelineRow v-for="cat in categoryProgress" :key="cat.id" v-bind="cat" />
         </div>
       </div>
     </div>

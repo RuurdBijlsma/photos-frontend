@@ -19,18 +19,18 @@ onUnmounted(() => {
 })
 
 const categories = [
-  { key: 'metadata', label: 'File import', icon: 'mdi-file-image-outline' },
-  { key: 'thumbnails', label: 'Generate thumbnails', icon: 'mdi-image-outline' },
-  { key: 'analysis', label: 'Index for search', icon: 'mdi-search-web' },
+  { id: 'metadata', label: 'File import', icon: 'mdi-file-image-outline' },
+  { id: 'thumbnails', label: 'Generate thumbnails', icon: 'mdi-image-outline' },
+  { id: 'analysis', label: 'Index for search', icon: 'mdi-search-web' },
 ] as const
 
 const activeCategories = computed(() => {
   if (!ingestStore.overview) return new Set<string>()
   const activeCats = new Set<string>()
   for (const cat of categories) {
-    const counts = ingestStore.overview[cat.key]
+    const counts = ingestStore.overview[cat.id]
     if (counts && counts.running > 0) {
-      activeCats.add(cat.key)
+      activeCats.add(cat.id)
     }
   }
   return activeCats
@@ -40,7 +40,7 @@ const filteredCategoryProgress = computed(() => {
   if (!ingestStore.overview) return []
 
   const progress = categories.map((cat) => {
-    const counts = ingestStore.overview![cat.key]
+    const counts = ingestStore.overview![cat.id]
     const total = counts?.total || 0
     const done = counts?.done || 0
     const running = counts?.running || 0
@@ -58,7 +58,7 @@ const filteredCategoryProgress = computed(() => {
   })
 
   if (activeCategories.value.size > 0) {
-    return progress.filter((cat) => activeCategories.value.has(cat.key))
+    return progress.filter((cat) => activeCategories.value.has(cat.id))
   }
   return progress
 })
@@ -82,7 +82,7 @@ const filteredCategoryProgress = computed(() => {
       <div class="progress-section">
         <IngestPipelineRow
           v-for="cat in filteredCategoryProgress"
-          :key="cat.key"
+          :key="cat.id"
           v-bind="cat"
           compact
         />

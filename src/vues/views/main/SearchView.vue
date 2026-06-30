@@ -167,7 +167,7 @@ async function executeSearch(isLoadMore = false) {
 
     hasMore.value = items.length === SEARCH_LIMIT
     offset.value += items.length
-  } catch {
+  } catch (e) {
     if (searchId === currentSearchId) {
       snackStore.error('Could not perform search', e)
     }

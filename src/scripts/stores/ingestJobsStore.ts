@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { IngestOverviewResponse } from '@/scripts/types/api/ingestJobs.ts'
-import type { JobInfo, JobStatus } from '@/scripts/types/api/admin.ts'
+import type { JobInfo } from '@/scripts/types/api/admin.ts'
 import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
 import ingestJobsService from '@/scripts/services/ingestJobsService.ts'
 
