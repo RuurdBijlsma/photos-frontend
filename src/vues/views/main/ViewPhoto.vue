@@ -172,21 +172,19 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
-function prefetchMediaItem(mediaItemId: string) {
+async function prefetchMediaItem(mediaItemId: string) {
   console.warn('PREFETCH', mediaItemId)
+  let item
   if (authStore.isAuthenticated) {
-    mediaItemStore.fetchMediaItem(mediaItemId)
+    await mediaItemStore.fetchMediaItem(mediaItemId)
+    item = mediaItemStore.mediaItems.get(mediaItemId)
   } else if (albumId.value) {
-    mediaItemStore.fetchSharedMediaItem(albumId.value, mediaItemId)
+    await mediaItemStore.fetchSharedMediaItem(albumId.value, mediaItemId)
+    item = mediaItemStore.sharedMediaItems.get(mediaItemId)
   }
-
-  const timelineItem = timelineStore.mediaItemsMap.get(mediaItemId)
-  if (!timelineItem) {
-    console.warn('OH NO')
-    return
-  }
-  if (timelineItem.usePanoramaViewer) {
-    panoStore.fetchConfig(timelineItem.id)
+  const usePanoViewer = item?.use_panorama_viewer ?? false
+  if (usePanoViewer) {
+    panoStore.fetchConfig(mediaItemId).then()
   }
 }
 

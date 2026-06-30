@@ -74,7 +74,6 @@ export interface TimelineItem {
   hasThumbnails: boolean;
   durationMs?: number | undefined;
   timestamp: string;
-  usePanoramaViewer: boolean;
 }
 
 /** --- Simple timeline --- */
@@ -84,7 +83,6 @@ export interface SimpleTimelineItem {
   hasThumbnails: boolean;
   durationMs?: number | undefined;
   ratio: number;
-  usePanoramaViewer: boolean;
 }
 
 /** --- Album Specific --- */
@@ -521,14 +519,7 @@ export const TimelineMonthItems: MessageFns<TimelineMonthItems> = {
 };
 
 function createBaseTimelineItem(): TimelineItem {
-  return {
-    id: "",
-    isVideo: false,
-    hasThumbnails: false,
-    durationMs: undefined,
-    timestamp: "",
-    usePanoramaViewer: false,
-  };
+  return { id: "", isVideo: false, hasThumbnails: false, durationMs: undefined, timestamp: "" };
 }
 
 export const TimelineItem: MessageFns<TimelineItem> = {
@@ -547,9 +538,6 @@ export const TimelineItem: MessageFns<TimelineItem> = {
     }
     if (message.timestamp !== "") {
       writer.uint32(42).string(message.timestamp);
-    }
-    if (message.usePanoramaViewer !== false) {
-      writer.uint32(48).bool(message.usePanoramaViewer);
     }
     return writer;
   },
@@ -601,14 +589,6 @@ export const TimelineItem: MessageFns<TimelineItem> = {
           message.timestamp = reader.string();
           continue;
         }
-        case 6: {
-          if (tag !== 48) {
-            break;
-          }
-
-          message.usePanoramaViewer = reader.bool();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -637,11 +617,6 @@ export const TimelineItem: MessageFns<TimelineItem> = {
         ? globalThis.Number(object.duration_ms)
         : undefined,
       timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : "",
-      usePanoramaViewer: isSet(object.usePanoramaViewer)
-        ? globalThis.Boolean(object.usePanoramaViewer)
-        : isSet(object.use_panorama_viewer)
-        ? globalThis.Boolean(object.use_panorama_viewer)
-        : false,
     };
   },
 
@@ -662,9 +637,6 @@ export const TimelineItem: MessageFns<TimelineItem> = {
     if (message.timestamp !== "") {
       obj.timestamp = message.timestamp;
     }
-    if (message.usePanoramaViewer !== false) {
-      obj.usePanoramaViewer = message.usePanoramaViewer;
-    }
     return obj;
   },
 
@@ -678,13 +650,12 @@ export const TimelineItem: MessageFns<TimelineItem> = {
     message.hasThumbnails = object.hasThumbnails ?? false;
     message.durationMs = object.durationMs ?? undefined;
     message.timestamp = object.timestamp ?? "";
-    message.usePanoramaViewer = object.usePanoramaViewer ?? false;
     return message;
   },
 };
 
 function createBaseSimpleTimelineItem(): SimpleTimelineItem {
-  return { id: "", isVideo: false, hasThumbnails: false, durationMs: undefined, ratio: 0, usePanoramaViewer: false };
+  return { id: "", isVideo: false, hasThumbnails: false, durationMs: undefined, ratio: 0 };
 }
 
 export const SimpleTimelineItem: MessageFns<SimpleTimelineItem> = {
@@ -703,9 +674,6 @@ export const SimpleTimelineItem: MessageFns<SimpleTimelineItem> = {
     }
     if (message.ratio !== 0) {
       writer.uint32(45).float(message.ratio);
-    }
-    if (message.usePanoramaViewer !== false) {
-      writer.uint32(48).bool(message.usePanoramaViewer);
     }
     return writer;
   },
@@ -757,14 +725,6 @@ export const SimpleTimelineItem: MessageFns<SimpleTimelineItem> = {
           message.ratio = reader.float();
           continue;
         }
-        case 6: {
-          if (tag !== 48) {
-            break;
-          }
-
-          message.usePanoramaViewer = reader.bool();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -793,11 +753,6 @@ export const SimpleTimelineItem: MessageFns<SimpleTimelineItem> = {
         ? globalThis.Number(object.duration_ms)
         : undefined,
       ratio: isSet(object.ratio) ? globalThis.Number(object.ratio) : 0,
-      usePanoramaViewer: isSet(object.usePanoramaViewer)
-        ? globalThis.Boolean(object.usePanoramaViewer)
-        : isSet(object.use_panorama_viewer)
-        ? globalThis.Boolean(object.use_panorama_viewer)
-        : false,
     };
   },
 
@@ -818,9 +773,6 @@ export const SimpleTimelineItem: MessageFns<SimpleTimelineItem> = {
     if (message.ratio !== 0) {
       obj.ratio = message.ratio;
     }
-    if (message.usePanoramaViewer !== false) {
-      obj.usePanoramaViewer = message.usePanoramaViewer;
-    }
     return obj;
   },
 
@@ -834,7 +786,6 @@ export const SimpleTimelineItem: MessageFns<SimpleTimelineItem> = {
     message.hasThumbnails = object.hasThumbnails ?? false;
     message.durationMs = object.durationMs ?? undefined;
     message.ratio = object.ratio ?? 0;
-    message.usePanoramaViewer = object.usePanoramaViewer ?? false;
     return message;
   },
 };

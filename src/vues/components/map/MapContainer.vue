@@ -780,7 +780,6 @@ const getItemFromProperties = (
     id: String(properties.id),
     isVideo: Boolean(properties.isVideo),
     hasThumbnails: Boolean(properties.hasThumbnails),
-    usePanoramaViewer: Boolean(properties.usePanoramaViewer),
     ...(Number.isFinite(durationMs) && durationMs > 0 ? { durationMs } : {}),
     ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : 1,
   }
