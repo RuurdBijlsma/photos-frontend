@@ -52,7 +52,7 @@ watch(
     <template v-if="is3DMode && panoramaConfig">
       <PanoramaViewer
         :config="panoramaConfig"
-        :base-url="`http://localhost:9475/thumbnails/${mediaItemId}/pano`"
+        :base-url="`http://localhost:9475/hosted/pano/${mediaItemId}`"
       />
     </template>
 
