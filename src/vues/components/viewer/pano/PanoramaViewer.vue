@@ -2,12 +2,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import type { PannellumConfig } from '@/scripts/types/api/pannellumConfig.ts'
-
-// Import Pannellum scripts and styles from the npm package
 import 'pannellum'
 import 'pannellum/build/pannellum.css'
 
-// Extend global window type for TypeScript safety
 declare global {
   interface Window {
     pannellum: any
