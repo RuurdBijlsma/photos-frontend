@@ -29,7 +29,7 @@ const thumbsUsedPercentage = computed(
       </p>
     </div>
     <div class="storage-info" v-if="!diskStats.areSameDrive">
-      <p class="drive-descriptor">Thumbnail drive</p>
+      <p class="drive-descriptor">App data drive</p>
       <v-progress-linear
         class="progress-linear"
         :model-value="thumbsUsedPercentage"
