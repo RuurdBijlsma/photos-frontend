@@ -18,7 +18,7 @@ const showFilters = ref(false)
 // URL Source of Truth
 const query = computed(() => (route.query.query as string) || '')
 const filterMediaType = computed({
-  get: () => (route.query.type as 'all' | 'photo' | 'video') || 'all',
+  get: () => (route.query.type as 'all' | 'photo' | 'video' | 'panorama') || 'all',
   set: (val) => updateURL({ type: val === 'all' ? undefined : val }),
 })
 const filterPeople = computed({
@@ -290,10 +290,14 @@ const activeFilterChips = computed(() => {
 
   // Media Type
   if (filterMediaType.value !== 'all') {
+    let prettyName = 'Photos'
+    if (filterMediaType.value === 'video') prettyName = 'Videos'
+    else if (filterMediaType.value === 'panorama') prettyName = '360 Photos'
+
     chips.push({
       id: 'mediaType',
       type: 'Media type',
-      label: filterMediaType.value === 'photo' ? 'Photos' : 'Videos',
+      label: prettyName,
       clear: () => (filterMediaType.value = 'all'),
     })
   }
@@ -411,6 +415,7 @@ const activeFilterChips = computed(() => {
                 <v-chip value="all">All</v-chip>
                 <v-chip value="photo">Photos</v-chip>
                 <v-chip value="video">Videos</v-chip>
+                <v-chip value="panorama">360 Photos</v-chip>
               </v-chip-group>
             </div>
 

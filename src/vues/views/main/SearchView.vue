@@ -91,7 +91,7 @@ function getSearchParams(isLoadMore: boolean) {
     startDate: urlParamToISO(route.query.start as string),
     endDate: urlParamToISO(route.query.end as string, true),
     countryCodes: (route.query.countries as string) || '',
-    mediaType: (route.query.type as 'all' | 'photo' | 'video') || 'all',
+    mediaType: (route.query.type as 'all' | 'photo' | 'video' | 'panorama') || 'all',
     negativeQuery: (route.query.exclude as string) || undefined,
     personIds: (route.query.people as string) || '',
     allFacesRequired: route.query.peopleAnd === '1' ? true : undefined,
