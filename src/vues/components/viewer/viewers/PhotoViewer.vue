@@ -6,6 +6,12 @@ import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import axios from 'axios'
 
+// todo: prop to turn off scroll capture (for settings page)
+// todo: make use of motion photo presentation timestamp
+// todo: if use_panorama_viewer -> add button to view panorama (PanoViewer.vue will be obsolete).
+// todo: if zoomed in any level, then remove the click area to go next/prev in ViewPhoto.vue. Keep the button, remove the large click area.
+// todo: if item has higher resolution, allow for deeper max zoom level
+
 const props = defineProps<{
   mediaItemId: string
 }>()
