@@ -10,6 +10,7 @@ import axios from 'axios'
 // todo: if use_panorama_viewer -> add button to view panorama (PanoViewer.vue will be obsolete).
 // todo: if zoomed in any level, then remove the click area to go next/prev in ViewPhoto.vue. Keep the button, remove the large click area.
 // todo: if item has higher resolution, allow for deeper max zoom level
+// todo: use vueuse event listeners and timeouts instead of the manual lifecycle management i'm doing now
 
 const props = defineProps<{
   disableEventCapture: boolean
@@ -53,6 +54,24 @@ const fullResLoaded = ref(false)
 const isLoadingFull = ref(false)
 
 let currentAbortController: AbortController | null = null
+
+const isTransforming = ref(false)
+let transformTimeout: ReturnType<typeof setTimeout> | null = null
+
+function setTransforming(value: boolean, debounceTime = 0) {
+  if (transformTimeout) {
+    clearTimeout(transformTimeout)
+    transformTimeout = null
+  }
+
+  if (debounceTime > 0) {
+    transformTimeout = setTimeout(() => {
+      isTransforming.value = value
+    }, debounceTime)
+  } else {
+    isTransforming.value = value
+  }
+}
 
 // Native format support check
 function isMimeTypeSupported(mimeType?: string): boolean {
@@ -202,9 +221,22 @@ onUnmounted(() => {
 })
 
 const transformStyle = computed(() => {
-  return {
-    transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${scale.value})`,
-    transformOrigin: '0 0',
+  const x = translateX.value
+  const y = translateY.value
+  const s = scale.value
+
+  if (isTransforming.value) {
+    return {
+      transform: `translate3d(${x}px, ${y}px, 0) scale(${s})`,
+      transformOrigin: '0 0',
+      willChange: 'transform',
+    }
+  } else {
+    return {
+      transform: `translate(${x}px, ${y}px) scale(${s})`,
+      transformOrigin: '0 0',
+      willChange: 'auto',
+    }
   }
 })
 
@@ -260,6 +292,9 @@ function handlePointerDown(e: PointerEvent) {
     return
   }
 
+  // Turn on hardware acceleration immediately when touching/clicking down
+  setTransforming(true)
+
   const target = e.currentTarget as HTMLElement
   target.setPointerCapture(e.pointerId)
   activePointers.set(e.pointerId, e)
@@ -284,6 +319,9 @@ function handlePointerMove(e: PointerEvent) {
   if (props.disableEventCapture) return
   if (!activePointers.has(e.pointerId)) return
   activePointers.set(e.pointerId, e)
+
+  // Keep acceleration active during active drags/pinches
+  setTransforming(true)
 
   if (activePointers.size === 1 && isDragging) {
     const dx = e.clientX - startX
@@ -318,8 +356,9 @@ function handlePointerUp(e: PointerEvent) {
 
   if (activePointers.size === 0) {
     isDragging = false
+    // Release hardware acceleration after a slight delay so the image repaints sharply
+    setTransforming(false, 150)
   } else if (activePointers.size === 1) {
-    // Resume dragging with the remaining pointer
     const remaining = Array.from(activePointers.values())[0]
     isDragging = true
     startX = remaining.clientX
@@ -347,22 +386,32 @@ function handleGlobalWheel(e: WheelEvent) {
   }
 
   e.preventDefault()
-  // Adjust zoom sensitivity based on device
+
+  // Enable acceleration for rapid mouse wheel scrolling
+  setTransforming(true)
+
   const zoomFactor = e.ctrlKey ? 0.05 : 0.01
   const direction = e.deltaY < 0 ? 1 : -1
   const newScale = scale.value * (1 + direction * zoomFactor * 10)
   zoomToPoint(e.clientX, e.clientY, newScale)
+
+  // Use a longer debounce time (e.g. 300ms) for scroll events, as wheel scrolling occurs in bursts
+  setTransforming(false, 300)
 }
 
 function handleDoubleClick(e: MouseEvent) {
   if (props.disableEventCapture) return
   if (e.button !== 0) return
+
+  setTransforming(true)
   if (scale.value > 1) {
     scale.value = 1
     translateX.value = 0
     translateY.value = 0
+    setTransforming(false, 150)
   } else {
     zoomToPoint(e.clientX, e.clientY, 3)
+    setTransforming(false, 150)
   }
 }
 
@@ -373,6 +422,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('wheel', handleGlobalWheel)
+  if (transformTimeout) {
+    clearTimeout(transformTimeout)
+  }
 })
 </script>
 
