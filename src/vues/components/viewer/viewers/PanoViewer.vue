@@ -5,7 +5,7 @@ import { useWindowSize } from '@vueuse/core'
 import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { getThumbnailHeight } from '@/scripts/utils.ts'
-import PanoramaViewer from '@/vues/components/viewer/pano/PanoramaViewer.vue'
+import PanoramaViewer from '@/vues/components/viewer/PanoramaViewer.vue'
 
 const props = defineProps<{
   mediaItemId: string

@@ -15,8 +15,11 @@ import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 // * Motion photo support:
 //   * on load, play motion photo video that's embedded in the original file (this needs some backend support to know when a file has a motion video embedded, and an endpoint to stream the video)
 //   * after motion video is done, show original image.
-//   * show some kind of UI chip [Motion] when the user clicks it the video plays again (once)
-// * Image must be shown using <img> tag, for gain map support
+//   * show some kind of UI button [Motion] in the ViewPhoto top right menu when the user clicks it the video plays again (once)
+// * Image must be shown using <img> tag, for gain-map support
+// * only load full resolution image if browser supports it (jpeg, png, avif, webp, etc.)
+// * I think we need a way to abort the full image loading as well, so you dont get 30 queued full photo downloads when quickly moving through the photo viewer.
+// *
 
 const props = defineProps<{
   mediaItemId: string
