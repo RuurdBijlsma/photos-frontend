@@ -5,6 +5,7 @@ import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import axios from 'axios'
+import { useTimeoutFn } from '@vueuse/core'
 
 // todo: make use of motion photo presentation timestamp
 // todo: if use_panorama_viewer -> add button to view panorama (PanoViewer.vue will be obsolete).
@@ -54,24 +55,6 @@ const fullResLoaded = ref(false)
 const isLoadingFull = ref(false)
 
 let currentAbortController: AbortController | null = null
-
-const isTransforming = ref(false)
-let transformTimeout: ReturnType<typeof setTimeout> | null = null
-
-function setTransforming(value: boolean, debounceTime = 0) {
-  if (transformTimeout) {
-    clearTimeout(transformTimeout)
-    transformTimeout = null
-  }
-
-  if (debounceTime > 0) {
-    transformTimeout = setTimeout(() => {
-      isTransforming.value = value
-    }, debounceTime)
-  } else {
-    isTransforming.value = value
-  }
-}
 
 // Native format support check
 function isMimeTypeSupported(mimeType?: string): boolean {
@@ -148,6 +131,18 @@ async function startFullResLoad() {
   }
 }
 
+// Native async decoding to prevent main thread "image decode" frame drops during zoom
+async function onFullResLoad(e: Event) {
+  const img = e.target as HTMLImageElement
+  try {
+    await img.decode()
+    fullResLoaded.value = true
+  } catch (err) {
+    console.warn('Background image decoding failed, displaying immediately:', err)
+    fullResLoaded.value = true
+  }
+}
+
 // Motion Photo Settings & Logic
 const showingMotionVideo = ref(false)
 const videoPlayerRef = ref<HTMLVideoElement | null>(null)
@@ -221,24 +216,28 @@ onUnmounted(() => {
 })
 
 const transformStyle = computed(() => {
-  const x = translateX.value
-  const y = translateY.value
-  const s = scale.value
-
-  if (isTransforming.value) {
-    return {
-      transform: `translate3d(${x}px, ${y}px, 0) scale(${s})`,
-      transformOrigin: '0 0',
-      willChange: 'transform',
-    }
-  } else {
-    return {
-      transform: `translate(${x}px, ${y}px) scale(${s})`,
-      transformOrigin: '0 0',
-      willChange: 'auto',
-    }
+  return {
+    // translate3d forces GPU rendering continuously, without requiring blurry "will-change: transform" caching.
+    transform: `translate3d(${translateX.value}px, ${translateY.value}px, 0) scale(${scale.value})`,
+    transformOrigin: '0 0',
   }
 })
+
+// Active Transform state handling using VueUse's lifecycle-aware timer
+const isTransforming = ref(false)
+
+const { start: startTransformTimer, stop: stopTransformTimer } = useTimeoutFn(
+  () => {
+    isTransforming.value = false
+  },
+  150,
+  { immediate: false },
+)
+
+function setTransforming(value: boolean) {
+  stopTransformTimer()
+  isTransforming.value = value
+}
 
 function zoomToPoint(clientX: number, clientY: number, newScale: number) {
   if (!containerRef.value) return
@@ -249,20 +248,32 @@ function zoomToPoint(clientX: number, clientY: number, newScale: number) {
 
   const minScale = 1
   const maxScale = 8
-  newScale = Math.max(minScale, Math.min(maxScale, newScale))
+  const clampedScale = Math.max(minScale, Math.min(maxScale, newScale))
 
   const oldScale = scale.value
-  if (oldScale === newScale) return
+  if (oldScale === clampedScale) {
+    // We didn't actually change zoom levels (meaning we tried zooming past limits), stop transform immediately
+    setTransforming(false)
+    return
+  }
 
   // Zoom centered at the cursor coordinates
-  const nextTranslateX = xScreen - (xScreen - translateX.value) * (newScale / oldScale)
-  const nextTranslateY = yScreen - (yScreen - translateY.value) * (newScale / oldScale)
+  const nextTranslateX = xScreen - (xScreen - translateX.value) * (clampedScale / oldScale)
+  const nextTranslateY = yScreen - (yScreen - translateY.value) * (clampedScale / oldScale)
 
-  scale.value = newScale
+  scale.value = clampedScale
   translateX.value = nextTranslateX
   translateY.value = nextTranslateY
 
   clampTranslations()
+
+  // Snap resolution crispness immediately if we reached minimum or maximum zoom boundaries
+  if (clampedScale === minScale || clampedScale === maxScale) {
+    setTransforming(false)
+  } else {
+    setTransforming(true)
+    startTransformTimer()
+  }
 }
 
 function clampTranslations() {
@@ -292,8 +303,9 @@ function handlePointerDown(e: PointerEvent) {
     return
   }
 
-  // Turn on hardware acceleration immediately when touching/clicking down
-  setTransforming(true)
+  if (scale.value > 1) {
+    setTransforming(true)
+  }
 
   const target = e.currentTarget as HTMLElement
   target.setPointerCapture(e.pointerId)
@@ -320,15 +332,17 @@ function handlePointerMove(e: PointerEvent) {
   if (!activePointers.has(e.pointerId)) return
   activePointers.set(e.pointerId, e)
 
-  // Keep acceleration active during active drags/pinches
-  setTransforming(true)
-
   if (activePointers.size === 1 && isDragging) {
     const dx = e.clientX - startX
     const dy = e.clientY - startY
     translateX.value = startTranslateX + dx
     translateY.value = startTranslateY + dy
     clampTranslations()
+
+    if (scale.value > 1) {
+      setTransforming(true)
+      startTransformTimer()
+    }
   } else if (activePointers.size === 2) {
     const pointers = Array.from(activePointers.values())
     const dx = pointers[0].clientX - pointers[1].clientX
@@ -356,9 +370,13 @@ function handlePointerUp(e: PointerEvent) {
 
   if (activePointers.size === 0) {
     isDragging = false
-    // Release hardware acceleration after a slight delay so the image repaints sharply
-    setTransforming(false, 150)
+    if (scale.value === 1) {
+      setTransforming(false)
+    } else {
+      startTransformTimer()
+    }
   } else if (activePointers.size === 1) {
+    // Resume dragging with the remaining pointer
     const remaining = Array.from(activePointers.values())[0]
     isDragging = true
     startX = remaining.clientX
@@ -387,31 +405,30 @@ function handleGlobalWheel(e: WheelEvent) {
 
   e.preventDefault()
 
-  // Enable acceleration for rapid mouse wheel scrolling
+  // Flag active transform state
   setTransforming(true)
 
+  // Adjust zoom sensitivity based on device
   const zoomFactor = e.ctrlKey ? 0.05 : 0.01
   const direction = e.deltaY < 0 ? 1 : -1
   const newScale = scale.value * (1 + direction * zoomFactor * 10)
   zoomToPoint(e.clientX, e.clientY, newScale)
 
-  // Use a longer debounce time (e.g. 300ms) for scroll events, as wheel scrolling occurs in bursts
-  setTransforming(false, 300)
+  if (scale.value > 1 && scale.value < 8) {
+    startTransformTimer()
+  }
 }
 
 function handleDoubleClick(e: MouseEvent) {
   if (props.disableEventCapture) return
   if (e.button !== 0) return
-
-  setTransforming(true)
   if (scale.value > 1) {
     scale.value = 1
     translateX.value = 0
     translateY.value = 0
-    setTransforming(false, 150)
+    setTransforming(false)
   } else {
     zoomToPoint(e.clientX, e.clientY, 3)
-    setTransforming(false, 150)
   }
 }
 
@@ -422,9 +439,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('wheel', handleGlobalWheel)
-  if (transformTimeout) {
-    clearTimeout(transformTimeout)
-  }
 })
 </script>
 
@@ -469,7 +483,7 @@ onBeforeUnmount(() => {
             opacity: fullResLoaded ? 1 : 0,
             pointerEvents: fullResLoaded ? 'auto' : 'none',
           }"
-          @load="fullResLoaded = true"
+          @load="onFullResLoad"
           @dragstart.prevent
         />
 
@@ -532,6 +546,8 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100%;
   height: 100%;
+  will-change: auto;
+  transform: translateZ(0);
 }
 
 .image-tag {
