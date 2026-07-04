@@ -4,7 +4,6 @@ import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
-import { useWindowSize } from '@vueuse/core'
 import axios from 'axios'
 
 const props = defineProps<{
@@ -149,41 +148,52 @@ function onVideoEnded() {
 }
 
 // Watchers
-watch(() => props.mediaItemId, () => {
-  // Reset zoom & pan when switching images
-  scale.value = 1
-  translateX.value = 0
-  translateY.value = 0
+watch(
+  () => props.mediaItemId,
+  () => {
+    // Reset zoom & pan when switching images
+    scale.value = 1
+    translateX.value = 0
+    translateY.value = 0
 
-  // Start motion photo autoplay if configured
-  showingMotionVideo.value = false
-  if (settings.playMotionPhotos && fullImage.value?.media_features?.is_motion_photo) {
-    playMotionPhoto()
-  }
+    // Start motion photo autoplay if configured
+    showingMotionVideo.value = false
+    if (settings.playMotionPhotos && fullImage.value?.media_features?.is_motion_photo) {
+      playMotionPhoto()
+    }
 
-  startFullResLoad()
-}, { immediate: true })
+    startFullResLoad()
+  },
+  { immediate: true },
+)
 
 watch(fullImage, (newVal) => {
   if (newVal && !fullResUrl.value && !isLoadingFull.value) {
     startFullResLoad()
   }
-  if (newVal && settings.playMotionPhotos && newVal.media_features?.is_motion_photo && !showingMotionVideo.value) {
+  if (
+    newVal &&
+    settings.playMotionPhotos &&
+    newVal.media_features?.is_motion_photo &&
+    !showingMotionVideo.value
+  ) {
     playMotionPhoto()
   }
 })
 
 // Listen to motion trigger from ViewPhoto top right menu
-watch(() => viewPhotoStore.playMotionTrigger, () => {
-  if (fullImage.value?.media_features?.is_motion_photo) {
-    playMotionPhoto()
-  }
-})
+watch(
+  () => viewPhotoStore.playMotionTrigger,
+  () => {
+    if (fullImage.value?.media_features?.is_motion_photo) {
+      playMotionPhoto()
+    }
+  },
+)
 
 onUnmounted(() => {
   cleanup()
 })
-
 
 const transformStyle = computed(() => {
   return {
@@ -314,11 +324,22 @@ function handlePointerCancel(e: PointerEvent) {
   handlePointerUp(e)
 }
 
-function handleWheel(e: WheelEvent) {
+function handleGlobalWheel(e: WheelEvent) {
+  const target = e.target as HTMLElement
+  // Only zoom if the event isn't targeted inside overlays, info panels or menus
+  if (
+    target.closest('.media-info-panel') ||
+    target.closest('.v-overlay') ||
+    target.closest('.v-menu')
+  ) {
+    return
+  }
+
   e.preventDefault()
-  const zoomFactor = 0.1
+  // Adjust zoom sensitivity based on device
+  const zoomFactor = e.ctrlKey ? 0.05 : 0.01
   const direction = e.deltaY < 0 ? 1 : -1
-  const newScale = scale.value * (1 + direction * zoomFactor)
+  const newScale = scale.value * (1 + direction * zoomFactor * 10)
   zoomToPoint(e.clientX, e.clientY, newScale)
 }
 
@@ -334,16 +355,12 @@ function handleDoubleClick(e: MouseEvent) {
 }
 
 onMounted(() => {
-  if (containerRef.value) {
-    // Passive false is required to let handleWheel prevent default scroll behavior
-    containerRef.value.addEventListener('wheel', handleWheel, { passive: false })
-  }
+  // Passive false is required to let handleGlobalWheel prevent default scroll behavior
+  window.addEventListener('wheel', handleGlobalWheel, { passive: false })
 })
 
 onBeforeUnmount(() => {
-  if (containerRef.value) {
-    containerRef.value.removeEventListener('wheel', handleWheel)
-  }
+  window.removeEventListener('wheel', handleGlobalWheel)
 })
 </script>
 
@@ -360,6 +377,7 @@ onBeforeUnmount(() => {
     <div
       ref="containerRef"
       class="zoom-pan-container"
+      :class="{ 'zoomed-in': scale > 1 }"
       @pointerdown="handlePointerDown"
       @pointermove="handlePointerMove"
       @pointerup="handlePointerUp"
@@ -381,6 +399,8 @@ onBeforeUnmount(() => {
           class="image-tag full-res-img"
           :src="fullResUrl"
           alt="Full resolution image"
+          decoding="async"
+          loading="lazy"
           :style="{
             opacity: fullResLoaded ? 1 : 0,
             pointerEvents: fullResLoaded ? 'auto' : 'none',
@@ -431,10 +451,14 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   touch-action: none;
+  cursor: default;
+}
+
+.zoom-pan-container.zoomed-in {
   cursor: grab;
 }
 
-.zoom-pan-container:active {
+.zoom-pan-container.zoomed-in:active {
   cursor: grabbing;
 }
 
