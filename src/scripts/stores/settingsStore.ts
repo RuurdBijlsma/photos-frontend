@@ -33,6 +33,7 @@ export const useSettingStore = defineStore('settings', () => {
   const useImageGlow = useStorage('imageGlow', USE_IMAGE_GLOW)
   const darkPhotoViewer = useStorage('darkPhotoViewer', DARK_PHOTO_VIEWER)
   const lightPhotoViewerMap = useStorage('lightPhotoViewerMap', LIGHT_PHOTO_VIEWER_MAP)
+  const playMotionPhotos = useStorage('playMotionPhotos', true)
   // UI -> General
   const useBackdropBlur = useStorage('backdropBlur', USE_BACKDROP_BLUR)
   // UI -> Timeline
@@ -52,9 +53,11 @@ export const useSettingStore = defineStore('settings', () => {
     asyncImageDecoding,
     darkPhotoViewer,
     lightPhotoViewerMap,
+    playMotionPhotos,
     themeString,
     useSunSchedule,
     enableLightThemeTime,
     enableDarkThemeTime,
   }
 })
+

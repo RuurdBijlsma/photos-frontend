@@ -80,7 +80,18 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
               density="comfortable"
               class="setting-switch"
             />
+            <v-switch
+              v-model="settings.playMotionPhotos"
+              label="Enable Motion Photos"
+              hint="Automatically play motion photos when viewing items (if available)"
+              persistent-hint
+              color="primary"
+              inset
+              density="comfortable"
+              class="setting-switch"
+            />
           </div>
+
 
           <!-- Section: Timeline Settings -->
           <div class="section-divider mt-6">

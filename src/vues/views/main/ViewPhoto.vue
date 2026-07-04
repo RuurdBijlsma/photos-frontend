@@ -269,6 +269,19 @@ watch(
       </div>
       <div class="right-buttons">
         <v-btn
+          v-if="settings.playMotionPhotos && fullImage?.media_features?.is_motion_photo"
+          rounded="xl"
+          icon="mdi-motion-play-outline"
+          variant="plain"
+          @click="viewPhotoStore.triggerPlayMotion"
+          v-tooltip="{
+            text: 'Play motion photo',
+            location: 'bottom',
+            attach: true,
+            width: 140,
+          }"
+        />
+        <v-btn
           v-if="selectionStore.selection.size > 0"
           :color="isSelected ? 'secondary' : 'default'"
           rounded="xl"
@@ -282,6 +295,7 @@ watch(
             width: 140,
           }"
         />
+
         <v-menu
           v-if="!isBin"
           :close-on-content-click="false"
