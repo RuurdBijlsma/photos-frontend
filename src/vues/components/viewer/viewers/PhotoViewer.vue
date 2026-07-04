@@ -6,13 +6,13 @@ import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import axios from 'axios'
 
-// todo: prop to turn off scroll capture (for settings page)
 // todo: make use of motion photo presentation timestamp
 // todo: if use_panorama_viewer -> add button to view panorama (PanoViewer.vue will be obsolete).
 // todo: if zoomed in any level, then remove the click area to go next/prev in ViewPhoto.vue. Keep the button, remove the large click area.
 // todo: if item has higher resolution, allow for deeper max zoom level
 
 const props = defineProps<{
+  disableEventCapture: boolean
   mediaItemId: string
 }>()
 
@@ -254,6 +254,7 @@ function clampTranslations() {
 
 // Pointer events panning & pinch-to-zoom
 function handlePointerDown(e: PointerEvent) {
+  if (props.disableEventCapture) return
   // Only allow drag/pan with left mouse button, touch, or pen. Right-clicks bypass.
   if (e.pointerType === 'mouse' && e.button !== 0) {
     return
@@ -280,6 +281,7 @@ function handlePointerDown(e: PointerEvent) {
 }
 
 function handlePointerMove(e: PointerEvent) {
+  if (props.disableEventCapture) return
   if (!activePointers.has(e.pointerId)) return
   activePointers.set(e.pointerId, e)
 
@@ -305,6 +307,7 @@ function handlePointerMove(e: PointerEvent) {
 }
 
 function handlePointerUp(e: PointerEvent) {
+  if (props.disableEventCapture) return
   activePointers.delete(e.pointerId)
   try {
     const target = e.currentTarget as HTMLElement
@@ -327,10 +330,12 @@ function handlePointerUp(e: PointerEvent) {
 }
 
 function handlePointerCancel(e: PointerEvent) {
+  if (props.disableEventCapture) return
   handlePointerUp(e)
 }
 
 function handleGlobalWheel(e: WheelEvent) {
+  if (props.disableEventCapture) return
   const target = e.target as HTMLElement
   // Only zoom if the event isn't targeted inside overlays, info panels or menus
   if (
@@ -350,6 +355,7 @@ function handleGlobalWheel(e: WheelEvent) {
 }
 
 function handleDoubleClick(e: MouseEvent) {
+  if (props.disableEventCapture) return
   if (e.button !== 0) return
   if (scale.value > 1) {
     scale.value = 1

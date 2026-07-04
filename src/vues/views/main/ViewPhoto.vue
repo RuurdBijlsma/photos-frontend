@@ -18,12 +18,14 @@ import { useTheme } from 'vuetify/framework'
 
 const props = withDefaults(
   defineProps<{
+    disableEventCapture?: boolean | undefined
     overrideId?: string
     muted?: boolean
   }>(),
   {
     overrideId: undefined,
     muted: false,
+    disableEventCapture: false,
   },
 )
 
@@ -208,7 +210,8 @@ watch(
     }"
   >
     <media-viewer
-      :muted="muted"
+      :disable-event-capture="disableEventCapture ?? false"
+      :muted="muted ?? false"
       v-if="id"
       :view-type="viewerType"
       :media-item-id="id"

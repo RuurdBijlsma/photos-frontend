@@ -13,6 +13,7 @@ const PanoViewer = defineAsyncComponent(
 )
 
 defineProps<{
+  disableEventCapture: boolean
   viewType: PhotoViewerType
   mediaItemId: string
   muted: boolean
@@ -21,7 +22,11 @@ defineProps<{
 
 <template>
   <div class="viewer-container">
-    <photo-viewer :media-item-id="mediaItemId" v-if="viewType === 'photo'" />
+    <photo-viewer
+      :media-item-id="mediaItemId"
+      v-if="viewType === 'photo'"
+      :disable-event-capture="disableEventCapture"
+    />
     <video-viewer :media-item-id="mediaItemId" v-else-if="viewType === 'video'" :muted="muted" />
     <pano-viewer :media-item-id="mediaItemId" v-if="viewType === 'panorama'" />
   </div>

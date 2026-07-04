@@ -174,7 +174,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
             <div class="preview-element-title">Viewer Ambient Glow & Theme</div>
             <div class="viewer-preview-box">
               <div class="preview-scale">
-                <view-photo :override-id="previewTimeline[0]!.id" muted />
+                <view-photo disable-event-capture :override-id="previewTimeline[0]!.id" muted />
               </div>
             </div>
           </div>
