@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import axios from 'axios'
-import { useTimeoutFn } from '@vueuse/core'
+import { useTimeoutFn, useEventListener, useRafFn } from '@vueuse/core'
 
 // todo: if use_panorama_viewer -> add button in bottom center to view panorama (PanoViewer.vue will be obsolete). Make button same style as the overlay buttons in ViewPhoto.vue
 // todo: if item has higher resolution, allow for deeper max zoom level
@@ -154,46 +154,32 @@ const motionVideoUrl = computed(() => {
   return mediaItemService.getMotionVideo(props.mediaItemId)
 })
 
-let rafId: number | null = null
+const { pause: stopMonitoring, resume: startMonitoring } = useRafFn(
+  () => {
+    const video = videoPlayerRef.value
+    if (!video) {
+      stopMonitoring()
+      return
+    }
 
-function startMonitoring() {
-  stopMonitoring()
-  rafId = requestAnimationFrame(monitorVideoTime)
-}
+    const presentationTimestampUs =
+      fullImage.value?.media_features?.motion_photo_presentation_timestamp
+    let targetTime = 0
 
-function stopMonitoring() {
-  if (rafId !== null) {
-    cancelAnimationFrame(rafId)
-    rafId = null
-  }
-}
+    if (presentationTimestampUs !== undefined && presentationTimestampUs > 0) {
+      targetTime = presentationTimestampUs / 1000000
+    } else if (video.duration && !isNaN(video.duration)) {
+      targetTime = video.duration / 2
+    }
 
-function monitorVideoTime() {
-  const video = videoPlayerRef.value
-  if (!video) {
-    stopMonitoring()
-    return
-  }
-
-  const presentationTimestampUs =
-    fullImage.value?.media_features?.motion_photo_presentation_timestamp
-  let targetTime = 0
-
-  if (presentationTimestampUs !== undefined && presentationTimestampUs > 0) {
-    targetTime = presentationTimestampUs / 1000000
-  } else if (video.duration && !isNaN(video.duration)) {
-    targetTime = video.duration / 2
-  }
-
-  // Swap back to the static photo once the presentation timestamp is crossed
-  if (targetTime > 0 && video.currentTime >= targetTime) {
-    showingMotionVideo.value = false
-    stopMonitoring()
-    return
-  }
-
-  rafId = requestAnimationFrame(monitorVideoTime)
-}
+    // Swap back to the static photo once the presentation timestamp is crossed
+    if (targetTime > 0 && video.currentTime >= targetTime) {
+      showingMotionVideo.value = false
+      stopMonitoring()
+    }
+  },
+  { immediate: false },
+)
 
 function playMotionPhoto() {
   if (!settings.playMotionPhotos) return
@@ -269,7 +255,6 @@ watch(
 
 onUnmounted(() => {
   cleanup()
-  stopMonitoring()
 })
 
 const transformStyle = computed(() => {
@@ -489,18 +474,7 @@ function handleDoubleClick(e: MouseEvent) {
   }
 }
 
-onMounted(() => {
-  // Passive false is required to let handleWheel prevent default scroll behavior on the container
-  if (containerRef.value) {
-    containerRef.value.addEventListener('wheel', handleWheel, { passive: false })
-  }
-})
-
-onBeforeUnmount(() => {
-  if (containerRef.value) {
-    containerRef.value.removeEventListener('wheel', handleWheel)
-  }
-})
+useEventListener(containerRef, 'wheel', handleWheel, { passive: false })
 </script>
 
 <template>
