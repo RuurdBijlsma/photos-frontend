@@ -12,8 +12,6 @@ const PanoramaViewer = defineAsyncComponent(
   () => import('@/vues/components/viewer/PanoramaViewer.vue'),
 )
 
-// todo: if item has higher resolution, allow for deeper max zoom level
-
 const props = withDefaults(
   defineProps<{
     disableEventCapture: boolean

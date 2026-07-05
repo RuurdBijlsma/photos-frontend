@@ -437,6 +437,11 @@ watch(viewerType, () => {
   cursor: none !important;
 }
 
+.hide-ui,
+.hide-ui :deep(*) {
+  cursor: none !important;
+}
+
 .photo-viewer {
   width: 100%;
   height: 100%;
