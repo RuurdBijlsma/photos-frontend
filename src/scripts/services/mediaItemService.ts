@@ -68,10 +68,18 @@ const mediaItemService = {
     })
   },
 
-  downloadMediaFileById(id: string): Promise<AxiosResponse<Blob>> {
+  downloadMediaFileById(id: string, signal?: AbortSignal): Promise<AxiosResponse<Blob>> {
     return apiClient.get<Blob>(`/photos/${id}/download`, {
       responseType: 'blob',
+      signal,
     })
+  },
+
+  getMotionVideo(id: string | null | undefined): string {
+    if (id === null || id === undefined) return ''
+    const baseUrl = apiClient.defaults.baseURL
+    const path = `/thumbnails/${id}/motion.mp4`
+    return new URL(path, baseUrl).href
   },
 
   async listMapPhotos(startDate?: string, endDate?: string): Promise<MapPhotosResponse> {

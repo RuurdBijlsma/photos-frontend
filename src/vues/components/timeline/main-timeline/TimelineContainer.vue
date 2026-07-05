@@ -239,7 +239,11 @@ function calculateLayout(
     }
 
     if (rowItems.length > 0) {
-      const sizeMultiplier = Math.min(containerWidth / itemsWidth, MAX_SIZE_MULTIPLIER)
+      let sizeMultiplier = Math.min(containerWidth / itemsWidth, MAX_SIZE_MULTIPLIER)
+      // If full row width can be reached width size multiplier, then use it, otherwise dont increase size
+      if (itemsWidth * sizeMultiplier < containerWidth) {
+        sizeMultiplier = 1
+      }
       const rowHeight = settings.timelineRowHeight * sizeMultiplier
       layoutRows.push({
         items: rowItems,

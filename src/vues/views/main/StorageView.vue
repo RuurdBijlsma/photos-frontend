@@ -17,7 +17,7 @@ const summary = useObjStorage<StorageSummaryResponse>('storage-summary-response'
   blurryPotentialSavings: 0,
   blurryItemCount: 0,
   mediaFolderSizeBytes: 0,
-  thumbnailFolderSizeBytes: 0,
+  appDataFolderSizeBytes: 0,
 })
 const loading = ref(false)
 
@@ -78,7 +78,7 @@ onMounted(loadSummary)
       <big-storage-overview
         :disk-stats="systemStore.stats.disk"
         :media-folder-size-bytes="summary.mediaFolderSizeBytes"
-        :thumbnail-folder-size-bytes="summary.thumbnailFolderSizeBytes"
+        :app-data-folder-size-bytes="summary.appDataFolderSizeBytes"
       />
 
       <section class="review-section">

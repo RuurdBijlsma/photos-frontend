@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue'
-import type { PhotoViewerType } from '@/scripts/types/viewerType.ts'
 
 const PhotoViewer = defineAsyncComponent(
   () => import('@/vues/components/viewer/viewers/PhotoViewer.vue'),
@@ -8,22 +7,32 @@ const PhotoViewer = defineAsyncComponent(
 const VideoViewer = defineAsyncComponent(
   () => import('@/vues/components/viewer/viewers/VideoViewer.vue'),
 )
-const PanoViewer = defineAsyncComponent(
-  () => import('@/vues/components/viewer/viewers/PanoViewer.vue'),
-)
 
 defineProps<{
-  viewType: PhotoViewerType
+  disableEventCapture: boolean
+  isVideo: boolean
   mediaItemId: string
   muted: boolean
+  showUi?: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'zoom-change', isZoomed: boolean): void
+  (e: 'pano-active', isActive: boolean): void
 }>()
 </script>
 
 <template>
   <div class="viewer-container">
-    <photo-viewer :media-item-id="mediaItemId" v-if="viewType === 'photo'" />
-    <video-viewer :media-item-id="mediaItemId" v-else-if="viewType === 'video'" :muted="muted" />
-    <pano-viewer :media-item-id="mediaItemId" v-if="viewType === 'panorama'" />
+    <photo-viewer
+      :media-item-id="mediaItemId"
+      v-if="!isVideo"
+      :disable-event-capture="disableEventCapture"
+      :show-ui="showUi"
+      @zoom-change="emit('zoom-change', $event)"
+      @pano-active="emit('pano-active', $event)"
+    />
+    <video-viewer :media-item-id="mediaItemId" v-else :muted="muted" :show-ui="showUi" />
   </div>
 </template>
 

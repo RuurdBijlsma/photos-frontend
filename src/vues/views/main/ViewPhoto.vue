@@ -8,9 +8,8 @@ import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import MediaViewer from '@/vues/components/viewer/MediaViewer.vue'
 import { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
-import type { PhotoViewerType } from '@/scripts/types/viewerType'
 import { useEventListener } from '@vueuse/core'
-import MediaInfoPanel from '@/vues/components/viewer/MediaInfoPanel.vue'
+import MediaInfoPanel from '@/vues/components/viewer/components/MediaInfoPanel.vue'
 import { makeDateTimeString, makeLocationString } from '@/scripts/utils.ts'
 import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
@@ -18,12 +17,14 @@ import { useTheme } from 'vuetify/framework'
 
 const props = withDefaults(
   defineProps<{
+    disableEventCapture?: boolean | undefined
     overrideId?: string
     muted?: boolean
   }>(),
   {
     overrideId: undefined,
     muted: false,
+    disableEventCapture: false,
   },
 )
 
@@ -44,16 +45,22 @@ const persistentInfo = ref(false)
 const hideSeconds = ref(7)
 const infoMenuOpen = ref(false)
 const optionsOpen = ref(false)
+const isZoomed = ref(false)
+const isPanoActive = ref(false)
+
 const showUI = computed(() => hideSeconds.value > 0)
 const hideTimer = setInterval(() => {
   hideSeconds.value--
   if (infoMenuOpen.value || optionsOpen.value) {
-    hideSeconds.value = 5
+    hideSeconds.value = 10
   }
 }, 1000)
 
 useEventListener(document, 'mousemove', () => {
-  hideSeconds.value = 5
+  hideSeconds.value = 10
+})
+useEventListener(document, 'click', () => {
+  hideSeconds.value = 10
 })
 
 const id = computed(() => {
@@ -124,18 +131,9 @@ const timelineItem = computed<TimelineItem | undefined>(() => {
   return timelineStore.mediaItemsMap.get(id.value)
 })
 
-const viewerType = computed<PhotoViewerType>(() => {
-  if (fullImage.value && fullImage.value.use_panorama_viewer) {
-    return 'panorama'
-  }
-  if (
-    (fullImage.value && fullImage.value.is_video) ||
-    (timelineItem.value && timelineItem.value.isVideo)
-  ) {
-    return 'video'
-  }
-  return 'photo'
-})
+const isVideo = computed<boolean>(
+  () => fullImage.value?.is_video ?? timelineItem.value?.isVideo ?? false,
+)
 
 async function initialize() {
   const loadingId = id.value
@@ -170,35 +168,41 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 }
 
+function prefetchMediaItem(mediaItemId: string) {
+  if (authStore.isAuthenticated) {
+    mediaItemStore.fetchMediaItem(mediaItemId)
+  } else if (albumId.value) {
+    mediaItemStore.fetchSharedMediaItem(albumId.value, mediaItemId)
+  }
+}
+
 onBeforeUnmount(() => clearInterval(hideTimer))
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeyDown))
+
 // Pre-fetch
 watch(prevId, () => {
-  if (prevId.value) {
-    if (authStore.isAuthenticated) {
-      return mediaItemStore.fetchMediaItem(prevId.value)
-    } else if (albumId.value) {
-      return mediaItemStore.fetchSharedMediaItem(albumId.value, prevId.value)
-    }
-  }
+  if (prevId.value) requestIdleCallback(() => prefetchMediaItem(prevId.value))
 })
 watch(nextId, () => {
-  if (nextId.value) {
-    if (authStore.isAuthenticated) {
-      return mediaItemStore.fetchMediaItem(nextId.value)
-    } else if (albumId.value) {
-      return mediaItemStore.fetchSharedMediaItem(albumId.value, nextId.value)
-    }
-  }
+  if (nextId.value) requestIdleCallback(() => prefetchMediaItem(nextId.value))
 })
+
+// Reset zoom states when content identifiers or viewer states change
 watch(
   id,
   () => {
+    isZoomed.value = false
+    isPanoActive.value = false
     initialize()
   },
   { immediate: true },
 )
+
+watch(isVideo, () => {
+  isZoomed.value = false
+  isPanoActive.value = false
+})
 </script>
 
 <template>
@@ -212,11 +216,15 @@ watch(
     }"
   >
     <media-viewer
-      :muted="muted"
+      :disable-event-capture="disableEventCapture ?? false"
+      :muted="muted ?? false"
       v-if="id"
-      :view-type="viewerType"
+      :is-video="isVideo"
       :media-item-id="id"
+      :show-ui="showUI"
       class="photo-viewer"
+      @zoom-change="isZoomed = $event"
+      @pano-active="isPanoActive = $event"
     />
     <div class="top-bar">
       <div class="left-buttons">
@@ -273,6 +281,19 @@ watch(
       </div>
       <div class="right-buttons">
         <v-btn
+          v-if="settings.playMotionPhotos && fullImage?.media_features?.is_motion_photo"
+          rounded="xl"
+          icon="mdi-motion-play-outline"
+          variant="plain"
+          @click="viewPhotoStore.triggerPlayMotion"
+          v-tooltip="{
+            text: 'View photo in motion',
+            location: 'bottom',
+            attach: true,
+            width: 200,
+          }"
+        />
+        <v-btn
           v-if="selectionStore.selection.size > 0"
           :color="isSelected ? 'secondary' : 'default'"
           rounded="xl"
@@ -286,6 +307,7 @@ watch(
             width: 140,
           }"
         />
+
         <v-menu
           v-if="!isBin"
           :close-on-content-click="false"
@@ -353,14 +375,16 @@ watch(
       </div>
     </div>
     <div
-      @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}`, query: route.query })"
       v-if="prevId !== null"
       class="prev-area"
+      :class="{ 'zoomed-nav': isZoomed || isPanoActive }"
+      @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}`, query: route.query })"
       @mouseenter="showLeftButton = true"
       @mouseleave="showLeftButton = false"
     >
       <v-btn
-        :style="{ opacity: showLeftButton ? 1 : 0 }"
+        class="nav-btn"
+        :class="{ 'show-btn': showLeftButton }"
         icon="mdi-chevron-left"
         variant="elevated"
         rounded="xl"
@@ -368,14 +392,16 @@ watch(
       ></v-btn>
     </div>
     <div
-      @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}`, query: route.query })"
       v-if="nextId !== null"
       class="next-area"
+      :class="{ 'zoomed-nav': isZoomed || isPanoActive }"
+      @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}`, query: route.query })"
       @mouseenter="showRightButton = true"
       @mouseleave="showRightButton = false"
     >
       <v-btn
-        :style="{ opacity: showRightButton ? 1 : 0 }"
+        class="nav-btn"
+        :class="{ 'show-btn': showRightButton }"
         icon="mdi-chevron-right"
         variant="elevated"
         rounded="xl"
@@ -398,6 +424,11 @@ watch(
 }
 
 .hide-ui {
+  cursor: none !important;
+}
+
+.hide-ui,
+.hide-ui :deep(*) {
   cursor: none !important;
 }
 
@@ -523,7 +554,7 @@ watch(
   position: absolute;
   right: 0;
   top: 70px;
-  height: calc(100% - 140px);
+  height: calc(100% - 190px);
   width: 20%;
   min-width: 92px;
   max-width: 150px;
@@ -539,7 +570,7 @@ watch(
   position: absolute;
   left: 0;
   top: 70px;
-  height: calc(100% - 140px);
+  height: calc(100% - 190px);
   width: 20%;
   min-width: 92px;
   max-width: 150px;
@@ -549,5 +580,29 @@ watch(
   align-items: center;
   padding: 20px;
   z-index: 1502;
+}
+
+/* Custom transitions and styling for navigation buttons */
+.nav-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  pointer-events: auto; /* Always keep the button itself interactive */
+}
+
+.nav-btn.show-btn {
+  opacity: 1;
+}
+
+/* When zoomed in, disable pointer events on the large navigation container */
+.prev-area.zoomed-nav,
+.next-area.zoomed-nav {
+  pointer-events: none;
+  cursor: default;
+}
+
+/* Let the button itself show on hover in zoomed mode */
+.prev-area.zoomed-nav .nav-btn:hover,
+.next-area.zoomed-nav .nav-btn:hover {
+  opacity: 1;
 }
 </style>

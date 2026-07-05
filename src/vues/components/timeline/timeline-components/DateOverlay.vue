@@ -20,14 +20,31 @@ const renderedDate = computed(() => {
 
 const dateMenuOpen = ref(false)
 const pickedDate = ref<Date | null>(null)
-watch(pickedDate, () => {
-  dateMenuOpen.value = false
-  emit('datePicked', pickedDate.value)
+
+watch(
+  () => props.date,
+  (newDate) => {
+    if (!dateMenuOpen.value) pickedDate.value = newDate
+  },
+  { immediate: true },
+)
+
+// Only close the menu and emit the update when the user actively selects a date in the open menu
+watch(pickedDate, (newVal) => {
+  if (dateMenuOpen.value) {
+    dateMenuOpen.value = false
+    emit('datePicked', newVal)
+  }
 })
 </script>
 
 <template>
-  <v-menu :close-on-content-click="false" v-model="dateMenuOpen" position="bottom-left">
+  <v-menu
+    :close-on-content-click="false"
+    v-model="dateMenuOpen"
+    position="bottom-left"
+    location="bottom end"
+  >
     <template v-slot:activator="{ props }">
       <v-slide-y-transition>
         <div class="date-view" v-if="date" v-bind="props">
@@ -49,8 +66,9 @@ watch(pickedDate, () => {
 
 <style scoped>
 .date-picker {
-  background-color: rgba(var(--v-theme-surface-container-high), 0.8);
+  background-color: rgba(var(--v-theme-surface-container), 0.95);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 5px;
 }
 
 .date-view {

@@ -7,7 +7,7 @@ const peopleService = {
   getFaceThumbnail(clusterId: string | null | undefined): string {
     if (clusterId === null || clusterId === undefined) return ''
     const baseUrl = apiClient.defaults.baseURL
-    const path = `/thumbnails/face-clusters/${clusterId}.webp`
+    const path = `/hosted/face-clusters/${clusterId}.webp`
     return new URL(path, baseUrl).href
   },
 

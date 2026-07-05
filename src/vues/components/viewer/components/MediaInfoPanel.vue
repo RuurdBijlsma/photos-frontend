@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import type { FullMediaItem, MediaItemAlbumRef } from '@/scripts/types/api/fullPhoto.ts'
+import type { FullMediaItem, MediaItemAlbumRef } from '@/scripts/types/api/fullPhoto.js'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
-import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
-import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { useDialogStore } from '@/scripts/stores/dialogStore.js'
+import { useSettingStore } from '@/scripts/stores/settingsStore.js'
 import { computed, defineAsyncComponent, ref, watch } from 'vue'
-import { DAYS, MONTHS } from '@/scripts/constants.ts'
-import MediaWeatherInfo from '@/vues/components/viewer/MediaWeatherInfo.vue'
-import { caps, prettyBytes, toHms } from '@/scripts/utils.ts'
-import EditDateTimeCard from '@/vues/components/viewer/EditDateTimeCard.vue'
-import { useAuthStore } from '@/scripts/stores/authStore.ts'
-import type { SharedMediaItem } from '@/scripts/types/api/album.ts'
+import { DAYS, MONTHS } from '@/scripts/constants.js'
+import MediaWeatherInfo from '@/vues/components/viewer/components/MediaWeatherInfo.vue'
+import { caps, prettyBytes, toHms } from '@/scripts/utils.js'
+import EditDateTimeCard from '@/vues/components/viewer/components/EditDateTimeCard.vue'
+import { useAuthStore } from '@/scripts/stores/authStore.js'
+import type { SharedMediaItem } from '@/scripts/types/api/album.js'
 import { useRoute } from 'vue-router'
 import { useTheme } from 'vuetify/framework'
-import { getCodecInfo } from '@/scripts/codecUtils.ts'
-import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
+import { getCodecInfo } from '@/scripts/codecUtils.js'
+import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.js'
 
 const MediaLocationMap = defineAsyncComponent(
   () => import('@/vues/components/map/MediaLocationMap.vue'),
@@ -387,7 +387,6 @@ const showCameraSection = computed(() => {
         </router-link>
       </section>
       <div class="camera-info" v-if="showCameraSection">
-        <!--        todo add more info here!-->
         <div
           class="camera-header"
           v-if="cameraDisplayName || fileTypeLabel || featureBadges.length > 0"

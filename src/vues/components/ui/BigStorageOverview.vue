@@ -5,15 +5,15 @@ import type { DiskStats } from '@/scripts/types/api/system.ts'
 
 const props = defineProps<{
   mediaFolderSizeBytes: number
-  thumbnailFolderSizeBytes: number
+  appDataFolderSizeBytes: number
   diskStats: DiskStats
 }>()
 
 const mediaUsedPercentage = computed(() =>
   percentage(props.diskStats.mediaDrive.diskUsed, props.diskStats.mediaDrive.diskTotal),
 )
-const thumbnailUsedPercentage = computed(() =>
-  percentage(props.diskStats.thumbnailDrive.diskUsed, props.diskStats.thumbnailDrive.diskTotal),
+const appDataUsedPercentage = computed(() =>
+  percentage(props.diskStats.appDataDrive.diskUsed, props.diskStats.appDataDrive.diskTotal),
 )
 
 // Computed breakdown for media drive usage
@@ -24,42 +24,42 @@ const mediaDriveUsage = computed(() => {
 
   // Guard against out-of-sync backend measurements and division by zero
   const mediaBytes = Math.min(used, props.mediaFolderSizeBytes)
-  const thumbnailBytes = props.diskStats.areSameDrive
-    ? Math.min(used - mediaBytes, props.thumbnailFolderSizeBytes)
+  const appDataBytes = props.diskStats.areSameDrive
+    ? Math.min(used - mediaBytes, props.appDataFolderSizeBytes)
     : 0
 
-  const otherBytes = Math.max(0, used - mediaBytes - thumbnailBytes)
+  const otherBytes = Math.max(0, used - mediaBytes - appDataBytes)
 
   const mediaPercent = total > 0 ? (mediaBytes / total) * 100 : 0
-  const thumbnailPercent = total > 0 ? (thumbnailBytes / total) * 100 : 0
+  const appDataPercent = total > 0 ? (appDataBytes / total) * 100 : 0
   const otherPercent = total > 0 ? (otherBytes / total) * 100 : 0
 
   return {
     mediaBytes,
-    thumbnailBytes,
+    appDataBytes,
     otherBytes,
     mediaPercent,
-    thumbnailPercent,
+    appDataPercent,
     otherPercent,
   }
 })
 
-// Computed breakdown for thumbnail drive usage (only relevant when drives are separate)
-const thumbnailDriveUsage = computed(() => {
-  const drive = props.diskStats.thumbnailDrive
+// Computed breakdown for app_data drive usage (only relevant when drives are separate)
+const appDataDriveUsage = computed(() => {
+  const drive = props.diskStats.appDataDrive
   const total = drive.diskTotal
   const used = drive.diskUsed
 
-  const thumbnailBytes = Math.min(used, props.thumbnailFolderSizeBytes)
-  const otherBytes = Math.max(0, used - thumbnailBytes)
+  const appDataBytes = Math.min(used, props.appDataFolderSizeBytes)
+  const otherBytes = Math.max(0, used - appDataBytes)
 
-  const thumbnailPercent = total > 0 ? (thumbnailBytes / total) * 100 : 0
+  const appDataPercent = total > 0 ? (appDataBytes / total) * 100 : 0
   const otherPercent = total > 0 ? (otherBytes / total) * 100 : 0
 
   return {
-    thumbnailBytes,
+    appDataBytes,
     otherBytes,
-    thumbnailPercent,
+    appDataPercent,
     otherPercent,
   }
 })
@@ -98,10 +98,10 @@ function percentage(used: number, total: number) {
           v-tooltip:top="'Media folder'"
         />
         <div
-          v-if="mediaDriveUsage.thumbnailPercent > 0"
+          v-if="mediaDriveUsage.appDataPercent > 0"
           class="progress-segment thumbnail-segment"
-          :style="{ width: mediaDriveUsage.thumbnailPercent + '%' }"
-          v-tooltip:top="'Thumbnail folder'"
+          :style="{ width: mediaDriveUsage.appDataPercent + '%' }"
+          v-tooltip:top="'App data folder'"
         />
         <div
           v-if="mediaDriveUsage.otherPercent > 0"
@@ -118,10 +118,10 @@ function percentage(used: number, total: number) {
           <span class="legend-label">Media:</span>
           <strong class="legend-value">{{ prettyBytes(mediaDriveUsage.mediaBytes, 1) }}</strong>
         </div>
-        <div class="legend-item" v-if="mediaDriveUsage.thumbnailBytes > 0">
+        <div class="legend-item" v-if="mediaDriveUsage.appDataBytes > 0">
           <span class="legend-dot thumbnail-dot"></span>
-          <span class="legend-label">Thumbnails:</span>
-          <strong class="legend-value">{{ prettyBytes(mediaDriveUsage.thumbnailBytes, 1) }}</strong>
+          <span class="legend-label">App data:</span>
+          <strong class="legend-value">{{ prettyBytes(mediaDriveUsage.appDataBytes, 1) }}</strong>
         </div>
         <div class="legend-item" v-if="mediaDriveUsage.otherBytes > 0">
           <span class="legend-dot other-dot"></span>
@@ -135,48 +135,46 @@ function percentage(used: number, total: number) {
     <div class="usage-card" v-if="!diskStats.areSameDrive">
       <div class="usage-card-header">
         <div>
-          <h2>Thumbnail drive</h2>
+          <h2>App data drive</h2>
           <div class="usage-used-available">
             <span>
-              {{ prettyBytes(diskStats.thumbnailDrive.diskUsed, 1) }} of
-              {{ prettyBytes(diskStats.thumbnailDrive.diskTotal, 1) }} used
+              {{ prettyBytes(diskStats.appDataDrive.diskUsed, 1) }} of
+              {{ prettyBytes(diskStats.appDataDrive.diskTotal, 1) }} used
             </span>
             <span>•</span>
-            <span> {{ prettyBytes(diskStats.thumbnailDrive.diskAvailable, 1) }} available </span>
+            <span> {{ prettyBytes(diskStats.appDataDrive.diskAvailable, 1) }} available </span>
           </div>
         </div>
-        <strong class="usage-percentage">{{ Math.round(thumbnailUsedPercentage) }}%</strong>
+        <strong class="usage-percentage">{{ Math.round(appDataUsedPercentage) }}%</strong>
       </div>
 
       <!-- Multi-segment Progress Bar -->
       <div class="storage-progress-bar">
         <div
-          v-if="thumbnailDriveUsage.thumbnailPercent > 0"
+          v-if="appDataDriveUsage.appDataPercent > 0"
           class="progress-segment thumbnail-segment"
-          :style="{ width: thumbnailDriveUsage.thumbnailPercent + '%' }"
-          v-tooltip:top="'Thumbnail folder'"
+          :style="{ width: appDataDriveUsage.appDataPercent + '%' }"
+          v-tooltip:top="'App data folder'"
         />
         <div
-          v-if="thumbnailDriveUsage.otherPercent > 0"
+          v-if="appDataDriveUsage.otherPercent > 0"
           class="progress-segment other-segment"
-          :style="{ width: thumbnailDriveUsage.otherPercent + '%' }"
+          :style="{ width: appDataDriveUsage.otherPercent + '%' }"
           v-tooltip:top="'Other system files & data'"
         />
       </div>
 
       <!-- Legend -->
       <div class="legend-container">
-        <div class="legend-item" v-if="thumbnailDriveUsage.thumbnailBytes > 0">
+        <div class="legend-item" v-if="appDataDriveUsage.appDataBytes > 0">
           <span class="legend-dot thumbnail-dot"></span>
-          <span class="legend-label">Thumbnails:</span>
-          <strong class="legend-value">{{
-            prettyBytes(thumbnailDriveUsage.thumbnailBytes, 1)
-          }}</strong>
+          <span class="legend-label">App data:</span>
+          <strong class="legend-value">{{ prettyBytes(appDataDriveUsage.appDataBytes, 1) }}</strong>
         </div>
-        <div class="legend-item" v-if="thumbnailDriveUsage.otherBytes > 0">
+        <div class="legend-item" v-if="appDataDriveUsage.otherBytes > 0">
           <span class="legend-dot other-dot"></span>
           <span class="legend-label">Other files:</span>
-          <strong class="legend-value">{{ prettyBytes(thumbnailDriveUsage.otherBytes, 1) }}</strong>
+          <strong class="legend-value">{{ prettyBytes(appDataDriveUsage.otherBytes, 1) }}</strong>
         </div>
       </div>
     </div>

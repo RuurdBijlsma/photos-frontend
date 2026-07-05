@@ -5,7 +5,7 @@ export interface DiskInfo {
 }
 
 export interface DiskStats {
-  thumbnailDrive: DiskInfo
+  appDataDrive: DiskInfo
   mediaDrive: DiskInfo
   areSameDrive: boolean
 }
@@ -16,4 +16,5 @@ export interface SystemStats {
   allowFileModifications: boolean
   allowFileDeletion: boolean
   disk: DiskStats
+  isIngesting: boolean
 }

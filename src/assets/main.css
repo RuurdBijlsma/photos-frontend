@@ -19,6 +19,10 @@ body {
   background-color: #101010 !important;
 }
 
+* {
+  user-select: none;
+}
+
 ::-moz-selection {
   color: rgb(var(--v-theme-on-tertiary));
   background: rgb(var(--v-theme-tertiary));

@@ -23,6 +23,9 @@ const offset = ref(0)
 const hasMore = ref(true)
 const loadingMore = ref(false)
 
+let currentSearchId = 0
+let activeAbortController: AbortController | null = null
+
 // URL Source of Truth Computations
 const query = computed(() => (route.query.query as string) || '')
 
@@ -73,7 +76,7 @@ function getSearchParams(isLoadMore: boolean) {
     if (loadingMore.value || !hasMore.value) return
     loadingMore.value = true
   } else {
-    if (loading.value && !loadingMore.value) return
+    // Removed the guard preventing execution when already loading to allow updates to override
     offset.value = 0
     hasMore.value = true
     if (loadingTimer) clearTimeout(loadingTimer)
@@ -88,7 +91,7 @@ function getSearchParams(isLoadMore: boolean) {
     startDate: urlParamToISO(route.query.start as string),
     endDate: urlParamToISO(route.query.end as string, true),
     countryCodes: (route.query.countries as string) || '',
-    mediaType: (route.query.type as 'all' | 'photo' | 'video') || 'all',
+    mediaType: (route.query.type as 'all' | 'photo' | 'video' | 'panorama') || 'all',
     negativeQuery: (route.query.exclude as string) || undefined,
     personIds: (route.query.people as string) || '',
     allFacesRequired: route.query.peopleAnd === '1' ? true : undefined,
@@ -105,8 +108,20 @@ async function executeSearch(isLoadMore = false) {
     return
   }
 
+  const searchId = ++currentSearchId
+
+  if (!isLoadMore) {
+    // Abort any ongoing query
+    if (activeAbortController) {
+      activeAbortController.abort()
+    }
+    activeAbortController = new AbortController()
+  }
+
   const searchParams = getSearchParams(isLoadMore)
   if (!searchParams) return
+
+  const signal = !isLoadMore ? activeAbortController?.signal : undefined
 
   try {
     let items: SimpleTimelineItem[] = []
@@ -115,8 +130,12 @@ async function executeSearch(isLoadMore = false) {
       // Execute Image Search
       const imageFile = searchStore.searchImage
       const response = searchStore.searchImageSessionId
-        ? await searchService.searchByImageSession(searchStore.searchImageSessionId, searchParams)
-        : await searchService.searchByImage(imageFile, searchParams)
+        ? await searchService.searchByImageSession(
+            searchStore.searchImageSessionId,
+            searchParams,
+            signal,
+          )
+        : await searchService.searchByImage(imageFile, searchParams, signal)
       if (!searchStore.searchImageSessionId && searchStore.searchImage === imageFile) {
         searchStore.searchImageSessionId = response.sessionId ?? null
       }
@@ -128,11 +147,16 @@ async function executeSearch(isLoadMore = false) {
       if (searchCache.has(key)) {
         items = searchCache.get(key)!
       } else {
-        const response = await searchService.search(searchParams)
+        const response = await searchService.search(searchParams, signal)
         items = response.items
         console.log('SearchPage results', items)
         requestIdleCallback(() => searchCache.set(key, items))
       }
+    }
+
+    // Only apply modifications if this is still the active search
+    if (searchId !== currentSearchId) {
+      return
     }
 
     if (isLoadMore) {
@@ -144,17 +168,25 @@ async function executeSearch(isLoadMore = false) {
     hasMore.value = items.length === SEARCH_LIMIT
     offset.value += items.length
   } catch (e) {
-    snackStore.error('Could not perform search', e)
+    if (searchId === currentSearchId) {
+      snackStore.error('Could not perform search', e)
+    }
   } finally {
-    if (loadingTimer) clearTimeout(loadingTimer)
-    loading.value = false
-    loadingMore.value = false
-    showLoadingUI.value = false
+    if (searchId === currentSearchId) {
+      if (loadingTimer) clearTimeout(loadingTimer)
+      loading.value = false
+      loadingMore.value = false
+      showLoadingUI.value = false
+      if (!isLoadMore) {
+        activeAbortController = null
+      }
+    }
   }
 }
 
 onUnmounted(() => {
   if (loadingTimer) clearTimeout(loadingTimer)
+  if (activeAbortController) activeAbortController.abort()
 })
 
 watch([() => route.query, () => searchStore.searchImage], () => executeSearch(false), {

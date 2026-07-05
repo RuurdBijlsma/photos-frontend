@@ -203,7 +203,7 @@ export interface StorageSummaryResponse {
   blurryPotentialSavings: number
   blurryItemCount: number
   mediaFolderSizeBytes: number
-  thumbnailFolderSizeBytes: number
+  appDataFolderSizeBytes: number
 }
 
 function createBaseTimelineRatiosResponse(): TimelineRatiosResponse {
@@ -685,7 +685,7 @@ export const SimpleTimelineItem: MessageFns<SimpleTimelineItem> = {
       writer.uint32(32).int32(message.durationMs)
     }
     if (message.ratio !== 0) {
-      writer.uint32(53).float(message.ratio)
+      writer.uint32(45).float(message.ratio)
     }
     return writer
   },
@@ -729,8 +729,8 @@ export const SimpleTimelineItem: MessageFns<SimpleTimelineItem> = {
           message.durationMs = reader.int32()
           continue
         }
-        case 6: {
-          if (tag !== 53) {
+        case 5: {
+          if (tag !== 45) {
             break
           }
 
@@ -2617,7 +2617,7 @@ function createBaseStorageSummaryResponse(): StorageSummaryResponse {
     blurryPotentialSavings: 0,
     blurryItemCount: 0,
     mediaFolderSizeBytes: 0,
-    thumbnailFolderSizeBytes: 0,
+    appDataFolderSizeBytes: 0,
   }
 }
 
@@ -2638,8 +2638,8 @@ export const StorageSummaryResponse: MessageFns<StorageSummaryResponse> = {
     if (message.mediaFolderSizeBytes !== 0) {
       writer.uint32(40).int64(message.mediaFolderSizeBytes)
     }
-    if (message.thumbnailFolderSizeBytes !== 0) {
-      writer.uint32(48).int64(message.thumbnailFolderSizeBytes)
+    if (message.appDataFolderSizeBytes !== 0) {
+      writer.uint32(48).int64(message.appDataFolderSizeBytes)
     }
     return writer
   },
@@ -2696,7 +2696,7 @@ export const StorageSummaryResponse: MessageFns<StorageSummaryResponse> = {
             break
           }
 
-          message.thumbnailFolderSizeBytes = longToNumber(reader.int64())
+          message.appDataFolderSizeBytes = longToNumber(reader.int64())
           continue
         }
       }
@@ -2735,10 +2735,10 @@ export const StorageSummaryResponse: MessageFns<StorageSummaryResponse> = {
         : isSet(object.media_folder_size_bytes)
           ? globalThis.Number(object.media_folder_size_bytes)
           : 0,
-      thumbnailFolderSizeBytes: isSet(object.thumbnailFolderSizeBytes)
-        ? globalThis.Number(object.thumbnailFolderSizeBytes)
-        : isSet(object.thumbnail_folder_size_bytes)
-          ? globalThis.Number(object.thumbnail_folder_size_bytes)
+      appDataFolderSizeBytes: isSet(object.appDataFolderSizeBytes)
+        ? globalThis.Number(object.appDataFolderSizeBytes)
+        : isSet(object.app_data_folder_size_bytes)
+          ? globalThis.Number(object.app_data_folder_size_bytes)
           : 0,
     }
   },
@@ -2760,8 +2760,8 @@ export const StorageSummaryResponse: MessageFns<StorageSummaryResponse> = {
     if (message.mediaFolderSizeBytes !== 0) {
       obj.mediaFolderSizeBytes = Math.round(message.mediaFolderSizeBytes)
     }
-    if (message.thumbnailFolderSizeBytes !== 0) {
-      obj.thumbnailFolderSizeBytes = Math.round(message.thumbnailFolderSizeBytes)
+    if (message.appDataFolderSizeBytes !== 0) {
+      obj.appDataFolderSizeBytes = Math.round(message.appDataFolderSizeBytes)
     }
     return obj
   },
@@ -2780,7 +2780,7 @@ export const StorageSummaryResponse: MessageFns<StorageSummaryResponse> = {
     message.blurryPotentialSavings = object.blurryPotentialSavings ?? 0
     message.blurryItemCount = object.blurryItemCount ?? 0
     message.mediaFolderSizeBytes = object.mediaFolderSizeBytes ?? 0
-    message.thumbnailFolderSizeBytes = object.thumbnailFolderSizeBytes ?? 0
+    message.appDataFolderSizeBytes = object.appDataFolderSizeBytes ?? 0
     return message
   },
 }

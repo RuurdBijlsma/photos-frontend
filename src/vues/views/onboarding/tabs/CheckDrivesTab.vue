@@ -42,7 +42,7 @@ refreshFolderSummary().then()
 
     <!-- Thumbnails Folder -->
     <full-folder-status
-      :folder="adminStore.disks.thumbnailsFolder"
+      :folder="adminStore.disks.appDataFolder"
       env-var="THUMBNAILS_DIR"
       title-icon="mdi-image-multiple"
     />

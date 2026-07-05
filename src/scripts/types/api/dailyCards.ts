@@ -13,7 +13,7 @@ export interface DailyCardResponse {
 export interface CollectionMediaItem extends SimpleTimelineItem {
   width: number
   height: number
-  isPanorama: boolean
+  usePanoramaViewer: boolean
   takenAtLocal?: string
 }
 

@@ -4,13 +4,17 @@ import SearchBar from '@/vues/components/ui/SearchBar.vue'
 import { useAuthStore } from '@/scripts/stores/authStore.ts'
 import UserAvatar from '@/vues/components/ui/UserAvatar.vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
+import { useSystemStore } from '@/scripts/stores/systemStore.ts'
 import { themeOptions } from '@/scripts/constants.ts'
 import { caps } from '@/scripts/utils.ts'
+import IngestOverlayMenu from '@/vues/components/activity/IngestOverlayMenu.vue'
 
 const authStore = useAuthStore()
 const settings = useSettingStore()
+const systemStore = useSystemStore()
 
 const menuOpen = ref(false)
+const ingestMenuOpen = ref(false)
 
 async function logout() {
   menuOpen.value = false
@@ -26,10 +30,24 @@ async function logout() {
     <search-bar v-if="authStore.isAuthenticated" />
     <v-spacer />
     <div v-if="authStore.isAuthenticated" class="header-buttons">
-      <v-btn variant="plain" rounded>
-        <v-icon icon="mdi-upload"></v-icon>
-        Upload
-      </v-btn>
+      <!-- Sync Menu overlay for background ingestion state (hidden when on full activity page) -->
+      <v-menu
+        v-if="systemStore.stats.isIngesting"
+        v-model="ingestMenuOpen"
+        :close-on-content-click="false"
+        location="bottom end"
+        offset="10"
+        transition="slide-y-transition"
+      >
+        <template v-slot:activator="{ props }">
+          <v-btn icon v-bind="props" variant="text" color="primary" class="mr-1">
+            <v-icon class="spinning-sync-icon">mdi-sync</v-icon>
+          </v-btn>
+        </template>
+        <ingest-overlay-menu @close-menu="ingestMenuOpen = false" />
+      </v-menu>
+
+      <v-btn variant="plain" rounded prepend-icon="mdi-upload"> Upload </v-btn>
       <v-menu v-model="menuOpen" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props">
@@ -66,7 +84,7 @@ async function logout() {
           <v-list bg-color="surface-container">
             <v-list-item>
               <div class="mt-1 theme-container">
-                <v-list-item-title class="theme-title"> Theme</v-list-item-title>
+                <v-list-item-title class="theme-title">Theme</v-list-item-title>
 
                 <v-chip-group
                   v-model="settings.themeString"
@@ -109,6 +127,9 @@ async function logout() {
               @click="menuOpen = false"
             >
               <v-list-item-title>Admin</v-list-item-title>
+            </v-list-item>
+            <v-list-item prepend-icon="mdi-sync" to="/activity" @click="menuOpen = false">
+              <v-list-item-title>Activity</v-list-item-title>
             </v-list-item>
             <v-list-item prepend-icon="mdi-cog" to="/settings" @click="menuOpen = false">
               <v-list-item-title>Settings</v-list-item-title>
@@ -190,5 +211,18 @@ async function logout() {
   font-weight: 300;
   opacity: 0.7;
   text-align: center;
+}
+
+.spinning-sync-icon {
+  animation: rotation 3s infinite linear;
+}
+
+@keyframes rotation {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
 }
 </style>

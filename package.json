@@ -25,11 +25,12 @@
     "@vueuse/core": "^14.2.1",
     "axios": "^1.16.0",
     "maplibre-gl": "^5.24.0",
+    "pannellum": "^2.5.7",
     "pinia": "^3.0.4",
     "vite-plugin-vuetify": "^2.1.3",
     "vue": "^3.5.31",
     "vue-router": "^5.0.4",
-    "vuetify": "^4.0.4"
+    "vuetify": "^4.1.2"
   },
   "devDependencies": {
     "@prettier/plugin-oxc": "^0.1.3",

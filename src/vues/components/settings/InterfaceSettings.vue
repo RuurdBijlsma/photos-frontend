@@ -27,7 +27,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
       hide-scroll-bar
       class="timeline-preview"
       :timeline-items="previewTimeline"
-      view-link="/settings/view/"
+      view-link="/unreachable"
       :ideal-row-height="settings.timelineRowHeight"
       :style="{
         height: settings.timelineRowHeight + 100 + 'px',
@@ -74,6 +74,16 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
               v-model="settings.useImageGlow"
               label="Ambient Image Glow"
               hint="Adds a soft glowing background reflecting the colors of the active image"
+              persistent-hint
+              color="primary"
+              inset
+              density="comfortable"
+              class="setting-switch"
+            />
+            <v-switch
+              v-model="settings.playMotionPhotos"
+              label="Enable Motion Photos"
+              hint="Automatically play motion photos when viewing items (if available)"
               persistent-hint
               color="primary"
               inset
@@ -163,7 +173,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
             <div class="preview-element-title">Viewer Ambient Glow & Theme</div>
             <div class="viewer-preview-box">
               <div class="preview-scale">
-                <view-photo :override-id="previewTimeline[0]!.id" muted />
+                <view-photo disable-event-capture :override-id="previewTimeline[0]!.id" muted />
               </div>
             </div>
           </div>
@@ -224,6 +234,7 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
   left: 0;
   width: 100%;
   opacity: 0.6;
+  pointer-events: none;
 }
 
 .ui-settings-layout {

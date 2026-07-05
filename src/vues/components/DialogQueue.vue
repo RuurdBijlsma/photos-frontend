@@ -41,6 +41,9 @@ const handleAction = async (actionItem: DialogAction) => {
         <v-text-field
           v-if="store.current.type === 'prompt'"
           v-model="store.inputValue"
+          variant="outlined"
+          base-color="primary"
+          bg-color="surface-container-low"
           autofocus
           color="primary"
           density="comfortable"

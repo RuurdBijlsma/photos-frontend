@@ -9,6 +9,7 @@ const DEFAULT_SYSTEM_STATS: SystemStats = {
   hasClusteredPhotos: true,
   allowFileDeletion: true,
   allowFileModifications: true,
+  isIngesting: false,
   disk: {
     areSameDrive: true,
     mediaDrive: {
@@ -16,7 +17,7 @@ const DEFAULT_SYSTEM_STATS: SystemStats = {
       diskTotal: 100,
       diskUsed: 0,
     },
-    thumbnailDrive: {
+    appDataDrive: {
       diskAvailable: 50,
       diskTotal: 100,
       diskUsed: 0,
@@ -32,8 +33,6 @@ export const useSystemStore = defineStore('system', () => {
   async function fetchStats() {
     try {
       const { data } = await systemService.getStats()
-      console.log('system stats', data)
-      // data.disk.areSameDrive = true
       stats.value = data
     } catch (e) {
       snackbarStore.error('Could not fetch system stats', e)

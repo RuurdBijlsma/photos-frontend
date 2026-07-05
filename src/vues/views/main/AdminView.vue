@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import MainLayoutContainer from '@/vues/components/MainLayoutContainer.vue'
 import UserAdmin from '@/vues/components/admin/UserAdmin.vue'
+import JobsAdmin from '@/vues/components/admin/JobsAdmin.vue'
 </script>
 
 <template>
@@ -14,6 +15,13 @@ import UserAdmin from '@/vues/components/admin/UserAdmin.vue'
         <v-divider />
       </div>
       <user-admin />
+
+      <div class="divider-flex">
+        <v-divider />
+        <span>Jobs</span>
+        <v-divider />
+      </div>
+      <jobs-admin />
 
       <!-- Section: Placeholder Other Settings -->
       <section class="placeholder-section">
