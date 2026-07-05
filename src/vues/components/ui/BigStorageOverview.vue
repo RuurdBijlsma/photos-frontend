@@ -169,9 +169,7 @@ function percentage(used: number, total: number) {
         <div class="legend-item" v-if="appDataDriveUsage.appDataBytes > 0">
           <span class="legend-dot thumbnail-dot"></span>
           <span class="legend-label">App data:</span>
-          <strong class="legend-value">{{
-              prettyBytes(appDataDriveUsage.appDataBytes, 1)
-            }}</strong>
+          <strong class="legend-value">{{ prettyBytes(appDataDriveUsage.appDataBytes, 1) }}</strong>
         </div>
         <div class="legend-item" v-if="appDataDriveUsage.otherBytes > 0">
           <span class="legend-dot other-dot"></span>

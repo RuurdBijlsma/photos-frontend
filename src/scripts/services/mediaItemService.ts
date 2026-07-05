@@ -82,7 +82,6 @@ const mediaItemService = {
     return new URL(path, baseUrl).href
   },
 
-
   async listMapPhotos(startDate?: string, endDate?: string): Promise<MapPhotosResponse> {
     const response = await apiClient.get('/photos/geo', {
       responseType: 'arraybuffer',

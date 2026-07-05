@@ -17,4 +17,3 @@ export const useViewPhotoStore = defineStore('viewPhoto', () => {
     triggerPlayMotion,
   }
 })
-

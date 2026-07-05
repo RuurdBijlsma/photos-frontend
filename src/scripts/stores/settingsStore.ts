@@ -60,4 +60,3 @@ export const useSettingStore = defineStore('settings', () => {
     enableDarkThemeTime,
   }
 })
-

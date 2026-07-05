@@ -92,7 +92,6 @@ searchService.search({ query: 'sunset', limit: 10, mediaType: 'photo' }).then((i
             />
           </div>
 
-
           <!-- Section: Timeline Settings -->
           <div class="section-divider mt-6">
             <span class="section-label">Timeline Layout</span>

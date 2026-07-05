@@ -33,7 +33,7 @@ const bufferedRanges = ref<Array<{ start: number; end: number }>>([])
 // Play/Pause Overlay States
 const overlayAction = ref<'play' | 'pause' | null>(null)
 const overlayTrigger = ref(0)
-let overlayTimeout: any = null
+let overlayTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Volume State (Persisted with useStorage)
 const savedVolume = useStorage<number>('video-player-volume', 1.0)
@@ -85,9 +85,10 @@ function onQualitySelect(size: number) {
 function triggerOverlay(action: 'play' | 'pause') {
   overlayAction.value = action
   overlayTrigger.value++
-  if (overlayTimeout) clearTimeout(overlayTimeout)
-  overlayTimeout = setTimeout(() => {
+  if (overlayTimeout !== null) clearTimeout(overlayTimeout)
+  overlayTimeout = window.setTimeout(() => {
     overlayAction.value = null
+    overlayTimeout = null
   }, 750)
 }
 

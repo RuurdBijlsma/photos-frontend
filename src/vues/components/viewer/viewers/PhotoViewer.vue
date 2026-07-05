@@ -134,8 +134,11 @@ async function startFullResLoad() {
 
     const objectUrl = URL.createObjectURL(res.data)
     fullResUrl.value = objectUrl
-  } catch (err: any) {
-    if (err.name === 'CanceledError' || axios.isCancel(err) || controller.signal.aborted) {
+  } catch (err: unknown) {
+    const isAbortError =
+      err instanceof DOMException && (err.name === 'CanceledError' || err.name === 'AbortError')
+
+    if (isAbortError || axios.isCancel(err) || controller.signal.aborted) {
       console.log('Background fetch aborted for image:', item.id)
     } else {
       console.error('Failed to load full-resolution image:', err)

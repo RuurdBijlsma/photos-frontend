@@ -5,9 +5,15 @@ import type { PannellumConfig } from '@/scripts/types/api/pannellumConfig.js'
 import 'pannellum'
 import 'pannellum/build/pannellum.css'
 
+interface PannellumViewer {
+  destroy: () => void
+}
+
 declare global {
   interface Window {
-    pannellum: any
+    pannellum?: {
+      viewer: (container: HTMLDivElement, config: PannellumConfig) => PannellumViewer
+    }
   }
 }
 
@@ -17,7 +23,7 @@ const props = defineProps<{
 }>()
 
 const containerRef = ref<HTMLDivElement | null>(null)
-let viewerInstance: any = null
+let viewerInstance: PannellumViewer | null = null
 
 function destroyViewer() {
   if (viewerInstance) {
