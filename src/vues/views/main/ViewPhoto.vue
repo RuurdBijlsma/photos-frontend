@@ -47,6 +47,7 @@ const hideSeconds = ref(7)
 const infoMenuOpen = ref(false)
 const optionsOpen = ref(false)
 const isZoomed = ref(false)
+const isPanoActive = ref(false)
 
 const showUI = computed(() => hideSeconds.value > 0)
 const hideTimer = setInterval(() => {
@@ -57,6 +58,9 @@ const hideTimer = setInterval(() => {
 }, 1000)
 
 useEventListener(document, 'mousemove', () => {
+  hideSeconds.value = 5
+})
+useEventListener(document, 'click', () => {
   hideSeconds.value = 5
 })
 
@@ -199,6 +203,7 @@ watch(
   id,
   () => {
     isZoomed.value = false
+    isPanoActive.value = false
     initialize()
   },
   { immediate: true },
@@ -206,6 +211,7 @@ watch(
 
 watch(viewerType, () => {
   isZoomed.value = false
+  isPanoActive.value = false
 })
 </script>
 
@@ -228,6 +234,7 @@ watch(viewerType, () => {
       :show-ui="showUI"
       class="photo-viewer"
       @zoom-change="isZoomed = $event"
+      @pano-active="isPanoActive = $event"
     />
     <div class="top-bar">
       <div class="left-buttons">
@@ -380,7 +387,7 @@ watch(viewerType, () => {
     <div
       v-if="prevId !== null"
       class="prev-area"
-      :class="{ 'zoomed-nav': isZoomed }"
+      :class="{ 'zoomed-nav': isZoomed || isPanoActive }"
       @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}`, query: route.query })"
       @mouseenter="showLeftButton = true"
       @mouseleave="showLeftButton = false"
@@ -397,7 +404,7 @@ watch(viewerType, () => {
     <div
       v-if="nextId !== null"
       class="next-area"
-      :class="{ 'zoomed-nav': isZoomed }"
+      :class="{ 'zoomed-nav': isZoomed || isPanoActive }"
       @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}`, query: route.query })"
       @mouseenter="showRightButton = true"
       @mouseleave="showRightButton = false"

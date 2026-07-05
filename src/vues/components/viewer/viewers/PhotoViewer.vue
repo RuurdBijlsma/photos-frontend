@@ -13,7 +13,6 @@ const PanoramaViewer = defineAsyncComponent(
 )
 
 // todo: if item has higher resolution, allow for deeper max zoom level
-// todo: when in panorama viewer, dont show extended click area for next/prev buttons in viewphoto
 
 const props = withDefaults(
   defineProps<{
@@ -28,6 +27,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'zoom-change', isZoomed: boolean): void
+  (e: 'pano-active', isActive: boolean): void
 }>()
 
 const mediaItemStore = useMediaItemStore()
@@ -214,6 +214,14 @@ function onVideoEnded() {
 }
 
 // Watchers
+watch(
+  is3DMode,
+  (isActive) => {
+    emit('pano-active', isActive)
+  },
+  { immediate: true },
+)
+
 watch(
   () => props.mediaItemId,
   () => {
@@ -506,10 +514,7 @@ useEventListener(containerRef, 'wheel', handleWheel, { passive: false })
 
     <!-- 3D mode: Instantiated when toggled to true; todo: use baseurl -->
     <template v-if="is3DMode && panoramaConfig">
-      <PanoramaViewer
-        :config="panoramaConfig"
-        :base-url="`${baseUrl}hosted/pano/${mediaItemId}`"
-      />
+      <PanoramaViewer :config="panoramaConfig" :base-url="`${baseUrl}hosted/pano/${mediaItemId}`" />
     </template>
 
     <div

@@ -21,6 +21,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'zoom-change', isZoomed: boolean): void
+  (e: 'pano-active', isActive: boolean): void
 }>()
 </script>
 
@@ -32,6 +33,7 @@ const emit = defineEmits<{
       :disable-event-capture="disableEventCapture"
       :show-ui="showUi"
       @zoom-change="emit('zoom-change', $event)"
+      @pano-active="emit('pano-active', $event)"
     />
     <video-viewer :media-item-id="mediaItemId" v-else-if="viewType === 'video'" :muted="muted" />
   </div>
