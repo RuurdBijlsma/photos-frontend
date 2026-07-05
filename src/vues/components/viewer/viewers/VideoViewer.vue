@@ -2,7 +2,7 @@
 // TODO:
 // * video player to play video
 // * Use existing video endpoint (see mediaItemService.getVideo definition and usage)
-// * Native browser player is probably fine
+// * make video player UI styling similar to buttons in ViewPhoto.vue
 // * autoplay on load
 
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
