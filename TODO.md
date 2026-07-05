@@ -208,6 +208,11 @@
 * ✅ loading indicator als je album maakt
 * ✅ [BUG] negative query is not sending full query (i type orange, it sends "or" in the request payload)
 * ✅ [BUG] timeline is slow again? fps (wait for all thumbnails to process before checking)
+* make generic refresh thing, call it when moving item to bin
+  * For example, refreshStore or something, which has a refreshCounter. If you're on a page you can watch that counter, if it changes, then refresh the content of the page.
+  * This way if you delete something from /search, or from /person, or from /camera, etc. it can refresh the page and remove the deleted item from view
+  * on "move to bin", increment refresh counter in refreshStore
+  * Remove existing refresh logic for timeline and make timeline use the refreshCounter store
 * leave ViewPhoto -> timeline, the scroll to where i was in the photo viewer is bad
   * possible workaround, dont scroll if i didnt next/prev more than 5 photos?
   * root cause fix: fix the height calculation of the timeline grid
