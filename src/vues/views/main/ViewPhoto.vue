@@ -564,7 +564,7 @@ watch(viewerType, () => {
   position: absolute;
   right: 0;
   top: 70px;
-  height: calc(100% - 140px);
+  height: calc(100% - 190px);
   width: 20%;
   min-width: 92px;
   max-width: 150px;
@@ -580,7 +580,7 @@ watch(viewerType, () => {
   position: absolute;
   left: 0;
   top: 70px;
-  height: calc(100% - 140px);
+  height: calc(100% - 190px);
   width: 20%;
   min-width: 92px;
   max-width: 150px;

@@ -35,7 +35,12 @@ const emit = defineEmits<{
       @zoom-change="emit('zoom-change', $event)"
       @pano-active="emit('pano-active', $event)"
     />
-    <video-viewer :media-item-id="mediaItemId" v-else-if="viewType === 'video'" :muted="muted" />
+    <video-viewer
+      :media-item-id="mediaItemId"
+      v-else-if="viewType === 'video'"
+      :muted="muted"
+      :show-ui="showUi"
+    />
   </div>
 </template>
 
