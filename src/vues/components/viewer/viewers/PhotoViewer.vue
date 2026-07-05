@@ -9,7 +9,7 @@ import { useTimeoutFn, useEventListener, useRafFn } from '@vueuse/core'
 import apiClient from '@/scripts/services/api.ts'
 
 const PanoramaViewer = defineAsyncComponent(
-  () => import('@/vues/components/viewer/PanoramaViewer.vue'),
+  () => import('@/vues/components/viewer/components/PanoramaViewer.vue'),
 )
 
 const props = withDefaults(

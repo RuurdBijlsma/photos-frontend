@@ -6,9 +6,7 @@ import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { VIDEO_SIZES } from '@/scripts/constants.ts'
 import { getVideoHeight, toHms } from '@/scripts/utils.ts'
 
-// todo: the progress bar slider animates from end to start when looping, this is ugly. it should just teleport (no animation).
-// i would also like the slider thumb for progress slider to be smaller. And dont have the styling for the volume and progress bar coupled. i want to experiment changing colours and such.
-// todo: if video is paused, and i switch quality, it unpauses -> BAD. On quality switch it should retain play/paused state.
+// todo: tooltip over progress slider hover to show what time that position is
 
 const props = withDefaults(
   defineProps<{
@@ -41,6 +39,7 @@ const isFullscreen = ref(false)
 // Quality State (Persisted with useStorage)
 const defaultQuality = getVideoHeight(screen.height)
 const savedQuality = useStorage<number>('video-player-quality', defaultQuality)
+const sortedVideoSizes = [...VIDEO_SIZES].sort((a, b) => b - a)
 
 const currentQuality = computed({
   get() {
@@ -64,12 +63,14 @@ const videoUrl = computed(() => {
   return mediaItemService.getVideo(props.mediaItemId, currentQuality.value, onDemand)
 })
 
-// Keep track of the position to restore across source swaps
+// Keep track of the position and play state to restore across source swaps
 const timeToRestore = ref<number | null>(null)
+const isPlayingOnQualityChange = ref<boolean | null>(null)
 
 function onQualitySelect(size: number) {
   if (videoRef.value) {
     timeToRestore.value = videoRef.value.currentTime
+    isPlayingOnQualityChange.value = !videoRef.value.paused
   }
   currentQuality.value = size
 }
@@ -100,17 +101,40 @@ watch(
   { immediate: true },
 )
 
+// Helper to trigger safe programmatic playback
+function playVideo() {
+  if (videoRef.value) {
+    videoRef.value.play().catch((err) => {
+      console.warn('Playback failed or was blocked by browser:', err)
+    })
+  }
+}
+
 // Trigger reload on source changes
-watch(videoUrl, () => {
-  nextTick(() => {
-    if (videoRef.value) {
-      videoRef.value.load()
-      videoRef.value.play().catch((err) => {
-        console.warn('Playback failed or was blocked by browser:', err)
-      })
-    }
-  })
-})
+watch(
+  videoUrl,
+  () => {
+    nextTick(() => {
+      if (videoRef.value) {
+        // Determine if the video should play. If isPlayingOnQualityChange is null,
+        // we are loading a new media item entirely, which autoplays by default.
+        const shouldPlay =
+          isPlayingOnQualityChange.value !== null ? isPlayingOnQualityChange.value : true
+
+        videoRef.value.load()
+
+        if (shouldPlay) {
+          playVideo()
+        } else {
+          videoRef.value.pause()
+        }
+
+        isPlayingOnQualityChange.value = null
+      }
+    })
+  },
+  { immediate: true },
+)
 
 // Volume & Mute Synchronization
 watch(
@@ -169,9 +193,7 @@ function onTimeUpdate() {
 function togglePlay() {
   if (!videoRef.value) return
   if (videoRef.value.paused) {
-    videoRef.value.play().catch((err) => {
-      console.warn('Failed to resume playback:', err)
-    })
+    playVideo()
   } else {
     videoRef.value.pause()
   }
@@ -278,6 +300,10 @@ const volumeIcon = computed(() => {
 
 onMounted(() => {
   document.addEventListener('fullscreenchange', onFullscreenChange)
+  // Fallback programmatic start if needed on initial load
+  if (videoRef.value && isPlaying.value === false) {
+    playVideo()
+  }
 })
 
 onUnmounted(() => {
@@ -301,7 +327,6 @@ useEventListener(window, 'keydown', handleKeyDown)
       :muted="isMuted"
       loop
       playsinline
-      autoplay
       @loadedmetadata="onLoadedMetadata"
       @timeupdate="onTimeUpdate"
       @play="onPlay"
@@ -323,6 +348,8 @@ useEventListener(window, 'keydown', handleKeyDown)
           step="0.01"
           hide-details
           density="compact"
+          track-size="3"
+          thumb-size="12"
         />
       </div>
 
@@ -363,7 +390,7 @@ useEventListener(window, 'keydown', handleKeyDown)
             </template>
             <v-list class="quality-menu-list">
               <v-list-item
-                v-for="size in VIDEO_SIZES"
+                v-for="size in sortedVideoSizes"
                 :key="size"
                 :value="size"
                 @click="onQualitySelect(size)"
@@ -418,7 +445,6 @@ useEventListener(window, 'keydown', handleKeyDown)
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
   z-index: 1510;
   transition:
     transform 0.2s ease,
@@ -501,20 +527,46 @@ body.backdrop-blur .control-island:hover {
   font-weight: 500;
 }
 
-/* Custom Grayscale / Color-Neutral overrides for Sliders */
-:deep(.v-slider-thumb) {
+/* Custom Grayscale / Color-Neutral overrides for Sliders (Decoupled) */
+
+/* Volume Slider Customization */
+:deep(.volume-slider .v-slider-thumb) {
   color: rgba(var(--fg), 0.9) !important;
 }
 
-:deep(.v-slider-track__fill) {
+:deep(.volume-slider .v-slider-track__fill) {
   background: rgba(var(--fg), 0.5) !important;
 }
 
-:deep(.v-slider-track__background) {
+:deep(.volume-slider .v-slider-track__background) {
   background: rgba(var(--fg), 0.5) !important;
 }
 
-:deep(.v-slider-thumb__ripple) {
+:deep(.volume-slider .v-slider-thumb__ripple) {
+  color: rgba(var(--fg), 0.3) !important;
+}
+
+/* Progress Slider Customization */
+:deep(.progress-slider .v-slider-thumb) {
+  color: rgba(255, 0, 0, 0.9) !important;
+}
+
+:deep(.progress-slider .v-slider-track__fill) {
+  background: rgb(200, 0, 0, 0.8) !important;
+  transition: none !important;
+}
+
+:deep(.progress-slider .v-slider-track__background) {
+  background: rgba(var(--fg), 0.5) !important;
+  transition: none !important;
+}
+
+:deep(.progress-slider .v-slider-thumb__surface),
+:deep(.progress-slider .v-slider-thumb) {
+  transition: none !important;
+}
+
+:deep(.progress-slider .v-slider-thumb__ripple) {
   color: rgba(var(--fg), 0.3) !important;
 }
 </style>

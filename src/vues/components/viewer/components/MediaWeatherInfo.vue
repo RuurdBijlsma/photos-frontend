@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Weather } from '@/scripts/types/api/fullPhoto.ts'
-import { getWeatherIcon } from '@/scripts/utils.ts'
+import type { Weather } from '@/scripts/types/api/fullPhoto.js'
+import { getWeatherIcon } from '@/scripts/utils.js'
 
 defineProps<{
   weatherInfo: Weather

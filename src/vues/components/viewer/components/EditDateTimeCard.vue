@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import ThumbnailImg from '@/vues/components/ui/ThumbnailImg.vue'
-import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.ts'
-import DateTimePicker from '@/vues/components/viewer/DateTimePicker.vue'
-import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
-import { useDialogStore } from '@/scripts/stores/dialogStore.ts'
-import { formatNaiveDate } from '@/scripts/utils.ts'
-import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.ts'
-import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
+import type { FullMediaItem } from '@/scripts/types/api/fullPhoto.js'
+import DateTimePicker from '@/vues/components/viewer/components/DateTimePicker.vue'
+import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.js'
+import { useDialogStore } from '@/scripts/stores/dialogStore.js'
+import { formatNaiveDate } from '@/scripts/utils.js'
+import { useSnackbarsStore } from '@/scripts/stores/snackbarStore.js'
+import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.js'
 
 const props = defineProps<{
   mediaItem: FullMediaItem
