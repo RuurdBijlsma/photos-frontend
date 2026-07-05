@@ -18,6 +18,10 @@ const props = defineProps<{
   mediaItemId: string
 }>()
 
+const emit = defineEmits<{
+  (e: 'zoom-change', isZoomed: boolean): void
+}>()
+
 const mediaItemStore = useMediaItemStore()
 const settings = useSettingStore()
 const viewPhotoStore = useViewPhotoStore()
@@ -244,6 +248,15 @@ watch(fullImage, (newVal) => {
   }
 })
 
+// Emit zoom state to parents
+watch(
+  scale,
+  (newScale) => {
+    emit('zoom-change', newScale > 1)
+  },
+  { immediate: true },
+)
+
 // Listen to motion trigger from ViewPhoto top right menu
 watch(
   () => viewPhotoStore.playMotionTrigger,
@@ -435,7 +448,7 @@ function handlePointerCancel(e: PointerEvent) {
   handlePointerUp(e)
 }
 
-function handleGlobalWheel(e: WheelEvent) {
+function handleWheel(e: WheelEvent) {
   if (props.disableEventCapture) return
   const target = e.target as HTMLElement
   // Only zoom if the event isn't targeted inside overlays, info panels or menus
@@ -477,12 +490,16 @@ function handleDoubleClick(e: MouseEvent) {
 }
 
 onMounted(() => {
-  // Passive false is required to let handleGlobalWheel prevent default scroll behavior
-  window.addEventListener('wheel', handleGlobalWheel, { passive: false })
+  // Passive false is required to let handleWheel prevent default scroll behavior on the container
+  if (containerRef.value) {
+    containerRef.value.addEventListener('wheel', handleWheel, { passive: false })
+  }
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('wheel', handleGlobalWheel)
+  if (containerRef.value) {
+    containerRef.value.removeEventListener('wheel', handleWheel)
+  }
 })
 </script>
 

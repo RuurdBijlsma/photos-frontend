@@ -46,6 +46,8 @@ const persistentInfo = ref(false)
 const hideSeconds = ref(7)
 const infoMenuOpen = ref(false)
 const optionsOpen = ref(false)
+const isZoomed = ref(false)
+
 const showUI = computed(() => hideSeconds.value > 0)
 const hideTimer = setInterval(() => {
   hideSeconds.value--
@@ -183,6 +185,7 @@ function prefetchMediaItem(mediaItemId: string) {
 onBeforeUnmount(() => clearInterval(hideTimer))
 onMounted(() => document.addEventListener('keydown', handleKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', handleKeyDown))
+
 // Pre-fetch
 watch(prevId, () => {
   if (prevId.value) requestIdleCallback(() => prefetchMediaItem(prevId.value))
@@ -190,13 +193,20 @@ watch(prevId, () => {
 watch(nextId, () => {
   if (nextId.value) requestIdleCallback(() => prefetchMediaItem(nextId.value))
 })
+
+// Reset zoom states when content identifiers or viewer states change
 watch(
   id,
   () => {
+    isZoomed.value = false
     initialize()
   },
   { immediate: true },
 )
+
+watch(viewerType, () => {
+  isZoomed.value = false
+})
 </script>
 
 <template>
@@ -216,6 +226,7 @@ watch(
       :view-type="viewerType"
       :media-item-id="id"
       class="photo-viewer"
+      @zoom-change="isZoomed = $event"
     />
     <div class="top-bar">
       <div class="left-buttons">
@@ -366,14 +377,16 @@ watch(
       </div>
     </div>
     <div
-      @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}`, query: route.query })"
       v-if="prevId !== null"
       class="prev-area"
+      :class="{ 'zoomed-nav': isZoomed }"
+      @click="router.replace({ path: `${viewPhotoStore.viewLink}${prevId}`, query: route.query })"
       @mouseenter="showLeftButton = true"
       @mouseleave="showLeftButton = false"
     >
       <v-btn
-        :style="{ opacity: showLeftButton ? 1 : 0 }"
+        class="nav-btn"
+        :class="{ 'show-btn': showLeftButton }"
         icon="mdi-chevron-left"
         variant="elevated"
         rounded="xl"
@@ -381,14 +394,16 @@ watch(
       ></v-btn>
     </div>
     <div
-      @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}`, query: route.query })"
       v-if="nextId !== null"
       class="next-area"
+      :class="{ 'zoomed-nav': isZoomed }"
+      @click="router.replace({ path: `${viewPhotoStore.viewLink}${nextId}`, query: route.query })"
       @mouseenter="showRightButton = true"
       @mouseleave="showRightButton = false"
     >
       <v-btn
-        :style="{ opacity: showRightButton ? 1 : 0 }"
+        class="nav-btn"
+        :class="{ 'show-btn': showRightButton }"
         icon="mdi-chevron-right"
         variant="elevated"
         rounded="xl"
@@ -562,5 +577,29 @@ watch(
   align-items: center;
   padding: 20px;
   z-index: 1502;
+}
+
+/* Custom transitions and styling for navigation buttons */
+.nav-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  pointer-events: auto; /* Always keep the button itself interactive */
+}
+
+.nav-btn.show-btn {
+  opacity: 1;
+}
+
+/* When zoomed in, disable pointer events on the large navigation container */
+.prev-area.zoomed-nav,
+.next-area.zoomed-nav {
+  pointer-events: none;
+  cursor: default;
+}
+
+/* Let the button itself show on hover in zoomed mode */
+.prev-area.zoomed-nav .nav-btn:hover,
+.next-area.zoomed-nav .nav-btn:hover {
+  opacity: 1;
 }
 </style>

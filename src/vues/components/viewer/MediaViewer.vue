@@ -12,11 +12,17 @@ const PanoViewer = defineAsyncComponent(
   () => import('@/vues/components/viewer/viewers/PanoViewer.vue'),
 )
 
+// todo: use media viewer in location estimatr
+
 defineProps<{
   disableEventCapture: boolean
   viewType: PhotoViewerType
   mediaItemId: string
   muted: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'zoom-change', isZoomed: boolean): void
 }>()
 </script>
 
@@ -26,6 +32,7 @@ defineProps<{
       :media-item-id="mediaItemId"
       v-if="viewType === 'photo'"
       :disable-event-capture="disableEventCapture"
+      @zoom-change="emit('zoom-change', $event)"
     />
     <video-viewer :media-item-id="mediaItemId" v-else-if="viewType === 'video'" :muted="muted" />
     <pano-viewer :media-item-id="mediaItemId" v-if="viewType === 'panorama'" />
