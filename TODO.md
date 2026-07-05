@@ -207,4 +207,7 @@
 * settings page heeft geen visible scrollbar
 * ✅ loading indicator als je album maakt
 * ✅ [BUG] negative query is not sending full query (i type orange, it sends "or" in the request payload)
-* [BUG] timeline is slow again? fps (wait for all thumbnails to process before checking)
+* ✅ [BUG] timeline is slow again? fps (wait for all thumbnails to process before checking)
+* leave ViewPhoto -> timeline, the scroll to where i was in the photo viewer is bad
+  * possible workaround, dont scroll if i didnt next/prev more than 5 photos?
+  * root cause fix: fix the height calculation of the timeline grid

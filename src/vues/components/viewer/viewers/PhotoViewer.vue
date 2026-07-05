@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onUnmounted, nextTick, defineAsyncComponent } from 'vue'
 import { useSettingStore } from '@/scripts/stores/settingsStore.ts'
 import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
@@ -7,16 +7,22 @@ import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import axios from 'axios'
 import { useTimeoutFn, useEventListener, useRafFn } from '@vueuse/core'
 
-// todo: if use_panorama_viewer -> add button in bottom center to view panorama (PanoViewer.vue will be obsolete). Make button same style as the overlay buttons in ViewPhoto.vue
-// todo: if item has higher resolution, allow for deeper max zoom level
-// todo: use vueuse event listeners and timeouts instead of the manual lifecycle management i'm doing now
-// todo: if zoomed in any level, then remove the click area to go next/prev in ViewPhoto.vue. Keep the button, remove the large click area.
-// todo: only scroll zoom if mouse is on photo viewer
+const PanoramaViewer = defineAsyncComponent(
+  () => import('@/vues/components/viewer/PanoramaViewer.vue'),
+)
 
-const props = defineProps<{
-  disableEventCapture: boolean
-  mediaItemId: string
-}>()
+// todo: if item has higher resolution, allow for deeper max zoom level
+
+const props = withDefaults(
+  defineProps<{
+    disableEventCapture: boolean
+    mediaItemId: string
+    showUi?: boolean
+  }>(),
+  {
+    showUi: true,
+  },
+)
 
 const emit = defineEmits<{
   (e: 'zoom-change', isZoomed: boolean): void
@@ -43,6 +49,11 @@ let startTranslateY = 0
 
 const fullImage = computed(() => mediaItemStore.mediaItems.get(props.mediaItemId))
 const generatedThumbsAvailable = computed(() => fullImage.value?.has_thumbnails ?? true)
+
+// Panorama states
+const isPanorama = computed(() => fullImage.value?.use_panorama_viewer ?? false)
+const panoramaConfig = computed(() => fullImage.value?.panorama_config)
+const is3DMode = ref(false)
 
 // Phase 1: Immediate Thumbnail URL (1440p)
 const imageUrl = computed(() => {
@@ -208,6 +219,9 @@ watch(
     translateX.value = 0
     translateY.value = 0
 
+    // Reset panorama mode
+    is3DMode.value = false
+
     // Start motion photo autoplay if configured
     showingMotionVideo.value = false
     stopMonitoring()
@@ -236,9 +250,9 @@ watch(fullImage, (newVal) => {
 
 // Emit zoom state to parents
 watch(
-  scale,
-  (newScale) => {
-    emit('zoom-change', newScale > 1)
+  [scale, is3DMode],
+  ([newScale, is3D]) => {
+    emit('zoom-change', !is3D && newScale > 1)
   },
   { immediate: true },
 )
@@ -480,14 +494,23 @@ useEventListener(containerRef, 'wheel', handleWheel, { passive: false })
 <template>
   <div class="photo-viewer-wrapper">
     <div
-      v-if="settings.useImageGlow"
+      v-if="settings.useImageGlow && !is3DMode"
       class="blurry-bg"
       :style="{
         backgroundImage: `url(${imageUrl})`,
       }"
     ></div>
 
+    <!-- 3D mode: Instantiated when toggled to true; todo: use baseurl -->
+    <template v-if="is3DMode && panoramaConfig">
+      <PanoramaViewer
+        :config="panoramaConfig"
+        :base-url="`http://localhost:9475/hosted/pano/${mediaItemId}`"
+      />
+    </template>
+
     <div
+      v-else
       ref="containerRef"
       class="zoom-pan-container"
       :class="{ 'zoomed-in': scale > 1 }"
@@ -536,6 +559,18 @@ useEventListener(containerRef, 'wheel', handleWheel, { passive: false })
           @ended="onVideoEnded"
         />
       </div>
+    </div>
+
+    <!-- Bottom Center Panorama Toggle Control -->
+    <div
+      v-if="isPanorama && panoramaConfig"
+      class="pano-toggle-container"
+      :class="{ 'hide-ui': !showUi }"
+    >
+      <v-btn rounded="xl" variant="plain" class="pano-toggle-btn" @click="is3DMode = !is3DMode">
+        <v-icon start :icon="is3DMode ? 'mdi-image-outline' : 'mdi-panorama-variant-outline'" />
+        <span>{{ is3DMode ? 'View as Flat Photo' : 'Enter 3D Panorama' }}</span>
+      </v-btn>
     </div>
   </div>
 </template>
@@ -604,5 +639,46 @@ useEventListener(containerRef, 'wheel', handleWheel, { passive: false })
 .motion-video-tag {
   z-index: 10;
   background-color: transparent;
+}
+
+/* Bottom Center Panorama Overlay controls to match ViewPhoto's top header bars */
+.pano-toggle-container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  padding: 8px 30px;
+  border-radius: 30px;
+  background-color: rgba(var(--bg, 0, 0, 0), 0.8);
+  box-shadow: 0 3px 12px rgba(var(--bg, 0, 0, 0), 0.15);
+  transition:
+    background-color 0.15s,
+    transform 0.5s ease-in-out;
+  z-index: 1600;
+  pointer-events: auto;
+}
+
+.pano-toggle-container.hide-ui {
+  transform: translate(-50%, 80px);
+}
+
+.backdrop-blur .pano-toggle-container {
+  backdrop-filter: blur(30px) saturate(150%) brightness(90%) contrast(90%);
+  background-color: rgba(var(--bg, 0, 0, 0), 0.5);
+  border: 1px solid rgba(var(--fg, 255, 255, 255), 0.1);
+}
+
+.backdrop-blur .pano-toggle-container:hover {
+  background-color: rgba(var(--bg, 0, 0, 0), 0.7);
+}
+
+.pano-toggle-btn {
+  text-transform: none;
+  font-family: Jost, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: rgba(var(--fg, 255, 255, 255), 0.95);
 }
 </style>

@@ -225,6 +225,7 @@ watch(viewerType, () => {
       v-if="id"
       :view-type="viewerType"
       :media-item-id="id"
+      :show-ui="showUI"
       class="photo-viewer"
       @zoom-change="isZoomed = $event"
     />
