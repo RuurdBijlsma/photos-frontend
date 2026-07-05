@@ -278,10 +278,10 @@ watch(
           variant="plain"
           @click="viewPhotoStore.triggerPlayMotion"
           v-tooltip="{
-            text: 'Play motion photo',
+            text: 'View photo in motion',
             location: 'bottom',
             attach: true,
-            width: 140,
+            width: 200,
           }"
         />
         <v-btn
