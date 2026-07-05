@@ -7,11 +7,11 @@ import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import axios from 'axios'
 import { useTimeoutFn } from '@vueuse/core'
 
-// todo: make use of motion photo presentation timestamp
-// todo: if use_panorama_viewer -> add button to view panorama (PanoViewer.vue will be obsolete).
-// todo: if zoomed in any level, then remove the click area to go next/prev in ViewPhoto.vue. Keep the button, remove the large click area.
+// todo: if use_panorama_viewer -> add button in bottom center to view panorama (PanoViewer.vue will be obsolete). Make button same style as the overlay buttons in ViewPhoto.vue
 // todo: if item has higher resolution, allow for deeper max zoom level
 // todo: use vueuse event listeners and timeouts instead of the manual lifecycle management i'm doing now
+// todo: if zoomed in any level, then remove the click area to go next/prev in ViewPhoto.vue. Keep the button, remove the large click area.
+// todo: only scroll zoom if mouse is on photo viewer
 
 const props = defineProps<{
   disableEventCapture: boolean

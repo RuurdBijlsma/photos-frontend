@@ -9,6 +9,7 @@ import BaseMap from '@/vues/components/map/BaseMap.vue'
 import type { StyleName } from '@/vues/components/map/BaseMap.vue'
 import maplibregl from 'maplibre-gl'
 import { useDailyCardStore } from '@/scripts/stores/timeline/dailyCardStore.ts'
+import PhotoViewer from '@/vues/components/viewer/viewers/PhotoViewer.vue'
 
 const props = defineProps<{
   card: DailyCardResponse
@@ -688,7 +689,11 @@ onUnmounted(() => {
             class="media-content"
             :src="currentVideoUrl"
           />
-          <img v-else :src="currentImageUrl" class="media-content" alt="Guess Location target" />
+          <photo-viewer
+            :disable-event-capture="false"
+            :media-item-id="currentMediaItem.id"
+            v-else
+          />
         </div>
       </div>
 
