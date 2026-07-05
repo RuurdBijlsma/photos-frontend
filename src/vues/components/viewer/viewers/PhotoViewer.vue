@@ -510,7 +510,7 @@ useEventListener(containerRef, 'wheel', handleWheel, { passive: false })
       }"
     ></div>
 
-    <!-- 3D mode: Instantiated when toggled to true; todo: use baseurl -->
+    <!-- 3D mode: Instantiated when toggled to true -->
     <template v-if="is3DMode && panoramaConfig">
       <PanoramaViewer :config="panoramaConfig" :base-url="`${baseUrl}hosted/pano/${mediaItemId}`" />
     </template>

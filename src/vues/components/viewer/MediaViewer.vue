@@ -8,8 +8,6 @@ const VideoViewer = defineAsyncComponent(
   () => import('@/vues/components/viewer/viewers/VideoViewer.vue'),
 )
 
-// todo: use media viewer in location estimatr
-
 defineProps<{
   disableEventCapture: boolean
   isVideo: boolean
