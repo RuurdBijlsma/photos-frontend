@@ -6,12 +6,14 @@ import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import axios from 'axios'
 import { useTimeoutFn, useEventListener, useRafFn } from '@vueuse/core'
+import apiClient from '@/scripts/services/api.ts'
 
 const PanoramaViewer = defineAsyncComponent(
   () => import('@/vues/components/viewer/PanoramaViewer.vue'),
 )
 
 // todo: if item has higher resolution, allow for deeper max zoom level
+// todo: when in panorama viewer, dont show extended click area for next/prev buttons in viewphoto
 
 const props = withDefaults(
   defineProps<{
@@ -37,6 +39,7 @@ const scale = ref(1)
 const translateX = ref(0)
 const translateY = ref(0)
 const containerRef = ref<HTMLElement | null>(null)
+const baseUrl = apiClient.defaults.baseURL
 
 const activePointers = new Map<number, PointerEvent>()
 let initialPinchDistance = 0
@@ -505,7 +508,7 @@ useEventListener(containerRef, 'wheel', handleWheel, { passive: false })
     <template v-if="is3DMode && panoramaConfig">
       <PanoramaViewer
         :config="panoramaConfig"
-        :base-url="`http://localhost:9475/hosted/pano/${mediaItemId}`"
+        :base-url="`${baseUrl}hosted/pano/${mediaItemId}`"
       />
     </template>
 
@@ -569,7 +572,7 @@ useEventListener(containerRef, 'wheel', handleWheel, { passive: false })
     >
       <v-btn rounded="xl" variant="plain" class="pano-toggle-btn" @click="is3DMode = !is3DMode">
         <v-icon start :icon="is3DMode ? 'mdi-image-outline' : 'mdi-panorama-variant-outline'" />
-        <span>{{ is3DMode ? 'View as Flat Photo' : 'Enter 3D Panorama' }}</span>
+        <span>{{ is3DMode ? 'View as Photo' : 'Enter 3D Panorama' }}</span>
       </v-btn>
     </div>
   </div>

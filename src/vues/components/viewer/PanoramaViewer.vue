@@ -46,6 +46,7 @@ function initViewer() {
           config.multiRes.basePath = props.baseUrl
         }
         config.autoLoad = true
+        config.showZoomCtrl = false
         config.compass = true
         config.showFullscreenCtrl = false
         config.avoidShowingBackground = false
