@@ -244,7 +244,7 @@ onUnmounted(() => {
   position: absolute;
   top: -32px;
   transform: translateX(-50%);
-  background-color: rgba(62, 83, 115, 0.9); /* slate blue matching screenshot */
+  background-color: rgba(0, 0, 0, 0.5);
   color: #ffffff;
   font-family: Jost, sans-serif;
   font-size: 13px;

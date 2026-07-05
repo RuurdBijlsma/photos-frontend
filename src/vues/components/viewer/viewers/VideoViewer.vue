@@ -5,8 +5,10 @@ import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import { VIDEO_SIZES } from '@/scripts/constants.ts'
 import { getVideoHeight, toHms } from '@/scripts/utils.ts'
+import VideoProgressSlider from '@/vues/components/viewer/components/VideoProgressSlider.vue'
 
-// todo: tooltip over progress slider hover to show what time that position is
+// todo: play/pause indication in middle of screen that shows up temporarily when play/pausing. Large icon with circular background. background something like rgba(0,0,0,0.3), foreground rgba(255,255,255,0.8). Fades away as soon as it appears, appears instantly on play/pause. Fades away in about 750ms.
+// todo: only show volume slider when hovering over volume section.
 
 const props = withDefaults(
   defineProps<{
@@ -28,6 +30,7 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 const isPlaying = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
+const bufferedRanges = ref<Array<{ start: number; end: number }>>([])
 
 // Volume State (Persisted with useStorage)
 const savedVolume = useStorage<number>('video-player-volume', 1.0)
@@ -75,6 +78,21 @@ function onQualitySelect(size: number) {
   currentQuality.value = size
 }
 
+// Queries current media buffering intervals directly from the browser instance
+function updateBufferedProgress() {
+  if (videoRef.value) {
+    const b = videoRef.value.buffered
+    const ranges: Array<{ start: number; end: number }> = []
+    for (let i = 0; i < b.length; i++) {
+      ranges.push({
+        start: b.start(i),
+        end: b.end(i),
+      })
+    }
+    bufferedRanges.value = ranges
+  }
+}
+
 function onLoadedMetadata() {
   if (videoRef.value) {
     duration.value = videoRef.value.duration || 0
@@ -83,6 +101,7 @@ function onLoadedMetadata() {
       currentTime.value = timeToRestore.value
       timeToRestore.value = null
     }
+    updateBufferedProgress()
   }
 }
 
@@ -114,10 +133,9 @@ function playVideo() {
 watch(
   videoUrl,
   () => {
+    bufferedRanges.value = [] // Reset buffering indicator layout
     nextTick(() => {
       if (videoRef.value) {
-        // Determine if the video should play. If isPlayingOnQualityChange is null,
-        // we are loading a new media item entirely, which autoplays by default.
         const shouldPlay =
           isPlayingOnQualityChange.value !== null ? isPlayingOnQualityChange.value : true
 
@@ -163,6 +181,7 @@ let animationFrameId: number | null = null
 function updateProgressSmoothly() {
   if (videoRef.value && !videoRef.value.paused) {
     currentTime.value = videoRef.value.currentTime
+    updateBufferedProgress()
     animationFrameId = requestAnimationFrame(updateProgressSmoothly)
   }
 }
@@ -187,6 +206,11 @@ function onTimeUpdate() {
   if (videoRef.value && videoRef.value.paused) {
     currentTime.value = videoRef.value.currentTime
   }
+  updateBufferedProgress()
+}
+
+function onProgress() {
+  updateBufferedProgress()
 }
 
 // Playback Controls
@@ -300,7 +324,6 @@ const volumeIcon = computed(() => {
 
 onMounted(() => {
   document.addEventListener('fullscreenchange', onFullscreenChange)
-  // Fallback programmatic start if needed on initial load
   if (videoRef.value && isPlaying.value === false) {
     playVideo()
   }
@@ -329,6 +352,7 @@ useEventListener(window, 'keydown', handleKeyDown)
       playsinline
       @loadedmetadata="onLoadedMetadata"
       @timeupdate="onTimeUpdate"
+      @progress="onProgress"
       @play="onPlay"
       @pause="onPause"
       @click="togglePlay"
@@ -337,19 +361,13 @@ useEventListener(window, 'keydown', handleKeyDown)
 
     <!-- Custom Player Controls Bar -->
     <div class="video-controls-container" :class="{ 'hide-ui': !showUi }">
-      <!-- Timeline Seek Bar -->
+      <!-- Custom Progress Slider with hover tooltip and buffered segments -->
       <div class="seekbar-row">
-        <v-slider
-          class="progress-slider"
+        <VideoProgressSlider
           :model-value="currentTime"
           @update:model-value="onSeekInput"
-          min="0"
-          :max="duration || 100"
-          step="0.01"
-          hide-details
-          density="compact"
-          track-size="3"
-          thumb-size="12"
+          :max="duration"
+          :buffered="bufferedRanges"
         />
       </div>
 
@@ -462,10 +480,6 @@ useEventListener(window, 'keydown', handleKeyDown)
   padding: 0 10px;
 }
 
-.progress-slider {
-  margin: 0;
-}
-
 .controls-row {
   display: flex;
   align-items: center;
@@ -512,9 +526,10 @@ body.backdrop-blur .control-island:hover {
   user-select: none;
   font-weight: 400;
   margin-left: 10px;
+  margin-right: 15px;
 }
 
-/* manually set colors because it's in a v-menu, which teleports to body or something and doesnt have access to --bg and --fg */
+/* manually set colors because it's in a v-menu, which teleports to body and doesnt have access to local styles */
 .quality-menu-list {
   background-color: rgba(var(--v-theme-surface-container-lowest), 0.95) !important;
   color: rgba(var(--v-theme-on-surface-container-lowest), 0.95) !important;
@@ -527,7 +542,7 @@ body.backdrop-blur .control-island:hover {
   font-weight: 500;
 }
 
-/* Custom Grayscale / Color-Neutral overrides for Sliders (Decoupled) */
+/* Custom Grayscale / Color-Neutral overrides for remaining Sliders (Decoupled) */
 
 /* Volume Slider Customization */
 :deep(.volume-slider .v-slider-thumb) {
@@ -543,30 +558,6 @@ body.backdrop-blur .control-island:hover {
 }
 
 :deep(.volume-slider .v-slider-thumb__ripple) {
-  color: rgba(var(--fg), 0.3) !important;
-}
-
-/* Progress Slider Customization */
-:deep(.progress-slider .v-slider-thumb) {
-  color: rgba(255, 0, 0, 0.9) !important;
-}
-
-:deep(.progress-slider .v-slider-track__fill) {
-  background: rgb(200, 0, 0, 0.8) !important;
-  transition: none !important;
-}
-
-:deep(.progress-slider .v-slider-track__background) {
-  background: rgba(var(--fg), 0.5) !important;
-  transition: none !important;
-}
-
-:deep(.progress-slider .v-slider-thumb__surface),
-:deep(.progress-slider .v-slider-thumb) {
-  transition: none !important;
-}
-
-:deep(.progress-slider .v-slider-thumb__ripple) {
   color: rgba(var(--fg), 0.3) !important;
 }
 </style>
