@@ -53,15 +53,15 @@ const showUI = computed(() => hideSeconds.value > 0)
 const hideTimer = setInterval(() => {
   hideSeconds.value--
   if (infoMenuOpen.value || optionsOpen.value) {
-    hideSeconds.value = 5
+    hideSeconds.value = 10
   }
 }, 1000)
 
 useEventListener(document, 'mousemove', () => {
-  hideSeconds.value = 5
+  hideSeconds.value = 10
 })
 useEventListener(document, 'click', () => {
-  hideSeconds.value = 5
+  hideSeconds.value = 10
 })
 
 const id = computed(() => {

@@ -7,6 +7,7 @@ import { VIDEO_SIZES } from '@/scripts/constants.ts'
 import { getVideoHeight, toHms } from '@/scripts/utils.ts'
 
 // todo: the progress bar slider animates from end to start when looping, this is ugly. it should just teleport (no animation).
+// i would also like the slider thumb for progress slider to be smaller. And dont have the styling for the volume and progress bar coupled. i want to experiment changing colours and such.
 // todo: if video is paused, and i switch quality, it unpauses -> BAD. On quality switch it should retain play/paused state.
 
 const props = withDefaults(
@@ -487,6 +488,7 @@ body.backdrop-blur .control-island:hover {
   margin-left: 10px;
 }
 
+/* manually set colors because it's in a v-menu, which teleports to body or something and doesnt have access to --bg and --fg */
 .quality-menu-list {
   background-color: rgba(var(--v-theme-surface-container-lowest), 0.95) !important;
   color: rgba(var(--v-theme-on-surface-container-lowest), 0.95) !important;
