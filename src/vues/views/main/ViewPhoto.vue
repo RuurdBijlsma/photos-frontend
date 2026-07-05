@@ -8,7 +8,6 @@ import { useViewPhotoStore } from '@/scripts/stores/timeline/viewPhotoStore.ts'
 import MediaViewer from '@/vues/components/viewer/MediaViewer.vue'
 import { TimelineItem } from '@/scripts/types/generated/timeline.ts'
 import { useTimelineStore } from '@/scripts/stores/timeline/timelineStore.ts'
-import type { PhotoViewerType } from '@/scripts/types/viewerType'
 import { useEventListener } from '@vueuse/core'
 import MediaInfoPanel from '@/vues/components/viewer/components/MediaInfoPanel.vue'
 import { makeDateTimeString, makeLocationString } from '@/scripts/utils.ts'
@@ -132,18 +131,9 @@ const timelineItem = computed<TimelineItem | undefined>(() => {
   return timelineStore.mediaItemsMap.get(id.value)
 })
 
-const viewerType = computed<PhotoViewerType>(() => {
-  if (fullImage.value && fullImage.value.use_panorama_viewer) {
-    return 'panorama'
-  }
-  if (
-    (fullImage.value && fullImage.value.is_video) ||
-    (timelineItem.value && timelineItem.value.isVideo)
-  ) {
-    return 'video'
-  }
-  return 'photo'
-})
+const isVideo = computed<boolean>(
+  () => fullImage.value?.is_video ?? timelineItem.value?.isVideo ?? false,
+)
 
 async function initialize() {
   const loadingId = id.value
@@ -209,7 +199,7 @@ watch(
   { immediate: true },
 )
 
-watch(viewerType, () => {
+watch(isVideo, () => {
   isZoomed.value = false
   isPanoActive.value = false
 })
@@ -229,7 +219,7 @@ watch(viewerType, () => {
       :disable-event-capture="disableEventCapture ?? false"
       :muted="muted ?? false"
       v-if="id"
-      :view-type="viewerType"
+      :is-video="isVideo"
       :media-item-id="id"
       :show-ui="showUI"
       class="photo-viewer"

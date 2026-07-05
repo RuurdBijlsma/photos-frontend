@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { useWindowSize } from '@vueuse/core'
 import type { CollectionMediaItem, DailyCardResponse } from '@/scripts/types/api/dailyCards.ts'
-import { getThumbnailHeight, getVideoHeight, useObjStorage } from '@/scripts/utils.ts'
+import { useObjStorage } from '@/scripts/utils.ts'
 import mediaItemService from '@/scripts/services/mediaItemService.ts'
 import BaseMap from '@/vues/components/map/BaseMap.vue'
 import type { StyleName } from '@/vues/components/map/BaseMap.vue'
 import maplibregl from 'maplibre-gl'
 import { useDailyCardStore } from '@/scripts/stores/timeline/dailyCardStore.ts'
-import PhotoViewer from '@/vues/components/viewer/viewers/PhotoViewer.vue'
+import MediaViewer from '@/vues/components/viewer/MediaViewer.vue'
+import { useMediaItemStore } from '@/scripts/stores/timeline/mediaItemStore.ts'
 
 const props = defineProps<{
   card: DailyCardResponse
 }>()
 
 const router = useRouter()
-const windowSize = useWindowSize()
 const cardStore = useDailyCardStore()
+const mediaItemStore = useMediaItemStore()
 
 export interface EstimatrRound {
   latitude: number
@@ -113,26 +113,6 @@ const currentRound = computed<EstimatrRound | null>(() => {
 })
 
 const currentMediaItem = computed(() => currentRound.value?.mediaItem || null)
-
-const currentImageUrl = computed(() => {
-  const item = currentMediaItem.value
-  if (!item) return ''
-  return mediaItemService.getPhotoThumbnail(
-    item.id,
-    getThumbnailHeight(windowSize.height.value),
-    !item.hasThumbnails,
-  )
-})
-
-const currentVideoUrl = computed(() => {
-  const item = currentMediaItem.value
-  if (!item) return ''
-  return mediaItemService.getVideo(
-    item.id,
-    getVideoHeight(windowSize.height.value),
-    !item.hasThumbnails,
-  )
-})
 
 const totalScore = computed(() => {
   return gameState.value.guesses.reduce((sum, g) => sum + (g?.score || 0), 0)
@@ -624,6 +604,15 @@ function goBack() {
 }
 
 watch(
+  currentMediaItem,
+  () => {
+    if (!currentMediaItem.value) return
+    mediaItemStore.fetchMediaItem(currentMediaItem.value.id)
+  },
+  { immediate: true },
+)
+
+watch(
   () => gameState.value.currentRoundIndex,
   () => {
     tempGuess.value = null
@@ -681,24 +670,26 @@ onUnmounted(() => {
     <div class="estimatr-main-content" v-if="gameState.status !== 'finished'">
       <!-- Media Player Viewer Box -->
       <div class="media-viewport">
-        <div class="media-frame" v-if="currentMediaItem">
-          <video
-            v-if="currentMediaItem.isVideo"
-            controls
-            autoplay
-            class="media-content"
-            :src="currentVideoUrl"
-          />
-          <photo-viewer
-            :disable-event-capture="false"
-            :media-item-id="currentMediaItem.id"
-            v-else
-          />
-        </div>
+        <media-viewer
+          class="media-frame"
+          v-if="currentMediaItem"
+          :media-item-id="currentMediaItem.id"
+          :disable-event-capture="false"
+          :show-ui="true"
+          :is-video="currentMediaItem.isVideo"
+          :muted="false"
+        />
       </div>
 
       <!-- Corner Map Placement Overlay -->
-      <div class="map-wrapper" :style="{ width: `${mapWidth}px`, height: `${mapHeight}px` }">
+      <div
+        class="map-wrapper"
+        :style="{
+          width: `${mapWidth}px`,
+          height: `${mapHeight}px`,
+          transform: currentMediaItem?.isVideo ? `translate(10px, -115px)` : '',
+        }"
+      >
         <div class="map-inner-container">
           <base-map
             class="base-map"

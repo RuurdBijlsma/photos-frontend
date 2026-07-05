@@ -7,9 +7,6 @@ import { VIDEO_SIZES } from '@/scripts/constants.ts'
 import { getVideoHeight, toHms } from '@/scripts/utils.ts'
 import VideoProgressSlider from '@/vues/components/viewer/components/VideoProgressSlider.vue'
 
-// todo: play/pause indication in middle of screen that shows up temporarily when play/pausing. Large icon with circular background. background something like rgba(0,0,0,0.3), foreground rgba(255,255,255,0.8). Fades away as soon as it appears, appears instantly on play/pause. Fades away in about 750ms.
-// todo: only show volume slider when hovering over volume section.
-
 const props = withDefaults(
   defineProps<{
     mediaItemId: string
@@ -25,12 +22,18 @@ const mediaItemStore = useMediaItemStore()
 
 // Video Element Reference
 const videoRef = ref<HTMLVideoElement | null>(null)
+const fps = computed(() => fullImage.value?.media_features?.video_fps || 30)
 
 // Playback States
 const isPlaying = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const bufferedRanges = ref<Array<{ start: number; end: number }>>([])
+
+// Play/Pause Overlay States
+const overlayAction = ref<'play' | 'pause' | null>(null)
+const overlayTrigger = ref(0)
+let overlayTimeout: any = null
 
 // Volume State (Persisted with useStorage)
 const savedVolume = useStorage<number>('video-player-volume', 1.0)
@@ -76,6 +79,16 @@ function onQualitySelect(size: number) {
     isPlayingOnQualityChange.value = !videoRef.value.paused
   }
   currentQuality.value = size
+}
+
+// Triggers the temporary play/pause animation overlay in the middle of the screen
+function triggerOverlay(action: 'play' | 'pause') {
+  overlayAction.value = action
+  overlayTrigger.value++
+  if (overlayTimeout) clearTimeout(overlayTimeout)
+  overlayTimeout = setTimeout(() => {
+    overlayAction.value = null
+  }, 750)
 }
 
 // Queries current media buffering intervals directly from the browser instance
@@ -214,23 +227,14 @@ function onProgress() {
 }
 
 // Playback Controls
-function togglePlay() {
+function togglePlay(showOverlay = false) {
   if (!videoRef.value) return
   if (videoRef.value.paused) {
     playVideo()
+    if (showOverlay) triggerOverlay('play')
   } else {
     videoRef.value.pause()
-  }
-}
-
-function toggleMute() {
-  isMuted.value = !isMuted.value
-}
-
-function onVolumeChange(val: number) {
-  savedVolume.value = val
-  if (val > 0) {
-    isMuted.value = false
+    if (showOverlay) triggerOverlay('pause')
   }
 }
 
@@ -244,10 +248,31 @@ function seekBy(seconds: number) {
   currentTime.value = target
 }
 
+function stepFrame(direction: number) {
+  if (!videoRef.value) return
+  const frameDuration = 1 / fps.value
+  let target = videoRef.value.currentTime + direction * frameDuration
+  if (target < 0) target = 0
+  if (target > duration.value) target = duration.value
+  videoRef.value.currentTime = target
+  currentTime.value = target
+}
+
 function onSeekInput(val: number) {
   if (videoRef.value) {
     videoRef.value.currentTime = val
     currentTime.value = val
+  }
+}
+
+function toggleMute() {
+  isMuted.value = !isMuted.value
+}
+
+function onVolumeChange(val: number) {
+  savedVolume.value = val
+  if (val > 0) {
+    isMuted.value = false
   }
 }
 
@@ -287,7 +312,7 @@ function handleKeyDown(e: KeyboardEvent) {
   switch (e.key.toLowerCase()) {
     case ' ':
       e.preventDefault()
-      togglePlay()
+      togglePlay(true) // Triggers play/pause with screen animation feedback
       break
     case 'arrowleft':
       e.preventDefault()
@@ -312,6 +337,18 @@ function handleKeyDown(e: KeyboardEvent) {
     case 'f':
       e.preventDefault()
       toggleFullscreen()
+      break
+    case ',':
+      if (videoRef.value?.paused) {
+        e.preventDefault()
+        stepFrame(-1)
+      }
+      break
+    case '.':
+      if (videoRef.value?.paused) {
+        e.preventDefault()
+        stepFrame(1)
+      }
       break
   }
 }
@@ -355,9 +392,16 @@ useEventListener(window, 'keydown', handleKeyDown)
       @progress="onProgress"
       @play="onPlay"
       @pause="onPause"
-      @click="togglePlay"
+      @click="togglePlay(true)"
       @dblclick="toggleFullscreen"
     />
+
+    <!-- Play/Pause Overlay Indication -->
+    <div v-if="overlayAction" :key="overlayTrigger" class="play-pause-overlay">
+      <div class="overlay-circle">
+        <v-icon :icon="overlayAction === 'play' ? 'mdi-play' : 'mdi-pause'" size="40" />
+      </div>
+    </div>
 
     <!-- Custom Player Controls Bar -->
     <div class="video-controls-container" :class="{ 'hide-ui': !showUi }">
@@ -375,25 +419,29 @@ useEventListener(window, 'keydown', handleKeyDown)
       <div class="controls-row">
         <!-- Left Island Capsule -->
         <div class="control-island left-island">
+          <!-- Clicking bottom-left control capsule buttons will play/pause silently without screen overlay feedback -->
           <v-btn
             variant="plain"
             :icon="isPlaying ? 'mdi-pause' : 'mdi-play'"
             rounded="xl"
-            @click="togglePlay"
+            @click="togglePlay()"
           />
 
+          <!-- Hover-revealed volume controls container -->
           <div class="volume-container">
             <v-btn variant="plain" :icon="volumeIcon" rounded="xl" @click="toggleMute" />
-            <v-slider
-              class="volume-slider"
-              :model-value="isMuted ? 0 : savedVolume"
-              @update:model-value="onVolumeChange"
-              min="0"
-              max="1"
-              step="0.05"
-              hide-details
-              density="compact"
-            />
+            <div class="volume-slider-wrapper">
+              <v-slider
+                class="volume-slider"
+                :model-value="isMuted ? 0 : savedVolume"
+                @update:model-value="onVolumeChange"
+                min="0"
+                max="1"
+                step="0.05"
+                hide-details
+                density="compact"
+              />
+            </div>
           </div>
 
           <div class="time-display">{{ toHms(currentTime) }} / {{ toHms(duration) }}</div>
@@ -456,6 +504,44 @@ useEventListener(window, 'keydown', handleKeyDown)
   object-fit: contain;
 }
 
+/* Play/Pause Center Indicator */
+.play-pause-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1505;
+  pointer-events: none;
+  animation: fade-out-overlay 750ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.overlay-circle {
+  width: 80px;
+  height: 80px;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fade-out-overlay {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
 .video-controls-container {
   position: absolute;
   bottom: 10px;
@@ -514,6 +600,29 @@ body.backdrop-blur .control-island:hover {
   align-items: center;
 }
 
+/* Transitions the container width and opacity when hovering */
+.volume-slider-wrapper {
+  display: flex;
+  align-items: center;
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    width 0.25s ease-in-out,
+    opacity 0.2s ease-in-out,
+    margin 0.25s ease-in-out;
+  pointer-events: none;
+  margin-left: 0;
+}
+
+.volume-container:hover .volume-slider-wrapper,
+.volume-container:focus-within .volume-slider-wrapper {
+  width: 80px;
+  opacity: 1;
+  pointer-events: auto;
+  margin-left: 8px;
+}
+
 .volume-slider {
   width: 80px;
   flex: none;
@@ -527,14 +636,6 @@ body.backdrop-blur .control-island:hover {
   font-weight: 400;
   margin-left: 10px;
   margin-right: 15px;
-}
-
-/* manually set colors because it's in a v-menu, which teleports to body and doesnt have access to local styles */
-.quality-menu-list {
-  background-color: rgba(var(--v-theme-surface-container-lowest), 0.95) !important;
-  color: rgba(var(--v-theme-on-surface-container-lowest), 0.95) !important;
-  border: 1px solid rgba(var(--v-theme-on-surface-container-lowest), 0.1);
-  border-radius: 12px;
 }
 
 .menu-text {

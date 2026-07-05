@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue'
-import type { PhotoViewerType } from '@/scripts/types/viewerType.ts'
 
 const PhotoViewer = defineAsyncComponent(
   () => import('@/vues/components/viewer/viewers/PhotoViewer.vue'),
@@ -13,7 +12,7 @@ const VideoViewer = defineAsyncComponent(
 
 defineProps<{
   disableEventCapture: boolean
-  viewType: PhotoViewerType
+  isVideo: boolean
   mediaItemId: string
   muted: boolean
   showUi?: boolean
@@ -29,7 +28,7 @@ const emit = defineEmits<{
   <div class="viewer-container">
     <photo-viewer
       :media-item-id="mediaItemId"
-      v-if="viewType === 'photo' || viewType === 'panorama'"
+      v-if="!isVideo"
       :disable-event-capture="disableEventCapture"
       :show-ui="showUi"
       @zoom-change="emit('zoom-change', $event)"
@@ -37,7 +36,7 @@ const emit = defineEmits<{
     />
     <video-viewer
       :media-item-id="mediaItemId"
-      v-else-if="viewType === 'video'"
+      v-else
       :muted="muted"
       :show-ui="showUi"
     />

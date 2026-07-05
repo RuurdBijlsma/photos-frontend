@@ -429,7 +429,7 @@ function handlePointerUp(e: PointerEvent) {
   try {
     const target = e.currentTarget as HTMLElement
     target.releasePointerCapture(e.pointerId)
-  } catch (err) {
+  } catch {
     // Ignore
   }
 
