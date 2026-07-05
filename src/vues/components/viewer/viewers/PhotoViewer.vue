@@ -150,6 +150,47 @@ const motionVideoUrl = computed(() => {
   return mediaItemService.getMotionVideo(props.mediaItemId)
 })
 
+let rafId: number | null = null
+
+function startMonitoring() {
+  stopMonitoring()
+  rafId = requestAnimationFrame(monitorVideoTime)
+}
+
+function stopMonitoring() {
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
+}
+
+function monitorVideoTime() {
+  const video = videoPlayerRef.value
+  if (!video) {
+    stopMonitoring()
+    return
+  }
+
+  const presentationTimestampUs =
+    fullImage.value?.media_features?.motion_photo_presentation_timestamp
+  let targetTime = 0
+
+  if (presentationTimestampUs !== undefined && presentationTimestampUs > 0) {
+    targetTime = presentationTimestampUs / 1000000
+  } else if (video.duration && !isNaN(video.duration)) {
+    targetTime = video.duration / 2
+  }
+
+  // Swap back to the static photo once the presentation timestamp is crossed
+  if (targetTime > 0 && video.currentTime >= targetTime) {
+    showingMotionVideo.value = false
+    stopMonitoring()
+    return
+  }
+
+  rafId = requestAnimationFrame(monitorVideoTime)
+}
+
 function playMotionPhoto() {
   if (!settings.playMotionPhotos) return
   showingMotionVideo.value = true
@@ -165,6 +206,7 @@ function playMotionPhoto() {
 
 function onVideoEnded() {
   showingMotionVideo.value = false
+  stopMonitoring()
 }
 
 // Watchers
@@ -178,6 +220,7 @@ watch(
 
     // Start motion photo autoplay if configured
     showingMotionVideo.value = false
+    stopMonitoring()
     if (settings.playMotionPhotos && fullImage.value?.media_features?.is_motion_photo) {
       playMotionPhoto()
     }
@@ -213,6 +256,7 @@ watch(
 
 onUnmounted(() => {
   cleanup()
+  stopMonitoring()
 })
 
 const transformStyle = computed(() => {
@@ -496,6 +540,8 @@ onBeforeUnmount(() => {
           autoplay
           muted
           playsinline
+          @play="startMonitoring"
+          @pause="stopMonitoring"
           @ended="onVideoEnded"
         />
       </div>
