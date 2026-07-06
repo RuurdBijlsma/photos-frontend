@@ -208,6 +208,9 @@
 * ✅ loading indicator als je album maakt
 * ✅ [BUG] negative query is not sending full query (i type orange, it sends "or" in the request payload)
 * ✅ [BUG] timeline is slow again? fps (wait for all thumbnails to process before checking)
+* Fix build assets
+* replace logo with new log
+* make option to keep background image permanently, or something like set image as background image on kebab menu in viewphoto?
 * make generic refresh thing, call it when moving item to bin
   * For example, refreshStore or something, which has a refreshCounter. If you're on a page you can watch that counter, if it changes, then refresh the content of the page.
   * This way if you delete something from /search, or from /person, or from /camera, etc. it can refresh the page and remove the deleted item from view
